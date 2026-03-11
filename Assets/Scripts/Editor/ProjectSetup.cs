@@ -347,7 +347,7 @@ public class ProjectSetup : EditorWindow
         memory.title = "Memory";
         memory.cardColor = MemoryColor;
         memory.targetSceneName = "MemoryGame";
-        memory.hasSubItems = true;
+        memory.hasSubItems = false;
         memory.selectionScreenTitle = "Choose a Category";
         memory.subItems = new List<SubItemData>
         {
@@ -380,13 +380,26 @@ public class ProjectSetup : EditorWindow
         }
         EditorUtility.SetDirty(coloring);
 
-        // ── Puzzle (direct launch) ──
+        // ── Puzzle (sub-item selection) ──
         var puzzle = CreateSO<GameItemData>($"{DataPath}/Puzzle.asset");
         puzzle.id = "puzzle";
         puzzle.title = "Puzzle";
         puzzle.cardColor = PuzzleColor;
         puzzle.targetSceneName = "PuzzleGame";
-        puzzle.hasSubItems = false;
+        puzzle.hasSubItems = true;
+        puzzle.selectionScreenTitle = "Choose a Puzzle";
+        puzzle.subItems = new List<SubItemData>();
+        for (int i = 0; i < animals.Length; i++)
+        {
+            puzzle.subItems.Add(new SubItemData
+            {
+                id = $"puzzle_{animals[i].ToLower()}",
+                title = animals[i],
+                cardColor = AnimalColors[i % AnimalColors.Length],
+                categoryKey = animals[i].ToLower(),
+                targetSceneName = "PuzzleGame"
+            });
+        }
         EditorUtility.SetDirty(puzzle);
 
         // ── Colors (direct launch) ──
@@ -742,7 +755,7 @@ public class ProjectSetup : EditorWindow
             var arrowRT = arrowGO.AddComponent<RectTransform>();
             StretchFull(arrowRT);
             var arrowTMP = arrowGO.AddComponent<TextMeshProUGUI>();
-            arrowTMP.text = "\u25C0"; // ◀
+            arrowTMP.text = "<";
             arrowTMP.fontSize = 36;
             arrowTMP.color = HexColor("#4A4A4A");
             arrowTMP.alignment = TextAlignmentOptions.Center;
