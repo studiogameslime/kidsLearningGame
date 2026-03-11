@@ -11,6 +11,8 @@ public class ColoringGameController : MonoBehaviour
     [Header("Canvas")]
     public DrawingCanvas drawingCanvas;
     public RawImage outlineImage;     // overlay that shows the animal outline (coloring mode only)
+    public Image referenceImage;      // small colored sprite preview (coloring mode only)
+    public GameObject referenceContainer; // parent GO to show/hide the reference
 
     [Header("Palette")]
     public Transform colorButtonContainer;
@@ -65,9 +67,15 @@ public class ColoringGameController : MonoBehaviour
             : "free";
 
         if (categoryKey != "free")
+        {
             SetupOutline();
+        }
         else
+        {
             outlineImage.gameObject.SetActive(false);
+            if (referenceContainer != null)
+                referenceContainer.SetActive(false);
+        }
 
         // Build palette UI
         BuildColorPalette();
@@ -101,11 +109,21 @@ public class ColoringGameController : MonoBehaviour
             {
                 outlineImage.gameObject.SetActive(false);
             }
+
+            // Show colored reference thumbnail
+            if (referenceImage != null)
+            {
+                referenceImage.sprite = animalSprite;
+                if (referenceContainer != null)
+                    referenceContainer.SetActive(true);
+            }
         }
         else
         {
             Debug.LogWarning($"Could not load animal sprite for coloring. Key: {GameContext.CurrentSelection?.categoryKey}");
             outlineImage.gameObject.SetActive(false);
+            if (referenceContainer != null)
+                referenceContainer.SetActive(false);
         }
     }
 

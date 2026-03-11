@@ -20,6 +20,46 @@ public static class OutlineGenerator
         int srcH = source.height;
         Color[] srcPixels = source.GetPixels();
 
+        // Find bounding box of non-transparent pixels
+        int minX = srcW, maxX = 0, minY = srcH, maxY = 0;
+        for (int y = 0; y < srcH; y++)
+        {
+            for (int x = 0; x < srcW; x++)
+            {
+                if (srcPixels[y * srcW + x].a > 0.05f)
+                {
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                }
+            }
+        }
+
+        // Fallback if no visible pixels
+        if (maxX < minX || maxY < minY)
+        {
+            minX = 0; maxX = srcW - 1;
+            minY = 0; maxY = srcH - 1;
+        }
+
+        // Content dimensions with a small margin
+        int contentW = maxX - minX + 1;
+        int contentH = maxY - minY + 1;
+        float margin = 0.05f; // 5% margin on each side
+        int marginPx = Mathf.RoundToInt(Mathf.Min(outputWidth, outputHeight) * margin);
+        int availW = outputWidth - marginPx * 2;
+        int availH = outputHeight - marginPx * 2;
+
+        // Scale to fit while preserving aspect ratio
+        float scale = Mathf.Min((float)availW / contentW, (float)availH / contentH);
+        float scaledW = contentW * scale;
+        float scaledH = contentH * scale;
+
+        // Center offset in output space
+        float offsetX = (outputWidth - scaledW) * 0.5f;
+        float offsetY = (outputHeight - scaledH) * 0.5f;
+
         // Create output texture
         var outline = new Texture2D(outputWidth, outputHeight, TextureFormat.RGBA32, false);
         outline.filterMode = FilterMode.Bilinear;
@@ -37,9 +77,13 @@ public static class OutlineGenerator
         {
             for (int x = 0; x < outputWidth; x++)
             {
-                // Map output position to source position
-                float srcX = (float)x / outputWidth * srcW;
-                float srcY = (float)y / outputHeight * srcH;
+                // Map output position to cropped source position (centered, scaled)
+                float srcX = (x - offsetX) / scale + minX;
+                float srcY = (y - offsetY) / scale + minY;
+
+                // Skip pixels outside the source texture bounds
+                if (srcX < 0 || srcX >= srcW || srcY < 0 || srcY >= srcH)
+                    continue;
 
                 bool isEdge = false;
 

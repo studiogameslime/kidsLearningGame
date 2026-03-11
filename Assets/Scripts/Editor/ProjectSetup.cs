@@ -266,12 +266,30 @@ public class ProjectSetup : EditorWindow
         btn.colors = colors;
         btn.targetGraphic = bgImage;
 
-        // Thumbnail image (top area, inset)
+        // Title text (top area)
+        var titleGO = new GameObject("Title");
+        titleGO.transform.SetParent(root.transform, false);
+        var titleRT = titleGO.AddComponent<RectTransform>();
+        titleRT.anchorMin = new Vector2(0.05f, 0.82f);
+        titleRT.anchorMax = new Vector2(0.95f, 0.98f);
+        titleRT.offsetMin = Vector2.zero;
+        titleRT.offsetMax = Vector2.zero;
+        var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
+        titleTMP.text = "Game Title";
+        titleTMP.fontSize = 36;
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.color = CardTextColor;
+        titleTMP.alignment = TextAlignmentOptions.Center;
+        titleTMP.enableWordWrapping = true;
+        titleTMP.overflowMode = TextOverflowModes.Ellipsis;
+        titleTMP.raycastTarget = false;
+
+        // Thumbnail image (below title, fills most of the card)
         var thumbGO = new GameObject("Thumbnail");
         thumbGO.transform.SetParent(root.transform, false);
         var thumbRT = thumbGO.AddComponent<RectTransform>();
-        thumbRT.anchorMin = new Vector2(0.1f, 0.3f);
-        thumbRT.anchorMax = new Vector2(0.9f, 0.9f);
+        thumbRT.anchorMin = new Vector2(0.05f, 0.02f);
+        thumbRT.anchorMax = new Vector2(0.95f, 0.82f);
         thumbRT.offsetMin = Vector2.zero;
         thumbRT.offsetMax = Vector2.zero;
         var thumbImg = thumbGO.AddComponent<Image>();
@@ -279,36 +297,18 @@ public class ProjectSetup : EditorWindow
         thumbImg.raycastTarget = false;
         thumbImg.color = Color.white;
 
-        // Placeholder icon (shown when no thumbnail; a simple star-like shape using the circle)
+        // Placeholder icon (shown when no thumbnail)
         var phGO = new GameObject("PlaceholderIcon");
         phGO.transform.SetParent(root.transform, false);
         var phRT = phGO.AddComponent<RectTransform>();
-        phRT.anchorMin = new Vector2(0.25f, 0.4f);
-        phRT.anchorMax = new Vector2(0.75f, 0.85f);
+        phRT.anchorMin = new Vector2(0.2f, 0.2f);
+        phRT.anchorMax = new Vector2(0.8f, 0.75f);
         phRT.offsetMin = Vector2.zero;
         phRT.offsetMax = Vector2.zero;
         var phImg = phGO.AddComponent<Image>();
         phImg.color = new Color(1f, 1f, 1f, 0.35f);
         phImg.preserveAspect = true;
         phImg.raycastTarget = false;
-
-        // Title text (bottom area)
-        var titleGO = new GameObject("Title");
-        titleGO.transform.SetParent(root.transform, false);
-        var titleRT = titleGO.AddComponent<RectTransform>();
-        titleRT.anchorMin = new Vector2(0.05f, 0.02f);
-        titleRT.anchorMax = new Vector2(0.95f, 0.28f);
-        titleRT.offsetMin = Vector2.zero;
-        titleRT.offsetMax = Vector2.zero;
-        var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "Game Title";
-        titleTMP.fontSize = 38;
-        titleTMP.fontStyle = FontStyles.Bold;
-        titleTMP.color = CardTextColor;
-        titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.enableWordWrapping = true;
-        titleTMP.overflowMode = TextOverflowModes.Ellipsis;
-        titleTMP.raycastTarget = false;
 
         // Wire up the GameCardView component
         var cardView = root.AddComponent<GameCardView>();

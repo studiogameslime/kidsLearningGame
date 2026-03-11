@@ -22,11 +22,13 @@ public class ColoringGameSetup : EditorWindow
     private static readonly Color ToolBtnColor  = HexColor("#F0F0F0");
     private static readonly Color CanvasBorder  = HexColor("#E0D5C8");  // subtle warm border
 
-    // Layout
-    private const int TopBarHeight = 100;
-    private const int PaletteHeight = 80;
-    private const int BrushBarHeight = 60;
+    // Layout — sized for kids' fingers
+    private const int TopBarHeight = 130;
+    private const int PaletteHeight = 110;    // single scrollable row of big color circles
+    private const int BrushBarHeight = 80;
     private const int CanvasPad = 16;
+    private const int RefImageSize = 220;     // colored reference sprite preview (1.5x bigger)
+    private const int ColorCircleSize = 86;   // big color circles for kids
 
     [MenuItem("Tools/Kids Learning Game/Setup Coloring Game")]
     public static void RunSetup()
@@ -107,7 +109,6 @@ public class ColoringGameSetup : EditorWindow
         foreach (var item in coloring.subItems)
         {
             if (item.categoryKey == "free") continue;
-            if (item.contentAsset != null) continue; // already assigned
 
             string name = char.ToUpper(item.categoryKey[0]) + item.categoryKey.Substring(1);
 
@@ -123,6 +124,7 @@ public class ColoringGameSetup : EditorWindow
                 if (sprite != null)
                 {
                     item.contentAsset = sprite;
+                    item.thumbnail = sprite; // show animal image in selection menu
                     break;
                 }
             }
@@ -142,7 +144,7 @@ public class ColoringGameSetup : EditorWindow
 
         var root = new GameObject("ColorButton");
         var rootRT = root.AddComponent<RectTransform>();
-        rootRT.sizeDelta = new Vector2(60, 60);
+        rootRT.sizeDelta = new Vector2(ColorCircleSize, ColorCircleSize);
 
         var img = root.AddComponent<Image>();
         img.sprite = circleSprite;
@@ -157,8 +159,8 @@ public class ColoringGameSetup : EditorWindow
         var ringRT = ring.AddComponent<RectTransform>();
         ringRT.anchorMin = Vector2.zero;
         ringRT.anchorMax = Vector2.one;
-        ringRT.offsetMin = new Vector2(-5, -5);
-        ringRT.offsetMax = new Vector2(5, 5);
+        ringRT.offsetMin = new Vector2(-6, -6);
+        ringRT.offsetMax = new Vector2(6, 6);
         var ringImg = ring.AddComponent<Image>();
         ringImg.sprite = circleSprite;
         ringImg.color = new Color(0.3f, 0.3f, 0.3f, 0.5f);
@@ -177,7 +179,7 @@ public class ColoringGameSetup : EditorWindow
 
         var root = new GameObject("BrushSizeButton");
         var rootRT = root.AddComponent<RectTransform>();
-        rootRT.sizeDelta = new Vector2(52, 52);
+        rootRT.sizeDelta = new Vector2(68, 68);
 
         var img = root.AddComponent<Image>();
         img.sprite = roundedRect;
@@ -264,23 +266,127 @@ public class ColoringGameSetup : EditorWindow
         // Home button (top-left)
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
         var homeGO = CreateIconButton(topBar.transform, "HomeButton", homeIcon,
-            new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(20, -10), new Vector2(70, 70));
+            new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(16, -15), new Vector2(90, 90));
 
         // Undo button (top-right area)
         var undoGO = CreateToolButton(topBar.transform, "UndoButton", "\u21A9", roundedRect,
-            new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-100, -15), new Vector2(70, 70));
+            new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-120, -18), new Vector2(90, 90));
 
         // Clear button (top-right)
         var clearGO = CreateToolButton(topBar.transform, "ClearButton", "\u2715", roundedRect,
-            new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-20, -15), new Vector2(70, 70));
+            new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-20, -18), new Vector2(90, 90));
 
-        // ── DRAWING AREA ──
-        // Canvas border/frame
+        // ── COLOR PALETTE (scrollable horizontal row, ABOVE the canvas) ──
+        var paletteBar = new GameObject("PaletteBar");
+        paletteBar.transform.SetParent(safeArea.transform, false);
+        var paletteBarRT = paletteBar.AddComponent<RectTransform>();
+        paletteBarRT.anchorMin = new Vector2(0, 1);
+        paletteBarRT.anchorMax = new Vector2(1, 1);
+        paletteBarRT.pivot = new Vector2(0.5f, 1);
+        paletteBarRT.anchoredPosition = new Vector2(0, -TopBarHeight);
+        paletteBarRT.sizeDelta = new Vector2(0, PaletteHeight);
+
+        // Palette background (child, behind everything)
+        var paletteBgGO = CreateStretchImage(paletteBar.transform, "PaletteBg", BottomColor);
+        paletteBgGO.GetComponent<Image>().raycastTarget = false;
+
+        // Viewport (masks the scrollable content)
+        var viewport = new GameObject("Viewport");
+        viewport.transform.SetParent(paletteBar.transform, false);
+        var viewportRT = viewport.AddComponent<RectTransform>();
+        StretchFull(viewportRT);
+        var viewportImg = viewport.AddComponent<Image>();
+        viewportImg.color = new Color(1, 1, 1, 0); // transparent but needed for Mask
+        viewportImg.raycastTarget = true;
+        viewport.AddComponent<RectMask2D>(); // clips children without needing an opaque image
+
+        // Scrollable content with HorizontalLayout
+        var colorContainer = new GameObject("Colors");
+        colorContainer.transform.SetParent(viewport.transform, false);
+        var colorContainerRT = colorContainer.AddComponent<RectTransform>();
+        colorContainerRT.anchorMin = new Vector2(0, 0);
+        colorContainerRT.anchorMax = new Vector2(0, 1);
+        colorContainerRT.pivot = new Vector2(0, 0.5f);
+        colorContainerRT.sizeDelta = new Vector2(1200, 0); // initial width, grows with ContentSizeFitter
+
+        var colorLayout = colorContainer.AddComponent<HorizontalLayoutGroup>();
+        colorLayout.spacing = 12;
+        colorLayout.childAlignment = TextAnchor.MiddleCenter;
+        colorLayout.childForceExpandWidth = false;
+        colorLayout.childForceExpandHeight = false;
+        colorLayout.padding = new RectOffset(16, 16, 8, 8);
+
+        var colorFitter = colorContainer.AddComponent<ContentSizeFitter>();
+        colorFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+        colorFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+        // ScrollRect on the palette bar itself
+        var paletteScroll = paletteBar.AddComponent<ScrollRect>();
+        paletteScroll.horizontal = true;
+        paletteScroll.vertical = false;
+        paletteScroll.movementType = ScrollRect.MovementType.Elastic;
+        paletteScroll.elasticity = 0.1f;
+        paletteScroll.scrollSensitivity = 20f;
+        paletteScroll.content = colorContainerRT;
+        paletteScroll.viewport = viewportRT;
+
+        // ── BRUSH BAR (under palette, above canvas) ──
+        var brushBar = new GameObject("BrushBar");
+        brushBar.transform.SetParent(safeArea.transform, false);
+        var brushBarRT = brushBar.AddComponent<RectTransform>();
+        brushBarRT.anchorMin = new Vector2(0, 1);
+        brushBarRT.anchorMax = new Vector2(1, 1);
+        brushBarRT.pivot = new Vector2(0.5f, 1);
+        brushBarRT.anchoredPosition = new Vector2(0, -(TopBarHeight + PaletteHeight));
+        brushBarRT.sizeDelta = new Vector2(0, BrushBarHeight);
+
+        var brushLayout = brushBar.AddComponent<HorizontalLayoutGroup>();
+        brushLayout.spacing = 16;
+        brushLayout.childAlignment = TextAnchor.MiddleCenter;
+        brushLayout.childForceExpandWidth = false;
+        brushLayout.childForceExpandHeight = false;
+        brushLayout.padding = new RectOffset(24, 24, 4, 4);
+
+        // Eraser button
+        var eraserGO = CreateToolButton(brushBar.transform, "EraserButton", "E", roundedRect,
+            Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(68, 68), false);
+        var eraserHL = new GameObject("EraserHighlight");
+        eraserHL.transform.SetParent(eraserGO.transform, false);
+        var eraserHLRT = eraserHL.AddComponent<RectTransform>();
+        StretchFull(eraserHLRT);
+        eraserHLRT.offsetMin = new Vector2(-4, -4);
+        eraserHLRT.offsetMax = new Vector2(4, 4);
+        var eraserHLImg = eraserHL.AddComponent<Image>();
+        eraserHLImg.sprite = roundedRect;
+        eraserHLImg.type = Image.Type.Sliced;
+        eraserHLImg.color = new Color(0.9f, 0.3f, 0.3f, 0.4f);
+        eraserHLImg.raycastTarget = false;
+        eraserHL.SetActive(false);
+
+        // Spacer
+        var spacer = new GameObject("Spacer");
+        spacer.transform.SetParent(brushBar.transform, false);
+        var spacerLE = spacer.AddComponent<LayoutElement>();
+        spacerLE.flexibleWidth = 1;
+
+        // Brush size buttons container
+        var brushContainer = new GameObject("BrushSizes");
+        brushContainer.transform.SetParent(brushBar.transform, false);
+        var brushContainerRT = brushContainer.AddComponent<RectTransform>();
+        brushContainerRT.sizeDelta = new Vector2(250, BrushBarHeight);
+        var brushContainerLayout = brushContainer.AddComponent<HorizontalLayoutGroup>();
+        brushContainerLayout.spacing = 14;
+        brushContainerLayout.childAlignment = TextAnchor.MiddleCenter;
+        brushContainerLayout.childForceExpandWidth = false;
+        brushContainerLayout.childForceExpandHeight = false;
+
+        // ── DRAWING AREA (below brush bar, fills remaining space) ──
+        int topOffset = TopBarHeight + PaletteHeight + BrushBarHeight;
         var canvasFrame = CreateStretchImage(safeArea.transform, "CanvasFrame", CanvasBorder);
         var canvasFrameRT = canvasFrame.GetComponent<RectTransform>();
         StretchFull(canvasFrameRT);
-        canvasFrameRT.offsetMax = new Vector2(-CanvasPad, -(TopBarHeight + 8));
-        canvasFrameRT.offsetMin = new Vector2(CanvasPad, PaletteHeight + BrushBarHeight + 16);
+        canvasFrameRT.offsetMax = new Vector2(-CanvasPad, -(topOffset + 4));
+        canvasFrameRT.offsetMin = new Vector2(CanvasPad, 8);
         canvasFrame.GetComponent<Image>().raycastTarget = false;
 
         // White canvas background
@@ -307,96 +413,43 @@ public class ColoringGameSetup : EditorWindow
         StretchFull(outlineRT);
         var outlineRaw = outlineGO.AddComponent<RawImage>();
         outlineRaw.color = Color.white;
-        outlineRaw.raycastTarget = false; // clicks pass through to drawing layer
+        outlineRaw.raycastTarget = false;
         outlineGO.SetActive(false);
 
-        // ── BOTTOM TOOL AREA ──
+        // ── REFERENCE IMAGE (colored sprite, TOP-RIGHT overlaid on canvas) ──
+        var refBgGO = new GameObject("RefBackground");
+        refBgGO.transform.SetParent(safeArea.transform, false);
+        var refBgRT = refBgGO.AddComponent<RectTransform>();
+        refBgRT.anchorMin = new Vector2(1, 1);
+        refBgRT.anchorMax = new Vector2(1, 1);
+        refBgRT.pivot = new Vector2(1, 1);
+        refBgRT.anchoredPosition = new Vector2(-CanvasPad, -(topOffset + 8));
+        refBgRT.sizeDelta = new Vector2(RefImageSize + 16, RefImageSize + 16);
+        var refBgImg = refBgGO.AddComponent<Image>();
+        refBgImg.sprite = roundedRect;
+        refBgImg.type = Image.Type.Sliced;
+        refBgImg.color = new Color(1f, 1f, 1f, 0.92f);
+        refBgImg.raycastTarget = false;
+        refBgGO.SetActive(false);
 
-        // Brush size bar
-        var brushBar = new GameObject("BrushBar");
-        brushBar.transform.SetParent(safeArea.transform, false);
-        var brushBarRT = brushBar.AddComponent<RectTransform>();
-        brushBarRT.anchorMin = new Vector2(0, 0);
-        brushBarRT.anchorMax = new Vector2(1, 0);
-        brushBarRT.pivot = new Vector2(0.5f, 0);
-        brushBarRT.anchoredPosition = new Vector2(0, PaletteHeight + 4);
-        brushBarRT.sizeDelta = new Vector2(0, BrushBarHeight);
-
-        var brushLayout = brushBar.AddComponent<HorizontalLayoutGroup>();
-        brushLayout.spacing = 12;
-        brushLayout.childAlignment = TextAnchor.MiddleCenter;
-        brushLayout.childForceExpandWidth = false;
-        brushLayout.childForceExpandHeight = false;
-        brushLayout.padding = new RectOffset(20, 20, 4, 4);
-
-        // Eraser button (in brush bar, left side)
-        var eraserGO = CreateToolButton(brushBar.transform, "EraserButton", "E", roundedRect,
-            Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(52, 52), false);
-        // Also add a highlight indicator as child
-        var eraserHL = new GameObject("EraserHighlight");
-        eraserHL.transform.SetParent(eraserGO.transform, false);
-        var eraserHLRT = eraserHL.AddComponent<RectTransform>();
-        StretchFull(eraserHLRT);
-        eraserHLRT.offsetMin = new Vector2(-3, -3);
-        eraserHLRT.offsetMax = new Vector2(3, 3);
-        var eraserHLImg = eraserHL.AddComponent<Image>();
-        eraserHLImg.sprite = roundedRect;
-        eraserHLImg.type = Image.Type.Sliced;
-        eraserHLImg.color = new Color(0.9f, 0.3f, 0.3f, 0.4f);
-        eraserHLImg.raycastTarget = false;
-        eraserHL.SetActive(false);
-
-        // Spacer
-        var spacer = new GameObject("Spacer");
-        spacer.transform.SetParent(brushBar.transform, false);
-        var spacerLE = spacer.AddComponent<LayoutElement>();
-        spacerLE.flexibleWidth = 1;
-
-        // Brush size buttons container (right side of brush bar)
-        // Brush sizes will be instantiated by the controller at runtime
-        var brushContainer = new GameObject("BrushSizes");
-        brushContainer.transform.SetParent(brushBar.transform, false);
-        var brushContainerRT = brushContainer.AddComponent<RectTransform>();
-        brushContainerRT.sizeDelta = new Vector2(200, BrushBarHeight);
-        var brushContainerLayout = brushContainer.AddComponent<HorizontalLayoutGroup>();
-        brushContainerLayout.spacing = 10;
-        brushContainerLayout.childAlignment = TextAnchor.MiddleCenter;
-        brushContainerLayout.childForceExpandWidth = false;
-        brushContainerLayout.childForceExpandHeight = false;
-
-        // Color palette bar
-        var paletteBar = new GameObject("PaletteBar");
-        paletteBar.transform.SetParent(safeArea.transform, false);
-        var paletteBarRT = paletteBar.AddComponent<RectTransform>();
-        paletteBarRT.anchorMin = new Vector2(0, 0);
-        paletteBarRT.anchorMax = new Vector2(1, 0);
-        paletteBarRT.pivot = new Vector2(0.5f, 0);
-        paletteBarRT.sizeDelta = new Vector2(0, PaletteHeight);
-
-        // Palette background
-        var paletteBg = paletteBar.AddComponent<Image>();
-        paletteBg.color = BottomColor;
-        paletteBg.raycastTarget = false;
-
-        // Color buttons container (inside palette bar)
-        var colorContainer = new GameObject("Colors");
-        colorContainer.transform.SetParent(paletteBar.transform, false);
-        var colorContainerRT = colorContainer.AddComponent<RectTransform>();
-        StretchFull(colorContainerRT);
-        colorContainerRT.offsetMin = new Vector2(12, 8);
-        colorContainerRT.offsetMax = new Vector2(-12, -8);
-
-        var colorLayout = colorContainer.AddComponent<HorizontalLayoutGroup>();
-        colorLayout.spacing = 6;
-        colorLayout.childAlignment = TextAnchor.MiddleCenter;
-        colorLayout.childForceExpandWidth = true;
-        colorLayout.childForceExpandHeight = false;
-        colorLayout.padding = new RectOffset(4, 4, 0, 0);
+        // Colored sprite on top
+        var refGO = new GameObject("ReferenceSprite");
+        refGO.transform.SetParent(refBgGO.transform, false);
+        var refRT = refGO.AddComponent<RectTransform>();
+        StretchFull(refRT);
+        refRT.offsetMin = new Vector2(8, 8);
+        refRT.offsetMax = new Vector2(-8, -8);
+        var refImg = refGO.AddComponent<Image>();
+        refImg.preserveAspect = true;
+        refImg.raycastTarget = false;
+        refImg.color = Color.white;
 
         // ── CONTROLLER ──
         var controller = canvasGO.AddComponent<ColoringGameController>();
         controller.drawingCanvas = drawCanvas;
         controller.outlineImage = outlineRaw;
+        controller.referenceImage = refImg;
+        controller.referenceContainer = refBgGO;
         controller.colorButtonContainer = colorContainerRT;
         controller.brushSizeContainer = brushContainerRT;
         controller.colorButtonPrefab = colorBtnPrefab;
@@ -483,7 +536,7 @@ public class ColoringGameSetup : EditorWindow
         StretchFull(labelRT);
         var tmp = labelGO.AddComponent<TextMeshProUGUI>();
         tmp.text = label;
-        tmp.fontSize = 28;
+        tmp.fontSize = 36;
         tmp.fontStyle = FontStyles.Bold;
         tmp.color = HexColor("#555555");
         tmp.alignment = TextAlignmentOptions.Center;
