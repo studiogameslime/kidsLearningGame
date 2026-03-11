@@ -117,6 +117,27 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Puzzle Game…", 0.96f);
             PuzzleGameSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Connect The Dots…", 0.90f);
+            ConnectTheDotsSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Color Mixing…", 0.91f);
+            ColorMixingSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Shadow Match…", 0.92f);
+            ShadowMatchSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Maze Game…", 0.93f);
+            MazeGameSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Bubble Pop…", 0.94f);
+            BubblePopSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Find The Animal…", 0.95f);
+            FindTheAnimalSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Counting Game…", 0.96f);
+            CountingGameSetup.RunSetupSilent();
+
             // Open MainMenu scene
             EditorSceneManager.OpenScene($"{ScenesPath}/MainMenu.unity");
         }
@@ -128,7 +149,7 @@ public class ProjectSetup : EditorWindow
         EditorUtility.DisplayDialog(
             "Setup Complete!",
             "Project foundation created successfully.\n\n" +
-            "• 5 scenes created and added to Build Settings\n" +
+            "• 6 scenes created and added to Build Settings\n" +
             "• Player settings configured for portrait\n" +
             "• MainMenu scene is now open\n\n" +
             "Press Play to test the full flow!",
@@ -442,59 +463,110 @@ public class ProjectSetup : EditorWindow
         }
         EditorUtility.SetDirty(coloring);
 
-        // ── Fill The Dots (placeholder — no scene yet) ──
+        // ── Connect The Dots ──
         var fillDots = CreateSO<GameItemData>($"{DataPath}/FillTheDots.asset");
         fillDots.id = "fillthedots";
-        fillDots.title = "Fill The Dots";
+        fillDots.title = "Connect the Dots";
         fillDots.cardColor = FillDotsColor;
-        fillDots.targetSceneName = "MainMenu";
+        fillDots.targetSceneName = "ConnectTheDots";
         fillDots.hasSubItems = false;
         fillDots.thumbnail = LoadSprite($"{previewPath}/FillTheDots.png");
         EditorUtility.SetDirty(fillDots);
 
-        // ── Find The Count (placeholder) ──
+        // ── Counting Game ──
         var findCount = CreateSO<GameItemData>($"{DataPath}/FindTheCount.asset");
         findCount.id = "findthecount";
-        findCount.title = "Find The Count";
+        findCount.title = "How Many?";
         findCount.cardColor = FindCountColor;
-        findCount.targetSceneName = "MainMenu";
+        findCount.targetSceneName = "CountingGame";
         findCount.hasSubItems = false;
         findCount.thumbnail = LoadSprite($"{previewPath}/FindTheCount.png");
         EditorUtility.SetDirty(findCount);
 
-        // ── Find The Object (placeholder) ──
+        // ── Find The Animal ──
         var findObject = CreateSO<GameItemData>($"{DataPath}/FindTheObject.asset");
         findObject.id = "findtheobject";
-        findObject.title = "Find The Object";
+        findObject.title = "Find the Animal";
         findObject.cardColor = FindObjectColor;
-        findObject.targetSceneName = "MainMenu";
+        findObject.targetSceneName = "FindTheAnimal";
         findObject.hasSubItems = false;
         findObject.thumbnail = LoadSprite($"{previewPath}/FindTheObject.png");
         EditorUtility.SetDirty(findObject);
 
-        // ── Pop The Bubbles (placeholder) ──
+        // ── Bubble Pop ──
         var popBubbles = CreateSO<GameItemData>($"{DataPath}/PopTheBubbles.asset");
         popBubbles.id = "popthebubbles";
-        popBubbles.title = "Pop The Bubbles";
+        popBubbles.title = "Bubble Pop";
         popBubbles.cardColor = PopBubblesColor;
-        popBubbles.targetSceneName = "MainMenu";
+        popBubbles.targetSceneName = "BubblePop";
         popBubbles.hasSubItems = false;
         popBubbles.thumbnail = LoadSprite($"{previewPath}/PopTheBubbles.png");
         EditorUtility.SetDirty(popBubbles);
 
-        // ── Shadows (placeholder) ──
+        // ── Shadow Match ──
         var shadows = CreateSO<GameItemData>($"{DataPath}/Shadows.asset");
         shadows.id = "shadows";
-        shadows.title = "Shadows";
+        shadows.title = "Shadow Match";
         shadows.cardColor = ShadowsColor;
-        shadows.targetSceneName = "MainMenu";
+        shadows.targetSceneName = "ShadowMatch";
         shadows.hasSubItems = false;
         shadows.thumbnail = LoadSprite($"{previewPath}/Shadows.png");
         EditorUtility.SetDirty(shadows);
 
+        // ── Color Mixing ──
+        var colorMix = CreateSO<GameItemData>($"{DataPath}/ColorMixing.asset");
+        colorMix.id = "colormixing";
+        colorMix.title = "Color Mixing";
+        colorMix.cardColor = HexColor("#CE93D8");
+        colorMix.targetSceneName = "ColorMixing";
+        colorMix.hasSubItems = false;
+        colorMix.thumbnail = LoadSprite($"{previewPath}/ColorMixing.png");
+        colorMix.subItems = new List<SubItemData>();
+        for (int i = 0; i < animals.Length; i++)
+        {
+            string name = animals[i];
+            string mainPath = $"Assets/Art/Animals/{name}/Art/Puzzle/{name} Main.png";
+            var mainSprite = LoadSprite(mainPath);
+            Sprite thumbSprite = LoadSprite($"Assets/Art/Animals/{name}/Art/{name}Sprite.png");
+            if (mainSprite == null && thumbSprite == null) continue;
+            colorMix.subItems.Add(new SubItemData
+            {
+                id = $"mix_{name.ToLower()}", title = name,
+                cardColor = AnimalColors[i % AnimalColors.Length],
+                categoryKey = name.ToLower(), targetSceneName = "ColorMixing",
+                contentAsset = mainSprite != null ? mainSprite : thumbSprite,
+                thumbnail = thumbSprite != null ? thumbSprite : mainSprite
+            });
+        }
+        EditorUtility.SetDirty(colorMix);
+
+        // ── Maze ──
+        var maze = CreateSO<GameItemData>($"{DataPath}/MazeGame.asset");
+        maze.id = "maze";
+        maze.title = "Maze";
+        maze.cardColor = HexColor("#FFD54F");
+        maze.targetSceneName = "MazeGame";
+        maze.hasSubItems = false;
+        maze.thumbnail = LoadSprite($"{previewPath}/Maze.png");
+        maze.subItems = new List<SubItemData>();
+        for (int i = 0; i < animals.Length; i++)
+        {
+            string name = animals[i];
+            Sprite thumbSprite = LoadSprite($"Assets/Art/Animals/{name}/Art/{name}Sprite.png");
+            if (thumbSprite == null) continue;
+            maze.subItems.Add(new SubItemData
+            {
+                id = $"maze_{name.ToLower()}", title = name,
+                cardColor = AnimalColors[i % AnimalColors.Length],
+                categoryKey = name.ToLower(), targetSceneName = "MazeGame",
+                contentAsset = thumbSprite, thumbnail = thumbSprite
+            });
+        }
+        EditorUtility.SetDirty(maze);
+
         // ── Game Database ──
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, findCount, findObject, popBubbles, shadows };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, popBubbles, findObject, findCount, colorMix, maze };
         EditorUtility.SetDirty(db);
 
         return db;
@@ -517,7 +589,7 @@ public class ProjectSetup : EditorWindow
         CreateSelectionMenuScene(cardPrefab, roundedRect, circleSprite);
 
         // Placeholder game scenes
-        string[] gameScenes = { "MemoryGame", "PuzzleGame", "ColoringGame" };
+        string[] gameScenes = { "MemoryGame", "PuzzleGame", "ColoringGame", "ConnectTheDots", "ColorMixing", "ShadowMatch", "MazeGame", "BubblePop", "FindTheAnimal", "CountingGame" };
         foreach (var sceneName in gameScenes)
         {
             float progress = 0.4f + 0.5f * (System.Array.IndexOf(gameScenes, sceneName) / (float)gameScenes.Length);
@@ -996,6 +1068,13 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/MemoryGame.unity",
             $"{ScenesPath}/PuzzleGame.unity",
             $"{ScenesPath}/ColoringGame.unity",
+            $"{ScenesPath}/ConnectTheDots.unity",
+            $"{ScenesPath}/ColorMixing.unity",
+            $"{ScenesPath}/ShadowMatch.unity",
+            $"{ScenesPath}/MazeGame.unity",
+            $"{ScenesPath}/BubblePop.unity",
+            $"{ScenesPath}/FindTheAnimal.unity",
+            $"{ScenesPath}/CountingGame.unity",
         };
 
         var buildScenes = scenePaths.Select(p => new EditorBuildSettingsScene(p, true)).ToArray();
