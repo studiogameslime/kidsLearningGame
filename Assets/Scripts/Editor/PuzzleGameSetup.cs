@@ -42,6 +42,13 @@ public class PuzzleGameSetup : EditorWindow
             "Build", "Cancel"))
             return;
 
+        RunSetupSilent();
+        EditorSceneManager.OpenScene("Assets/Scenes/PuzzleGame.unity");
+        EditorUtility.DisplayDialog("Done!", "Puzzle Game built.\nPress Play to test!", "OK");
+    }
+
+    public static void RunSetupSilent()
+    {
         try
         {
             EditorUtility.DisplayProgressBar("Puzzle Game Setup", "Updating puzzle data…", 0.2f);
@@ -53,15 +60,11 @@ public class PuzzleGameSetup : EditorWindow
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-
-            EditorSceneManager.OpenScene("Assets/Scenes/PuzzleGame.unity");
         }
         finally
         {
             EditorUtility.ClearProgressBar();
         }
-
-        EditorUtility.DisplayDialog("Done!", "Puzzle Game built.\nPress Play to test!", "OK");
     }
 
     // ─────────────────────────────────────────
@@ -77,7 +80,7 @@ public class PuzzleGameSetup : EditorWindow
             return;
         }
 
-        puzzle.hasSubItems = true;
+        puzzle.hasSubItems = false;
         puzzle.selectionScreenTitle = "Choose a Puzzle";
         puzzle.targetSceneName = "PuzzleGame";
 

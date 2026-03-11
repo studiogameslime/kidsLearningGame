@@ -29,9 +29,7 @@ public class GameCardView : MonoBehaviour
         if (titleText != null)
             titleText.text = title;
 
-        // Background color
-        if (backgroundImage != null)
-            backgroundImage.color = cardColor;
+        // Background color — no longer used (frame is always black)
 
         // Thumbnail — show image if available, otherwise show placeholder icon area
         if (thumbnail != null)

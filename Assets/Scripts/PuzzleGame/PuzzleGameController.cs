@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,6 +7,7 @@ using UnityEngine.UI;
 /// Puzzle game: shows a faded reference image in the center.
 /// 4 pieces (2x2) sit at the bottom — player drags them onto
 /// the reference. Pieces snap and stick when placed correctly.
+/// On completion, loads a new random puzzle after a short delay.
 /// </summary>
 public class PuzzleGameController : MonoBehaviour
 {
@@ -19,24 +21,81 @@ public class PuzzleGameController : MonoBehaviour
 
     private Canvas canvas;
     private List<PuzzlePiece> pieces = new List<PuzzlePiece>();
+    private List<GameObject> slotObjects = new List<GameObject>();
     private int placedCount = 0;
     private const int GridSize = 2; // 2x2 = 4 pieces
+    private int lastAnimalIndex = -1;
 
     private void Start()
     {
         canvas = GetComponentInParent<Canvas>();
+        LoadRandomPuzzle();
+    }
 
-        Sprite puzzleSprite = null;
+    private Sprite PickRandomPuzzleSprite()
+    {
+        // If launched with a specific selection, use it (first time only)
         if (GameContext.CurrentSelection != null)
-            puzzleSprite = GameContext.CurrentSelection.contentAsset;
+        {
+            var sprite = GameContext.CurrentSelection.contentAsset;
+            GameContext.CurrentSelection = null; // clear so next round is random
+            return sprite;
+        }
+
+        // Pick a random animal from the game's sub-items list
+        var game = GameContext.CurrentGame;
+        if (game != null && game.subItems != null && game.subItems.Count > 0)
+        {
+            int index;
+            if (game.subItems.Count == 1)
+            {
+                index = 0;
+            }
+            else
+            {
+                // Avoid repeating the same animal
+                do { index = Random.Range(0, game.subItems.Count); }
+                while (index == lastAnimalIndex);
+            }
+            lastAnimalIndex = index;
+            return game.subItems[index].contentAsset;
+        }
+
+        return null;
+    }
+
+    private void LoadRandomPuzzle()
+    {
+        Sprite puzzleSprite = PickRandomPuzzleSprite();
 
         if (puzzleSprite == null)
         {
-            Debug.LogError("No puzzle sprite assigned! Check contentAsset on the sub-item.");
+            Debug.LogError("No puzzle sprite available! Check contentAsset on sub-items.");
             return;
         }
 
         BuildPuzzle(puzzleSprite);
+    }
+
+    private void ClearPuzzle()
+    {
+        // Destroy old pieces
+        foreach (var piece in pieces)
+        {
+            if (piece != null)
+                Destroy(piece.gameObject);
+        }
+        pieces.Clear();
+
+        // Destroy old slot overlays
+        foreach (var slot in slotObjects)
+        {
+            if (slot != null)
+                Destroy(slot);
+        }
+        slotObjects.Clear();
+
+        placedCount = 0;
     }
 
     private void BuildPuzzle(Sprite sourceSprite)
@@ -82,7 +141,6 @@ public class PuzzleGameController : MonoBehaviour
         float refTop = refCenter.y + refH / 2f;
 
         // Correct positions for each piece (relative to puzzleArea)
-        // Pieces are anchored at center, so calculate center of each cell
         List<Vector2> correctPositions = new List<Vector2>();
         for (int row = 0; row < GridSize; row++)
         {
@@ -152,10 +210,8 @@ public class PuzzleGameController : MonoBehaviour
 
             // Position in tray row at bottom
             float trayX = trayStartX + i * (trayPieceW + 10f);
-            // Convert tray position to puzzleArea space
             Vector2 trayLocalPos = new Vector2(trayX, -areaH / 2f + trayPieceH / 2f + 30f);
             rt.anchoredPosition = trayLocalPos;
-            // Scale down in tray
             rt.localScale = new Vector3(trayPieceW / (pieceW - 4), trayPieceH / (pieceH - 4), 1f);
 
             piece.SetStartPosition(trayLocalPos);
@@ -165,7 +221,7 @@ public class PuzzleGameController : MonoBehaviour
             pieces.Add(piece);
         }
 
-        // Draw subtle grid lines on the reference to show where pieces go
+        // Draw subtle grid lines on the reference
         CreateGridOverlay(refW, refH, pieceW, pieceH, refCenter);
 
         if (source != sourceSprite.texture)
@@ -195,6 +251,8 @@ public class PuzzleGameController : MonoBehaviour
                 var slotImg = slotGO.AddComponent<Image>();
                 slotImg.color = new Color(0.85f, 0.82f, 0.78f, 0.35f);
                 slotImg.raycastTarget = false;
+
+                slotObjects.Add(slotGO);
             }
         }
     }
@@ -204,10 +262,18 @@ public class PuzzleGameController : MonoBehaviour
         placedCount++;
         if (placedCount >= 4)
         {
-            // Puzzle complete — make reference fully visible
+            // Puzzle complete — hide reference, show completed image briefly, then load next
             referenceImage.color = new Color(1f, 1f, 1f, 0f);
             Debug.Log("Puzzle complete!");
+            StartCoroutine(LoadNextPuzzleAfterDelay(1.5f));
         }
+    }
+
+    private IEnumerator LoadNextPuzzleAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        ClearPuzzle();
+        LoadRandomPuzzle();
     }
 
     public void OnHomePressed()

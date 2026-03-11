@@ -41,18 +41,18 @@ public class ProjectSetup : EditorWindow
     private static readonly Color CardTextColor = Color.white;
 
     // Per-game card colors
-    private static readonly Color MemoryColor   = HexColor("#B39DDB");
-    private static readonly Color PuzzleColor   = HexColor("#FFB74D");
-    private static readonly Color ColoringColor = HexColor("#F48FB1");
-    private static readonly Color ColorsColor   = HexColor("#81D4FA");
-    private static readonly Color LettersColor  = HexColor("#A5D6A7");
-    private static readonly Color NumbersColor  = HexColor("#FFF176");
+    private static readonly Color MemoryColor      = HexColor("#B39DDB");
+    private static readonly Color PuzzleColor      = HexColor("#FFB74D");
+    private static readonly Color ColoringColor    = HexColor("#F48FB1");
+    private static readonly Color FillDotsColor    = HexColor("#81D4FA");
+    private static readonly Color FindCountColor   = HexColor("#A5D6A7");
+    private static readonly Color FindObjectColor  = HexColor("#FFF176");
+    private static readonly Color PopBubblesColor  = HexColor("#80DEEA");
+    private static readonly Color ShadowsColor     = HexColor("#FFCC80");
 
     // Sub-item colors
     private static readonly Color SubAnimals  = HexColor("#CE93D8");
-    private static readonly Color SubNumbers  = HexColor("#90CAF9");
-    private static readonly Color SubColors   = HexColor("#FFAB91");
-    private static readonly Color SubLetters  = HexColor("#80CBC4");
+    // (SubNumbers, SubColors, SubLetters removed — those games were removed)
 
     // Coloring sub-item animal colors
     private static readonly Color[] AnimalColors = new Color[]
@@ -100,12 +100,22 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Creating scenes…", 0.40f);
             CreateAllScenes(cardPrefab, database, roundedRect, circleSprite);
 
-            EditorUtility.DisplayProgressBar("Setting up project…", "Configuring settings…", 0.90f);
+            EditorUtility.DisplayProgressBar("Setting up project…", "Configuring settings…", 0.85f);
             ConfigurePlayerSettings();
             ConfigureBuildSettings();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+
+            // Build all game scenes
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Memory Game…", 0.88f);
+            MemoryGameSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Coloring Game…", 0.92f);
+            ColoringGameSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Puzzle Game…", 0.96f);
+            PuzzleGameSetup.RunSetupSilent();
 
             // Open MainMenu scene
             EditorSceneManager.OpenScene($"{ScenesPath}/MainMenu.unity");
@@ -118,7 +128,7 @@ public class ProjectSetup : EditorWindow
         EditorUtility.DisplayDialog(
             "Setup Complete!",
             "Project foundation created successfully.\n\n" +
-            "• 8 scenes created and added to Build Settings\n" +
+            "• 5 scenes created and added to Build Settings\n" +
             "• Player settings configured for portrait\n" +
             "• MainMenu scene is now open\n\n" +
             "Press Play to test the full flow!",
@@ -242,18 +252,10 @@ public class ProjectSetup : EditorWindow
         var root = new GameObject("GameCard");
         var rootRT = root.AddComponent<RectTransform>();
 
-        // Background image (rounded rect, tinted per card)
+        // Invisible background for button hit area
         var bgImage = root.AddComponent<Image>();
-        bgImage.sprite = roundedRect;
-        bgImage.type = Image.Type.Sliced;
-        bgImage.pixelsPerUnitMultiplier = 1;
-        bgImage.color = Color.white;
+        bgImage.color = new Color(1f, 1f, 1f, 0f); // fully transparent
         bgImage.raycastTarget = true;
-
-        // Subtle shadow
-        var shadow = root.AddComponent<Shadow>();
-        shadow.effectColor = new Color(0f, 0f, 0f, 0.18f);
-        shadow.effectDistance = new Vector2(0, -4);
 
         // Button
         var btn = root.AddComponent<Button>();
@@ -266,7 +268,7 @@ public class ProjectSetup : EditorWindow
         btn.colors = colors;
         btn.targetGraphic = bgImage;
 
-        // Title text (top area)
+        // Title text (hidden — kids can't read, but kept for sub-selection menus)
         var titleGO = new GameObject("Title");
         titleGO.transform.SetParent(root.transform, false);
         var titleRT = titleGO.AddComponent<RectTransform>();
@@ -275,7 +277,7 @@ public class ProjectSetup : EditorWindow
         titleRT.offsetMin = Vector2.zero;
         titleRT.offsetMax = Vector2.zero;
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "Game Title";
+        titleTMP.text = "";
         titleTMP.fontSize = 36;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = CardTextColor;
@@ -283,19 +285,57 @@ public class ProjectSetup : EditorWindow
         titleTMP.enableWordWrapping = true;
         titleTMP.overflowMode = TextOverflowModes.Ellipsis;
         titleTMP.raycastTarget = false;
+        titleGO.SetActive(false);
 
-        // Thumbnail image (below title, fills most of the card)
+        // Thumbnail mask container (rounded corners via Mask)
+        var thumbMaskGO = new GameObject("ThumbnailMask");
+        thumbMaskGO.transform.SetParent(root.transform, false);
+        var thumbMaskRT = thumbMaskGO.AddComponent<RectTransform>();
+        thumbMaskRT.anchorMin = Vector2.zero;
+        thumbMaskRT.anchorMax = Vector2.one;
+        thumbMaskRT.offsetMin = new Vector2(14, 14);
+        thumbMaskRT.offsetMax = new Vector2(-14, -14);
+        var maskImg = thumbMaskGO.AddComponent<Image>();
+        maskImg.sprite = roundedRect;
+        maskImg.type = Image.Type.Sliced;
+        maskImg.raycastTarget = false;
+        thumbMaskGO.AddComponent<Mask>().showMaskGraphic = false;
+
+        // Actual thumbnail image (child of mask, stretches to fill)
         var thumbGO = new GameObject("Thumbnail");
-        thumbGO.transform.SetParent(root.transform, false);
+        thumbGO.transform.SetParent(thumbMaskGO.transform, false);
         var thumbRT = thumbGO.AddComponent<RectTransform>();
-        thumbRT.anchorMin = new Vector2(0.05f, 0.02f);
-        thumbRT.anchorMax = new Vector2(0.95f, 0.82f);
+        thumbRT.anchorMin = Vector2.zero;
+        thumbRT.anchorMax = Vector2.one;
         thumbRT.offsetMin = Vector2.zero;
         thumbRT.offsetMax = Vector2.zero;
         var thumbImg = thumbGO.AddComponent<Image>();
-        thumbImg.preserveAspect = true;
+        thumbImg.preserveAspect = false;
         thumbImg.raycastTarget = false;
         thumbImg.color = Color.white;
+
+        // Frame border (rounded rect outline, sits on top, overlapping the thumbnail edges)
+        var frameGO = new GameObject("Frame");
+        frameGO.transform.SetParent(root.transform, false);
+        var frameRT = frameGO.AddComponent<RectTransform>();
+        frameRT.anchorMin = Vector2.zero;
+        frameRT.anchorMax = Vector2.one;
+        frameRT.anchorMin = Vector2.zero;
+        frameRT.anchorMax = Vector2.one;
+        frameRT.offsetMin = new Vector2(2, 2);
+        frameRT.offsetMax = new Vector2(-2, -2);
+        var frameImg = frameGO.AddComponent<Image>();
+        frameImg.sprite = roundedRect;
+        frameImg.type = Image.Type.Sliced;
+        frameImg.color = Color.white;
+        frameImg.raycastTarget = false;
+        frameImg.fillCenter = false; // only the border, no fill
+        frameImg.pixelsPerUnitMultiplier = 0.75f; // slightly thicker border
+
+        // Subtle shadow on the frame
+        var shadow = frameGO.AddComponent<Shadow>();
+        shadow.effectColor = new Color(0f, 0f, 0f, 0.15f);
+        shadow.effectDistance = new Vector2(0, -3);
 
         // Placeholder icon (shown when no thumbnail)
         var phGO = new GameObject("PlaceholderIcon");
@@ -312,7 +352,7 @@ public class ProjectSetup : EditorWindow
 
         // Wire up the GameCardView component
         var cardView = root.AddComponent<GameCardView>();
-        cardView.backgroundImage = bgImage;
+        cardView.backgroundImage = frameImg; // frame gets tinted with cardColor
         cardView.thumbnailImage = thumbImg;
         cardView.titleText = titleTMP;
         cardView.button = btn;
@@ -341,6 +381,8 @@ public class ProjectSetup : EditorWindow
             "Sheep", "Snake", "Turtle", "Zebra"
         };
 
+        string previewPath = "Assets/Art/Games Preview";
+
         // ── Memory Game ──
         var memory = CreateSO<GameItemData>($"{DataPath}/MemoryGame.asset");
         memory.id = "memory";
@@ -348,46 +390,21 @@ public class ProjectSetup : EditorWindow
         memory.cardColor = MemoryColor;
         memory.targetSceneName = "MemoryGame";
         memory.hasSubItems = false;
-        memory.selectionScreenTitle = "Choose a Category";
+        memory.thumbnail = LoadSprite($"{previewPath}/MemoryCards.png");
         memory.subItems = new List<SubItemData>
         {
             new SubItemData { id = "memory_animals", title = "Animals",  cardColor = SubAnimals, categoryKey = "animals",  targetSceneName = "MemoryGame" },
-            new SubItemData { id = "memory_numbers", title = "Numbers",  cardColor = SubNumbers, categoryKey = "numbers",  targetSceneName = "MemoryGame" },
-            new SubItemData { id = "memory_colors",  title = "Colors",   cardColor = SubColors,  categoryKey = "colors",   targetSceneName = "MemoryGame" },
-            new SubItemData { id = "memory_letters", title = "Letters",  cardColor = SubLetters, categoryKey = "letters",  targetSceneName = "MemoryGame" },
         };
         EditorUtility.SetDirty(memory);
 
-        // ── Coloring ──
-        var coloring = CreateSO<GameItemData>($"{DataPath}/Coloring.asset");
-        coloring.id = "coloring";
-        coloring.title = "Coloring";
-        coloring.cardColor = ColoringColor;
-        coloring.targetSceneName = "ColoringGame";
-        coloring.hasSubItems = true;
-        coloring.selectionScreenTitle = "Choose a Picture";
-        coloring.subItems = new List<SubItemData>();
-        for (int i = 0; i < animals.Length; i++)
-        {
-            coloring.subItems.Add(new SubItemData
-            {
-                id = $"coloring_{animals[i].ToLower()}",
-                title = animals[i],
-                cardColor = AnimalColors[i % AnimalColors.Length],
-                categoryKey = animals[i].ToLower(),
-                targetSceneName = "ColoringGame"
-            });
-        }
-        EditorUtility.SetDirty(coloring);
-
-        // ── Puzzle (sub-item selection) ──
+        // ── Puzzle ──
         var puzzle = CreateSO<GameItemData>($"{DataPath}/Puzzle.asset");
         puzzle.id = "puzzle";
         puzzle.title = "Puzzle";
         puzzle.cardColor = PuzzleColor;
         puzzle.targetSceneName = "PuzzleGame";
-        puzzle.hasSubItems = true;
-        puzzle.selectionScreenTitle = "Choose a Puzzle";
+        puzzle.hasSubItems = false;
+        puzzle.thumbnail = LoadSprite($"{previewPath}/Puzzle.png");
         puzzle.subItems = new List<SubItemData>();
         for (int i = 0; i < animals.Length; i++)
         {
@@ -402,36 +419,82 @@ public class ProjectSetup : EditorWindow
         }
         EditorUtility.SetDirty(puzzle);
 
-        // ── Colors (direct launch) ──
-        var colors = CreateSO<GameItemData>($"{DataPath}/Colors.asset");
-        colors.id = "colors";
-        colors.title = "Colors";
-        colors.cardColor = ColorsColor;
-        colors.targetSceneName = "ColorsGame";
-        colors.hasSubItems = false;
-        EditorUtility.SetDirty(colors);
+        // ── Coloring / Painting ──
+        var coloring = CreateSO<GameItemData>($"{DataPath}/Coloring.asset");
+        coloring.id = "coloring";
+        coloring.title = "Painting";
+        coloring.cardColor = ColoringColor;
+        coloring.targetSceneName = "ColoringGame";
+        coloring.hasSubItems = true;
+        coloring.selectionScreenTitle = "Choose a Picture";
+        coloring.thumbnail = LoadSprite($"{previewPath}/Painting.png");
+        coloring.subItems = new List<SubItemData>();
+        for (int i = 0; i < animals.Length; i++)
+        {
+            coloring.subItems.Add(new SubItemData
+            {
+                id = $"coloring_{animals[i].ToLower()}",
+                title = animals[i],
+                cardColor = AnimalColors[i % AnimalColors.Length],
+                categoryKey = animals[i].ToLower(),
+                targetSceneName = "ColoringGame"
+            });
+        }
+        EditorUtility.SetDirty(coloring);
 
-        // ── Letters (direct launch) ──
-        var letters = CreateSO<GameItemData>($"{DataPath}/Letters.asset");
-        letters.id = "letters";
-        letters.title = "Letters";
-        letters.cardColor = LettersColor;
-        letters.targetSceneName = "LettersGame";
-        letters.hasSubItems = false;
-        EditorUtility.SetDirty(letters);
+        // ── Fill The Dots (placeholder — no scene yet) ──
+        var fillDots = CreateSO<GameItemData>($"{DataPath}/FillTheDots.asset");
+        fillDots.id = "fillthedots";
+        fillDots.title = "Fill The Dots";
+        fillDots.cardColor = FillDotsColor;
+        fillDots.targetSceneName = "MainMenu";
+        fillDots.hasSubItems = false;
+        fillDots.thumbnail = LoadSprite($"{previewPath}/FillTheDots.png");
+        EditorUtility.SetDirty(fillDots);
 
-        // ── Numbers (direct launch) ──
-        var numbers = CreateSO<GameItemData>($"{DataPath}/Numbers.asset");
-        numbers.id = "numbers";
-        numbers.title = "Numbers";
-        numbers.cardColor = NumbersColor;
-        numbers.targetSceneName = "NumbersGame";
-        numbers.hasSubItems = false;
-        EditorUtility.SetDirty(numbers);
+        // ── Find The Count (placeholder) ──
+        var findCount = CreateSO<GameItemData>($"{DataPath}/FindTheCount.asset");
+        findCount.id = "findthecount";
+        findCount.title = "Find The Count";
+        findCount.cardColor = FindCountColor;
+        findCount.targetSceneName = "MainMenu";
+        findCount.hasSubItems = false;
+        findCount.thumbnail = LoadSprite($"{previewPath}/FindTheCount.png");
+        EditorUtility.SetDirty(findCount);
+
+        // ── Find The Object (placeholder) ──
+        var findObject = CreateSO<GameItemData>($"{DataPath}/FindTheObject.asset");
+        findObject.id = "findtheobject";
+        findObject.title = "Find The Object";
+        findObject.cardColor = FindObjectColor;
+        findObject.targetSceneName = "MainMenu";
+        findObject.hasSubItems = false;
+        findObject.thumbnail = LoadSprite($"{previewPath}/FindTheObject.png");
+        EditorUtility.SetDirty(findObject);
+
+        // ── Pop The Bubbles (placeholder) ──
+        var popBubbles = CreateSO<GameItemData>($"{DataPath}/PopTheBubbles.asset");
+        popBubbles.id = "popthebubbles";
+        popBubbles.title = "Pop The Bubbles";
+        popBubbles.cardColor = PopBubblesColor;
+        popBubbles.targetSceneName = "MainMenu";
+        popBubbles.hasSubItems = false;
+        popBubbles.thumbnail = LoadSprite($"{previewPath}/PopTheBubbles.png");
+        EditorUtility.SetDirty(popBubbles);
+
+        // ── Shadows (placeholder) ──
+        var shadows = CreateSO<GameItemData>($"{DataPath}/Shadows.asset");
+        shadows.id = "shadows";
+        shadows.title = "Shadows";
+        shadows.cardColor = ShadowsColor;
+        shadows.targetSceneName = "MainMenu";
+        shadows.hasSubItems = false;
+        shadows.thumbnail = LoadSprite($"{previewPath}/Shadows.png");
+        EditorUtility.SetDirty(shadows);
 
         // ── Game Database ──
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, colors, letters, numbers };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, findCount, findObject, popBubbles, shadows };
         EditorUtility.SetDirty(db);
 
         return db;
@@ -454,7 +517,7 @@ public class ProjectSetup : EditorWindow
         CreateSelectionMenuScene(cardPrefab, roundedRect, circleSprite);
 
         // Placeholder game scenes
-        string[] gameScenes = { "MemoryGame", "PuzzleGame", "ColoringGame", "ColorsGame", "LettersGame", "NumbersGame" };
+        string[] gameScenes = { "MemoryGame", "PuzzleGame", "ColoringGame" };
         foreach (var sceneName in gameScenes)
         {
             float progress = 0.4f + 0.5f * (System.Array.IndexOf(gameScenes, sceneName) / (float)gameScenes.Length);
@@ -933,9 +996,6 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/MemoryGame.unity",
             $"{ScenesPath}/PuzzleGame.unity",
             $"{ScenesPath}/ColoringGame.unity",
-            $"{ScenesPath}/ColorsGame.unity",
-            $"{ScenesPath}/LettersGame.unity",
-            $"{ScenesPath}/NumbersGame.unity",
         };
 
         var buildScenes = scenePaths.Select(p => new EditorBuildSettingsScene(p, true)).ToArray();
@@ -988,5 +1048,19 @@ public class ProjectSetup : EditorWindow
     {
         ColorUtility.TryParseHtmlString(hex, out Color c);
         return c;
+    }
+
+    private static Sprite LoadSprite(string path)
+    {
+        var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        if (sprite != null) return sprite;
+
+        var allAssets = AssetDatabase.LoadAllAssetsAtPath(path);
+        if (allAssets != null)
+        {
+            foreach (var asset in allAssets)
+                if (asset is Sprite s) return s;
+        }
+        return null;
     }
 }

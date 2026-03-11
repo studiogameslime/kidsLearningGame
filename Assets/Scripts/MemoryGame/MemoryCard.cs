@@ -81,10 +81,11 @@ public class MemoryCard : MonoBehaviour
         flipRoutine = StartCoroutine(FlipAnimation(frontSprite, backSprite, false, onComplete));
     }
 
-    /// <summary>Play the match success animation (slight scale bounce then stay face-up).</summary>
-    public void PlayMatchAnimation()
+    /// <summary>Play bounce then fade out and disappear.</summary>
+    public void PlayMatchAndHide()
     {
-        StartCoroutine(MatchBounce());
+        Lock();
+        StartCoroutine(MatchBounceAndHide());
     }
 
     private IEnumerator FlipAnimation(Sprite fromSprite, Sprite toSprite, bool toFaceUp, Action onComplete)
@@ -124,7 +125,7 @@ public class MemoryCard : MonoBehaviour
         onComplete?.Invoke();
     }
 
-    private IEnumerator MatchBounce()
+    private IEnumerator MatchBounceAndHide()
     {
         Vector3 orig = flipRoot.localScale;
         Vector3 big = orig * 1.15f;
@@ -149,6 +150,23 @@ public class MemoryCard : MonoBehaviour
         }
 
         flipRoot.localScale = orig;
+
+        // Fade out
+        var canvasGroup = GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
+            canvasGroup = gameObject.AddComponent<CanvasGroup>();
+
+        float fadeDur = 0.3f;
+        t = 0f;
+        while (t < fadeDur)
+        {
+            t += Time.deltaTime;
+            canvasGroup.alpha = 1f - Mathf.Clamp01(t / fadeDur);
+            yield return null;
+        }
+
+        canvasGroup.alpha = 0f;
+        canvasGroup.blocksRaycasts = false;
     }
 
     /// <summary>Disable interaction (used when card is matched).</summary>

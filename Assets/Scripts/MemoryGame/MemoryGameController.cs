@@ -151,10 +151,8 @@ public class MemoryGameController : MonoBehaviour
 
             firstFlipped.IsMatched = true;
             secondFlipped.IsMatched = true;
-            firstFlipped.PlayMatchAnimation();
-            secondFlipped.PlayMatchAnimation();
-            firstFlipped.Lock();
-            secondFlipped.Lock();
+            firstFlipped.PlayMatchAndHide();
+            secondFlipped.PlayMatchAndHide();
 
             matchedPairs++;
             UpdateUI();

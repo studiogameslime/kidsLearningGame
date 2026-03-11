@@ -39,6 +39,13 @@ public class ColoringGameSetup : EditorWindow
             "Build", "Cancel"))
             return;
 
+        RunSetupSilent();
+        EditorSceneManager.OpenScene("Assets/Scenes/ColoringGame.unity");
+        EditorUtility.DisplayDialog("Done!", "Coloring Game built.\nPress Play to test!", "OK");
+    }
+
+    public static void RunSetupSilent()
+    {
         try
         {
             EditorUtility.DisplayProgressBar("Coloring Game Setup", "Creating prefabs…", 0.1f);
@@ -56,15 +63,11 @@ public class ColoringGameSetup : EditorWindow
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-
-            EditorSceneManager.OpenScene("Assets/Scenes/ColoringGame.unity");
         }
         finally
         {
             EditorUtility.ClearProgressBar();
         }
-
-        EditorUtility.DisplayDialog("Done!", "Coloring Game built.\nPress Play to test!", "OK");
     }
 
     // ─────────────────────────────────────────
@@ -112,21 +115,13 @@ public class ColoringGameSetup : EditorWindow
 
             string name = char.ToUpper(item.categoryKey[0]) + item.categoryKey.Substring(1);
 
-            // Try standard naming then fallback
-            string[] paths = {
-                $"Assets/Art/Animals/{name}/Art/{name}Sprite.png",
-                $"Assets/Art/Animals/{name}/Art/{name}.png"
-            };
-
-            foreach (var path in paths)
+            // Use puzzle Main image for both painting and outline generation
+            string mainPath = $"Assets/Art/Animals/{name}/Art/Puzzle/{name} Main.png";
+            var sprite = LoadSprite(mainPath);
+            if (sprite != null)
             {
-                var sprite = LoadSprite(path);
-                if (sprite != null)
-                {
-                    item.contentAsset = sprite;
-                    item.thumbnail = sprite; // show animal image in selection menu
-                    break;
-                }
+                item.contentAsset = sprite;
+                item.thumbnail = sprite;
             }
         }
 

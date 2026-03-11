@@ -46,53 +46,47 @@ public class MemoryGameSetup : EditorWindow
             "Build", "Cancel"))
             return;
 
+        RunSetupSilent();
+        EditorSceneManager.OpenScene("Assets/Scenes/MemoryGame.unity");
+        EditorUtility.DisplayDialog("Done!", "Memory Game scene built successfully.\nPress Play to test!", "OK");
+    }
+
+    public static void RunSetupSilent()
+    {
         try
         {
             EditorUtility.DisplayProgressBar("Memory Game Setup", "Loading sprites…", 0.1f);
 
-            // Load the rounded rect sprite (created by ProjectSetup)
             var roundedRect = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/RoundedRect.png");
             if (roundedRect == null)
             {
-                EditorUtility.DisplayDialog("Error", "RoundedRect.png not found. Run 'Setup Project' first.", "OK");
+                Debug.LogError("RoundedRect.png not found. Run 'Setup Project' first.");
                 return;
             }
 
-            // Load back card sprite (handles both Single and Multiple sprite modes)
             var cardBack = LoadSpriteFromPath("Assets/Art/BackMemoryCard.png");
             if (cardBack == null)
-            {
                 Debug.LogWarning("BackMemoryCard.png not found at Assets/Art/. Using placeholder.");
-            }
 
-            // Collect animal memory sprites
             EditorUtility.DisplayProgressBar("Memory Game Setup", "Collecting animal sprites…", 0.2f);
             var animalSprites = CollectAnimalMemorySprites();
 
-            // Create card prefab
             EditorUtility.DisplayProgressBar("Memory Game Setup", "Creating card prefab…", 0.3f);
             var cardPrefab = CreateMemoryCardPrefab(roundedRect);
 
-            // Create category data
             EditorUtility.DisplayProgressBar("Memory Game Setup", "Creating category data…", 0.5f);
             var animalsCategory = CreateAnimalsCategory(animalSprites, cardBack);
 
-            // Build the scene
             EditorUtility.DisplayProgressBar("Memory Game Setup", "Building MemoryGame scene…", 0.7f);
             CreateMemoryGameScene(cardPrefab, animalsCategory, roundedRect);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-
-            // Open the scene
-            EditorSceneManager.OpenScene("Assets/Scenes/MemoryGame.unity");
         }
         finally
         {
             EditorUtility.ClearProgressBar();
         }
-
-        EditorUtility.DisplayDialog("Done!", "Memory Game scene built successfully.\nPress Play to test!", "OK");
     }
 
     // ─────────────────────────────────────────
