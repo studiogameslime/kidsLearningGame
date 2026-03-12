@@ -768,6 +768,8 @@ public class ProjectSetup : EditorWindow
         cam.backgroundColor = BgColor;
         cam.orthographic = true;
         cam.orthographicSize = 5;
+        camGO.AddComponent<AudioListener>();
+
         // Add URP camera data if available
         var urpCamType = System.Type.GetType("UnityEngine.Rendering.Universal.UniversalAdditionalCameraData, Unity.RenderPipelines.Universal.Runtime");
         if (urpCamType != null)

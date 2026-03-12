@@ -23,22 +23,12 @@ public class ConnectTheDotsSetup : EditorWindow
     private const int BottomBarHeight = 120;
     private const float DotSize     = 80f;
 
-    private static readonly Color[] AnimalColors = {
-        HexColor("#EF9A9A"), HexColor("#F48FB1"), HexColor("#CE93D8"),
-        HexColor("#B39DDB"), HexColor("#9FA8DA"), HexColor("#90CAF9"),
-        HexColor("#80DEEA"), HexColor("#80CBC4"), HexColor("#A5D6A7"),
-        HexColor("#C5E1A5"), HexColor("#E6EE9C"), HexColor("#FFF59D"),
-        HexColor("#FFE082"), HexColor("#FFCC80"), HexColor("#FFAB91"),
-        HexColor("#BCAAA4"), HexColor("#B0BEC5"), HexColor("#CFD8DC"),
-        HexColor("#F8BBD0")
-    };
-
     [MenuItem("Tools/Kids Learning Game/Setup Connect The Dots")]
     public static void RunSetup()
     {
         if (!EditorUtility.DisplayDialog(
             "Connect The Dots Setup",
-            "This will create/overwrite:\n• ConnectTheDots scene\n• Update FillTheDots.asset with animal data\n\nContinue?",
+            "This will create/overwrite:\n• ConnectTheDots scene\n• Update FillTheDots.asset\n\nContinue?",
             "Build", "Cancel"))
             return;
 
@@ -84,49 +74,12 @@ public class ConnectTheDotsSetup : EditorWindow
         game.targetSceneName = "ConnectTheDots";
         game.hasSubItems = false;
 
-        string[] animals = {
-            "Bear", "Bird", "Cat", "Chicken", "Cow", "Dog", "Donkey", "Duck",
-            "Elephant", "Fish", "Frog", "Giraffe", "Horse", "Lion", "Monkey",
-            "Sheep", "Snake", "Turtle", "Zebra"
-        };
-
         if (game.subItems == null)
             game.subItems = new List<SubItemData>();
         game.subItems.Clear();
 
-        for (int i = 0; i < animals.Length; i++)
-        {
-            string name = animals[i];
-            string mainPath = $"Assets/Art/Animals/{name}/Art/Puzzle/{name} Main.png";
-            var mainSprite = LoadSprite(mainPath);
-
-            Sprite thumbSprite = null;
-            string[] thumbPaths = {
-                $"Assets/Art/Animals/{name}/Art/{name}Sprite.png",
-                $"Assets/Art/Animals/{name}/Art/{name}.png"
-            };
-            foreach (var tp in thumbPaths)
-            {
-                thumbSprite = LoadSprite(tp);
-                if (thumbSprite != null) break;
-            }
-
-            if (mainSprite == null && thumbSprite == null) continue;
-
-            game.subItems.Add(new SubItemData
-            {
-                id = $"dots_{name.ToLower()}",
-                title = name,
-                cardColor = AnimalColors[i % AnimalColors.Length],
-                categoryKey = name.ToLower(),
-                targetSceneName = "ConnectTheDots",
-                contentAsset = mainSprite != null ? mainSprite : thumbSprite,
-                thumbnail = thumbSprite != null ? thumbSprite : mainSprite
-            });
-        }
-
         EditorUtility.SetDirty(game);
-        Debug.Log($"ConnectTheDots data updated with {game.subItems.Count} animals.");
+        Debug.Log("ConnectTheDots data updated (shape-based, no sub-items).");
     }
 
     // ─────────────────────────────────────────
@@ -141,6 +94,7 @@ public class ConnectTheDotsSetup : EditorWindow
         // Camera
         var camGO = new GameObject("Main Camera");
         camGO.tag = "MainCamera";
+        camGO.AddComponent<AudioListener>();
         var cam = camGO.AddComponent<Camera>();
         cam.clearFlags = CameraClearFlags.SolidColor;
         cam.backgroundColor = BgColor;
@@ -229,17 +183,25 @@ public class ConnectTheDotsSetup : EditorWindow
         var lineContRT = lineContainer.AddComponent<RectTransform>();
         StretchFull(lineContRT);
 
-        // Animal reveal image (centered, covers play area)
-        var revealGO = new GameObject("AnimalReveal");
-        revealGO.transform.SetParent(playArea.transform, false);
-        var revealRT = revealGO.AddComponent<RectTransform>();
-        revealRT.anchorMin = new Vector2(0.1f, 0.1f);
-        revealRT.anchorMax = new Vector2(0.9f, 0.9f);
-        revealRT.offsetMin = Vector2.zero;
-        revealRT.offsetMax = Vector2.zero;
-        var revealRaw = revealGO.AddComponent<RawImage>();
-        revealRaw.color = new Color(1, 1, 1, 0);
-        revealRaw.raycastTarget = false;
+        // Shape name text (centered, shown after completion)
+        var shapeNameGO = new GameObject("ShapeNameText");
+        shapeNameGO.transform.SetParent(playArea.transform, false);
+        var shapeNameRT = shapeNameGO.AddComponent<RectTransform>();
+        shapeNameRT.anchorMin = new Vector2(0.1f, 0.4f);
+        shapeNameRT.anchorMax = new Vector2(0.9f, 0.6f);
+        shapeNameRT.offsetMin = Vector2.zero;
+        shapeNameRT.offsetMax = Vector2.zero;
+        var shapeNameTMP = shapeNameGO.AddComponent<TextMeshProUGUI>();
+        shapeNameTMP.text = "";
+        shapeNameTMP.fontSize = 96;
+        shapeNameTMP.fontStyle = FontStyles.Bold;
+        shapeNameTMP.color = new Color(1, 1, 1, 0);
+        shapeNameTMP.alignment = TextAlignmentOptions.Center;
+        shapeNameTMP.raycastTarget = false;
+        shapeNameTMP.enableAutoSizing = true;
+        shapeNameTMP.fontSizeMin = 48;
+        shapeNameTMP.fontSizeMax = 96;
+        shapeNameGO.SetActive(false);
 
         // ── DOT PREFAB ──
         var dotPrefab = CreateDotPrefab(circleSprite, roundedRect);
@@ -248,7 +210,7 @@ public class ConnectTheDotsSetup : EditorWindow
         var controller = canvasGO.AddComponent<ConnectTheDotsController>();
         controller.playArea = playAreaRT;
         controller.lineContainer = lineContRT;
-        controller.animalRevealImage = revealRaw;
+        controller.shapeNameText = shapeNameTMP;
         controller.dotPrefab = dotPrefab;
         controller.dotSize = DotSize;
         controller.lineWidth = 8f;

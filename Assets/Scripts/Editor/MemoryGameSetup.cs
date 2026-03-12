@@ -225,6 +225,7 @@ public class MemoryGameSetup : EditorWindow
         // Camera
         var camGO = new GameObject("Main Camera");
         camGO.tag = "MainCamera";
+        camGO.AddComponent<AudioListener>();
         var cam = camGO.AddComponent<Camera>();
         cam.clearFlags = CameraClearFlags.SolidColor;
         cam.backgroundColor = BgColor;
