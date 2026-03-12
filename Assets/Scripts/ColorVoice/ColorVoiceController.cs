@@ -68,6 +68,9 @@ public class ColorVoiceController : MonoBehaviour
         recognizer.OnPartialResult += OnRecognizerPartial;
         recognizer.OnError += OnRecognizerError;
 
+        // Mute background music (mic-based game)
+        BackgroundMusicManager.SetMuted(true);
+
         // Hide feedback/debug initially
         if (feedbackText != null) feedbackText.gameObject.SetActive(false);
         if (debugText != null) debugText.gameObject.SetActive(false);
@@ -79,6 +82,8 @@ public class ColorVoiceController : MonoBehaviour
 
     private void OnDestroy()
     {
+        BackgroundMusicManager.SetMuted(false);
+
         if (recognizer != null)
         {
             recognizer.OnReady -= OnRecognizerReady;
