@@ -792,6 +792,63 @@ public class ProfileSceneSetup : EditorWindow
             "\u05D9\u05D0\u05DC\u05DC\u05D4 \u05DC\u05E9\u05D7\u05E7!", AccentColor, // !יאללה לשחק
             new Vector2(0.10f, 0.10f), new Vector2(0.90f, 0.25f), roundedRect, true);
 
+        // ── Webcam Panel (Desktop camera preview overlay) ──
+        var webcamPanelGO = new GameObject("WebcamPanel");
+        webcamPanelGO.transform.SetParent(canvasGO.transform, false);
+        var webcamPanelRT = webcamPanelGO.AddComponent<RectTransform>();
+        StretchFull(webcamPanelRT);
+
+        // Dark overlay background
+        var webcamBgImg = webcamPanelGO.AddComponent<Image>();
+        webcamBgImg.color = new Color(0, 0, 0, 0.85f);
+        webcamBgImg.raycastTarget = true;
+
+        // Webcam preview (centered square)
+        var webcamPreviewGO = new GameObject("WebcamPreview");
+        webcamPreviewGO.transform.SetParent(webcamPanelGO.transform, false);
+        var webcamPreviewRT = webcamPreviewGO.AddComponent<RectTransform>();
+        webcamPreviewRT.anchorMin = new Vector2(0.5f, 0.5f);
+        webcamPreviewRT.anchorMax = new Vector2(0.5f, 0.5f);
+        webcamPreviewRT.sizeDelta = new Vector2(700, 700);
+        webcamPreviewRT.anchoredPosition = new Vector2(0, 80);
+        var webcamRawImage = webcamPreviewGO.AddComponent<RawImage>();
+        webcamRawImage.color = Color.white;
+
+        // Round mask on preview
+        var webcamMaskGO = new GameObject("WebcamMask");
+        webcamMaskGO.transform.SetParent(webcamPanelGO.transform, false);
+        var webcamMaskRT = webcamMaskGO.AddComponent<RectTransform>();
+        webcamMaskRT.anchorMin = webcamPreviewRT.anchorMin;
+        webcamMaskRT.anchorMax = webcamPreviewRT.anchorMax;
+        webcamMaskRT.sizeDelta = webcamPreviewRT.sizeDelta;
+        webcamMaskRT.anchoredPosition = webcamPreviewRT.anchoredPosition;
+        var webcamMaskImg = webcamMaskGO.AddComponent<Image>();
+        webcamMaskImg.sprite = circle;
+        webcamMaskImg.color = Color.white;
+        webcamMaskImg.raycastTarget = false;
+        webcamMaskGO.AddComponent<Mask>().showMaskGraphic = false;
+
+        // Re-parent preview inside mask
+        webcamPreviewGO.transform.SetParent(webcamMaskGO.transform, false);
+        webcamPreviewRT.anchorMin = Vector2.zero;
+        webcamPreviewRT.anchorMax = Vector2.one;
+        webcamPreviewRT.offsetMin = Vector2.zero;
+        webcamPreviewRT.offsetMax = Vector2.zero;
+        webcamPreviewRT.anchoredPosition = Vector2.zero;
+        webcamPreviewRT.sizeDelta = Vector2.zero;
+
+        // Capture button
+        var webcamCaptureBtn = CreateBigButton(webcamPanelGO.transform, "CaptureButton",
+            "\u05E6\u05DC\u05DE\u05D5!", AccentColor, // !צלמו
+            new Vector2(0.20f, 0.08f), new Vector2(0.80f, 0.18f), roundedRect, true);
+
+        // Cancel button
+        var webcamCancelBtn = CreateBigButton(webcamPanelGO.transform, "CancelButton",
+            "\u05D1\u05D9\u05D8\u05D5\u05DC", HexColor("#EF5350"), // ביטול
+            new Vector2(0.30f, 0.02f), new Vector2(0.70f, 0.08f), roundedRect, true);
+
+        webcamPanelGO.SetActive(false);
+
         // ── Controller ──
         var controller = canvasGO.AddComponent<ProfileCreationController>();
         controller.stepGreeting = stepGreeting;
@@ -830,6 +887,12 @@ public class ProfileSceneSetup : EditorWindow
         controller.doneButton = doneBtn.GetComponent<Button>();
 
         controller.backButton = backBtnGO.GetComponent<Button>();
+
+        // Webcam (desktop)
+        controller.webcamPanel = webcamPanelGO;
+        controller.webcamPreview = webcamRawImage;
+        controller.webcamCaptureButton = webcamCaptureBtn.GetComponent<Button>();
+        controller.webcamCancelButton = webcamCancelBtn.GetComponent<Button>();
 
         // Onboarding sounds
         string soundFolder = "Assets/Sounds/On boarding/";

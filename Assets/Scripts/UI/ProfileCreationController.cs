@@ -48,6 +48,12 @@ public class ProfileCreationController : MonoBehaviour
     public Button colorNextButton;
     public Button pickPhotoButton;
 
+    [Header("Webcam Preview (Desktop)")]
+    public GameObject webcamPanel;
+    public RawImage webcamPreview;
+    public Button webcamCaptureButton;
+    public Button webcamCancelButton;
+
     [Header("Done Step")]
     public TextMeshProUGUI doneNameText;
     public Image doneAvatar;
@@ -72,6 +78,7 @@ public class ProfileCreationController : MonoBehaviour
     private Texture2D pickedPhoto;
     private string pickedPhotoPath; // temp path of picked image
     private AudioSource audioSource;
+    private WebCamTexture webCamTexture;
 
     private static readonly string[] AvatarColors = {
         "#EF9A9A", "#F48FB1", "#CE93D8", "#B39DDB",
@@ -131,6 +138,14 @@ public class ProfileCreationController : MonoBehaviour
         // Wire pick photo button
         if (pickPhotoButton != null)
             pickPhotoButton.onClick.AddListener(OnPickPhotoPressed);
+
+        // Wire webcam buttons (desktop)
+        if (webcamCaptureButton != null)
+            webcamCaptureButton.onClick.AddListener(OnWebcamCapture);
+        if (webcamCancelButton != null)
+            webcamCancelButton.onClick.AddListener(OnWebcamCancel);
+        if (webcamPanel != null)
+            webcamPanel.SetActive(false);
 
         // Wire done
         if (doneButton != null)
@@ -362,43 +377,103 @@ public class ProfileCreationController : MonoBehaviour
 
     private void OnPickPhotoPressed()
     {
+#if UNITY_ANDROID || UNITY_IOS
         NativeCamera.TakePicture((path) =>
         {
             if (string.IsNullOrEmpty(path)) return;
-
-            // Load the captured image
             var tex = NativeCamera.LoadImageAtPath(path, 512, false);
             if (tex == null) return;
-
-            pickedPhoto = tex;
-            pickedPhotoPath = path;
-
-            // Show photo in preview
-            var sprite = Sprite.Create(tex,
-                new Rect(0, 0, tex.width, tex.height),
-                new Vector2(0.5f, 0.5f));
-
-            if (colorPreviewPhoto != null)
-            {
-                colorPreviewPhoto.sprite = sprite;
-                colorPreviewPhoto.gameObject.SetActive(true);
-            }
-            if (colorPreviewInitial != null)
-                colorPreviewInitial.gameObject.SetActive(false);
-
-            // Clear color selection outlines
-            if (colorButtons != null)
-            {
-                for (int i = 0; i < colorButtons.Length; i++)
-                {
-                    var outline = colorButtons[i].GetComponent<Outline>();
-                    if (outline != null) outline.enabled = false;
-                }
-            }
-
-            if (colorNextButton != null) colorNextButton.interactable = true;
-
+            ApplyPickedPhoto(tex, path);
         }, 512, preferredCamera: NativeCamera.PreferredCamera.Front);
+#else
+        OpenWebcam();
+#endif
+    }
+
+    private void ApplyPickedPhoto(Texture2D tex, string path = null)
+    {
+        pickedPhoto = tex;
+        pickedPhotoPath = path;
+
+        var sprite = Sprite.Create(tex,
+            new Rect(0, 0, tex.width, tex.height),
+            new Vector2(0.5f, 0.5f));
+
+        if (colorPreviewPhoto != null)
+        {
+            colorPreviewPhoto.sprite = sprite;
+            colorPreviewPhoto.gameObject.SetActive(true);
+        }
+        if (colorPreviewInitial != null)
+            colorPreviewInitial.gameObject.SetActive(false);
+
+        if (colorButtons != null)
+        {
+            for (int i = 0; i < colorButtons.Length; i++)
+            {
+                var outline = colorButtons[i].GetComponent<Outline>();
+                if (outline != null) outline.enabled = false;
+            }
+        }
+
+        if (colorNextButton != null) colorNextButton.interactable = true;
+    }
+
+    // ── Webcam (Desktop) ──
+
+    private void OpenWebcam()
+    {
+        if (webcamPanel == null || webcamPreview == null) return;
+
+        // Prefer front-facing camera
+        string deviceName = null;
+        foreach (var device in WebCamTexture.devices)
+        {
+            if (device.isFrontFacing) { deviceName = device.name; break; }
+        }
+
+        webCamTexture = deviceName != null
+            ? new WebCamTexture(deviceName, 512, 512, 30)
+            : new WebCamTexture(512, 512, 30);
+
+        webcamPreview.texture = webCamTexture;
+        webCamTexture.Play();
+        webcamPanel.SetActive(true);
+    }
+
+    private void OnWebcamCapture()
+    {
+        if (webCamTexture == null || !webCamTexture.isPlaying) return;
+
+        // Snapshot current frame
+        var tex = new Texture2D(webCamTexture.width, webCamTexture.height, TextureFormat.RGB24, false);
+        tex.SetPixels(webCamTexture.GetPixels());
+        tex.Apply();
+
+        StopWebcam();
+        ApplyPickedPhoto(tex);
+    }
+
+    private void OnWebcamCancel()
+    {
+        StopWebcam();
+    }
+
+    private void StopWebcam()
+    {
+        if (webCamTexture != null)
+        {
+            webCamTexture.Stop();
+            Destroy(webCamTexture);
+            webCamTexture = null;
+        }
+        if (webcamPanel != null)
+            webcamPanel.SetActive(false);
+    }
+
+    private void OnDestroy()
+    {
+        StopWebcam();
     }
 
     // ── Done ──
