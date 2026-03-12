@@ -138,7 +138,10 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Counting Game…", 0.96f);
             CountingGameSetup.RunSetupSilent();
 
-            EditorUtility.DisplayProgressBar("Setting up project…", "Building Profile Scenes…", 0.97f);
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Color Voice Game…", 0.97f);
+            ColorVoiceGameSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Profile Scenes…", 0.98f);
             ProfileSceneSetup.RunSetupSilent();
 
             // Open ProfileSelection scene (new entry point)
@@ -577,9 +580,19 @@ public class ProjectSetup : EditorWindow
         }
         EditorUtility.SetDirty(maze);
 
+        // ── Color Voice (Say the Color) ──
+        var colorVoice = CreateSO<GameItemData>($"{DataPath}/ColorVoice.asset");
+        colorVoice.id = "colorvoice";
+        colorVoice.title = "Say the Color";
+        colorVoice.cardColor = HexColor("#FF8A65");
+        colorVoice.targetSceneName = "ColorVoice";
+        colorVoice.hasSubItems = false;
+        colorVoice.thumbnail = LoadSprite($"{previewPath}/ColorVoice.png");
+        EditorUtility.SetDirty(colorVoice);
+
         // ── Game Database ──
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, popBubbles, findObject, findCount, colorMix, maze };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, popBubbles, findObject, findCount, colorMix, maze, colorVoice };
         EditorUtility.SetDirty(db);
 
         return db;
@@ -1154,6 +1167,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/BubblePop.unity",
             $"{ScenesPath}/FindTheAnimal.unity",
             $"{ScenesPath}/CountingGame.unity",
+            $"{ScenesPath}/ColorVoice.unity",
         };
 
         var buildScenes = scenePaths.Select(p => new EditorBuildSettingsScene(p, true)).ToArray();
