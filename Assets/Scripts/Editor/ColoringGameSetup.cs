@@ -95,10 +95,32 @@ public class ColoringGameSetup : EditorWindow
             coloring.subItems.Insert(0, new SubItemData
             {
                 id = "coloring_free",
-                title = "Free Draw",
+                title = "\u05D3\u05E3 \u05D7\u05D3\u05E9", // דף חדש (New Page)
                 cardColor = HexColor("#FFD93D"),
                 categoryKey = "free",
                 targetSceneName = "ColoringGame"
+            });
+        }
+
+        // Add "Selfie" option if not already present
+        bool hasSelfie = false;
+        foreach (var item in coloring.subItems)
+        {
+            if (item.categoryKey == "selfie") { hasSelfie = true; break; }
+        }
+
+        if (!hasSelfie)
+        {
+            var cameraIcon = LoadSprite("Assets/Art/Camera.png");
+            int insertIdx = 1;
+            coloring.subItems.Insert(insertIdx, new SubItemData
+            {
+                id = "coloring_selfie",
+                title = "\u05E1\u05DC\u05E4\u05D9", // סלפי (Selfie)
+                cardColor = HexColor("#F472B6"),
+                categoryKey = "selfie",
+                targetSceneName = "ColoringGame",
+                thumbnail = cameraIcon
             });
         }
 
@@ -111,7 +133,7 @@ public class ColoringGameSetup : EditorWindow
 
         foreach (var item in coloring.subItems)
         {
-            if (item.categoryKey == "free") continue;
+            if (item.categoryKey == "free" || item.categoryKey == "selfie") continue;
 
             string name = char.ToUpper(item.categoryKey[0]) + item.categoryKey.Substring(1);
 
@@ -258,6 +280,7 @@ public class ColoringGameSetup : EditorWindow
         topBarRT.pivot = new Vector2(0.5f, 1);
         topBarRT.sizeDelta = new Vector2(0, TopBarHeight);
         topBar.GetComponent<Image>().raycastTarget = false;
+        topBar.AddComponent<ThemeHeader>();
 
         // Title
         var titleGO = new GameObject("Title");

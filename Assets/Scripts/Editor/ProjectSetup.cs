@@ -933,6 +933,12 @@ public class ProjectSetup : EditorWindow
         headerRT.pivot = new Vector2(0.5f, 1);
         headerRT.sizeDelta = new Vector2(0, HeaderHeight);
 
+        // Background (themed at runtime)
+        var headerImg = headerGO.AddComponent<Image>();
+        headerImg.color = HeaderBgColor;
+        headerImg.raycastTarget = false;
+        headerGO.AddComponent<ThemeHeader>();
+
         // Title text
         var titleGO = new GameObject("TitleText");
         titleGO.transform.SetParent(headerGO.transform, false);
@@ -987,6 +993,12 @@ public class ProjectSetup : EditorWindow
         headerRT.anchorMax = new Vector2(1, 1);
         headerRT.pivot = new Vector2(0.5f, 1);
         headerRT.sizeDelta = new Vector2(0, HeaderHeight);
+
+        // Background (themed at runtime)
+        var headerImg = headerGO.AddComponent<Image>();
+        headerImg.color = HeaderBgColor;
+        headerImg.raycastTarget = false;
+        headerGO.AddComponent<ThemeHeader>();
 
         // Title text (centered)
         var titleGO = new GameObject("TitleText");

@@ -108,6 +108,7 @@ public class ColorVoiceGameSetup : EditorWindow
         topBarRT.pivot = new Vector2(0.5f, 1);
         topBarRT.sizeDelta = new Vector2(0, TopBarHeight);
         topBar.GetComponent<Image>().raycastTarget = false;
+        topBar.AddComponent<ThemeHeader>();
 
         // Title
         var titleGO = new GameObject("Title");

@@ -62,19 +62,30 @@ public class ColoringGameController : MonoBehaviour
         drawingCanvas.SetBrushSize(BrushSizes[selectedBrushIndex]);
 
         // Determine mode from context
-        string categoryKey = GameContext.CurrentSelection != null
-            ? GameContext.CurrentSelection.categoryKey
-            : "free";
+        Texture2D customTex = GameContext.CustomTexture;
 
-        if (categoryKey != "free")
+        if (customTex != null)
         {
-            SetupOutline();
+            // Selfie or gallery import — generate outlines from the photo
+            SetupOutlineFromTexture(customTex);
+            GameContext.CustomTexture = null;
         }
         else
         {
-            outlineImage.gameObject.SetActive(false);
-            if (referenceContainer != null)
-                referenceContainer.SetActive(false);
+            string categoryKey = GameContext.CurrentSelection != null
+                ? GameContext.CurrentSelection.categoryKey
+                : "free";
+
+            if (categoryKey != "free")
+            {
+                SetupOutline();
+            }
+            else
+            {
+                outlineImage.gameObject.SetActive(false);
+                if (referenceContainer != null)
+                    referenceContainer.SetActive(false);
+            }
         }
 
         // Build palette UI
@@ -124,6 +135,36 @@ public class ColoringGameController : MonoBehaviour
             outlineImage.gameObject.SetActive(false);
             if (referenceContainer != null)
                 referenceContainer.SetActive(false);
+        }
+    }
+
+    private void SetupOutlineFromTexture(Texture2D tex)
+    {
+        var sprite = Sprite.Create(
+            tex,
+            new Rect(0, 0, tex.width, tex.height),
+            new Vector2(0.5f, 0.5f),
+            100f
+        );
+
+        var outlineTex = OutlineGenerator.Generate(
+            sprite, outlineResolution, outlineResolution, 0.12f, 2);
+
+        if (outlineTex != null)
+        {
+            outlineImage.texture = outlineTex;
+            outlineImage.gameObject.SetActive(true);
+        }
+        else
+        {
+            outlineImage.gameObject.SetActive(false);
+        }
+
+        if (referenceImage != null)
+        {
+            referenceImage.sprite = sprite;
+            if (referenceContainer != null)
+                referenceContainer.SetActive(true);
         }
     }
 
