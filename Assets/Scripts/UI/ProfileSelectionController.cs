@@ -23,6 +23,7 @@ public class ProfileSelectionController : MonoBehaviour
     public AudioClip whoPlayingSound;
 
     private AudioSource audioSource;
+    private bool isSelecting;
 
     private void Start()
     {
@@ -68,6 +69,13 @@ public class ProfileSelectionController : MonoBehaviour
 
     private void OnProfileSelected(UserProfile profile)
     {
+        if (isSelecting) return;
+        isSelecting = true;
+
+        // Stop any playing sound (e.g. "Who playing?")
+        if (audioSource != null && audioSource.isPlaying)
+            audioSource.Stop();
+
         ProfileManager.Instance.SetActiveProfile(profile);
 
         // Play name audio if it exists

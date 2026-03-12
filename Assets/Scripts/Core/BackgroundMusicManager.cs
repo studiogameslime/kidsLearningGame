@@ -64,4 +64,15 @@ public class BackgroundMusicManager : MonoBehaviour
         if (clip == null || _instance == null) return;
         _instance.GetSfxSource().PlayOneShot(clip, volume);
     }
+
+    /// <summary>
+    /// Mute/unmute the background music (e.g. during microphone recording).
+    /// </summary>
+    public static void SetMuted(bool muted)
+    {
+        if (_instance == null) return;
+        var bgSource = _instance.GetComponent<AudioSource>();
+        if (bgSource != null)
+            bgSource.mute = muted;
+    }
 }

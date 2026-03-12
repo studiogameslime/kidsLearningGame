@@ -198,6 +198,7 @@ public class ProfileCreationController : MonoBehaviour
         }
 
         isRecording = true;
+        BackgroundMusicManager.SetMuted(true);
         recordedClip = Microphone.Start(null, false, 5, 44100); // max 5 seconds
         UpdateRecordUI();
         StartCoroutine(AutoStopRecording(5f));
@@ -214,6 +215,7 @@ public class ProfileCreationController : MonoBehaviour
     {
         if (!isRecording) return;
         isRecording = false;
+        BackgroundMusicManager.SetMuted(false);
 
         int pos = Microphone.GetPosition(null);
         Microphone.End(null);
@@ -231,10 +233,22 @@ public class ProfileCreationController : MonoBehaviour
         UpdateRecordUI();
     }
 
+    private bool isPlayingPreview;
+
     private void PlayRecording()
     {
-        if (recordedClip != null)
-            BackgroundMusicManager.PlayOneShot(recordedClip);
+        if (recordedClip == null || isPlayingPreview) return;
+        StartCoroutine(PlayRecordingCoroutine());
+    }
+
+    private IEnumerator PlayRecordingCoroutine()
+    {
+        isPlayingPreview = true;
+        if (playRecordButton != null) playRecordButton.interactable = false;
+        BackgroundMusicManager.PlayOneShot(recordedClip);
+        yield return new WaitForSeconds(recordedClip.length + 0.1f);
+        isPlayingPreview = false;
+        if (playRecordButton != null) playRecordButton.interactable = true;
     }
 
     private void UpdateRecordUI()
