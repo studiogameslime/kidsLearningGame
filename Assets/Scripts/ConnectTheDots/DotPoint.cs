@@ -6,7 +6,7 @@ using TMPro;
 
 /// <summary>
 /// A single numbered dot in the Connect-the-Dots game.
-/// Shows its number, handles tap, and animates when activated.
+/// Shows its number, highlights when next, and animates when activated by drag.
 /// </summary>
 public class DotPoint : MonoBehaviour
 {
@@ -15,29 +15,29 @@ public class DotPoint : MonoBehaviour
     public Image ringImage;
     public TextMeshProUGUI numberText;
 
-    [HideInInspector] public int dotIndex; // 0-based order
-    [HideInInspector] public Vector2 normalizedPosition; // 0-1 position within play area
+    [HideInInspector] public int dotIndex;
+    [HideInInspector] public Vector2 normalizedPosition;
 
-    private Action<DotPoint> onTapped;
     private bool isActivated;
-    private Button button;
 
     private static readonly Color InactiveColor = new Color(0.75f, 0.75f, 0.75f, 1f);
-    private static readonly Color ActiveColor = new Color(0.3f, 0.85f, 0.4f, 1f);   // green
-    private static readonly Color NextColor = new Color(1f, 0.65f, 0.2f, 1f);        // orange highlight
+    private static readonly Color ActiveColor = new Color(0.3f, 0.85f, 0.4f, 1f);
+    private static readonly Color NextColor = new Color(1f, 0.65f, 0.2f, 1f);
     private static readonly Color RingColor = new Color(1f, 1f, 1f, 0.5f);
 
     public void Init(int index, int displayNumber, Action<DotPoint> tapCallback)
     {
         dotIndex = index;
-        onTapped = tapCallback;
         isActivated = false;
 
         if (numberText != null)
             numberText.text = displayNumber.ToString();
 
         if (dotImage != null)
+        {
             dotImage.color = InactiveColor;
+            dotImage.raycastTarget = false;
+        }
 
         if (ringImage != null)
         {
@@ -45,22 +45,10 @@ public class DotPoint : MonoBehaviour
             ringImage.gameObject.SetActive(false);
         }
 
-        // Ensure the root has a raycast-target Image so the Button can receive clicks
+        // Disable any raycast on root so drag is not blocked
         var rootImg = GetComponent<Image>();
-        if (rootImg == null)
-        {
-            rootImg = gameObject.AddComponent<Image>();
-            rootImg.color = new Color(0, 0, 0, 0); // invisible
-            rootImg.raycastTarget = true;
-        }
-
-        button = GetComponent<Button>();
-        if (button == null)
-            button = gameObject.AddComponent<Button>();
-
-        button.transition = Selectable.Transition.None;
-        button.targetGraphic = rootImg;
-        button.onClick.AddListener(HandleTap);
+        if (rootImg != null)
+            rootImg.raycastTarget = false;
     }
 
     public void SetAsNext()
@@ -94,12 +82,6 @@ public class DotPoint : MonoBehaviour
             dotImage.color = InactiveColor;
         if (ringImage != null)
             ringImage.gameObject.SetActive(false);
-    }
-
-    private void HandleTap()
-    {
-        if (isActivated) return;
-        onTapped?.Invoke(this);
     }
 
     private IEnumerator BounceAnimation()
