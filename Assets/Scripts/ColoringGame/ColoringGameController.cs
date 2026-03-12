@@ -98,7 +98,7 @@ public class ColoringGameController : MonoBehaviour
         if (animalSprite != null)
         {
             var outlineTex = OutlineGenerator.Generate(
-                animalSprite, outlineResolution, outlineResolution, 0.15f, 2);
+                animalSprite, outlineResolution, outlineResolution, 0.12f, 2);
 
             if (outlineTex != null)
             {

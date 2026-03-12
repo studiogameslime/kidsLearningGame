@@ -80,8 +80,8 @@ public class PuzzleGameSetup : EditorWindow
             return;
         }
 
-        puzzle.hasSubItems = false;
-        puzzle.selectionScreenTitle = "Choose a Puzzle";
+        puzzle.hasSubItems = true;
+        puzzle.selectionScreenTitle = "\u05D1\u05D7\u05E8\u05D5 \u05E4\u05D0\u05D6\u05DC"; // בחרו פאזל
         puzzle.targetSceneName = "PuzzleGame";
 
         string[] animals = {
@@ -94,6 +94,18 @@ public class PuzzleGameSetup : EditorWindow
             puzzle.subItems = new List<SubItemData>();
 
         puzzle.subItems.Clear();
+
+        // Gallery import option — first item, outlined style
+        puzzle.subItems.Add(new SubItemData
+        {
+            id = "puzzle_gallery",
+            title = "\u05DE\u05D4\u05D2\u05DC\u05E8\u05D9\u05D4", // מהגלריה
+            cardColor = new Color(0.85f, 0.75f, 0.95f),
+            categoryKey = "gallery",
+            targetSceneName = "PuzzleGame",
+            contentAsset = null,
+            thumbnail = null
+        });
 
         for (int i = 0; i < animals.Length; i++)
         {

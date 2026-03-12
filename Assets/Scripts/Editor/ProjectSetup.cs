@@ -434,10 +434,20 @@ public class ProjectSetup : EditorWindow
         puzzle.title = "Puzzle";
         puzzle.cardColor = PuzzleColor;
         puzzle.targetSceneName = "PuzzleGame";
-        puzzle.hasSubItems = false;
+        puzzle.hasSubItems = true;
+        puzzle.selectionScreenTitle = "\u05D1\u05D7\u05E8\u05D5 \u05E4\u05D0\u05D6\u05DC"; // בחרו פאזל
         puzzle.thumbnail = LoadSprite($"{previewPath}/Puzzle.png");
         puzzle.nameClip = LoadAudioClip("Assets/Sounds/Games Names/Puzzle.mp3");
         puzzle.subItems = new List<SubItemData>();
+        // Gallery import option — first item
+        puzzle.subItems.Add(new SubItemData
+        {
+            id = "puzzle_gallery",
+            title = "\u05DE\u05D4\u05D2\u05DC\u05E8\u05D9\u05D4", // מהגלריה
+            cardColor = new Color(0.85f, 0.75f, 0.95f),
+            categoryKey = "gallery",
+            targetSceneName = "PuzzleGame"
+        });
         for (int i = 0; i < animals.Length; i++)
         {
             puzzle.subItems.Add(new SubItemData

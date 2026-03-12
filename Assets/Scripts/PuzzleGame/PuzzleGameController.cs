@@ -42,23 +42,33 @@ public class PuzzleGameController : MonoBehaviour
             return sprite;
         }
 
-        // Pick a random animal from the game's sub-items list
+        // Pick a random animal from the game's sub-items list (skip gallery item)
         var game = GameContext.CurrentGame;
         if (game != null && game.subItems != null && game.subItems.Count > 0)
         {
-            int index;
-            if (game.subItems.Count == 1)
+            // Build list of valid sub-items (those with content assets)
+            var validItems = new List<int>();
+            for (int i = 0; i < game.subItems.Count; i++)
             {
-                index = 0;
+                if (game.subItems[i].contentAsset != null)
+                    validItems.Add(i);
+            }
+
+            if (validItems.Count == 0) return null;
+
+            int pick;
+            if (validItems.Count == 1)
+            {
+                pick = 0;
             }
             else
             {
                 // Avoid repeating the same animal
-                do { index = Random.Range(0, game.subItems.Count); }
-                while (index == lastAnimalIndex);
+                do { pick = Random.Range(0, validItems.Count); }
+                while (validItems[pick] == lastAnimalIndex);
             }
-            lastAnimalIndex = index;
-            return game.subItems[index].contentAsset;
+            lastAnimalIndex = validItems[pick];
+            return game.subItems[lastAnimalIndex].contentAsset;
         }
 
         return null;
@@ -66,6 +76,23 @@ public class PuzzleGameController : MonoBehaviour
 
     private void LoadRandomPuzzle()
     {
+        // Check for custom gallery texture first
+        if (GameContext.CustomTexture != null)
+        {
+            var tex = GameContext.CustomTexture;
+            GameContext.CustomTexture = null;
+
+            // Create a sprite from the runtime texture
+            var sprite = Sprite.Create(
+                tex,
+                new Rect(0, 0, tex.width, tex.height),
+                new Vector2(0.5f, 0.5f),
+                100f
+            );
+            BuildPuzzle(sprite);
+            return;
+        }
+
         Sprite puzzleSprite = PickRandomPuzzleSprite();
 
         if (puzzleSprite == null)

@@ -13,11 +13,15 @@ public static class GameContext
     /// <summary>The sub-item the player selected (null if the game launched directly).</summary>
     public static SubItemData CurrentSelection;
 
+    /// <summary>Runtime texture from gallery import (not an asset — created at runtime).</summary>
+    public static Texture2D CustomTexture;
+
     /// <summary>Clears all selection state.</summary>
     public static void Clear()
     {
         CurrentGame = null;
         CurrentSelection = null;
+        CustomTexture = null;
     }
 }
 
