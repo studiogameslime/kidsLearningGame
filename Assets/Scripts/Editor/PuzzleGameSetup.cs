@@ -191,6 +191,21 @@ public class PuzzleGameSetup : EditorWindow
         topBarRT.sizeDelta = new Vector2(0, TopBarHeight);
         topBar.GetComponent<Image>().raycastTarget = false;
 
+        // Title
+        var titleGO = new GameObject("Title");
+        titleGO.transform.SetParent(topBar.transform, false);
+        var titleRT = titleGO.AddComponent<RectTransform>();
+        StretchFull(titleRT);
+        titleRT.offsetMin = new Vector2(100, 0);
+        titleRT.offsetMax = new Vector2(-100, 0);
+        var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
+        titleTMP.text = "Puzzle";
+        titleTMP.fontSize = 48;
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.color = Color.white;
+        titleTMP.alignment = TextAlignmentOptions.Center;
+        titleTMP.raycastTarget = false;
+
         // Home button
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
         var homeGO = CreateIconButton(topBar.transform, "HomeButton", homeIcon,

@@ -412,6 +412,7 @@ public class ProjectSetup : EditorWindow
         memory.targetSceneName = "MemoryGame";
         memory.hasSubItems = false;
         memory.thumbnail = LoadSprite($"{previewPath}/MemoryCards.png");
+        memory.nameClip = LoadAudioClip("Assets/Sounds/Games Names/Memory Game.mp3");
         memory.subItems = new List<SubItemData>
         {
             new SubItemData { id = "memory_animals", title = "Animals",  cardColor = SubAnimals, categoryKey = "animals",  targetSceneName = "MemoryGame" },
@@ -426,6 +427,7 @@ public class ProjectSetup : EditorWindow
         puzzle.targetSceneName = "PuzzleGame";
         puzzle.hasSubItems = false;
         puzzle.thumbnail = LoadSprite($"{previewPath}/Puzzle.png");
+        puzzle.nameClip = LoadAudioClip("Assets/Sounds/Games Names/Puzzle.mp3");
         puzzle.subItems = new List<SubItemData>();
         for (int i = 0; i < animals.Length; i++)
         {
@@ -449,6 +451,7 @@ public class ProjectSetup : EditorWindow
         coloring.hasSubItems = true;
         coloring.selectionScreenTitle = "Choose a Picture";
         coloring.thumbnail = LoadSprite($"{previewPath}/Painting.png");
+        coloring.nameClip = LoadAudioClip("Assets/Sounds/Games Names/Painting.mp3");
         coloring.subItems = new List<SubItemData>();
         for (int i = 0; i < animals.Length; i++)
         {
@@ -471,6 +474,7 @@ public class ProjectSetup : EditorWindow
         fillDots.targetSceneName = "ConnectTheDots";
         fillDots.hasSubItems = false;
         fillDots.thumbnail = LoadSprite($"{previewPath}/FillTheDots.png");
+        fillDots.nameClip = LoadAudioClip("Assets/Sounds/Games Names/Connect the dots.mp3");
         EditorUtility.SetDirty(fillDots);
 
         // ── Counting Game ──
@@ -481,6 +485,7 @@ public class ProjectSetup : EditorWindow
         findCount.targetSceneName = "CountingGame";
         findCount.hasSubItems = false;
         findCount.thumbnail = LoadSprite($"{previewPath}/FindTheCount.png");
+        findCount.nameClip = LoadAudioClip("Assets/Sounds/Games Names/How Many.mp3");
         EditorUtility.SetDirty(findCount);
 
         // ── Find The Animal ──
@@ -491,6 +496,7 @@ public class ProjectSetup : EditorWindow
         findObject.targetSceneName = "FindTheAnimal";
         findObject.hasSubItems = false;
         findObject.thumbnail = LoadSprite($"{previewPath}/FindTheObject.png");
+        findObject.nameClip = LoadAudioClip("Assets/Sounds/Games Names/Find the animal.mp3");
         EditorUtility.SetDirty(findObject);
 
         // ── Bubble Pop ──
@@ -501,6 +507,7 @@ public class ProjectSetup : EditorWindow
         popBubbles.targetSceneName = "BubblePop";
         popBubbles.hasSubItems = false;
         popBubbles.thumbnail = LoadSprite($"{previewPath}/PopTheBubbles.png");
+        popBubbles.nameClip = LoadAudioClip("Assets/Sounds/Games Names/Pop the bubbles.mp3");
         EditorUtility.SetDirty(popBubbles);
 
         // ── Shadow Match ──
@@ -511,6 +518,7 @@ public class ProjectSetup : EditorWindow
         shadows.targetSceneName = "ShadowMatch";
         shadows.hasSubItems = false;
         shadows.thumbnail = LoadSprite($"{previewPath}/Shadows.png");
+        shadows.nameClip = LoadAudioClip("Assets/Sounds/Games Names/Shadows.mp3");
         EditorUtility.SetDirty(shadows);
 
         // ── Color Mixing ──
@@ -521,6 +529,7 @@ public class ProjectSetup : EditorWindow
         colorMix.targetSceneName = "ColorMixing";
         colorMix.hasSubItems = false;
         colorMix.thumbnail = LoadSprite($"{previewPath}/ColorMixing.png");
+        colorMix.nameClip = LoadAudioClip("Assets/Sounds/Games Names/Color mixing.mp3");
         colorMix.subItems = new List<SubItemData>();
         for (int i = 0; i < animals.Length; i++)
         {
@@ -548,6 +557,7 @@ public class ProjectSetup : EditorWindow
         maze.targetSceneName = "MazeGame";
         maze.hasSubItems = false;
         maze.thumbnail = LoadSprite($"{previewPath}/Maze.png");
+        maze.nameClip = LoadAudioClip("Assets/Sounds/Games Names/Maze.mp3");
         maze.subItems = new List<SubItemData>();
         for (int i = 0; i < animals.Length; i++)
         {
@@ -861,9 +871,10 @@ public class ProjectSetup : EditorWindow
         titleTMP.overflowMode = TextOverflowModes.Ellipsis;
         titleTMP.raycastTarget = false;
 
-        // Back button (if needed)
+        // Back button (if needed) — uses home icon matching all game scenes
         if (showBack)
         {
+            var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
             var backGO = new GameObject("BackButton");
             backGO.transform.SetParent(headerGO.transform, false);
             var backRT = backGO.AddComponent<RectTransform>();
@@ -874,29 +885,13 @@ public class ProjectSetup : EditorWindow
             backRT.sizeDelta = new Vector2(90, 90);
 
             var backImg = backGO.AddComponent<Image>();
-            backImg.sprite = roundedRect;
-            backImg.type = Image.Type.Sliced;
-            backImg.color = new Color(0f, 0f, 0f, 0.06f);
+            backImg.sprite = homeIcon;
+            backImg.preserveAspect = true;
+            backImg.color = Color.white;
+            backImg.raycastTarget = true;
 
             var backBtn = backGO.AddComponent<Button>();
-            var backColors = backBtn.colors;
-            backColors.normalColor = new Color(0f, 0f, 0f, 0.06f);
-            backColors.pressedColor = new Color(0f, 0f, 0f, 0.15f);
-            backColors.highlightedColor = new Color(0f, 0f, 0f, 0.1f);
-            backBtn.colors = backColors;
             backBtn.targetGraphic = backImg;
-
-            // Back arrow text
-            var arrowGO = new GameObject("Arrow");
-            arrowGO.transform.SetParent(backGO.transform, false);
-            var arrowRT = arrowGO.AddComponent<RectTransform>();
-            StretchFull(arrowRT);
-            var arrowTMP = arrowGO.AddComponent<TextMeshProUGUI>();
-            arrowTMP.text = "<";
-            arrowTMP.fontSize = 36;
-            arrowTMP.color = HexColor("#4A4A4A");
-            arrowTMP.alignment = TextAlignmentOptions.Center;
-            arrowTMP.raycastTarget = false;
         }
 
         return headerGO;
@@ -930,9 +925,10 @@ public class ProjectSetup : EditorWindow
         titleTMP.overflowMode = TextOverflowModes.Ellipsis;
         titleTMP.raycastTarget = false;
 
-        // Home button (left)
-        CreateHeaderButton(headerGO.transform, "HomeButton", "\u2302", // ⌂
-            new Vector2(24, 0), new Vector2(0, 0.5f), roundedRect);
+        // Home button (left) — sprite icon matching all other games
+        var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
+        CreateIconHeaderButton(headerGO.transform, "HomeButton", homeIcon,
+            new Vector2(24, 0), new Vector2(0, 0.5f));
 
         // Restart button (right)
         CreateHeaderButton(headerGO.transform, "RestartButton", "\u21BB", // ↻
@@ -976,6 +972,30 @@ public class ProjectSetup : EditorWindow
         labelTMP.color = HexColor("#4A4A4A");
         labelTMP.alignment = TextAlignmentOptions.Center;
         labelTMP.raycastTarget = false;
+
+        return go;
+    }
+
+    private static GameObject CreateIconHeaderButton(Transform parent, string name, Sprite icon,
+        Vector2 pos, Vector2 anchor)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = anchor;
+        rt.anchorMax = anchor;
+        rt.pivot = new Vector2(0, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = new Vector2(90, 90);
+
+        var img = go.AddComponent<Image>();
+        img.sprite = icon;
+        img.preserveAspect = true;
+        img.color = Color.white;
+        img.raycastTarget = true;
+
+        var btn = go.AddComponent<Button>();
+        btn.targetGraphic = img;
 
         return go;
     }
@@ -1143,5 +1163,10 @@ public class ProjectSetup : EditorWindow
                 if (asset is Sprite s) return s;
         }
         return null;
+    }
+
+    private static AudioClip LoadAudioClip(string path)
+    {
+        return AssetDatabase.LoadAssetAtPath<AudioClip>(path);
     }
 }

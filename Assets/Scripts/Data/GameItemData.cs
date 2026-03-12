@@ -17,6 +17,10 @@ public class GameItemData : ScriptableObject
     public Sprite thumbnail;
     public Color cardColor = new Color(0.7f, 0.62f, 0.86f); // soft purple default
 
+    [Header("Audio")]
+    [Tooltip("Voice clip that plays when this game is selected from the main menu.")]
+    public AudioClip nameClip;
+
     [Header("Navigation")]
     [Tooltip("Scene to load when this game has no sub-items, or when sub-items don't override it.")]
     public string targetSceneName;

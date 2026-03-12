@@ -41,6 +41,8 @@ public class MainMenuController : MonoBehaviour
 
     private void OnGameCardTapped(GameItemData game)
     {
+        BackgroundMusicManager.PlayOneShot(game.nameClip);
+
         if (game.hasSubItems && game.subItems != null && game.subItems.Count > 0)
             NavigationManager.GoToSelectionMenu(game);
         else

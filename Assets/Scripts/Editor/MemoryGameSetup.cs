@@ -264,6 +264,21 @@ public class MemoryGameSetup : EditorWindow
         topBarRT.sizeDelta = new Vector2(0, TopBarHeight);
         topBar.GetComponent<Image>().raycastTarget = false;
 
+        // Title
+        var titleGO = new GameObject("Title");
+        titleGO.transform.SetParent(topBar.transform, false);
+        var titleRT = titleGO.AddComponent<RectTransform>();
+        StretchFull(titleRT);
+        titleRT.offsetMin = new Vector2(100, 0);
+        titleRT.offsetMax = new Vector2(-100, 0);
+        var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
+        titleTMP.text = "Memory";
+        titleTMP.fontSize = 48;
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.color = Color.white;
+        titleTMP.alignment = TextAlignmentOptions.Center;
+        titleTMP.raycastTarget = false;
+
         // ── Bottom bar (salmon/peach) ──
         var bottomBar = CreateImage(canvasGO.transform, "BottomBar", TopBarColor, null);
         var bottomBarRT = bottomBar.GetComponent<RectTransform>();
@@ -304,17 +319,17 @@ public class MemoryGameSetup : EditorWindow
         grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         grid.constraintCount = Columns;
 
-        // ── Home button (top-right corner, using home icon) ──
+        // ── Home button (top-left corner, using home icon) ──
         var homeIcon = LoadSpriteFromPath("Assets/Art/Icons/home.png");
 
         var homeGO = new GameObject("HomeButton");
         homeGO.transform.SetParent(safeArea.transform, false);
         var homeRT = homeGO.AddComponent<RectTransform>();
-        homeRT.anchorMin = new Vector2(1, 1);
-        homeRT.anchorMax = new Vector2(1, 1);
-        homeRT.pivot = new Vector2(1, 1);
-        homeRT.anchoredPosition = new Vector2(-20, -20);
-        homeRT.sizeDelta = new Vector2(80, 80);
+        homeRT.anchorMin = new Vector2(0, 1);
+        homeRT.anchorMax = new Vector2(0, 1);
+        homeRT.pivot = new Vector2(0, 1);
+        homeRT.anchoredPosition = new Vector2(16, -15);
+        homeRT.sizeDelta = new Vector2(90, 90);
 
         var homeImg = homeGO.AddComponent<Image>();
         homeImg.sprite = homeIcon;
