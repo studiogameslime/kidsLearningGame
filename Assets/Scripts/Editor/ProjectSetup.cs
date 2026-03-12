@@ -587,7 +587,7 @@ public class ProjectSetup : EditorWindow
         colorVoice.cardColor = HexColor("#FF8A65");
         colorVoice.targetSceneName = "ColorVoice";
         colorVoice.hasSubItems = false;
-        colorVoice.thumbnail = LoadSprite($"{previewPath}/ColorVoice.png");
+        colorVoice.thumbnail = LoadSprite($"{previewPath}/ColorsRecognize.png");
         EditorUtility.SetDirty(colorVoice);
 
         // ── Game Database ──
