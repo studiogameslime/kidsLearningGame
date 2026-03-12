@@ -17,9 +17,9 @@ public class FindTheAnimalController : MonoBehaviour
     public TextMeshProUGUI remainingText;
 
     [Header("Settings")]
-    public float animalSize = 180f;
+    public float animalSize = 280f;
 
-    private const int AnimalCount = 20;
+    private const int AnimalCount = 12;
 
     private Canvas canvas;
     private List<GameObject> spawnedAnimals = new List<GameObject>();

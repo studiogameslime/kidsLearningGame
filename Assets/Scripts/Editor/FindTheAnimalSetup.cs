@@ -290,7 +290,7 @@ public class FindTheAnimalSetup : EditorWindow
         controller.playArea = animalAreaRT;
         controller.targetImage = targetImg;
         controller.remainingText = countTMP;
-        controller.animalSize = 180f;
+        controller.animalSize = 280f;
 
         // Wire buttons
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
