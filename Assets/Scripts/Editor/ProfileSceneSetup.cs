@@ -682,10 +682,10 @@ public class ProfileSceneSetup : EditorWindow
         cpNameTMP.isRightToLeftText = true;
         cpNameTMP.raycastTarget = false;
 
-        // Pick Photo button (below preview, above color grid) with gallery icon
-        var galleryIcon = LoadSprite("Assets/Art/Gallery.png");
+        // Take Selfie button (below preview, above color grid)
+        var cameraIcon = LoadSprite("Assets/Art/Gallery.png");
         var pickPhotoBtn = CreateIconLabelButton(stepColor.transform, "PickPhotoButton",
-            galleryIcon, "\u05D1\u05D7\u05E8\u05D5 \u05EA\u05DE\u05D5\u05E0\u05D4", HexColor("#78909C"), // בחרו תמונה
+            cameraIcon, "\u05E6\u05DC\u05DE\u05D5 \u05E1\u05DC\u05E4\u05D9", HexColor("#78909C"), // צלמו סלפי
             new Vector2(0.10f, 0.42f), new Vector2(0.90f, 0.52f), roundedRect);
 
         // Color grid

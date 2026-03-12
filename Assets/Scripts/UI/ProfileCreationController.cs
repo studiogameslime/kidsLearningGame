@@ -362,12 +362,12 @@ public class ProfileCreationController : MonoBehaviour
 
     private void OnPickPhotoPressed()
     {
-        NativeGallery.GetImageFromGallery((path) =>
+        NativeCamera.TakePicture((path) =>
         {
             if (string.IsNullOrEmpty(path)) return;
 
-            // Load the image
-            var tex = NativeGallery.LoadImageAtPath(path, 512, false);
+            // Load the captured image
+            var tex = NativeCamera.LoadImageAtPath(path, 512, false);
             if (tex == null) return;
 
             pickedPhoto = tex;
@@ -398,7 +398,7 @@ public class ProfileCreationController : MonoBehaviour
 
             if (colorNextButton != null) colorNextButton.interactable = true;
 
-        }, "Pick Avatar Photo");
+        }, 512, preferredCamera: NativeCamera.PreferredCamera.Front);
     }
 
     // ── Done ──
