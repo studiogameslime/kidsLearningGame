@@ -87,6 +87,9 @@ public class ProjectSetup : EditorWindow
 
         try
         {
+            EditorUtility.DisplayProgressBar("Setting up project…", "Setting up Hebrew font…", 0.02f);
+            HebrewFontSetup.RunSetupSilent();
+
             EditorUtility.DisplayProgressBar("Setting up project…", "Creating sprites…", 0.05f);
             var roundedRect = CreateRoundedRectSprite();
             var circleSprite = CreateCircleSprite();
