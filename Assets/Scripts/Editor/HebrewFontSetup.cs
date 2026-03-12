@@ -1,24 +1,17 @@
 using UnityEngine;
 using UnityEditor;
 using TMPro;
-using TMPro.EditorUtilities;
-using System.IO;
+using System.Collections.Generic;
 
 /// <summary>
-/// Generates TMP SDF Font Assets from Rubik Hebrew font and sets as default.
+/// Generates TMP SDF Font Assets from Rubik Hebrew + Latin subsets
+/// and configures Latin as a fallback font on the Hebrew primary.
 /// Run via Tools > Kids Learning Game > Setup Hebrew Font.
 /// </summary>
 public class HebrewFontSetup : EditorWindow
 {
-    // Latin Basic + Latin-1 Supplement + Hebrew block
-    private const string CharacterSet =
-        // ASCII printable (32-126)
-        " !\"#$%&'()*+,-./0123456789:;<=>?@" +
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`" +
-        "abcdefghijklmnopqrstuvwxyz{|}~" +
-        // Common punctuation & symbols
-        "\u00A0\u00AB\u00BB\u00BF\u2013\u2014\u2018\u2019\u201C\u201D\u2026\u20AA" + // ₪
-        // Hebrew (U+0590–U+05FF) — all consonants, vowels, accents
+    private const string HebrewChars =
+        // Hebrew consonants (U+05D0–U+05EA)
         "\u05D0\u05D1\u05D2\u05D3\u05D4\u05D5\u05D6\u05D7\u05D8\u05D9\u05DA\u05DB\u05DC\u05DD\u05DE\u05DF" +
         "\u05E0\u05E1\u05E2\u05E3\u05E4\u05E5\u05E6\u05E7\u05E8\u05E9\u05EA" +
         // Hebrew vowels (nikud)
@@ -26,7 +19,16 @@ public class HebrewFontSetup : EditorWindow
         "\u05C0\u05C1\u05C2\u05C3\u05C4\u05C5\u05C6\u05C7" +
         // Hebrew punctuation
         "\u05F0\u05F1\u05F2\u05F3\u05F4" +
-        // Common extras
+        // Shekel sign
+        "\u20AA";
+
+    private const string LatinChars =
+        // ASCII printable (32-126)
+        " !\"#$%&'()*+,-./0123456789:;<=>?@" +
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`" +
+        "abcdefghijklmnopqrstuvwxyz{|}~" +
+        // Common punctuation & symbols
+        "\u00A0\u00AB\u00BB\u00BF\u2013\u2014\u2018\u2019\u201C\u201D\u2026" +
         "?!.,;:'\"()-+";
 
     [MenuItem("Tools/Kids Learning Game/Setup Hebrew Font")]
@@ -41,53 +43,110 @@ public class HebrewFontSetup : EditorWindow
         EnsureFolder("Assets/Fonts");
         EnsureFolder("Assets/Fonts/TMP");
 
-        var boldFont = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Rubik-Bold.ttf");
-        var regularFont = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Rubik-Regular.ttf");
+        // Load all font files
+        var hebrewBold = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Rubik-Bold.ttf");
+        var hebrewRegular = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Rubik-Regular.ttf");
+        var latinBold = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Rubik-Latin-Bold.ttf");
+        var latinRegular = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Rubik-Latin-Regular.ttf");
 
-        if (boldFont == null || regularFont == null)
+        if (hebrewBold == null || hebrewRegular == null)
         {
-            Debug.LogError("Rubik font files not found at Assets/Fonts/. Cannot generate TMP fonts.");
+            Debug.LogError("Rubik Hebrew font files not found at Assets/Fonts/. Cannot generate TMP fonts.");
             return;
         }
 
-        EditorUtility.DisplayProgressBar("Hebrew Font Setup", "Generating Rubik Bold SDF…", 0.3f);
-        var boldTMP = GenerateFontAsset(boldFont, "Assets/Fonts/TMP/Rubik-Bold SDF.asset", 48);
+        try
+        {
+            // Generate Hebrew fonts (primary)
+            EditorUtility.DisplayProgressBar("Hebrew Font Setup", "Generating Hebrew Bold SDF...", 0.1f);
+            var hebrewBoldTMP = GenerateFontAsset(hebrewBold, "Assets/Fonts/TMP/Rubik-Hebrew-Bold SDF.asset", HebrewChars);
 
-        EditorUtility.DisplayProgressBar("Hebrew Font Setup", "Generating Rubik Regular SDF…", 0.6f);
-        var regularTMP = GenerateFontAsset(regularFont, "Assets/Fonts/TMP/Rubik-Regular SDF.asset", 48);
+            EditorUtility.DisplayProgressBar("Hebrew Font Setup", "Generating Hebrew Regular SDF...", 0.3f);
+            var hebrewRegularTMP = GenerateFontAsset(hebrewRegular, "Assets/Fonts/TMP/Rubik-Hebrew-Regular SDF.asset", HebrewChars);
 
-        EditorUtility.DisplayProgressBar("Hebrew Font Setup", "Setting default font…", 0.9f);
+            // Generate Latin fonts (fallback)
+            TMP_FontAsset latinBoldTMP = null;
+            TMP_FontAsset latinRegularTMP = null;
 
-        // Set bold as default TMP font
-        if (boldTMP != null)
-            SetDefaultTMPFont(boldTMP);
+            if (latinBold != null)
+            {
+                EditorUtility.DisplayProgressBar("Hebrew Font Setup", "Generating Latin Bold SDF...", 0.5f);
+                latinBoldTMP = GenerateFontAsset(latinBold, "Assets/Fonts/TMP/Rubik-Latin-Bold SDF.asset", LatinChars);
+            }
 
-        AssetDatabase.SaveAssets();
-        AssetDatabase.Refresh();
-        EditorUtility.ClearProgressBar();
+            if (latinRegular != null)
+            {
+                EditorUtility.DisplayProgressBar("Hebrew Font Setup", "Generating Latin Regular SDF...", 0.6f);
+                latinRegularTMP = GenerateFontAsset(latinRegular, "Assets/Fonts/TMP/Rubik-Latin-Regular SDF.asset", LatinChars);
+            }
 
-        Debug.Log("Hebrew font setup complete. Rubik-Bold set as default TMP font.");
+            // Add Latin as fallback on Hebrew fonts
+            EditorUtility.DisplayProgressBar("Hebrew Font Setup", "Setting up fallback fonts...", 0.8f);
+
+            if (hebrewBoldTMP != null && latinBoldTMP != null)
+                AddFallbackFont(hebrewBoldTMP, latinBoldTMP);
+
+            if (hebrewRegularTMP != null && latinRegularTMP != null)
+                AddFallbackFont(hebrewRegularTMP, latinRegularTMP);
+
+            // Set Hebrew Bold as default TMP font
+            EditorUtility.DisplayProgressBar("Hebrew Font Setup", "Setting default font...", 0.9f);
+            if (hebrewBoldTMP != null)
+                SetDefaultTMPFont(hebrewBoldTMP);
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            Debug.Log("Hebrew font setup complete. Rubik-Hebrew-Bold set as default TMP font with Latin fallback.");
+        }
+        finally
+        {
+            EditorUtility.ClearProgressBar();
+        }
     }
 
-    private static TMP_FontAsset GenerateFontAsset(Font sourceFont, string outputPath, int samplingSize)
+    private static TMP_FontAsset GenerateFontAsset(Font sourceFont, string outputPath, string characterSet)
     {
-        // Check if already exists
+        // Delete existing
         var existing = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(outputPath);
         if (existing != null)
         {
-            Debug.Log($"Font asset already exists: {outputPath} — regenerating.");
+            Debug.Log($"Font asset already exists: {outputPath} - regenerating.");
             AssetDatabase.DeleteAsset(outputPath);
         }
 
-        // Create the font asset using TMP's built-in generation
-        var fontAsset = TMP_FontAsset.CreateFontAsset(
-            sourceFont,
-            samplingSize,
-            9,  // padding
-            UnityEngine.TextCore.LowLevel.GlyphRenderMode.SDFAA,
-            1024,  // atlas width
-            1024   // atlas height
-        );
+        // Try the full overload first, fall back to simple overload
+        TMP_FontAsset fontAsset = null;
+
+        try
+        {
+            fontAsset = TMP_FontAsset.CreateFontAsset(
+                sourceFont,
+                36,   // sampling size (smaller for subset fonts)
+                5,    // padding
+                UnityEngine.TextCore.LowLevel.GlyphRenderMode.SDFAA,
+                1024, // atlas width
+                1024  // atlas height
+            );
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"Full CreateFontAsset failed for {sourceFont.name}: {e.Message}. Trying simple overload...");
+        }
+
+        // Fallback: simple single-parameter overload
+        if (fontAsset == null)
+        {
+            try
+            {
+                fontAsset = TMP_FontAsset.CreateFontAsset(sourceFont);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Failed to create TMP font asset from {sourceFont.name}: {e.Message}");
+                return null;
+            }
+        }
 
         if (fontAsset == null)
         {
@@ -95,22 +154,23 @@ public class HebrewFontSetup : EditorWindow
             return null;
         }
 
-        // Try to add all Hebrew + Latin characters
-        uint[] unicodeArray = GetUnicodeArray(CharacterSet);
-        fontAsset.TryAddCharacters(unicodeArray, out uint[] missing);
+        // Add characters from the appropriate set
+        uint[] unicodeArray = GetUnicodeArray(characterSet);
+        bool addResult = fontAsset.TryAddCharacters(unicodeArray, out uint[] missing);
 
-        if (missing != null && missing.Length > 0)
-            Debug.LogWarning($"Missing {missing.Length} glyphs in {sourceFont.name} (likely unused nikud/accents)");
+        int added = unicodeArray.Length - (missing != null ? missing.Length : 0);
+        Debug.Log($"[{sourceFont.name}] Added {added}/{unicodeArray.Length} characters" +
+                  (missing != null && missing.Length > 0 ? $" ({missing.Length} missing)" : ""));
 
-        // Save
+        // Save as asset
         AssetDatabase.CreateAsset(fontAsset, outputPath);
 
-        // Save atlas texture as sub-asset
+        // Save atlas textures as sub-assets
         if (fontAsset.atlasTextures != null)
         {
             foreach (var tex in fontAsset.atlasTextures)
             {
-                if (tex != null)
+                if (tex != null && !AssetDatabase.Contains(tex))
                 {
                     tex.name = fontAsset.name + " Atlas";
                     AssetDatabase.AddObjectToAsset(tex, fontAsset);
@@ -119,7 +179,7 @@ public class HebrewFontSetup : EditorWindow
         }
 
         // Save material as sub-asset
-        if (fontAsset.material != null)
+        if (fontAsset.material != null && !AssetDatabase.Contains(fontAsset.material))
         {
             fontAsset.material.name = fontAsset.name + " Material";
             AssetDatabase.AddObjectToAsset(fontAsset.material, fontAsset);
@@ -130,17 +190,29 @@ public class HebrewFontSetup : EditorWindow
         return fontAsset;
     }
 
+    private static void AddFallbackFont(TMP_FontAsset primary, TMP_FontAsset fallback)
+    {
+        if (primary.fallbackFontAssetTable == null)
+            primary.fallbackFontAssetTable = new List<TMP_FontAsset>();
+
+        // Remove existing entry if present
+        primary.fallbackFontAssetTable.RemoveAll(f => f == fallback);
+
+        // Add as first fallback
+        primary.fallbackFontAssetTable.Insert(0, fallback);
+        EditorUtility.SetDirty(primary);
+        Debug.Log($"Added {fallback.name} as fallback on {primary.name}");
+    }
+
     private static void SetDefaultTMPFont(TMP_FontAsset fontAsset)
     {
-        // Load TMP Settings
         var settings = Resources.Load<TMP_Settings>("TMP Settings");
         if (settings == null)
         {
-            Debug.LogWarning("TMP Settings not found. Cannot set default font automatically.");
+            Debug.LogWarning("TMP Settings not found. Import TMP Essentials first, then re-run this setup.");
             return;
         }
 
-        // Use SerializedObject to set the default font asset
         var so = new SerializedObject(settings);
         var prop = so.FindProperty("m_defaultFontAsset");
         if (prop != null)
@@ -158,7 +230,7 @@ public class HebrewFontSetup : EditorWindow
 
     private static uint[] GetUnicodeArray(string chars)
     {
-        var set = new System.Collections.Generic.HashSet<uint>();
+        var set = new HashSet<uint>();
         foreach (char c in chars)
             set.Add(c);
         var arr = new uint[set.Count];

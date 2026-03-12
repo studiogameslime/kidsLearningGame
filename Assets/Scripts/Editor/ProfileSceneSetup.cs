@@ -258,8 +258,8 @@ public class ProfileSceneSetup : EditorWindow
         var titleGO = new GameObject("Title");
         titleGO.transform.SetParent(safeArea.transform, false);
         var titleRT = titleGO.AddComponent<RectTransform>();
-        titleRT.anchorMin = new Vector2(0, 0.75f);
-        titleRT.anchorMax = new Vector2(1, 0.95f);
+        titleRT.anchorMin = new Vector2(0, 0.88f);
+        titleRT.anchorMax = new Vector2(1, 0.97f);
         titleRT.offsetMin = new Vector2(40, 0);
         titleRT.offsetMax = new Vector2(-40, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
@@ -275,8 +275,8 @@ public class ProfileSceneSetup : EditorWindow
         var gridArea = new GameObject("ProfileGrid");
         gridArea.transform.SetParent(safeArea.transform, false);
         var gridAreaRT = gridArea.AddComponent<RectTransform>();
-        gridAreaRT.anchorMin = new Vector2(0, 0.15f);
-        gridAreaRT.anchorMax = new Vector2(1, 0.75f);
+        gridAreaRT.anchorMin = new Vector2(0, 0.10f);
+        gridAreaRT.anchorMax = new Vector2(1, 0.85f);
         gridAreaRT.offsetMin = new Vector2(40, 0);
         gridAreaRT.offsetMax = new Vector2(-40, 0);
 
