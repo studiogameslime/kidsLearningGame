@@ -79,37 +79,5 @@ public class MockSpeechRecognizer : MonoBehaviour, ISpeechRecognizer
             SimulateWrong();
     }
 
-    private void OnGUI()
-    {
-        if (!IsListening) return;
-
-        float btnW = 120f;
-        float btnH = 50f;
-        float startX = 10f;
-        float startY = Screen.height - btnH - 10f;
-
-        GUI.skin.button.fontSize = 20;
-
-        for (int i = 0; i < ColorVoiceData.Colors.Length; i++)
-        {
-            var color = ColorVoiceData.Colors[i];
-            var rect = new Rect(startX + i * (btnW + 5f), startY, btnW, btnH);
-
-            // Color the button background
-            var oldBg = GUI.backgroundColor;
-            GUI.backgroundColor = color.color;
-
-            if (GUI.Button(rect, $"{i + 1}: {color.hebrewName}"))
-                SimulateResult(color.hebrewName);
-
-            GUI.backgroundColor = oldBg;
-        }
-
-        // Wrong answer button
-        var wrongRect = new Rect(startX + ColorVoiceData.Colors.Length * (btnW + 5f), startY, btnW, btnH);
-        GUI.backgroundColor = Color.gray;
-        if (GUI.Button(wrongRect, "0: Wrong"))
-            SimulateWrong();
-        GUI.backgroundColor = Color.white;
-    }
+    // Keyboard-only in editor: 1-7 for colors, 0 for wrong. No on-screen buttons.
 }

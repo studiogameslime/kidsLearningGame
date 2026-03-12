@@ -187,8 +187,8 @@ public class ColorVoiceGameSetup : EditorWindow
         var colorCircleRT = colorCircleGO.AddComponent<RectTransform>();
         colorCircleRT.anchorMin = new Vector2(0.5f, 0.5f);
         colorCircleRT.anchorMax = new Vector2(0.5f, 0.5f);
-        colorCircleRT.sizeDelta = new Vector2(500, 500);
-        colorCircleRT.anchoredPosition = new Vector2(0, 40);
+        colorCircleRT.sizeDelta = new Vector2(1000, 1000);
+        colorCircleRT.anchoredPosition = new Vector2(0, 60);
         var colorCircleImg = colorCircleGO.AddComponent<Image>();
         colorCircleImg.sprite = circleSprite;
         colorCircleImg.color = HexColor("#FF4444");
@@ -207,7 +207,7 @@ public class ColorVoiceGameSetup : EditorWindow
         var colorLabelTMP = colorLabelGO.AddComponent<TextMeshProUGUI>();
         colorLabelTMP.text = "\u05D0\u05D3\u05D5\u05DD"; // אדום
         colorLabelTMP.isRightToLeftText = true;
-        colorLabelTMP.fontSize = 72;
+        colorLabelTMP.fontSize = 110;
         colorLabelTMP.fontStyle = FontStyles.Bold;
         colorLabelTMP.color = Color.white;
         colorLabelTMP.alignment = TextAlignmentOptions.Center;
@@ -221,7 +221,7 @@ public class ColorVoiceGameSetup : EditorWindow
         micRT.anchorMin = new Vector2(0.5f, 0.5f);
         micRT.anchorMax = new Vector2(0.5f, 0.5f);
         micRT.sizeDelta = new Vector2(100, 100);
-        micRT.anchoredPosition = new Vector2(0, -260);
+        micRT.anchoredPosition = new Vector2(0, -480);
         var micImg = micGO.AddComponent<Image>();
         micImg.sprite = micSprite;
         micImg.preserveAspect = true;
