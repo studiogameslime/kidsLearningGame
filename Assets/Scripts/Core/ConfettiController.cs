@@ -1,20 +1,36 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
-/// Reusable confetti burst for win celebrations.
-/// Attach to any Canvas. Call Play() to fire confetti.
-/// Creates its own ParticleSystem on a worldspace camera overlay.
+/// Reusable UI-based confetti burst for win celebrations.
+/// Creates its own overlay canvas with falling confetti pieces.
+/// Call Play() to fire. Works on top of any ScreenSpaceOverlay UI.
 /// </summary>
 public class ConfettiController : MonoBehaviour
 {
-    private ParticleSystem ps;
     private static ConfettiController _instance;
 
-    /// <summary>
-    /// Get or create the singleton confetti controller.
-    /// Safe to call from any scene — auto-creates if missing.
-    /// </summary>
+    private Canvas confettiCanvas;
+    private RectTransform canvasRT;
+    private List<RectTransform> pool = new List<RectTransform>();
+    private bool isPlaying;
+
+    private const int ParticleCount = 80;
+    private const float Duration = 3f;
+
+    private static readonly Color[] ConfettiColors = {
+        new Color(1f, 0.3f, 0.4f),     // red
+        new Color(1f, 0.65f, 0.2f),     // orange
+        new Color(1f, 0.9f, 0.2f),      // yellow
+        new Color(0.3f, 0.85f, 0.4f),   // green
+        new Color(0.3f, 0.7f, 1f),      // blue
+        new Color(0.68f, 0.51f, 0.93f), // purple
+        new Color(1f, 0.5f, 0.7f),      // pink
+        new Color(0.2f, 0.9f, 0.9f),    // cyan
+    };
+
     public static ConfettiController Instance
     {
         get
@@ -38,119 +54,147 @@ public class ConfettiController : MonoBehaviour
         }
         _instance = this;
         DontDestroyOnLoad(gameObject);
-        CreateParticleSystem();
+        CreateCanvas();
+        CreatePool();
     }
 
-    private void CreateParticleSystem()
+    private void CreateCanvas()
     {
-        var psGO = new GameObject("ConfettiParticles");
-        psGO.transform.SetParent(transform, false);
-        // Position in front of UI camera — top center, raining down
-        psGO.transform.position = new Vector3(0f, 6f, 0f);
+        var canvasGO = new GameObject("ConfettiCanvas");
+        canvasGO.transform.SetParent(transform, false);
 
-        ps = psGO.AddComponent<ParticleSystem>();
-        var main = ps.main;
-        main.duration = 2f;
-        main.loop = false;
-        main.startLifetime = new ParticleSystem.MinMaxCurve(2f, 3.5f);
-        main.startSpeed = new ParticleSystem.MinMaxCurve(2f, 6f);
-        main.startSize = new ParticleSystem.MinMaxCurve(0.15f, 0.35f);
-        main.startRotation = new ParticleSystem.MinMaxCurve(0f, 360f * Mathf.Deg2Rad);
-        main.gravityModifier = 0.6f;
-        main.maxParticles = 300;
-        main.simulationSpace = ParticleSystemSimulationSpace.World;
-        main.startColor = new ParticleSystem.MinMaxGradient(
-            new Color(1f, 0.3f, 0.4f),
-            new Color(0.3f, 0.8f, 1f)
-        );
-        main.playOnAwake = false;
+        confettiCanvas = canvasGO.AddComponent<Canvas>();
+        confettiCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        confettiCanvas.sortingOrder = 999;
 
-        // Emission — big burst
-        var emission = ps.emission;
-        emission.rateOverTime = 0;
-        emission.SetBursts(new ParticleSystem.Burst[] {
-            new ParticleSystem.Burst(0f, 120, 180)
-        });
+        var scaler = canvasGO.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1080, 1920);
+        scaler.matchWidthOrHeight = 0f;
 
-        // Shape — wide cone from top
-        var shape = ps.shape;
-        shape.shapeType = ParticleSystemShapeType.Cone;
-        shape.angle = 45f;
-        shape.radius = 3f;
-        shape.rotation = new Vector3(0f, 0f, 180f); // point downward
+        canvasRT = canvasGO.GetComponent<RectTransform>();
 
-        // Color over lifetime — fade out at end
-        var colorOverLife = ps.colorOverLifetime;
-        colorOverLife.enabled = true;
-        var gradient = new Gradient();
-        gradient.SetKeys(
-            new GradientColorKey[] {
-                new GradientColorKey(Color.white, 0f),
-                new GradientColorKey(Color.white, 0.7f),
-                new GradientColorKey(Color.white, 1f),
-            },
-            new GradientAlphaKey[] {
-                new GradientAlphaKey(1f, 0f),
-                new GradientAlphaKey(1f, 0.6f),
-                new GradientAlphaKey(0f, 1f),
-            }
-        );
-        colorOverLife.color = new ParticleSystem.MinMaxGradient(gradient);
-
-        // Rotation over lifetime — tumble
-        var rotOverLife = ps.rotationOverLifetime;
-        rotOverLife.enabled = true;
-        rotOverLife.z = new ParticleSystem.MinMaxCurve(-180f * Mathf.Deg2Rad, 180f * Mathf.Deg2Rad);
-
-        // Size over lifetime — slight shrink
-        var sizeOverLife = ps.sizeOverLifetime;
-        sizeOverLife.enabled = true;
-        var sizeCurve = new AnimationCurve(
-            new Keyframe(0f, 1f),
-            new Keyframe(0.5f, 1f),
-            new Keyframe(1f, 0.3f)
-        );
-        sizeOverLife.size = new ParticleSystem.MinMaxCurve(1f, sizeCurve);
-
-        // Velocity over lifetime — slight spread
-        var velOverLife = ps.velocityOverLifetime;
-        velOverLife.enabled = true;
-        velOverLife.x = new ParticleSystem.MinMaxCurve(-1f, 1f);
-
-        // Use default particle material
-        var renderer = psGO.GetComponent<ParticleSystemRenderer>();
-        renderer.renderMode = ParticleSystemRenderMode.Billboard;
-        renderer.sortingOrder = 9999; // render on top of everything
-
-        // Try to use a sprite material, fall back to default
-        var mat = new Material(Shader.Find("Particles/Standard Unlit"));
-        if (mat != null)
-        {
-            mat.SetFloat("_Mode", 0); // Additive or Alpha Blended
-            mat.color = Color.white;
-        }
-        renderer.material = mat;
-
-        ps.Stop();
+        // No GraphicRaycaster — confetti should not block input
     }
 
-    /// <summary>
-    /// Fire confetti burst. Can be called multiple times.
-    /// </summary>
+    private void CreatePool()
+    {
+        for (int i = 0; i < ParticleCount; i++)
+        {
+            var go = new GameObject($"Confetti_{i}");
+            go.transform.SetParent(confettiCanvas.transform, false);
+
+            var rt = go.AddComponent<RectTransform>();
+            // Random rectangular confetti pieces
+            float w = Random.Range(16f, 32f);
+            float h = Random.Range(8f, 20f);
+            rt.sizeDelta = new Vector2(w, h);
+
+            var img = go.AddComponent<Image>();
+            img.color = ConfettiColors[i % ConfettiColors.Length];
+            img.raycastTarget = false;
+
+            go.SetActive(false);
+            pool.Add(rt);
+        }
+    }
+
     public void Play()
     {
-        if (ps == null) return;
-        ps.Clear();
-        ps.Play();
+        if (isPlaying) return;
+        StartCoroutine(PlayConfetti());
     }
 
-    /// <summary>
-    /// Stop confetti immediately.
-    /// </summary>
     public void Stop()
     {
-        if (ps == null) return;
-        ps.Stop();
-        ps.Clear();
+        StopAllCoroutines();
+        isPlaying = false;
+        foreach (var rt in pool)
+            if (rt != null) rt.gameObject.SetActive(false);
+    }
+
+    private IEnumerator PlayConfetti()
+    {
+        isPlaying = true;
+
+        float canvasW = canvasRT.rect.width > 0 ? canvasRT.rect.width : 1080f;
+        float canvasH = canvasRT.rect.height > 0 ? canvasRT.rect.height : 1920f;
+        float halfW = canvasW * 0.5f;
+        float topY = canvasH * 0.5f + 50f;
+
+        // Initialize each piece with random properties
+        float[] startX = new float[ParticleCount];
+        float[] fallSpeed = new float[ParticleCount];
+        float[] swaySpeed = new float[ParticleCount];
+        float[] swayAmount = new float[ParticleCount];
+        float[] rotSpeed = new float[ParticleCount];
+        float[] delay = new float[ParticleCount];
+
+        for (int i = 0; i < ParticleCount; i++)
+        {
+            startX[i] = Random.Range(-halfW, halfW);
+            fallSpeed[i] = Random.Range(600f, 1200f);
+            swaySpeed[i] = Random.Range(2f, 5f);
+            swayAmount[i] = Random.Range(30f, 120f);
+            rotSpeed[i] = Random.Range(-360f, 360f);
+            delay[i] = Random.Range(0f, 0.4f);
+
+            var rt = pool[i];
+            rt.anchoredPosition = new Vector2(startX[i], topY);
+            rt.localRotation = Quaternion.Euler(0, 0, Random.Range(0f, 360f));
+
+            // Randomize color
+            var img = rt.GetComponent<Image>();
+            img.color = ConfettiColors[Random.Range(0, ConfettiColors.Length)];
+
+            // Randomize size
+            float w = Random.Range(16f, 32f);
+            float h = Random.Range(8f, 20f);
+            rt.sizeDelta = new Vector2(w, h);
+
+            rt.gameObject.SetActive(true);
+        }
+
+        float elapsed = 0f;
+        float bottomY = -canvasH * 0.5f - 100f;
+
+        while (elapsed < Duration)
+        {
+            elapsed += Time.deltaTime;
+
+            for (int i = 0; i < ParticleCount; i++)
+            {
+                float t = elapsed - delay[i];
+                if (t < 0f) continue;
+
+                var rt = pool[i];
+                float x = startX[i] + Mathf.Sin(t * swaySpeed[i]) * swayAmount[i];
+                float y = topY - t * fallSpeed[i];
+
+                rt.anchoredPosition = new Vector2(x, y);
+                rt.localRotation = Quaternion.Euler(0, 0, rotSpeed[i] * t);
+
+                // Fade out in last 0.5s
+                if (elapsed > Duration - 0.5f)
+                {
+                    float alpha = (Duration - elapsed) / 0.5f;
+                    var img = rt.GetComponent<Image>();
+                    Color c = img.color;
+                    img.color = new Color(c.r, c.g, c.b, Mathf.Clamp01(alpha));
+                }
+
+                // Hide if fallen off screen
+                if (y < bottomY)
+                    rt.gameObject.SetActive(false);
+            }
+
+            yield return null;
+        }
+
+        // Clean up
+        foreach (var rt in pool)
+            if (rt != null) rt.gameObject.SetActive(false);
+
+        isPlaying = false;
     }
 }
