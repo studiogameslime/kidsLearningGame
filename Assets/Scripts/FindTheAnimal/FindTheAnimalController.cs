@@ -206,6 +206,7 @@ public class FindTheAnimalController : MonoBehaviour
 
     private IEnumerator AdvanceRound()
     {
+        ConfettiController.Instance.Play();
         // Brief pause before loading next round
         yield return new WaitForSeconds(0.8f);
 

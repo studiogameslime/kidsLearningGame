@@ -809,6 +809,7 @@ public class MazeController : MonoBehaviour
     // ── success ──────────────────────────────────────────────────────
     private IEnumerator OnReachedGoal()
     {
+        ConfettiController.Instance.Play();
         // Jump animation
         yield return JumpAnimation(playerRT);
 

@@ -322,6 +322,7 @@ public class BubblePopController : MonoBehaviour
 
     private IEnumerator AutoRestart()
     {
+        ConfettiController.Instance.Play();
         yield return new WaitForSeconds(0.5f);
         ClearBubbles();
         StartNewRound();

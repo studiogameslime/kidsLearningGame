@@ -174,6 +174,7 @@ public class ShadowMatchController : MonoBehaviour
 
     private IEnumerator OnAllMatched()
     {
+        ConfettiController.Instance.Play();
         yield return new WaitForSeconds(1.2f);
         LoadRound();
     }

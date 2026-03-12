@@ -196,6 +196,7 @@ public class CountingGameController : MonoBehaviour
 
     private IEnumerator OnCorrect()
     {
+        ConfettiController.Instance.Play();
         // Sort animals left-to-right by x position
         List<GameObject> sorted = new List<GameObject>(spawnedAnimals);
         sorted.Sort((a, b) =>

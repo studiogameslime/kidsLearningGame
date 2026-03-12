@@ -375,6 +375,7 @@ public class ColorMixingController : MonoBehaviour
     // ── success ──────────────────────────────────────────────────────
     private IEnumerator SuccessSequence()
     {
+        ConfettiController.Instance.Play();
         // Pulse result
         yield return BounceTransform(resultCircle.transform, 1.3f);
 

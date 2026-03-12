@@ -53,7 +53,6 @@ public class DotPoint : MonoBehaviour
 
     public void SetAsNext()
     {
-        if (isActivated) return;
         if (dotImage != null)
             dotImage.color = NextColor;
         if (ringImage != null)

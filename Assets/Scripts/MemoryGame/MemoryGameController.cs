@@ -183,7 +183,7 @@ public class MemoryGameController : MonoBehaviour
     private void OnGameComplete()
     {
         Debug.Log($"Game complete! Moves: {moveCount}");
-        // TODO: show a celebration screen / animation
+        ConfettiController.Instance.Play();
     }
 
     private void UpdateUI()

@@ -265,6 +265,7 @@ public class PuzzleGameController : MonoBehaviour
             // Puzzle complete — hide reference, show completed image briefly, then load next
             referenceImage.color = new Color(1f, 1f, 1f, 0f);
             Debug.Log("Puzzle complete!");
+            ConfettiController.Instance.Play();
             StartCoroutine(LoadNextPuzzleAfterDelay(1.5f));
         }
     }

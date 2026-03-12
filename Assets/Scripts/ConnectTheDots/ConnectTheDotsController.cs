@@ -508,6 +508,7 @@ public class ConnectTheDotsController : MonoBehaviour
 
     private IEnumerator OnAllDotsConnected()
     {
+        ConfettiController.Instance.Play();
         yield return new WaitForSeconds(0.4f);
 
         // Fade out guide lines
