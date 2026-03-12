@@ -102,6 +102,7 @@ public class ConfettiController : MonoBehaviour
     public void Play()
     {
         if (isPlaying) return;
+        GameCompletionBridge.Instance?.OnConfettiPlayed();
         StartCoroutine(PlayConfetti());
     }
 

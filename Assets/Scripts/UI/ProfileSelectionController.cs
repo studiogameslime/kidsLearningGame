@@ -89,7 +89,7 @@ public class ProfileSelectionController : MonoBehaviour
             }
         }
 
-        NavigationManager.GoToMainMenu();
+        NavigationManager.GoToHome();
     }
 
     private IEnumerator PlayNameAndNavigate(string audioPath)
@@ -107,7 +107,7 @@ public class ProfileSelectionController : MonoBehaviour
             }
         }
 
-        NavigationManager.GoToMainMenu();
+        NavigationManager.GoToHome();
     }
 
     public void OnAddProfilePressed()

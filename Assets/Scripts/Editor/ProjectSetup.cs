@@ -144,10 +144,19 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Color Voice Game…", 0.97f);
             ColorVoiceGameSetup.RunSetupSilent();
 
-            EditorUtility.DisplayProgressBar("Setting up project…", "Building Profile Scenes…", 0.98f);
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Profile Scenes…", 0.97f);
             ProfileSceneSetup.RunSetupSilent();
 
-            // Open ProfileSelection scene (new entry point)
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Home Scene…", 0.98f);
+            HomeSceneSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Discovery Reveal…", 0.985f);
+            DiscoveryRevealSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building World Scene…", 0.99f);
+            WorldSceneSetup.RunSetupSilent();
+
+            // Open ProfileSelection scene (entry point)
             EditorSceneManager.OpenScene($"{ScenesPath}/ProfileSelection.unity");
         }
         finally
@@ -1180,6 +1189,7 @@ public class ProjectSetup : EditorWindow
         string[] scenePaths = {
             $"{ScenesPath}/ProfileSelection.unity",
             $"{ScenesPath}/ProfileCreation.unity",
+            $"{ScenesPath}/HomeScene.unity",
             $"{ScenesPath}/MainMenu.unity",
             $"{ScenesPath}/SelectionMenu.unity",
             $"{ScenesPath}/MemoryGame.unity",
@@ -1193,6 +1203,8 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/FindTheAnimal.unity",
             $"{ScenesPath}/CountingGame.unity",
             $"{ScenesPath}/ColorVoice.unity",
+            $"{ScenesPath}/DiscoveryReveal.unity",
+            $"{ScenesPath}/WorldScene.unity",
         };
 
         var buildScenes = scenePaths.Select(p => new EditorBuildSettingsScene(p, true)).ToArray();

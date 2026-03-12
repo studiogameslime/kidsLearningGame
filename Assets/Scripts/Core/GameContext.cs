@@ -32,9 +32,17 @@ public static class GameContext
 public static class NavigationManager
 {
     private const string MainMenuScene = "MainMenu";
+    private const string HomeSceneName = "HomeScene";
     private const string SelectionMenuScene = "SelectionMenu";
     private const string ProfileSelectionScene = "ProfileSelection";
     private const string ProfileCreationScene = "ProfileCreation";
+
+    /// <summary>Go to the home screen (main entry point after profile selection).</summary>
+    public static void GoToHome()
+    {
+        GameContext.Clear();
+        SceneManager.LoadScene(HomeSceneName);
+    }
 
     /// <summary>Go to the profile selection screen.</summary>
     public static void GoToProfileSelection()
@@ -49,9 +57,14 @@ public static class NavigationManager
         SceneManager.LoadScene(ProfileCreationScene);
     }
 
-    /// <summary>Go back to the main hub.</summary>
+    /// <summary>Go back to the main hub. If a journey is active, ends it and goes to HomeScene.</summary>
     public static void GoToMainMenu()
     {
+        if (JourneyManager.IsJourneyActive)
+        {
+            JourneyManager.Instance?.EndJourney();
+            return;
+        }
         GameContext.Clear();
         SceneManager.LoadScene(MainMenuScene);
     }

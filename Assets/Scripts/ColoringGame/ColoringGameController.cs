@@ -24,6 +24,7 @@ public class ColoringGameController : MonoBehaviour
     public Button eraserButton;
     public Button undoButton;
     public Button clearButton;
+    public Button doneButton;         // shown only during journey mode
     public Image eraserHighlight;     // visual indicator when eraser is active
 
     [Header("Settings")]
@@ -96,6 +97,20 @@ public class ColoringGameController : MonoBehaviour
         if (eraserButton != null) eraserButton.onClick.AddListener(ToggleEraser);
         if (undoButton != null) undoButton.onClick.AddListener(OnUndo);
         if (clearButton != null) clearButton.onClick.AddListener(OnClear);
+
+        // Show Done button only during journey
+        if (doneButton != null)
+        {
+            if (JourneyManager.IsJourneyActive)
+            {
+                doneButton.gameObject.SetActive(true);
+                doneButton.onClick.AddListener(OnDonePressed);
+            }
+            else
+            {
+                doneButton.gameObject.SetActive(false);
+            }
+        }
     }
 
     private void SetupOutline()
@@ -283,6 +298,12 @@ public class ColoringGameController : MonoBehaviour
     {
         if (eraserHighlight != null)
             eraserHighlight.gameObject.SetActive(isEraserActive);
+    }
+
+    /// <summary>Called by Done button during journey mode.</summary>
+    public void OnDonePressed()
+    {
+        ConfettiController.Instance.Play();
     }
 
     /// <summary>Called by Home button.</summary>

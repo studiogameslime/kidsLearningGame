@@ -18,6 +18,7 @@ public class UserProfile
     public long createdAt;
     public long lastPlayedAt;
     public GameProgress progress = new GameProgress();
+    public JourneyProgress journey = new JourneyProgress();
 
     public UserProfile()
     {
@@ -36,6 +37,46 @@ public class UserProfile
     }
 
     public string Initial => string.IsNullOrEmpty(displayName) ? "?" : displayName.Substring(0, 1).ToUpper();
+}
+
+/// <summary>
+/// Tracks journey mode progress — discoveries, unlocks, and per-game stats.
+/// </summary>
+[Serializable]
+public class JourneyProgress
+{
+    public int totalGamesCompleted;
+    public int gamesUntilNextDiscovery;
+
+    public List<string> unlockedAnimalIds = new List<string>();
+    public List<string> unlockedColorIds = new List<string>();
+    public List<string> unlockedGameIds = new List<string>();
+
+    public List<DiscoveryEntry> discoveryQueue = new List<DiscoveryEntry>();
+    public List<GameJourneyStat> gameStats = new List<GameJourneyStat>();
+
+    public GameJourneyStat GetOrCreateStat(string gameId)
+    {
+        foreach (var s in gameStats)
+            if (s.gameId == gameId) return s;
+        var stat = new GameJourneyStat { gameId = gameId };
+        gameStats.Add(stat);
+        return stat;
+    }
+}
+
+[Serializable]
+public class DiscoveryEntry
+{
+    public string type;   // "animal", "color", "game"
+    public string id;     // "Bear", "Red", "Maze"
+}
+
+[Serializable]
+public class GameJourneyStat
+{
+    public string gameId;
+    public int timesPlayedInJourney;
 }
 
 /// <summary>
