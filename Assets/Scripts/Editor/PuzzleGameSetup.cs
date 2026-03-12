@@ -199,7 +199,8 @@ public class PuzzleGameSetup : EditorWindow
         titleRT.offsetMin = new Vector2(100, 0);
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "Puzzle";
+        titleTMP.text = "\u05E4\u05D0\u05D6\u05DC"; // פאזל
+        titleTMP.isRightToLeftText = true;
         titleTMP.fontSize = 48;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;

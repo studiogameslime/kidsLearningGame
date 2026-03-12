@@ -29,6 +29,21 @@ public static class NavigationManager
 {
     private const string MainMenuScene = "MainMenu";
     private const string SelectionMenuScene = "SelectionMenu";
+    private const string ProfileSelectionScene = "ProfileSelection";
+    private const string ProfileCreationScene = "ProfileCreation";
+
+    /// <summary>Go to the profile selection screen.</summary>
+    public static void GoToProfileSelection()
+    {
+        GameContext.Clear();
+        SceneManager.LoadScene(ProfileSelectionScene);
+    }
+
+    /// <summary>Go to the profile creation onboarding flow.</summary>
+    public static void GoToProfileCreation()
+    {
+        SceneManager.LoadScene(ProfileCreationScene);
+    }
 
     /// <summary>Go back to the main hub.</summary>
     public static void GoToMainMenu()

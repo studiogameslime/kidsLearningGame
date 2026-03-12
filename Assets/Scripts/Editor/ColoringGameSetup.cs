@@ -267,7 +267,8 @@ public class ColoringGameSetup : EditorWindow
         titleRT.offsetMin = new Vector2(100, 0);
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "Painting";
+        titleTMP.text = "\u05E6\u05D1\u05D9\u05E2\u05D4"; // צביעה
+        titleTMP.isRightToLeftText = true;
         titleTMP.fontSize = 48;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;

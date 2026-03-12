@@ -138,8 +138,11 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Counting Game…", 0.96f);
             CountingGameSetup.RunSetupSilent();
 
-            // Open MainMenu scene
-            EditorSceneManager.OpenScene($"{ScenesPath}/MainMenu.unity");
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Profile Scenes…", 0.97f);
+            ProfileSceneSetup.RunSetupSilent();
+
+            // Open ProfileSelection scene (new entry point)
+            EditorSceneManager.OpenScene($"{ScenesPath}/ProfileSelection.unity");
         }
         finally
         {
@@ -629,16 +632,66 @@ public class ProjectSetup : EditorWindow
         var safeArea = CreateSafeArea(canvasGO.transform);
 
         // Header
-        var header = CreateHeader(safeArea.transform, "Choose a Game", showBack: false, roundedRect, circleSprite);
+        var header = CreateHeader(safeArea.transform, "\u05D1\u05D7\u05E8\u05D5 \u05DE\u05E9\u05D7\u05E7", showBack: false, roundedRect, circleSprite); // בחרו משחק
 
         // Scroll view with grid
         var scrollContent = CreateScrollGrid(safeArea.transform, HeaderHeight);
+
+        // Profile switch button (top-right corner, small avatar circle)
+        var profileIcon = LoadSprite("Assets/UI/Sprites/Circle.png");
+        var profileBtnGO = new GameObject("ProfileButton");
+        profileBtnGO.transform.SetParent(header.transform, false);
+        var profileBtnRT = profileBtnGO.AddComponent<RectTransform>();
+        profileBtnRT.anchorMin = new Vector2(1, 0.5f);
+        profileBtnRT.anchorMax = new Vector2(1, 0.5f);
+        profileBtnRT.pivot = new Vector2(1, 0.5f);
+        profileBtnRT.anchoredPosition = new Vector2(-24, 0);
+        profileBtnRT.sizeDelta = new Vector2(70, 70);
+        var profileBtnImg = profileBtnGO.AddComponent<Image>();
+        profileBtnImg.sprite = profileIcon;
+        profileBtnImg.color = HexColor("#90CAF9");
+        profileBtnImg.raycastTarget = true;
+        var profileBtnComp = profileBtnGO.AddComponent<Button>();
+        profileBtnComp.targetGraphic = profileBtnImg;
+
+        // Mask for circular photo clipping
+        profileBtnGO.AddComponent<Mask>().showMaskGraphic = true;
+
+        // Profile photo image (hidden by default, shown at runtime if profile has photo)
+        var profilePhotoGO = new GameObject("Photo");
+        profilePhotoGO.transform.SetParent(profileBtnGO.transform, false);
+        var profilePhotoRT = profilePhotoGO.AddComponent<RectTransform>();
+        StretchFull(profilePhotoRT);
+        var profilePhotoImg = profilePhotoGO.AddComponent<Image>();
+        profilePhotoImg.preserveAspect = false;
+        profilePhotoImg.raycastTarget = false;
+        profilePhotoGO.SetActive(false);
+
+        // Profile initial text on the button
+        var profileInitGO = new GameObject("Initial");
+        profileInitGO.transform.SetParent(profileBtnGO.transform, false);
+        var profileInitRT = profileInitGO.AddComponent<RectTransform>();
+        StretchFull(profileInitRT);
+        var profileInitTMP = profileInitGO.AddComponent<TextMeshProUGUI>();
+        profileInitTMP.text = "\u263A"; // smiley fallback, updated at runtime
+        profileInitTMP.fontSize = 32;
+        profileInitTMP.fontStyle = FontStyles.Bold;
+        profileInitTMP.color = Color.white;
+        profileInitTMP.alignment = TextAlignmentOptions.Center;
+        profileInitTMP.raycastTarget = false;
 
         // Main Menu Controller
         var controller = canvasGO.AddComponent<MainMenuController>();
         controller.database = database;
         controller.cardContainer = scrollContent;
         controller.cardPrefab = cardPrefab;
+        controller.profileButtonImage = profileBtnImg;
+        controller.profileButtonPhoto = profilePhotoImg;
+        controller.profileButtonInitial = profileInitTMP;
+
+        // Wire profile button
+        UnityEditor.Events.UnityEventTools.AddPersistentListener(
+            profileBtnComp.onClick, controller.OnSwitchProfilePressed);
 
         EditorSceneManager.SaveScene(scene, $"{ScenesPath}/MainMenu.unity");
     }
@@ -657,7 +710,7 @@ public class ProjectSetup : EditorWindow
         var safeArea = CreateSafeArea(canvasGO.transform);
 
         // Header with back button
-        var header = CreateHeader(safeArea.transform, "Choose", showBack: true, roundedRect, circleSprite);
+        var header = CreateHeader(safeArea.transform, "\u05D1\u05D7\u05E8\u05D5", showBack: true, roundedRect, circleSprite); // בחרו
         var titleTMP = header.transform.Find("TitleText").GetComponent<TextMeshProUGUI>();
 
         // Scroll grid
@@ -866,7 +919,8 @@ public class ProjectSetup : EditorWindow
         titleTMP.fontSize = 52;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = HexColor("#4A4A4A");
-        titleTMP.alignment = showBack ? TextAlignmentOptions.Left : TextAlignmentOptions.Center;
+        titleTMP.alignment = TextAlignmentOptions.Center;
+        titleTMP.isRightToLeftText = true;
         titleTMP.enableWordWrapping = false;
         titleTMP.overflowMode = TextOverflowModes.Ellipsis;
         titleTMP.raycastTarget = false;
@@ -917,6 +971,7 @@ public class ProjectSetup : EditorWindow
         titleRT.offsetMax = new Vector2(-120, -10);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
         titleTMP.text = title;
+        titleTMP.isRightToLeftText = true;
         titleTMP.fontSize = 48;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = HexColor("#4A4A4A");
@@ -1085,6 +1140,8 @@ public class ProjectSetup : EditorWindow
     private static void ConfigureBuildSettings()
     {
         string[] scenePaths = {
+            $"{ScenesPath}/ProfileSelection.unity",
+            $"{ScenesPath}/ProfileCreation.unity",
             $"{ScenesPath}/MainMenu.unity",
             $"{ScenesPath}/SelectionMenu.unity",
             $"{ScenesPath}/MemoryGame.unity",

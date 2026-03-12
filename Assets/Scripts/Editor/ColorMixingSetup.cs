@@ -116,7 +116,8 @@ public class ColorMixingSetup : EditorWindow
         titleRT.offsetMin = new Vector2(100, 0);
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "Color Mixing";
+        titleTMP.text = "\u05E2\u05E8\u05D1\u05D5\u05D1 \u05E6\u05D1\u05E2\u05D9\u05DD"; // ערבוב צבעים
+        titleTMP.isRightToLeftText = true;
         titleTMP.fontSize = 48;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;

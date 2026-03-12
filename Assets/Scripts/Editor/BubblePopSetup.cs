@@ -191,7 +191,8 @@ public class BubblePopSetup : EditorWindow
         titleRT.offsetMin = new Vector2(100, 0);
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "Bubble Pop";
+        titleTMP.text = "\u05E4\u05E7\u05E2 \u05D1\u05D5\u05E2\u05D5\u05EA"; // פקע בועות
+        titleTMP.isRightToLeftText = true;
         titleTMP.fontSize = 48;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;
