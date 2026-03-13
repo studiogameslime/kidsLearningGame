@@ -18,7 +18,6 @@ public class WorldController : MonoBehaviour
     public RectTransform skyArea;        // sky portion of content
     public RectTransform grassArea;      // grass portion of content
     public Button homeButton;
-    public Button galleryButton;
     public Image profileAvatar;
     public TMPro.TextMeshProUGUI profileInitial;
 
@@ -43,7 +42,6 @@ public class WorldController : MonoBehaviour
     private void Start()
     {
         if (homeButton != null) homeButton.onClick.AddListener(OnHomePressed);
-        if (galleryButton != null) galleryButton.onClick.AddListener(OnGalleryPressed);
 
         BuildAnimalSpriteLookup();
         UpdateProfileAvatar();
@@ -149,9 +147,9 @@ public class WorldController : MonoBehaviour
         float grassHeight = grassArea.rect.height;
         if (grassHeight <= 0) grassHeight = 500f;
 
-        // Place animals on a band in the upper part of the grass
-        float placementMinY = grassHeight * 0.05f;
-        float placementMaxY = grassHeight * 0.35f;
+        // Place animals on the main lower grass field (below the tree ridge)
+        float placementMinY = grassHeight * 0.18f;
+        float placementMaxY = grassHeight * 0.32f;
 
         for (int i = 0; i < animalIds.Count; i++)
         {
@@ -335,8 +333,4 @@ public class WorldController : MonoBehaviour
         NavigationManager.GoToHome();
     }
 
-    public void OnGalleryPressed()
-    {
-        NavigationManager.GoToDrawingGallery();
-    }
 }

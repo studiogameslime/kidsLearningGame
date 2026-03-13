@@ -5,13 +5,12 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Manages the World scene environment: layered backgrounds, day/night cycle,
-/// sun/moon toggle with animations and color transitions.
+/// sun/moon toggle with animations, color transitions, and night stars.
 /// </summary>
 public class WorldEnvironment : MonoBehaviour
 {
     [Header("Sky & Background Layers")]
     public Image skyBackground;
-    public Image mountainsLayer;
     public Image hillsLargeLayer;
     public Image hillsLayer;
     public Image groundBackLayer;
@@ -23,7 +22,9 @@ public class WorldEnvironment : MonoBehaviour
     public Image sunImage;
     public Image moonImage;
     public Image sunGlow;
-    public Image moonGlow;
+
+    [Header("Stars")]
+    public RectTransform starsContainer;
 
     [Header("Cloud Layers (static)")]
     public Image cloudLayerBack1;
@@ -33,7 +34,6 @@ public class WorldEnvironment : MonoBehaviour
 
     // Day colors
     private static readonly Color DaySky = HexColor("#8FD4F5");
-    private static readonly Color DayMountains = HexColor("#DCEEF8");
     private static readonly Color DayHillsLarge = HexColor("#B7D7D6");
     private static readonly Color DayHills = HexColor("#9FCBC5");
     private static readonly Color DayGroundBack = HexColor("#8ED36B");
@@ -43,13 +43,11 @@ public class WorldEnvironment : MonoBehaviour
 
     // Night colors
     private static readonly Color NightSky = HexColor("#345A8A");
-    private static readonly Color NightMountains = HexColor("#7D96B2");
     private static readonly Color NightHillsLarge = HexColor("#6E93A0");
     private static readonly Color NightHills = HexColor("#5F8491");
     private static readonly Color NightGroundBack = HexColor("#4F8E4F");
     private static readonly Color NightGroundFront = HexColor("#447A44");
     private static readonly Color NightCloudTint = HexColor("#BFCFE0");
-    private static readonly Color NightMoonGlow = new Color(0.85f, 0.9f, 1f, 0.3f);
 
     public bool IsNight { get; private set; }
     private bool isTransitioning;
@@ -58,21 +56,113 @@ public class WorldEnvironment : MonoBehaviour
     private float moonRestY;  // resting Y for moon (visible)
     private float offScreenY; // Y below visible area
 
+    // Stars
+    private List<Image> starImages = new List<Image>();
+    private float[] starMaxAlphas;      // per-star max brightness
+    private float[] starTwinkleSpeed;   // per-star twinkle frequency
+    private float[] starTwinkleOffset;  // per-star phase offset
+    private const int StarCount = 120;
+
     private void Start()
     {
         // Calculate positions based on parent
+        // Sun/moon use anchor at 0.93 of content height, so anchoredPosition.y=0 is the rest position.
+        // offScreenY is a negative offset that moves them down behind the ground layers.
         sunRestY = sunRT != null ? sunRT.anchoredPosition.y : 0f;
         moonRestY = moonRT != null ? moonRT.anchoredPosition.y : 0f;
-        offScreenY = -300f;
+        RectTransform parentRT = sunRT != null ? sunRT.parent as RectTransform : null;
+        float contentHeight = parentRT != null ? parentRT.rect.height : 1810f;
+        // Move from anchor 0.93 down to ~0.30 of content (behind ground at 0.45)
+        offScreenY = -(contentHeight * 0.63f);
 
         // Start in day mode
         IsNight = false;
-        ApplyColors(0f); // t=0 = full day
+        ApplyColors(0f);
 
         // Sun visible, moon hidden below
         if (sunRT != null) sunRT.anchoredPosition = new Vector2(sunRT.anchoredPosition.x, sunRestY);
         if (moonRT != null) moonRT.anchoredPosition = new Vector2(moonRT.anchoredPosition.x, offScreenY);
-        if (moonGlow != null) moonGlow.color = new Color(NightMoonGlow.r, NightMoonGlow.g, NightMoonGlow.b, 0f);
+
+        // Create stars (invisible during day)
+        CreateStars();
+        SetStarsAlpha(0f);
+    }
+
+    private void CreateStars()
+    {
+        if (starsContainer == null) return;
+
+        starMaxAlphas = new float[StarCount];
+        starTwinkleSpeed = new float[StarCount];
+        starTwinkleOffset = new float[StarCount];
+
+        for (int i = 0; i < StarCount; i++)
+        {
+            var go = new GameObject($"Star{i}");
+            go.transform.SetParent(starsContainer, false);
+            var rt = go.AddComponent<RectTransform>();
+
+            // Random position across the container
+            float x = Random.Range(0.02f, 0.98f);
+            float y = Random.Range(0.05f, 0.95f);
+            rt.anchorMin = new Vector2(x, y);
+            rt.anchorMax = new Vector2(x, y);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+
+            // Tiny size (2-8px) — more variety with denser field
+            float size = Random.Range(2f, 8f);
+            rt.sizeDelta = new Vector2(size, size);
+
+            var img = go.AddComponent<Image>();
+            img.raycastTarget = false;
+
+            // Soft white, pale blue, or warm yellow tint
+            float tint = Random.Range(0f, 1f);
+            if (tint < 0.5f)
+                img.color = new Color(1f, 1f, 1f, 0f);           // white
+            else if (tint < 0.8f)
+                img.color = new Color(0.85f, 0.92f, 1f, 0f);     // pale blue
+            else
+                img.color = new Color(1f, 0.95f, 0.8f, 0f);      // warm yellow
+
+            starImages.Add(img);
+
+            // Per-star twinkle parameters
+            starMaxAlphas[i] = Random.Range(0.3f, 0.95f);
+            starTwinkleSpeed[i] = Random.Range(0.5f, 2.5f);
+            starTwinkleOffset[i] = Random.Range(0f, Mathf.PI * 2f);
+        }
+
+        StartCoroutine(TwinkleStars());
+    }
+
+    private IEnumerator TwinkleStars()
+    {
+        while (true)
+        {
+            if (IsNight && !isTransitioning)
+            {
+                for (int i = 0; i < starImages.Count; i++)
+                {
+                    if (starImages[i] == null) continue;
+                    float twinkle = 0.7f + 0.3f * Mathf.Sin(Time.time * starTwinkleSpeed[i] + starTwinkleOffset[i]);
+                    var c = starImages[i].color;
+                    starImages[i].color = new Color(c.r, c.g, c.b, starMaxAlphas[i] * twinkle);
+                }
+            }
+            yield return null;
+        }
+    }
+
+    private void SetStarsAlpha(float alpha)
+    {
+        foreach (var img in starImages)
+        {
+            if (img == null) continue;
+            var c = img.color;
+            // Each star has a slightly different max brightness for variety
+            img.color = new Color(c.r, c.g, c.b, alpha);
+        }
     }
 
     public void OnSunTapped()
@@ -118,9 +208,16 @@ public class WorldEnvironment : MonoBehaviour
             // Colors transition
             ApplyColors(t);
 
-            // Glow transition
+            // Sun glow fade out
             if (sunGlow != null) sunGlow.color = new Color(DaySunGlow.r, DaySunGlow.g, DaySunGlow.b, DaySunGlow.a * (1f - t));
-            if (moonGlow != null) moonGlow.color = new Color(NightMoonGlow.r, NightMoonGlow.g, NightMoonGlow.b, NightMoonGlow.a * moonT);
+
+            // Stars fade in (synced with transition)
+            for (int i = 0; i < starImages.Count; i++)
+            {
+                if (starImages[i] == null) continue;
+                var c = starImages[i].color;
+                starImages[i].color = new Color(c.r, c.g, c.b, starMaxAlphas[i] * t);
+            }
 
             yield return null;
         }
@@ -146,6 +243,14 @@ public class WorldEnvironment : MonoBehaviour
         Vector2 sunStart = new Vector2(sunRT.anchoredPosition.x, offScreenY);
         Vector2 sunEnd = new Vector2(sunRT.anchoredPosition.x, sunRestY);
 
+        // Capture current star alphas for smooth fade out
+        float[] starStartAlpha = new float[starImages.Count];
+        for (int i = 0; i < starStartAlpha.Length; i++)
+        {
+            if (starImages[i] != null)
+                starStartAlpha[i] = starImages[i].color.a;
+        }
+
         while (elapsed < dur)
         {
             elapsed += Time.deltaTime;
@@ -162,9 +267,16 @@ public class WorldEnvironment : MonoBehaviour
             // Colors transition (reverse: night → day, so use 1-t)
             ApplyColors(1f - t);
 
-            // Glow transition
-            if (moonGlow != null) moonGlow.color = new Color(NightMoonGlow.r, NightMoonGlow.g, NightMoonGlow.b, NightMoonGlow.a * (1f - t));
+            // Sun glow fade in
             if (sunGlow != null) sunGlow.color = new Color(DaySunGlow.r, DaySunGlow.g, DaySunGlow.b, DaySunGlow.a * sunT);
+
+            // Stars fade out (synced with transition)
+            for (int i = 0; i < starImages.Count; i++)
+            {
+                if (starImages[i] == null) continue;
+                var c = starImages[i].color;
+                starImages[i].color = new Color(c.r, c.g, c.b, starStartAlpha[i] * (1f - t));
+            }
 
             yield return null;
         }
@@ -180,7 +292,6 @@ public class WorldEnvironment : MonoBehaviour
     {
         // t: 0 = day, 1 = night
         if (skyBackground != null) skyBackground.color = Color.Lerp(DaySky, NightSky, t);
-        if (mountainsLayer != null) mountainsLayer.color = Color.Lerp(DayMountains, NightMountains, t);
         if (hillsLargeLayer != null) hillsLargeLayer.color = Color.Lerp(DayHillsLarge, NightHillsLarge, t);
         if (hillsLayer != null) hillsLayer.color = Color.Lerp(DayHills, NightHills, t);
         if (groundBackLayer != null) groundBackLayer.color = Color.Lerp(DayGroundBack, NightGroundBack, t);

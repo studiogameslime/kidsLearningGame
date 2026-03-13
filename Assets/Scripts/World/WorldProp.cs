@@ -1,9 +1,11 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// An interactive tree or bush in the World scene.
 /// Tapping causes a playful sway/bounce animation.
+/// Trees also spawn falling leaves on tap.
 /// </summary>
 public class WorldProp : MonoBehaviour
 {
@@ -12,6 +14,14 @@ public class WorldProp : MonoBehaviour
 
     private RectTransform rt;
     private bool isAnimating;
+
+    private static readonly Color[] LeafColors = {
+        new Color(0.40f, 0.75f, 0.25f), // green
+        new Color(0.55f, 0.82f, 0.20f), // light green
+        new Color(0.85f, 0.78f, 0.15f), // yellow-green
+        new Color(0.92f, 0.65f, 0.12f), // golden
+        new Color(0.30f, 0.68f, 0.35f), // dark green
+    };
 
     private void Awake()
     {
@@ -23,7 +33,10 @@ public class WorldProp : MonoBehaviour
         if (isAnimating) return;
 
         if (propType == PropType.Tree)
+        {
             StartCoroutine(TreeSway());
+            SpawnLeaves();
+        }
         else
             StartCoroutine(BushBounce());
     }
@@ -48,6 +61,80 @@ public class WorldProp : MonoBehaviour
 
         rt.localRotation = Quaternion.identity;
         isAnimating = false;
+    }
+
+    private void SpawnLeaves()
+    {
+        int leafCount = Random.Range(5, 8);
+        for (int i = 0; i < leafCount; i++)
+        {
+            StartCoroutine(AnimateLeaf(i));
+        }
+    }
+
+    private IEnumerator AnimateLeaf(int index)
+    {
+        // Create leaf as a small colored rectangle
+        var leafGO = new GameObject($"Leaf{index}");
+        leafGO.transform.SetParent(rt.parent, false);
+        var leafRT = leafGO.AddComponent<RectTransform>();
+        leafRT.anchorMin = Vector2.zero;
+        leafRT.anchorMax = Vector2.zero;
+        leafRT.pivot = new Vector2(0.5f, 0.5f);
+
+        float leafSize = Random.Range(6f, 12f);
+        leafRT.sizeDelta = new Vector2(leafSize, leafSize * 0.7f);
+
+        // Start near the top of the tree (upper 60%)
+        float treeHeight = rt.sizeDelta.y;
+        float startX = rt.anchoredPosition.x + Random.Range(-rt.sizeDelta.x * 0.35f, rt.sizeDelta.x * 0.35f);
+        float startY = rt.anchoredPosition.y + treeHeight * Random.Range(0.4f, 0.9f);
+        leafRT.anchoredPosition = new Vector2(startX, startY);
+
+        var img = leafGO.AddComponent<Image>();
+        Color leafColor = LeafColors[Random.Range(0, LeafColors.Length)];
+        img.color = leafColor;
+        img.raycastTarget = false;
+
+        // Animate falling with gentle sway
+        float dur = Random.Range(1.2f, 2.0f);
+        float elapsed = 0f;
+        float fallDistance = Random.Range(120f, 220f);
+        float swayAmount = Random.Range(20f, 45f);
+        float swaySpeed = Random.Range(3f, 5f);
+        float rotSpeed = Random.Range(120f, 300f);
+        float phaseOffset = Random.Range(0f, Mathf.PI * 2f);
+
+        // Stagger start slightly
+        yield return new WaitForSeconds(index * 0.06f);
+
+        Vector2 startPos = leafRT.anchoredPosition;
+
+        while (elapsed < dur)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / dur;
+
+            // Fall with ease-in
+            float fallY = fallDistance * t * t;
+            // Gentle sway
+            float swayX = Mathf.Sin(t * swaySpeed * Mathf.PI + phaseOffset) * swayAmount * (1f - t * 0.5f);
+            leafRT.anchoredPosition = new Vector2(startPos.x + swayX, startPos.y - fallY);
+
+            // Gentle rotation
+            leafRT.localRotation = Quaternion.Euler(0, 0, elapsed * rotSpeed);
+
+            // Fade out in last 30%
+            if (t > 0.7f)
+            {
+                float fadeT = (t - 0.7f) / 0.3f;
+                img.color = new Color(leafColor.r, leafColor.g, leafColor.b, 1f - fadeT);
+            }
+
+            yield return null;
+        }
+
+        Destroy(leafGO);
     }
 
     private IEnumerator BushBounce()

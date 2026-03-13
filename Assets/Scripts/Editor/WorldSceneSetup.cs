@@ -19,7 +19,6 @@ public class WorldSceneSetup : EditorWindow
 
     // Day mode default colors (environment handles transitions)
     private static readonly Color DaySky = HexColor("#8FD4F5");
-    private static readonly Color DayMountains = HexColor("#DCEEF8");
     private static readonly Color DayHillsLarge = HexColor("#B7D7D6");
     private static readonly Color DayHills = HexColor("#9FCBC5");
     private static readonly Color DayGroundBack = HexColor("#8ED36B");
@@ -262,7 +261,6 @@ public class WorldSceneSetup : EditorWindow
         string artDir = "Assets/Art/World";
 
         // Load world art sprites
-        var mountainsSprite = LoadSprite($"{artDir}/mountains.png");
         var hillsLargeSprite = LoadSprite($"{artDir}/hillsLarge.png");
         var hillsSprite = LoadSprite($"{artDir}/hills.png");
         var groundLayer1Sprite = LoadSprite($"{artDir}/groundLayer1.png");
@@ -278,8 +276,6 @@ public class WorldSceneSetup : EditorWindow
         var treeSprite = LoadSprite($"{artDir}/tree.png");
         var treeLongSprite = LoadSprite($"{artDir}/treeLong.png");
         var treeSmall1Sprite = LoadSprite($"{artDir}/treeSmall_green1.png");
-        var bush1Sprite = LoadSprite($"{artDir}/bush1.png");
-        var bush2Sprite = LoadSprite($"{artDir}/bush2.png");
 
         // Camera
         var camGO = new GameObject("Main Camera");
@@ -399,11 +395,16 @@ public class WorldSceneSetup : EditorWindow
         var skyBgGO = CreateStretchImage(worldContent.transform, "SkyBackground", DaySky);
         skyBgGO.GetComponent<Image>().raycastTarget = false;
 
-        // Layer 2: Mountains (very far, top area)
-        var mountainsGO = CreateSpriteLayer(worldContent.transform, "Mountains", mountainsSprite,
-            new Vector2(0, 0.45f), new Vector2(1, 0.85f), DayMountains);
+        // Stars container (behind clouds/hills, populated at runtime)
+        var starsGO = new GameObject("Stars");
+        starsGO.transform.SetParent(worldContent.transform, false);
+        var starsRT = starsGO.AddComponent<RectTransform>();
+        starsRT.anchorMin = new Vector2(0, 0.5f);
+        starsRT.anchorMax = new Vector2(1, 1);
+        starsRT.offsetMin = Vector2.zero;
+        starsRT.offsetMax = Vector2.zero;
 
-        // Layer 3: Large hills (mid-far)
+        // Layer 2: Large hills (mid-far, no mountains)
         var hillsLargeGO = CreateSpriteLayer(worldContent.transform, "HillsLarge", hillsLargeSprite,
             new Vector2(0, 0.35f), new Vector2(1, 0.65f), DayHillsLarge);
 
@@ -423,23 +424,16 @@ public class WorldSceneSetup : EditorWindow
         var cloudLayer2GO = CreateSpriteLayer(worldContent.transform, "CloudLayer2", cloudLayer2Sprite,
             new Vector2(0, 0.4f), new Vector2(1, 0.65f), DayCloudTint);
 
-        // Layer 7: Ground back layer
-        var groundBackGO = CreateSpriteLayer(worldContent.transform, "GroundBack", groundLayer1Sprite,
-            new Vector2(0, 0), new Vector2(1, 0.35f), DayGroundBack);
-
-        // Layer 8: Ground front layer
-        var groundFrontGO = CreateSpriteLayer(worldContent.transform, "GroundFront", groundLayer2Sprite,
-            new Vector2(0, 0), new Vector2(1, 0.25f), DayGroundFront);
-
-        // ── Sun (in sky, right side) ──
+        // ── Sun (in sky, above clouds, behind ground) ──
+        // Anchored at 93% height for responsive vertical positioning across resolutions
         var sunGO = new GameObject("Sun");
         sunGO.transform.SetParent(worldContent.transform, false);
         var sunRT = sunGO.AddComponent<RectTransform>();
-        sunRT.anchorMin = new Vector2(0, 0);
-        sunRT.anchorMax = new Vector2(0, 0);
+        sunRT.anchorMin = new Vector2(0, 0.93f);
+        sunRT.anchorMax = new Vector2(0, 0.93f);
         sunRT.pivot = new Vector2(0.5f, 0.5f);
         sunRT.sizeDelta = new Vector2(180, 180);
-        sunRT.anchoredPosition = new Vector2(800, 1400);
+        sunRT.anchoredPosition = new Vector2(900, 0);
         var sunImg = sunGO.AddComponent<Image>();
         sunImg.sprite = sunSprite;
         sunImg.preserveAspect = true;
@@ -460,40 +454,34 @@ public class WorldSceneSetup : EditorWindow
         sunGlowImg.color = new Color(1f, 0.95f, 0.6f, 0.25f);
         sunGlowImg.raycastTarget = false;
 
-        // ── Moon (starts off-screen below) ──
+        // ── Moon (same responsive position as sun, starts hidden below) ──
         var moonGO = new GameObject("Moon");
         moonGO.transform.SetParent(worldContent.transform, false);
         var moonRT = moonGO.AddComponent<RectTransform>();
-        moonRT.anchorMin = new Vector2(0, 0);
-        moonRT.anchorMax = new Vector2(0, 0);
+        moonRT.anchorMin = new Vector2(0, 0.93f);
+        moonRT.anchorMax = new Vector2(0, 0.93f);
         moonRT.pivot = new Vector2(0.5f, 0.5f);
         moonRT.sizeDelta = new Vector2(150, 150);
-        moonRT.anchoredPosition = new Vector2(750, 1350); // rest position (environment will move to offscreen)
+        moonRT.anchoredPosition = new Vector2(900, 0);
         var moonImg = moonGO.AddComponent<Image>();
         moonImg.sprite = moonSprite;
         moonImg.preserveAspect = true;
         moonImg.raycastTarget = true;
         moonImg.color = Color.white;
 
-        // Moon glow
-        var moonGlowGO = new GameObject("MoonGlow");
-        moonGlowGO.transform.SetParent(moonGO.transform, false);
-        moonGlowGO.transform.SetAsFirstSibling();
-        var moonGlowRT = moonGlowGO.AddComponent<RectTransform>();
-        moonGlowRT.anchorMin = new Vector2(-0.5f, -0.5f);
-        moonGlowRT.anchorMax = new Vector2(1.5f, 1.5f);
-        moonGlowRT.offsetMin = Vector2.zero;
-        moonGlowRT.offsetMax = Vector2.zero;
-        var moonGlowImg = moonGlowGO.AddComponent<Image>();
-        if (circleSprite != null) moonGlowImg.sprite = circleSprite;
-        moonGlowImg.color = new Color(0.85f, 0.9f, 1f, 0f); // starts invisible
-        moonGlowImg.raycastTarget = false;
+        // Layer 7: Ground back layer (extended up to cover gap between clouds and grass)
+        var groundBackGO = CreateSpriteLayer(worldContent.transform, "GroundBack", groundLayer1Sprite,
+            new Vector2(0, 0), new Vector2(1, 0.45f), DayGroundBack);
+
+        // Layer 8: Ground front layer
+        var groundFrontGO = CreateSpriteLayer(worldContent.transform, "GroundFront", groundLayer2Sprite,
+            new Vector2(0, 0), new Vector2(1, 0.25f), DayGroundFront);
 
         // ── Sky Area (invisible, used for balloon/cloud spawning) ──
         var skyAreaGO = new GameObject("SkyArea");
         skyAreaGO.transform.SetParent(worldContent.transform, false);
         var skyAreaRT = skyAreaGO.AddComponent<RectTransform>();
-        skyAreaRT.anchorMin = new Vector2(0, 0.35f);
+        skyAreaRT.anchorMin = new Vector2(0, 0.45f);
         skyAreaRT.anchorMax = new Vector2(1, 1);
         skyAreaRT.offsetMin = Vector2.zero;
         skyAreaRT.offsetMax = Vector2.zero;
@@ -504,77 +492,231 @@ public class WorldSceneSetup : EditorWindow
         grassAreaGO.transform.SetParent(worldContent.transform, false);
         var grassAreaRT = grassAreaGO.AddComponent<RectTransform>();
         grassAreaRT.anchorMin = new Vector2(0, 0);
-        grassAreaRT.anchorMax = new Vector2(1, 0.3f);
+        grassAreaRT.anchorMax = new Vector2(1, 0.45f);
         grassAreaRT.offsetMin = Vector2.zero;
         grassAreaRT.offsetMax = Vector2.zero;
 
         // ── Trees & Bushes (interactive props on ground) ──
-        // Tree 1 — large tree on the left
+        // Tree 1 — large tree on the left (upper grass ridge, safe margin from edge)
         CreateProp(grassAreaGO.transform, "Tree1", treeSprite, WorldProp.PropType.Tree,
-            new Vector2(350, 20), new Vector2(180, 300));
-        // Tree 2 — tall tree in the middle-right
+            new Vector2(250, 600), new Vector2(180, 300));
+        // Tree 2 — tall tree in the middle
         CreateProp(grassAreaGO.transform, "Tree2", treeLongSprite, WorldProp.PropType.Tree,
-            new Vector2(1100, 15), new Vector2(160, 340));
-        // Small tree
+            new Vector2(800, 580), new Vector2(160, 340));
+        // Tree 3 — small tree on the right (safe margin from right edge)
         CreateProp(grassAreaGO.transform, "Tree3", treeSmall1Sprite, WorldProp.PropType.Tree,
-            new Vector2(1600, 25), new Vector2(120, 200));
-        // Bush 1
-        CreateProp(grassAreaGO.transform, "Bush1", bush1Sprite, WorldProp.PropType.Bush,
-            new Vector2(550, 10), new Vector2(100, 80));
-        // Bush 2
-        CreateProp(grassAreaGO.transform, "Bush2", bush2Sprite, WorldProp.PropType.Bush,
-            new Vector2(1400, 8), new Vector2(90, 70));
-
-        // ── Drawing Gallery Easel (on grass, far left) ──
-        var easelGO = new GameObject("GalleryEasel");
+            new Vector2(1350, 620), new Vector2(120, 200));
+        // ── Painting Easel (on grass, left side — gallery entry point) ──
+        var easelSprite = LoadSprite("Assets/Art/Easel.png");
+        var easelGO = new GameObject("PaintingEasel");
         easelGO.transform.SetParent(grassAreaGO.transform, false);
         var easelRT = easelGO.AddComponent<RectTransform>();
         easelRT.anchorMin = Vector2.zero;
         easelRT.anchorMax = Vector2.zero;
         easelRT.pivot = new Vector2(0.5f, 0);
-        easelRT.sizeDelta = new Vector2(160, 200);
-        easelRT.anchoredPosition = new Vector2(80, 30);
+        easelRT.sizeDelta = new Vector2(180, 220);
+        easelRT.anchoredPosition = new Vector2(150, 200);
 
-        var boardImg = easelGO.AddComponent<Image>();
-        boardImg.color = HexColor("#8D6E63");
-        boardImg.raycastTarget = true;
+        var easelImg = easelGO.AddComponent<Image>();
+        easelImg.sprite = easelSprite;
+        easelImg.preserveAspect = true;
+        easelImg.raycastTarget = true;
+        easelImg.color = Color.white;
 
-        var canvasOnEasel = new GameObject("Canvas");
-        canvasOnEasel.transform.SetParent(easelGO.transform, false);
-        var canvasOnEaselRT = canvasOnEasel.AddComponent<RectTransform>();
-        canvasOnEaselRT.anchorMin = new Vector2(0.1f, 0.25f);
-        canvasOnEaselRT.anchorMax = new Vector2(0.9f, 0.85f);
-        canvasOnEaselRT.offsetMin = Vector2.zero;
-        canvasOnEaselRT.offsetMax = Vector2.zero;
-        var canvasOnEaselImg = canvasOnEasel.AddComponent<Image>();
-        canvasOnEaselImg.color = Color.white;
-        canvasOnEaselImg.raycastTarget = false;
+        // ── Gallery Overlay (full-screen, above everything, initially hidden) ──
+        var roundedRectSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/RoundedRect.png");
 
-        var dotColors = new Color[] { HexColor("#EF4444"), HexColor("#3B82F6"), HexColor("#FACC15"), HexColor("#22C55E") };
-        for (int d = 0; d < dotColors.Length; d++)
-        {
-            var dotGO = new GameObject($"Dot{d}");
-            dotGO.transform.SetParent(canvasOnEasel.transform, false);
-            var dotRT = dotGO.AddComponent<RectTransform>();
-            float dx = 0.15f + d * 0.22f;
-            float dy = 0.3f + (d % 2) * 0.3f;
-            dotRT.anchorMin = new Vector2(dx, dy);
-            dotRT.anchorMax = new Vector2(dx + 0.18f, dy + 0.25f);
-            dotRT.offsetMin = Vector2.zero;
-            dotRT.offsetMax = Vector2.zero;
-            var dotImg = dotGO.AddComponent<Image>();
-            if (circleSprite != null) dotImg.sprite = circleSprite;
-            dotImg.color = dotColors[d];
-            dotImg.raycastTarget = false;
-        }
+        var galleryOverlay = new GameObject("GalleryOverlay");
+        galleryOverlay.transform.SetParent(safeArea.transform, false);
+        var galleryOverlayRT = galleryOverlay.AddComponent<RectTransform>();
+        StretchFull(galleryOverlayRT);
 
-        var easelBtn = easelGO.AddComponent<Button>();
-        easelBtn.targetGraphic = boardImg;
+        // Dim background
+        var dimBgGO = new GameObject("DimBackground");
+        dimBgGO.transform.SetParent(galleryOverlay.transform, false);
+        var dimBgRT = dimBgGO.AddComponent<RectTransform>();
+        StretchFull(dimBgRT);
+        var dimBgImg = dimBgGO.AddComponent<Image>();
+        dimBgImg.color = new Color(0, 0, 0, 0.45f);
+        dimBgImg.raycastTarget = true;
+
+        // Gallery panel (centered, rounded)
+        var galleryPanel = new GameObject("GalleryPanel");
+        galleryPanel.transform.SetParent(galleryOverlay.transform, false);
+        var galleryPanelRT = galleryPanel.AddComponent<RectTransform>();
+        galleryPanelRT.anchorMin = new Vector2(0.08f, 0.25f);
+        galleryPanelRT.anchorMax = new Vector2(0.92f, 0.75f);
+        galleryPanelRT.offsetMin = Vector2.zero;
+        galleryPanelRT.offsetMax = Vector2.zero;
+        var galleryPanelImg = galleryPanel.AddComponent<Image>();
+        galleryPanelImg.color = HexColor("#FFF8F0");
+        if (roundedRectSprite != null) galleryPanelImg.sprite = roundedRectSprite;
+        galleryPanelImg.type = Image.Type.Sliced;
+        galleryPanelImg.raycastTarget = true;
+
+        // Panel border/frame
+        var panelBorder = new GameObject("Border");
+        panelBorder.transform.SetParent(galleryPanel.transform, false);
+        panelBorder.transform.SetAsFirstSibling();
+        var panelBorderRT = panelBorder.AddComponent<RectTransform>();
+        panelBorderRT.anchorMin = new Vector2(-0.005f, -0.003f);
+        panelBorderRT.anchorMax = new Vector2(1.005f, 1.003f);
+        panelBorderRT.offsetMin = Vector2.zero;
+        panelBorderRT.offsetMax = Vector2.zero;
+        var panelBorderImg = panelBorder.AddComponent<Image>();
+        panelBorderImg.color = HexColor("#E8D5C0");
+        if (roundedRectSprite != null) panelBorderImg.sprite = roundedRectSprite;
+        panelBorderImg.type = Image.Type.Sliced;
+        panelBorderImg.raycastTarget = false;
+
+        // Header bar
+        var headerGO = new GameObject("Header");
+        headerGO.transform.SetParent(galleryPanel.transform, false);
+        var headerRT = headerGO.AddComponent<RectTransform>();
+        headerRT.anchorMin = new Vector2(0, 1);
+        headerRT.anchorMax = new Vector2(1, 1);
+        headerRT.pivot = new Vector2(0.5f, 1);
+        headerRT.sizeDelta = new Vector2(0, 100);
+
+        // Title
+        var galleryTitleGO = new GameObject("Title");
+        galleryTitleGO.transform.SetParent(headerGO.transform, false);
+        var galleryTitleRT = galleryTitleGO.AddComponent<RectTransform>();
+        StretchFull(galleryTitleRT);
+        galleryTitleRT.offsetMin = new Vector2(30, 0);
+        galleryTitleRT.offsetMax = new Vector2(-80, 0);
+        var galleryTitleTMP = galleryTitleGO.AddComponent<TMPro.TextMeshProUGUI>();
+        galleryTitleTMP.text = HebrewFixer.Fix("\u05D4\u05E6\u05D9\u05D5\u05E8\u05D9\u05DD \u05E9\u05DC\u05D9");
+        galleryTitleTMP.isRightToLeftText = false;
+        galleryTitleTMP.fontSize = 36;
+        galleryTitleTMP.fontStyle = TMPro.FontStyles.Bold;
+        galleryTitleTMP.color = HexColor("#5B4636");
+        galleryTitleTMP.alignment = TMPro.TextAlignmentOptions.Center;
+        galleryTitleTMP.raycastTarget = false;
+
+        // Close button
+        var closeBtnGO = new GameObject("CloseButton");
+        closeBtnGO.transform.SetParent(headerGO.transform, false);
+        var closeBtnRT = closeBtnGO.AddComponent<RectTransform>();
+        closeBtnRT.anchorMin = new Vector2(1, 0.5f);
+        closeBtnRT.anchorMax = new Vector2(1, 0.5f);
+        closeBtnRT.pivot = new Vector2(1, 0.5f);
+        closeBtnRT.anchoredPosition = new Vector2(-16, 0);
+        closeBtnRT.sizeDelta = new Vector2(64, 64);
+        var closeBtnImg = closeBtnGO.AddComponent<Image>();
+        if (circleSprite != null) closeBtnImg.sprite = circleSprite;
+        closeBtnImg.color = HexColor("#E57373");
+        closeBtnImg.raycastTarget = true;
+        var closeBtn = closeBtnGO.AddComponent<Button>();
+        closeBtn.targetGraphic = closeBtnImg;
+
+        // X text on close button
+        var xTextGO = new GameObject("X");
+        xTextGO.transform.SetParent(closeBtnGO.transform, false);
+        var xTextRT = xTextGO.AddComponent<RectTransform>();
+        StretchFull(xTextRT);
+        var xTextTMP = xTextGO.AddComponent<TMPro.TextMeshProUGUI>();
+        xTextTMP.text = "\u00D7";
+        xTextTMP.fontSize = 38;
+        xTextTMP.fontStyle = TMPro.FontStyles.Bold;
+        xTextTMP.color = Color.white;
+        xTextTMP.alignment = TMPro.TextAlignmentOptions.Center;
+        xTextTMP.raycastTarget = false;
+
+        // "New Drawing" button
+        var newDrawBtnGO = new GameObject("NewDrawingButton");
+        newDrawBtnGO.transform.SetParent(galleryPanel.transform, false);
+        var newDrawBtnRT = newDrawBtnGO.AddComponent<RectTransform>();
+        newDrawBtnRT.anchorMin = new Vector2(0, 1);
+        newDrawBtnRT.anchorMax = new Vector2(1, 1);
+        newDrawBtnRT.pivot = new Vector2(0.5f, 1);
+        newDrawBtnRT.anchoredPosition = new Vector2(0, -100);
+        newDrawBtnRT.sizeDelta = new Vector2(-40, 70);
+        var newDrawBtnImg = newDrawBtnGO.AddComponent<Image>();
+        newDrawBtnImg.color = HexColor("#66BB6A");
+        if (roundedRectSprite != null) newDrawBtnImg.sprite = roundedRectSprite;
+        newDrawBtnImg.type = Image.Type.Sliced;
+        newDrawBtnImg.raycastTarget = true;
+        var newDrawBtn = newDrawBtnGO.AddComponent<Button>();
+        newDrawBtn.targetGraphic = newDrawBtnImg;
+
+        // + icon and text
+        var newDrawTextGO = new GameObject("Text");
+        newDrawTextGO.transform.SetParent(newDrawBtnGO.transform, false);
+        var newDrawTextRT = newDrawTextGO.AddComponent<RectTransform>();
+        StretchFull(newDrawTextRT);
+        var newDrawTMP = newDrawTextGO.AddComponent<TMPro.TextMeshProUGUI>();
+        newDrawTMP.text = HebrewFixer.Fix("\u05E6\u05D9\u05D5\u05E8 \u05D7\u05D3\u05E9") + "  +";
+        newDrawTMP.isRightToLeftText = false;
+        newDrawTMP.fontSize = 30;
+        newDrawTMP.fontStyle = TMPro.FontStyles.Bold;
+        newDrawTMP.color = Color.white;
+        newDrawTMP.alignment = TMPro.TextAlignmentOptions.Center;
+        newDrawTMP.raycastTarget = false;
+
+        // Scroll View for drawings grid
+        var scrollGO = new GameObject("ScrollView");
+        scrollGO.transform.SetParent(galleryPanel.transform, false);
+        var scrollRT = scrollGO.AddComponent<RectTransform>();
+        scrollRT.anchorMin = Vector2.zero;
+        scrollRT.anchorMax = Vector2.one;
+        scrollRT.offsetMin = new Vector2(20, 20);
+        scrollRT.offsetMax = new Vector2(-20, -180);
+        var scrollRect = scrollGO.AddComponent<ScrollRect>();
+        scrollRect.horizontal = false;
+        scrollRect.vertical = true;
+        scrollGO.AddComponent<RectMask2D>();
+
+        // Grid content
+        var gridContentGO = new GameObject("Content");
+        gridContentGO.transform.SetParent(scrollGO.transform, false);
+        var gridContentRT = gridContentGO.AddComponent<RectTransform>();
+        gridContentRT.anchorMin = new Vector2(0, 1);
+        gridContentRT.anchorMax = new Vector2(1, 1);
+        gridContentRT.pivot = new Vector2(0.5f, 1);
+        gridContentRT.sizeDelta = new Vector2(0, 0);
+        var gridLayout = gridContentGO.AddComponent<GridLayoutGroup>();
+        gridLayout.cellSize = new Vector2(280, 280);
+        gridLayout.spacing = new Vector2(20, 20);
+        gridLayout.startCorner = GridLayoutGroup.Corner.UpperLeft;
+        gridLayout.startAxis = GridLayoutGroup.Axis.Horizontal;
+        gridLayout.childAlignment = TextAnchor.UpperCenter;
+        gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        gridLayout.constraintCount = 2;
+        gridLayout.padding = new RectOffset(10, 10, 10, 10);
+        var contentSizeFitter = gridContentGO.AddComponent<ContentSizeFitter>();
+        contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        scrollRect.content = gridContentRT;
+
+        // Empty state text
+        var emptyGO = new GameObject("EmptyText");
+        emptyGO.transform.SetParent(galleryPanel.transform, false);
+        var emptyRT = emptyGO.AddComponent<RectTransform>();
+        StretchFull(emptyRT);
+        var emptyTMP = emptyGO.AddComponent<TMPro.TextMeshProUGUI>();
+        emptyTMP.text = HebrewFixer.Fix("\u05E2\u05D3\u05D9\u05D9\u05DF \u05D0\u05D9\u05DF \u05E6\u05D9\u05D5\u05E8\u05D9\u05DD");
+        emptyTMP.isRightToLeftText = false;
+        emptyTMP.fontSize = 32;
+        emptyTMP.color = HexColor("#A0A0A0");
+        emptyTMP.alignment = TMPro.TextAlignmentOptions.Center;
+        emptyTMP.raycastTarget = false;
+
+        // Wire up WorldEasel component
+        var worldEasel = easelGO.AddComponent<WorldEasel>();
+        worldEasel.overlayRoot = galleryOverlay;
+        worldEasel.dimBackground = dimBgImg;
+        worldEasel.panelRT = galleryPanelRT;
+        worldEasel.gridContainer = gridContentRT;
+        worldEasel.closeButton = closeBtn;
+        worldEasel.emptyText = emptyGO;
+        worldEasel.roundedRectSprite = roundedRectSprite;
+        worldEasel.newDrawingButton = newDrawBtn;
+        worldEasel.gameDatabase = AssetDatabase.LoadAssetAtPath<GameDatabase>("Assets/Data/Games/GameDatabase.asset");
 
         // ── Environment Controller ──
         var envComponent = canvasGO.AddComponent<WorldEnvironment>();
         envComponent.skyBackground = skyBgGO.GetComponent<Image>();
-        envComponent.mountainsLayer = mountainsGO.GetComponent<Image>();
         envComponent.hillsLargeLayer = hillsLargeGO.GetComponent<Image>();
         envComponent.hillsLayer = hillsGO.GetComponent<Image>();
         envComponent.groundBackLayer = groundBackGO.GetComponent<Image>();
@@ -584,7 +726,7 @@ public class WorldSceneSetup : EditorWindow
         envComponent.sunImage = sunImg;
         envComponent.moonImage = moonImg;
         envComponent.sunGlow = sunGlowImg;
-        envComponent.moonGlow = moonGlowImg;
+        envComponent.starsContainer = starsRT;
         envComponent.cloudLayerBack1 = cloudLayerB1GO.GetComponent<Image>();
         envComponent.cloudLayerBack2 = cloudLayerB2GO.GetComponent<Image>();
         envComponent.cloudLayerFront1 = cloudLayer1GO.GetComponent<Image>();
@@ -602,7 +744,6 @@ public class WorldSceneSetup : EditorWindow
         controller.skyArea = skyAreaRT;
         controller.grassArea = grassAreaRT;
         controller.homeButton = homeGO.GetComponent<Button>();
-        controller.galleryButton = easelBtn;
         controller.profileAvatar = profileBtnImg;
         controller.profileInitial = profileInitialTMP;
         controller.environment = envComponent;

@@ -85,6 +85,14 @@ public class WorldInputHandler : MonoBehaviour
                 return;
             }
 
+            // Check for easel
+            var easel = go.GetComponent<WorldEasel>();
+            if (easel != null)
+            {
+                easel.OnTap();
+                return;
+            }
+
             // Check for prop (tree/bush)
             var prop = go.GetComponent<WorldProp>();
             if (prop != null)
