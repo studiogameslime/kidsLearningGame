@@ -10,7 +10,7 @@ public static class DiscoveryCatalog
     // Starter content (seeded on first journey)
     public static readonly string[] StarterAnimals = { "Cat", "Dog", "Bear" };
     public static readonly string[] StarterColors = { "Red", "Blue", "Yellow" };
-    public static readonly string[] StarterGameIds = { "popthebubbles", "findthecount", "findtheobject" };
+    public static readonly string[] StarterGameIds = { "memory", "findthecount", "findtheobject" };
 
     // Discovery order (includes Cat/Dog/Bear since only the favorite is seeded)
     private static readonly string[] AnimalOrder =
@@ -29,7 +29,7 @@ public static class DiscoveryCatalog
     private static readonly string[] GameOrder =
     {
         "shadows", "puzzle", "colormixing", "fillthedots",
-        "maze", "memory", "coloring", "colorvoice"
+        "maze", "coloring", "colorvoice"
     };
 
     public static bool HasMore(JourneyProgress jp)

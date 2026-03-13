@@ -103,7 +103,26 @@ public class ConfettiController : MonoBehaviour
     {
         if (isPlaying) return;
         GameCompletionBridge.Instance?.OnConfettiPlayed();
-        StartCoroutine(PlayConfetti());
+        StartCoroutine(PlayConfetti(ParticleCount));
+    }
+
+    public void PlayBig()
+    {
+        if (isPlaying) return;
+        // Expand pool if needed for double confetti
+        while (pool.Count < ParticleCount * 2)
+        {
+            var go = new GameObject($"Confetti_{pool.Count}");
+            go.transform.SetParent(confettiCanvas.transform, false);
+            var rt = go.AddComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(Random.Range(16f, 32f), Random.Range(8f, 20f));
+            var img = go.AddComponent<Image>();
+            img.color = ConfettiColors[pool.Count % ConfettiColors.Length];
+            img.raycastTarget = false;
+            go.SetActive(false);
+            pool.Add(rt);
+        }
+        StartCoroutine(PlayConfetti(ParticleCount * 2));
     }
 
     public void Stop()
@@ -114,7 +133,7 @@ public class ConfettiController : MonoBehaviour
             if (rt != null) rt.gameObject.SetActive(false);
     }
 
-    private IEnumerator PlayConfetti()
+    private IEnumerator PlayConfetti(int count)
     {
         isPlaying = true;
 
@@ -124,14 +143,14 @@ public class ConfettiController : MonoBehaviour
         float topY = canvasH * 0.5f + 50f;
 
         // Initialize each piece with random properties
-        float[] startX = new float[ParticleCount];
-        float[] fallSpeed = new float[ParticleCount];
-        float[] swaySpeed = new float[ParticleCount];
-        float[] swayAmount = new float[ParticleCount];
-        float[] rotSpeed = new float[ParticleCount];
-        float[] delay = new float[ParticleCount];
+        float[] startX = new float[count];
+        float[] fallSpeed = new float[count];
+        float[] swaySpeed = new float[count];
+        float[] swayAmount = new float[count];
+        float[] rotSpeed = new float[count];
+        float[] delay = new float[count];
 
-        for (int i = 0; i < ParticleCount; i++)
+        for (int i = 0; i < count; i++)
         {
             startX[i] = Random.Range(-halfW, halfW);
             fallSpeed[i] = Random.Range(600f, 1200f);
@@ -163,7 +182,7 @@ public class ConfettiController : MonoBehaviour
         {
             elapsed += Time.deltaTime;
 
-            for (int i = 0; i < ParticleCount; i++)
+            for (int i = 0; i < count; i++)
             {
                 float t = elapsed - delay[i];
                 if (t < 0f) continue;

@@ -219,14 +219,21 @@ public class ColorVoiceController : MonoBehaviour
     {
         if (!isRoundActive) return;
 
-        // Debug display
         if (debugText != null)
         {
             debugText.gameObject.SetActive(true);
-            debugText.text = results.Length > 0 ? string.Join(" | ", results) : "(empty)";
+            debugText.isRightToLeftText = true;
+            debugText.text = results.Length > 0 ? string.Join(" | ", results) : "";
         }
 
-        Debug.Log($"[ColorVoice] Results: {string.Join(", ", results)}");
+        // Log raw results with char codes for debugging
+        foreach (var r in results)
+        {
+            var codes = new System.Text.StringBuilder();
+            foreach (char c in r) codes.Append($"U+{(int)c:X4} ");
+            Debug.Log($"[ColorVoice] Result: \"{r}\" chars: {codes}");
+        }
+        Debug.Log($"[ColorVoice] Target: \"{currentColor.hebrewName}\" normalized: \"{ColorVoiceData.Normalize(currentColor.hebrewName)}\"");
 
         // Check if correct
         if (ColorVoiceData.IsMatch(currentColor, results))
@@ -258,7 +265,20 @@ public class ColorVoiceController : MonoBehaviour
         if (debugText != null)
         {
             debugText.gameObject.SetActive(true);
-            debugText.text = $"... {partial}";
+            debugText.isRightToLeftText = true;
+            debugText.text = partial;
+        }
+
+        // Android Hebrew recognition often only sends partials without final results.
+        // Check partial matches so the game responds immediately when the child says the right word.
+        if (!isRoundActive || string.IsNullOrEmpty(partial)) return;
+
+        string[] partialAsArray = new[] { partial };
+        if (ColorVoiceData.IsMatch(currentColor, partialAsArray))
+        {
+            Debug.Log($"[ColorVoice] Partial match accepted: \"{partial}\"");
+            StopListeningUI();
+            StartCoroutine(OnCorrectAnswer());
         }
     }
 

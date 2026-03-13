@@ -73,6 +73,14 @@ public static class ColorVoiceData
         {
             // Skip Hebrew nikud range (U+0591–U+05C7)
             if (c >= '\u0591' && c <= '\u05C7') continue;
+            // Skip Unicode directional marks and zero-width characters
+            // that Android speech recognition may embed
+            if (c == '\u200E' || c == '\u200F') continue; // LRM, RLM
+            if (c == '\u200B' || c == '\u200C' || c == '\u200D') continue; // zero-width spaces/joiners
+            if (c >= '\u202A' && c <= '\u202E') continue; // directional formatting
+            if (c >= '\u2066' && c <= '\u2069') continue; // directional isolates
+            if (c == '\uFEFF') continue; // BOM / zero-width no-break space
+            if (c == '\u00A0') { sb.Append(' '); continue; } // non-breaking space → regular space
             sb.Append(c);
         }
         return sb.ToString();

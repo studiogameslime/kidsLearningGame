@@ -95,6 +95,16 @@ public class JourneyManager : MonoBehaviour
             ProfileManager.Instance.Save();
         }
 
+        // Purge any game IDs that no longer exist in the database
+        var db = GetGameDb();
+        if (db != null)
+        {
+            var validIds = new System.Collections.Generic.HashSet<string>();
+            foreach (var g in db.games) validIds.Add(g.id);
+            jp.unlockedGameIds.RemoveAll(id => !validIds.Contains(id));
+            ProfileManager.Instance.Save();
+        }
+
         // Reset runtime session
         lastPlayedGameId = null;
         secondLastPlayedGameId = null;
@@ -237,10 +247,17 @@ public class JourneyManager : MonoBehaviour
             return;
         }
 
-        // Filter out recently played (unless < 3 unlocked)
+        // Filter out recently played and games not in the database
+        var db = GetGameDb();
+        var validIds = new System.Collections.Generic.HashSet<string>();
+        if (db != null)
+            foreach (var g in db.games)
+                validIds.Add(g.id);
+
         var candidates = new List<string>();
         foreach (var id in unlocked)
         {
+            if (!validIds.Contains(id)) continue; // skip removed games
             if (unlocked.Count >= 3 && (id == lastPlayedGameId || id == secondLastPlayedGameId))
                 continue;
             candidates.Add(id);

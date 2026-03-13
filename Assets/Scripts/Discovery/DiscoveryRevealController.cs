@@ -112,17 +112,56 @@ public class DiscoveryRevealController : MonoBehaviour
 
     private void CreateScratchOverlay()
     {
-        scratchTex = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBA32, false);
-        scratchTex.filterMode = FilterMode.Bilinear;
+        // Load scratch card texture and tint with child's profile color
+        var baseTex = Resources.Load<Texture2D>("ScratchCard");
+        Color tint = Color.white;
+        var profile = ProfileManager.ActiveProfile;
+        if (profile != null)
+            tint = profile.AvatarColor;
 
-        totalPixels = textureWidth * textureHeight;
-        clearedPixels = 0;
+        if (baseTex != null)
+        {
+            textureWidth = baseTex.width;
+            textureHeight = baseTex.height;
 
-        // Fill with gold color
-        pixels = new Color32[totalPixels];
-        var gold = new Color32(218, 165, 32, 255);
-        for (int i = 0; i < totalPixels; i++)
-            pixels[i] = gold;
+            scratchTex = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBA32, false);
+            scratchTex.filterMode = FilterMode.Bilinear;
+
+            var sourcePixels = baseTex.GetPixels32();
+            totalPixels = sourcePixels.Length;
+            clearedPixels = 0;
+            pixels = new Color32[totalPixels];
+
+            // Tint white texture with profile color
+            byte tR = (byte)(tint.r * 255);
+            byte tG = (byte)(tint.g * 255);
+            byte tB = (byte)(tint.b * 255);
+            for (int i = 0; i < totalPixels; i++)
+            {
+                var s = sourcePixels[i];
+                pixels[i] = new Color32(
+                    (byte)(s.r * tR / 255),
+                    (byte)(s.g * tG / 255),
+                    (byte)(s.b * tB / 255),
+                    s.a);
+            }
+        }
+        else
+        {
+            // Fallback: solid color fill
+            scratchTex = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBA32, false);
+            scratchTex.filterMode = FilterMode.Bilinear;
+
+            totalPixels = textureWidth * textureHeight;
+            clearedPixels = 0;
+            pixels = new Color32[totalPixels];
+
+            byte tR = (byte)(tint.r * 255);
+            byte tG = (byte)(tint.g * 255);
+            byte tB = (byte)(tint.b * 255);
+            for (int i = 0; i < totalPixels; i++)
+                pixels[i] = new Color32(tR, tG, tB, 255);
+        }
 
         scratchTex.SetPixels32(pixels);
         scratchTex.Apply();
@@ -218,22 +257,97 @@ public class DiscoveryRevealController : MonoBehaviour
 
         overlayImage.gameObject.SetActive(false);
 
-        // Show name
+        // Show Hebrew name
         var discovery = JourneyManager.Instance?.ActiveDiscovery;
         if (nameText != null && discovery != null)
         {
-            nameText.text = discovery.id;
+            nameText.text = GetHebrewName(discovery);
+            nameText.isRightToLeftText = true;
             nameText.gameObject.SetActive(true);
         }
 
-        // Confetti
-        ConfettiController.Instance.Play();
+        // Big confetti burst (double the normal amount)
+        ConfettiController.Instance.PlayBig();
 
         // Wait then continue journey
         yield return new WaitForSeconds(3f);
 
         isComplete = true;
         JourneyManager.Instance?.ContinueAfterDiscovery();
+    }
+
+    private string GetHebrewName(DiscoveryEntry discovery)
+    {
+        switch (discovery.type)
+        {
+            case "animal": return GetAnimalHebrew(discovery.id);
+            case "color":  return GetColorHebrew(discovery.id);
+            case "game":   return GetGameHebrew(discovery.id);
+            default:       return discovery.id;
+        }
+    }
+
+    private string GetAnimalHebrew(string id)
+    {
+        switch (id)
+        {
+            case "Cat":      return "\u05D7\u05EA\u05D5\u05DC";     // חתול
+            case "Dog":      return "\u05DB\u05DC\u05D1";           // כלב
+            case "Bear":     return "\u05D3\u05D5\u05D1";           // דוב
+            case "Duck":     return "\u05D1\u05E8\u05D5\u05D6";     // ברווז
+            case "Fish":     return "\u05D3\u05D2";                 // דג
+            case "Frog":     return "\u05E6\u05E4\u05E8\u05D3\u05E2"; // צפרדע
+            case "Bird":     return "\u05E6\u05D9\u05E4\u05D5\u05E8"; // ציפור
+            case "Cow":      return "\u05E4\u05E8\u05D4";           // פרה
+            case "Horse":    return "\u05E1\u05D5\u05E1";           // סוס
+            case "Lion":     return "\u05D0\u05E8\u05D9\u05D4";     // אריה
+            case "Monkey":   return "\u05E7\u05D5\u05E3";           // קוף
+            case "Elephant": return "\u05E4\u05D9\u05DC";           // פיל
+            case "Giraffe":  return "\u05D2\u05F3\u05D9\u05E8\u05E4\u05D4"; // ג'ירפה
+            case "Zebra":    return "\u05D6\u05D1\u05E8\u05D4";     // זברה
+            case "Turtle":   return "\u05E6\u05D1";                 // צב
+            case "Snake":    return "\u05E0\u05D7\u05E9";           // נחש
+            case "Sheep":    return "\u05DB\u05D1\u05E9\u05D4";     // כבשה
+            case "Chicken":  return "\u05EA\u05E8\u05E0\u05D2\u05D5\u05DC"; // תרנגול
+            case "Donkey":   return "\u05D7\u05DE\u05D5\u05E8";     // חמור
+            default:         return id;
+        }
+    }
+
+    private string GetColorHebrew(string id)
+    {
+        switch (id)
+        {
+            case "Red":    return "\u05D0\u05D3\u05D5\u05DD";   // אדום
+            case "Blue":   return "\u05DB\u05D7\u05D5\u05DC";   // כחול
+            case "Yellow": return "\u05E6\u05D4\u05D5\u05D1";   // צהוב
+            case "Green":  return "\u05D9\u05E8\u05D5\u05E7";   // ירוק
+            case "Orange": return "\u05DB\u05EA\u05D5\u05DD";   // כתום
+            case "Purple": return "\u05E1\u05D2\u05D5\u05DC";   // סגול
+            case "Pink":   return "\u05D5\u05E8\u05D5\u05D3";   // ורוד
+            case "Cyan":   return "\u05EA\u05DB\u05DC\u05EA";   // תכלת
+            case "Brown":  return "\u05D7\u05D5\u05DD";         // חום
+            case "Black":  return "\u05E9\u05D7\u05D5\u05E8";   // שחור
+            default:       return id;
+        }
+    }
+
+    private string GetGameHebrew(string id)
+    {
+        switch (id)
+        {
+            case "memory":       return "\u05DE\u05E9\u05D7\u05E7 \u05D6\u05D9\u05DB\u05E8\u05D5\u05DF"; // משחק זיכרון
+            case "puzzle":       return "\u05E4\u05D0\u05D6\u05DC";           // פאזל
+            case "coloring":     return "\u05E6\u05D1\u05D9\u05E2\u05D4";     // צביעה
+            case "fillthedots":  return "\u05D7\u05D1\u05E8 \u05E0\u05E7\u05D5\u05D3\u05D5\u05EA"; // חבר נקודות
+            case "shadows":      return "\u05D4\u05EA\u05D0\u05DE\u05EA \u05E6\u05DC\u05DC\u05D9\u05DD"; // התאמת צללים
+            case "colormixing":  return "\u05E2\u05E8\u05D1\u05D5\u05D1 \u05E6\u05D1\u05E2\u05D9\u05DD"; // ערבוב צבעים
+            case "maze":         return "\u05DE\u05D1\u05D5\u05DA";           // מבוך
+            case "colorvoice":   return "\u05D0\u05DE\u05E8\u05D5 \u05D0\u05EA \u05D4\u05E6\u05D1\u05E2"; // אמרו את הצבע
+            case "findtheobject":return "\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05D7\u05D9\u05D4"; // מצא את החיה
+            case "findthecount": return "\u05E1\u05E4\u05D9\u05E8\u05D4";     // ספירה
+            default:             return id;
+        }
     }
 
     private Color GetColorById(string colorId)
