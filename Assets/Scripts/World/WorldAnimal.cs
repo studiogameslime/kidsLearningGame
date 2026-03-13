@@ -11,6 +11,7 @@ public class WorldAnimal : MonoBehaviour
 {
     public string animalId;
     public float groundY = 20f; // Y position considered "ground" (set by WorldController)
+    public RectTransform shadowTransform; // optional shadow that follows the animal
 
     private RectTransform rt;
     private UISpriteAnimator spriteAnim;
@@ -89,6 +90,7 @@ public class WorldAnimal : MonoBehaviour
                 parentRT, screenPos, null, out localPoint))
             {
                 rt.anchoredPosition = localPoint + dragOffset;
+                UpdateShadow();
             }
         }
     }
@@ -121,6 +123,7 @@ public class WorldAnimal : MonoBehaviour
             }
 
             rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, newY);
+            UpdateShadow();
             yield return null;
         }
 
@@ -183,5 +186,12 @@ public class WorldAnimal : MonoBehaviour
             yield return null;
         }
         transform.localScale = Vector3.one;
+    }
+
+    private void UpdateShadow()
+    {
+        if (shadowTransform == null) return;
+        // Shadow stays at ground level, follows X position
+        shadowTransform.anchoredPosition = new Vector2(rt.anchoredPosition.x, groundY - 8f);
     }
 }

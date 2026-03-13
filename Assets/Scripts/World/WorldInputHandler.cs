@@ -4,6 +4,9 @@ using UnityEngine;
 /// Custom input handler for the World scene. Routes touch/mouse to:
 /// - WorldAnimal tap/drag
 /// - WorldBalloon tap
+/// - WorldCloud tap
+/// - WorldProp tap
+/// - Sun/Moon tap (day/night toggle)
 /// - World pan (empty area drag)
 /// No ScrollRect used to avoid drag conflicts.
 /// </summary>
@@ -12,6 +15,11 @@ public class WorldInputHandler : MonoBehaviour
     [Header("References")]
     public RectTransform worldContent;
     public RectTransform viewport;
+    public WorldEnvironment environment;
+
+    [Header("Sun/Moon")]
+    public RectTransform sunRT;
+    public RectTransform moonRT;
 
     [Header("Settings")]
     public float dragThreshold = 20f;
@@ -50,7 +58,10 @@ public class WorldInputHandler : MonoBehaviour
 
         foreach (var result in results)
         {
-            var animal = result.gameObject.GetComponent<WorldAnimal>();
+            var go = result.gameObject;
+
+            // Check for animal
+            var animal = go.GetComponent<WorldAnimal>();
             if (animal != null)
             {
                 draggedAnimal = animal;
@@ -58,15 +69,46 @@ public class WorldInputHandler : MonoBehaviour
                 return;
             }
 
-            var balloon = result.gameObject.GetComponent<WorldBalloon>();
+            // Check for balloon
+            var balloon = go.GetComponent<WorldBalloon>();
             if (balloon != null)
             {
                 balloon.Pop();
                 return;
             }
+
+            // Check for cloud
+            var cloud = go.GetComponent<WorldCloud>();
+            if (cloud != null)
+            {
+                cloud.OnTap();
+                return;
+            }
+
+            // Check for prop (tree/bush)
+            var prop = go.GetComponent<WorldProp>();
+            if (prop != null)
+            {
+                prop.OnTap();
+                return;
+            }
+
+            // Check for sun
+            if (sunRT != null && go.transform == sunRT.transform)
+            {
+                if (environment != null) environment.OnSunTapped();
+                return;
+            }
+
+            // Check for moon
+            if (moonRT != null && go.transform == moonRT.transform)
+            {
+                if (environment != null) environment.OnMoonTapped();
+                return;
+            }
         }
 
-        // No animal or balloon hit — will be a world pan
+        // No interactive object hit — will be a world pan
         isWorldPan = true;
     }
 
@@ -108,7 +150,6 @@ public class WorldInputHandler : MonoBehaviour
     {
         float newX = contentStartPos.x + totalDelta.x;
 
-        // Clamp to bounds
         float contentWidth = worldContent.rect.width;
         float viewportWidth = viewport != null ? viewport.rect.width : 1080f;
         float minX = -(contentWidth - viewportWidth);

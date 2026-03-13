@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Manages the scrollable world scene. Auto-lays out unlocked animals on grass
-/// and spawns color balloons in the sky. No ScrollRect — uses WorldInputHandler.
+/// and spawns color balloons in the sky. Uses layered backgrounds with day/night.
 /// </summary>
 public class WorldController : MonoBehaviour
 {
@@ -15,19 +15,24 @@ public class WorldController : MonoBehaviour
 
     [Header("UI References")]
     public RectTransform worldContent;   // wide horizontal container
-    public RectTransform skyArea;        // top 60% of content
-    public RectTransform grassArea;      // bottom 40% of content
+    public RectTransform skyArea;        // sky portion of content
+    public RectTransform grassArea;      // grass portion of content
     public Button homeButton;
     public Button galleryButton;
     public Image profileAvatar;
     public TMPro.TextMeshProUGUI profileInitial;
 
+    [Header("Environment")]
+    public WorldEnvironment environment;
+    public WorldCloudSystem cloudSystem;
+
     [Header("Settings")]
-    public float animalSpacing = 270f;
-    public float worldPadding = 200f;
-    public float animalSize = 200f;
-    public float balloonSize = 100f;
+    public float animalSpacing = 320f;
+    public float worldPadding = 250f;
+    public float animalSize = 280f;
+    public float balloonSize = 110f;
     public int balloonsPerColor = 2;
+    public float shadowOffsetY = -8f;
 
     private List<WorldAnimal> spawnedAnimals = new List<WorldAnimal>();
     private List<WorldBalloon> spawnedBalloons = new List<WorldBalloon>();
@@ -80,7 +85,6 @@ public class WorldController : MonoBehaviour
                 string key = sub.categoryKey;
                 if (string.IsNullOrEmpty(key)) continue;
 
-                // Store by lowercase key; prefer thumbnail for world display
                 string lowerKey = key.ToLower();
                 if (!_animalSprites.ContainsKey(lowerKey))
                     _animalSprites[lowerKey] = sub.thumbnail != null ? sub.thumbnail : sub.contentAsset;
@@ -109,7 +113,6 @@ public class WorldController : MonoBehaviour
         // Seed starters if world is visited before first journey
         if (jp.unlockedAnimalIds.Count == 0)
         {
-            // Only unlock the favorite animal
             string favAnimal = profile.favoriteAnimalId;
             if (string.IsNullOrEmpty(favAnimal)) favAnimal = "Cat";
             if (!jp.unlockedAnimalIds.Contains(favAnimal))
@@ -123,10 +126,14 @@ public class WorldController : MonoBehaviour
             ProfileManager.Instance.Save();
         }
 
-        // Size the world content
+        // Size the world content — minimum 1.5 screens wide
         int animalCount = jp.unlockedAnimalIds.Count;
-        float worldWidth = Mathf.Max(1080f, animalCount * animalSpacing + worldPadding * 2);
+        float worldWidth = Mathf.Max(1600f, animalCount * animalSpacing + worldPadding * 2);
         worldContent.sizeDelta = new Vector2(worldWidth, worldContent.sizeDelta.y);
+
+        // Update cloud system with world width
+        if (cloudSystem != null)
+            cloudSystem.worldWidth = worldWidth;
 
         // Spawn animals evenly on grass
         SpawnAnimals(jp.unlockedAnimalIds, worldWidth);
@@ -140,31 +147,57 @@ public class WorldController : MonoBehaviour
         if (grassArea == null) return;
 
         float grassHeight = grassArea.rect.height;
-        if (grassHeight <= 0) grassHeight = 400f;
+        if (grassHeight <= 0) grassHeight = 500f;
+
+        // Place animals on a band in the upper part of the grass
+        float placementMinY = grassHeight * 0.05f;
+        float placementMaxY = grassHeight * 0.35f;
 
         for (int i = 0; i < animalIds.Count; i++)
         {
             string animalId = animalIds[i];
 
+            // Shadow first (renders behind animal)
+            var shadowGO = new GameObject($"Shadow_{animalId}");
+            shadowGO.transform.SetParent(grassArea, false);
+            var shadowRT = shadowGO.AddComponent<RectTransform>();
+            float shadowW = animalSize * 0.7f;
+            float shadowH = animalSize * 0.18f;
+            shadowRT.sizeDelta = new Vector2(shadowW, shadowH);
+            shadowRT.anchorMin = Vector2.zero;
+            shadowRT.anchorMax = Vector2.zero;
+            shadowRT.pivot = new Vector2(0.5f, 0.5f);
+
+            var shadowImg = shadowGO.AddComponent<Image>();
+            if (circleSprite != null) shadowImg.sprite = circleSprite;
+            shadowImg.color = new Color(0f, 0f, 0f, 0.15f);
+            shadowImg.raycastTarget = false;
+
+            // Animal
             var go = new GameObject($"Animal_{animalId}");
             go.transform.SetParent(grassArea, false);
 
             var rt = go.AddComponent<RectTransform>();
             rt.sizeDelta = new Vector2(animalSize, animalSize);
 
-            // Evenly spaced horizontally, random Y within grass
+            // Evenly spaced horizontally, slight random Y variation
             float x = worldPadding + i * animalSpacing;
-            float y = Random.Range(20f, grassHeight * 0.6f);
-            rt.anchorMin = new Vector2(0, 0);
-            rt.anchorMax = new Vector2(0, 0);
+            float y = Mathf.Lerp(placementMinY, placementMaxY, Random.Range(0f, 1f));
+            // Alternate slight Y offset for visual interest
+            if (i % 2 == 1) y += 15f;
+
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.zero;
             rt.pivot = new Vector2(0.5f, 0);
             rt.anchoredPosition = new Vector2(x, y);
+
+            // Position shadow under animal
+            shadowRT.anchoredPosition = new Vector2(x, y + shadowOffsetY);
 
             var img = go.AddComponent<Image>();
             img.preserveAspect = true;
             img.raycastTarget = true;
 
-            // Look up sprite from GameDatabase sub-items
             Sprite sprite = null;
             if (_animalSprites != null)
                 _animalSprites.TryGetValue(animalId.ToLower(), out sprite);
@@ -172,9 +205,9 @@ public class WorldController : MonoBehaviour
             if (sprite != null)
                 img.sprite = sprite;
             else
-                img.color = new Color(0.8f, 0.6f, 0.4f); // brown placeholder
+                img.color = new Color(0.8f, 0.6f, 0.4f);
 
-            // Load per-animal anim data on demand (only loads this animal's sprites)
+            // Load per-animal anim data
             var animData = AnimalAnimData.Load(animalId);
             if (animData != null && animData.idleFrames != null && animData.idleFrames.Length > 0)
             {
@@ -188,7 +221,8 @@ public class WorldController : MonoBehaviour
 
             var animal = go.AddComponent<WorldAnimal>();
             animal.animalId = animalId;
-            animal.groundY = y; // remember original spawn Y as ground level
+            animal.groundY = y;
+            animal.shadowTransform = shadowRT;
             spawnedAnimals.Add(animal);
         }
     }
@@ -203,7 +237,6 @@ public class WorldController : MonoBehaviour
         foreach (var colorId in colorIds)
         {
             Color solidColor = GetColorById(colorId);
-            // Semi-transparent bubble color like BubblePop
             Color bubbleColor = new Color(solidColor.r, solidColor.g, solidColor.b, 0.7f);
 
             for (int j = 0; j < balloonsPerColor; j++)
@@ -215,12 +248,12 @@ public class WorldController : MonoBehaviour
 
                 var rt = go.AddComponent<RectTransform>();
                 rt.sizeDelta = new Vector2(sizeVariation, sizeVariation);
-                rt.anchorMin = new Vector2(0, 0);
-                rt.anchorMax = new Vector2(0, 0);
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.zero;
                 rt.pivot = new Vector2(0.5f, 0.5f);
 
                 float x = Random.Range(worldPadding, worldWidth - worldPadding);
-                float y = Random.Range(skyHeight * 0.2f, skyHeight * 0.8f);
+                float y = Random.Range(skyHeight * 0.15f, skyHeight * 0.65f);
                 rt.anchoredPosition = new Vector2(x, y);
 
                 var img = go.AddComponent<Image>();
@@ -228,7 +261,7 @@ public class WorldController : MonoBehaviour
                 img.raycastTarget = true;
                 if (circleSprite != null) img.sprite = circleSprite;
 
-                // Rim (behind everything)
+                // Rim
                 var rimGO = new GameObject("Rim");
                 rimGO.transform.SetParent(go.transform, false);
                 rimGO.transform.SetAsFirstSibling();
@@ -242,7 +275,7 @@ public class WorldController : MonoBehaviour
                 rimImg.color = new Color(bubbleColor.r * 0.7f, bubbleColor.g * 0.7f, bubbleColor.b * 0.7f, 0.3f);
                 rimImg.raycastTarget = false;
 
-                // Shine highlight (top-left)
+                // Shine
                 var shineGO = new GameObject("Shine");
                 shineGO.transform.SetParent(go.transform, false);
                 var shineRT = shineGO.AddComponent<RectTransform>();
