@@ -2,6 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// Custom input handler for the World scene. Routes touch/mouse to:
+/// - WorldToyBox tap (start journey)
 /// - WorldAnimal tap/drag
 /// - WorldBalloon tap
 /// - WorldCloud tap
@@ -82,6 +83,14 @@ public class WorldInputHandler : MonoBehaviour
             if (cloud != null)
             {
                 cloud.OnTap();
+                return;
+            }
+
+            // Check for toy box (main play button)
+            var toyBox = go.GetComponent<WorldToyBox>();
+            if (toyBox != null)
+            {
+                toyBox.OnTap();
                 return;
             }
 

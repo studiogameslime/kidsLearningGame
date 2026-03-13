@@ -22,7 +22,7 @@ public class JourneyManager : MonoBehaviour
 
     private GameDatabase _gameDb;
 
-    private const string HomeScene = "HomeScene";
+    private const string HomeScene = "WorldScene";
     private const string DiscoveryScene = "DiscoveryReveal";
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]

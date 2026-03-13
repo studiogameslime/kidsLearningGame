@@ -506,6 +506,28 @@ public class WorldSceneSetup : EditorWindow
         // Tree 3 — small tree on the right (safe margin from right edge)
         CreateProp(grassAreaGO.transform, "Tree3", treeSmall1Sprite, WorldProp.PropType.Tree,
             new Vector2(1350, 620), new Vector2(120, 200));
+        // ── Toy Box (between the trees on the upper grass ridge — main play button) ──
+        var toyBoxSprite = LoadSprite("Assets/Art/Toy Box.png");
+
+        var toyBoxGO = new GameObject("ToyBox");
+        toyBoxGO.transform.SetParent(grassAreaGO.transform, false);
+        var toyBoxRT = toyBoxGO.AddComponent<RectTransform>();
+        toyBoxRT.anchorMin = Vector2.zero;
+        toyBoxRT.anchorMax = Vector2.zero;
+        toyBoxRT.pivot = new Vector2(0.5f, 0);
+        // Centered between Tree1 (X=250) and Tree2 (X=800) = 525
+        // On the upper grass ridge with the trees (Y=560, trees are at 580-620)
+        toyBoxRT.sizeDelta = new Vector2(350, 380);  // ~1.3x animal size (280)
+        toyBoxRT.anchoredPosition = new Vector2(525, 560);
+
+        var toyBoxImg = toyBoxGO.AddComponent<Image>();
+        toyBoxImg.sprite = toyBoxSprite;
+        toyBoxImg.preserveAspect = true;
+        toyBoxImg.raycastTarget = true;
+        toyBoxImg.color = Color.white;
+
+        var worldToyBox = toyBoxGO.AddComponent<WorldToyBox>();
+
         // ── Painting Easel (on grass, left side — gallery entry point) ──
         var easelSprite = LoadSprite("Assets/Art/Easel.png");
         var easelGO = new GameObject("PaintingEasel");

@@ -330,7 +330,7 @@ public class WorldController : MonoBehaviour
 
     public void OnHomePressed()
     {
-        NavigationManager.GoToHome();
+        NavigationManager.GoToProfileSelection();
     }
 
 }

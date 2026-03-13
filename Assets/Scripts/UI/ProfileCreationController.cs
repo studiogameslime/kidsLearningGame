@@ -619,9 +619,9 @@ public class ProfileCreationController : MonoBehaviour
 
         ProfileManager.Instance.UpdateProfile(profile);
 
-        // Set as active and go to home
+        // Set as active and go to the World
         ProfileManager.Instance.SetActiveProfile(profile);
-        NavigationManager.GoToHome();
+        NavigationManager.GoToWorld();
     }
 
     // ── Onboarding Audio ──
