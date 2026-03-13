@@ -13,6 +13,10 @@ public class BackgroundMusicManager : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void AutoCreate()
     {
+        // Target 60fps on all platforms
+        Application.targetFrameRate = 60;
+        QualitySettings.vSyncCount = 0;
+
         if (_instance != null) return;
 
         var go = new GameObject("BackgroundMusicManager");
