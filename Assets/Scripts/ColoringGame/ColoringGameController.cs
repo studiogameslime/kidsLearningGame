@@ -313,7 +313,7 @@ public class ColoringGameController : MonoBehaviour
         var profile = ProfileManager.ActiveProfile;
         if (profile == null || drawingCanvas == null) return;
 
-        byte[] png = drawingCanvas.EncodeToPNG();
+        byte[] png = CompositeDrawing();
         if (png == null) return;
 
         string folder = ProfileManager.Instance.GetProfileFolder(profile.id);
@@ -339,6 +339,8 @@ public class ColoringGameController : MonoBehaviour
         profile.savedDrawings.Add(drawing);
         ProfileManager.Instance.Save();
 
+        SoundLibrary.PlayGreatPainting();
+
         // Brief visual feedback — disable button momentarily
         if (saveDrawingButton != null)
         {
@@ -363,6 +365,72 @@ public class ColoringGameController : MonoBehaviour
     public void OnHomePressed()
     {
         NavigationManager.GoToMainMenu();
+    }
+
+    /// <summary>
+    /// Composites the drawing layer with the outline overlay into a single PNG.
+    /// The outline is drawn on top of the painting so the saved image looks complete.
+    /// </summary>
+    private byte[] CompositeDrawing()
+    {
+        var drawPixels = drawingCanvas.GetPixels();
+        if (drawPixels == null) return drawingCanvas.EncodeToPNG();
+
+        var size = drawingCanvas.GetTextureSize();
+        if (size.x == 0) return drawingCanvas.EncodeToPNG();
+
+        // If no outline is active, just save the drawing as-is
+        if (outlineImage == null || !outlineImage.gameObject.activeSelf || outlineImage.texture == null)
+            return drawingCanvas.EncodeToPNG();
+
+        // Read the outline texture
+        var outlineTex = outlineImage.texture as Texture2D;
+        if (outlineTex == null) return drawingCanvas.EncodeToPNG();
+
+        // Resize outline to match drawing if needed
+        Color[] outlinePixels;
+        if (outlineTex.width == size.x && outlineTex.height == size.y)
+        {
+            outlinePixels = outlineTex.GetPixels();
+        }
+        else
+        {
+            // Create a resized copy
+            var resized = new Texture2D(size.x, size.y, TextureFormat.RGBA32, false);
+            var rt = RenderTexture.GetTemporary(size.x, size.y);
+            Graphics.Blit(outlineTex, rt);
+            RenderTexture.active = rt;
+            resized.ReadPixels(new Rect(0, 0, size.x, size.y), 0, 0);
+            resized.Apply();
+            RenderTexture.active = null;
+            RenderTexture.ReleaseTemporary(rt);
+            outlinePixels = resized.GetPixels();
+            Destroy(resized);
+        }
+
+        // Composite: drawing as base, outline on top (alpha blend)
+        for (int i = 0; i < drawPixels.Length && i < outlinePixels.Length; i++)
+        {
+            Color src = outlinePixels[i]; // outline (foreground)
+            if (src.a <= 0f) continue;
+
+            Color dst = drawPixels[i]; // drawing (background)
+            float outA = src.a;
+            float invA = 1f - outA;
+            drawPixels[i] = new Color(
+                src.r * outA + dst.r * invA,
+                src.g * outA + dst.g * invA,
+                src.b * outA + dst.b * invA,
+                Mathf.Max(dst.a, outA)
+            );
+        }
+
+        var result = new Texture2D(size.x, size.y, TextureFormat.RGBA32, false);
+        result.SetPixels(drawPixels);
+        result.Apply();
+        byte[] png = result.EncodeToPNG();
+        Destroy(result);
+        return png;
     }
 
     private static Color HexColor(string hex)

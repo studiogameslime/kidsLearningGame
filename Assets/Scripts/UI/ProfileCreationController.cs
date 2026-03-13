@@ -192,7 +192,11 @@ public class ProfileCreationController : MonoBehaviour
         if (stepRecordName != null) stepRecordName.SetActive(step == 1);
         if (stepTypeName != null) stepTypeName.SetActive(step == 2);
         if (stepChooseAge != null) stepChooseAge.SetActive(step == 3);
-        if (stepChooseAnimal != null) stepChooseAnimal.SetActive(step == 4);
+        if (stepChooseAnimal != null)
+        {
+            stepChooseAnimal.SetActive(step == 4);
+            if (step == 4) PlayOnboardingClip("Sounds/Onboarding/WhatIsYourFavoriteAnimal");
+        }
         if (stepChooseColor != null)
         {
             stepChooseColor.SetActive(step == 5);
@@ -370,6 +374,9 @@ public class ProfileCreationController : MonoBehaviour
     {
         selectedAnimalId = animalId;
 
+        // Play animal name sound
+        SoundLibrary.PlayAnimalName(animalId);
+
         // Highlight selected
         if (animalButtons != null)
         {
@@ -395,8 +402,9 @@ public class ProfileCreationController : MonoBehaviour
         // Update name in preview card
         if (colorPreviewName != null)
         {
-            colorPreviewName.text = !string.IsNullOrWhiteSpace(recordedName) ? recordedName : "";
-            colorPreviewName.isRightToLeftText = IsHebrew(recordedName);
+            string displayName = !string.IsNullOrWhiteSpace(recordedName) ? recordedName : "";
+            colorPreviewName.text = IsHebrew(displayName) ? HebrewFixer.Fix(displayName) : displayName;
+            colorPreviewName.isRightToLeftText = false;
         }
 
         // Update initial
@@ -547,8 +555,8 @@ public class ProfileCreationController : MonoBehaviour
     {
         if (doneNameText != null)
         {
-            doneNameText.text = recordedName;
-            doneNameText.isRightToLeftText = IsHebrew(recordedName);
+            doneNameText.text = IsHebrew(recordedName) ? HebrewFixer.Fix(recordedName) : recordedName;
+            doneNameText.isRightToLeftText = false;
         }
 
         if (pickedPhoto != null)
@@ -614,6 +622,15 @@ public class ProfileCreationController : MonoBehaviour
         // Set as active and go to home
         ProfileManager.Instance.SetActiveProfile(profile);
         NavigationManager.GoToHome();
+    }
+
+    // ── Onboarding Audio ──
+
+    private void PlayOnboardingClip(string resourcePath)
+    {
+        var clip = Resources.Load<AudioClip>(resourcePath);
+        if (clip != null)
+            BackgroundMusicManager.PlayOneShot(clip);
     }
 
     // ── WAV Save Helper ──

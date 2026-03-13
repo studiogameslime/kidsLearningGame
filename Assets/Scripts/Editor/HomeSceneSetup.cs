@@ -258,12 +258,12 @@ public class HomeSceneSetup : EditorWindow
         var worldLabelRT = worldLabel.AddComponent<RectTransform>();
         StretchFull(worldLabelRT);
         var worldLabelTMP = worldLabel.AddComponent<TextMeshProUGUI>();
-        worldLabelTMP.text = "\u05D4\u05E2\u05D5\u05DC\u05DD \u05E9\u05DC\u05D9"; // העולם שלי
+        worldLabelTMP.text = HebrewFixer.Fix("\u05D4\u05E2\u05D5\u05DC\u05DD \u05E9\u05DC\u05D9"); // העולם שלי
         worldLabelTMP.fontSize = 32;
         worldLabelTMP.fontStyle = FontStyles.Bold;
         worldLabelTMP.color = Color.white;
         worldLabelTMP.alignment = TextAlignmentOptions.Center;
-        worldLabelTMP.isRightToLeftText = true;
+        worldLabelTMP.isRightToLeftText = false;
         worldLabelTMP.raycastTarget = false;
 
         // ── All Games (bottom, small text) ──
@@ -277,11 +277,11 @@ public class HomeSceneSetup : EditorWindow
         allGamesBtnRT.sizeDelta = new Vector2(300, 60);
 
         var allGamesTMP = allGamesBtn.AddComponent<TextMeshProUGUI>();
-        allGamesTMP.text = "\u05DB\u05DC \u05D4\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD"; // כל המשחקים
+        allGamesTMP.text = HebrewFixer.Fix("\u05DB\u05DC \u05D4\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD"); // כל המשחקים
         allGamesTMP.fontSize = 24;
         allGamesTMP.color = AllGamesColor;
         allGamesTMP.alignment = TextAlignmentOptions.Center;
-        allGamesTMP.isRightToLeftText = true;
+        allGamesTMP.isRightToLeftText = false;
         var allGamesButton = allGamesBtn.AddComponent<Button>();
         allGamesButton.targetGraphic = allGamesTMP;
 

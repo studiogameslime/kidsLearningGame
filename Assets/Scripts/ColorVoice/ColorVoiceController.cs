@@ -157,7 +157,7 @@ public class ColorVoiceController : MonoBehaviour
         // Show instruction text
         if (instructionText != null)
         {
-            instructionText.text = "?\u05D0\u05D9\u05D6\u05D4 \u05E6\u05D1\u05E2 \u05D6\u05D4"; // ?איזה צבע זה
+            instructionText.text = HebrewFixer.Fix("?\u05D0\u05D9\u05D6\u05D4 \u05E6\u05D1\u05E2 \u05D6\u05D4"); // ?איזה צבע זה
             instructionText.gameObject.SetActive(true);
         }
 
@@ -222,8 +222,8 @@ public class ColorVoiceController : MonoBehaviour
         if (debugText != null)
         {
             debugText.gameObject.SetActive(true);
-            debugText.isRightToLeftText = true;
-            debugText.text = results.Length > 0 ? string.Join(" | ", results) : "";
+            debugText.isRightToLeftText = false;
+            debugText.text = results.Length > 0 ? HebrewFixer.Fix(string.Join(" | ", results)) : "";
         }
 
         // Log raw results with char codes for debugging
@@ -265,8 +265,8 @@ public class ColorVoiceController : MonoBehaviour
         if (debugText != null)
         {
             debugText.gameObject.SetActive(true);
-            debugText.isRightToLeftText = true;
-            debugText.text = partial;
+            debugText.isRightToLeftText = false;
+            debugText.text = HebrewFixer.Fix(partial);
         }
 
         // Android Hebrew recognition often only sends partials without final results.
@@ -317,7 +317,7 @@ public class ColorVoiceController : MonoBehaviour
         // Happy feedback
         if (feedbackText != null)
         {
-            feedbackText.text = "!\u05DB\u05DC \u05D4\u05DB\u05D1\u05D5\u05D3"; // !כל הכבוד
+            feedbackText.text = HebrewFixer.Fix("!\u05DB\u05DC \u05D4\u05DB\u05D1\u05D5\u05D3"); // !כל הכבוד
             feedbackText.color = new Color(0.2f, 0.7f, 0.2f);
             feedbackText.gameObject.SetActive(true);
         }
@@ -353,7 +353,7 @@ public class ColorVoiceController : MonoBehaviour
 
         if (feedbackText != null)
         {
-            feedbackText.text = "\u05E0\u05E1\u05D5 \u05E9\u05D5\u05D1"; // נסו שוב
+            feedbackText.text = HebrewFixer.Fix("\u05E0\u05E1\u05D5 \u05E9\u05D5\u05D1"); // נסו שוב
             feedbackText.color = new Color(0.9f, 0.5f, 0.2f);
             feedbackText.gameObject.SetActive(true);
         }
@@ -377,7 +377,7 @@ public class ColorVoiceController : MonoBehaviour
 
         if (feedbackText != null)
         {
-            feedbackText.text = "\u05EA\u05D2\u05D9\u05D3\u05D5 \u05D0\u05EA \u05D4\u05E6\u05D1\u05E2"; // תגידו את הצבע
+            feedbackText.text = HebrewFixer.Fix("\u05EA\u05D2\u05D9\u05D3\u05D5 \u05D0\u05EA \u05D4\u05E6\u05D1\u05E2"); // תגידו את הצבע
             feedbackText.color = new Color(0.5f, 0.5f, 0.5f);
             feedbackText.gameObject.SetActive(true);
         }
@@ -393,7 +393,7 @@ public class ColorVoiceController : MonoBehaviour
     {
         if (feedbackText != null)
         {
-            feedbackText.text = "?\u05D0\u05D9\u05D6\u05D4 \u05E6\u05D1\u05E2 \u05D6\u05D4"; // ?איזה צבע זה
+            feedbackText.text = HebrewFixer.Fix("?\u05D0\u05D9\u05D6\u05D4 \u05E6\u05D1\u05E2 \u05D6\u05D4"); // ?איזה צבע זה
             feedbackText.color = new Color(0.5f, 0.5f, 0.5f);
             feedbackText.gameObject.SetActive(true);
         }
@@ -421,8 +421,8 @@ public class ColorVoiceController : MonoBehaviour
         colorCircle.color = currentColor.color;
         if (colorLabel != null)
         {
-            colorLabel.text = currentColor.hebrewName;
-            colorLabel.isRightToLeftText = true;
+            colorLabel.text = HebrewFixer.Fix(currentColor.hebrewName);
+            colorLabel.isRightToLeftText = false;
         }
 
         // Scale-up bounce entrance

@@ -20,6 +20,7 @@ public class MemoryCard : MonoBehaviour
     [NonSerialized] public bool IsMatched;       // true once successfully matched
     [NonSerialized] public bool IsFaceUp;        // currently showing the front
 
+    [NonSerialized] public string FaceSpriteName; // for sound lookup
     private Sprite frontSprite;
     private Sprite backSprite;
     private Button button;
@@ -44,6 +45,7 @@ public class MemoryCard : MonoBehaviour
         frontSprite = front;
         backSprite = back;
         onCardClicked = clickCallback;
+        FaceSpriteName = front != null ? front.name : "";
 
         IsMatched = false;
         IsFaceUp = false;

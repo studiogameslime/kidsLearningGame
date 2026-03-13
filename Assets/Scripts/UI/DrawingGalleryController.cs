@@ -14,9 +14,10 @@ public class DrawingGalleryController : MonoBehaviour
     public GameObject fullscreenPanel;
     public RawImage fullscreenImage;
     public Button fullscreenCloseButton;
+    public GameObject emptyText;
 
     [Header("Settings")]
-    public float thumbnailSize = 300f;
+    public float thumbnailSize = 470f;
 
     [Header("Sprites")]
     public Sprite roundedRectSprite;
@@ -33,12 +34,20 @@ public class DrawingGalleryController : MonoBehaviour
             fullscreenPanel.SetActive(false);
 
         LoadDrawings();
+
+        // Play gallery intro voice
+        var clip = SoundLibrary.WorldSavedPaintings();
+        if (clip != null) BackgroundMusicManager.PlayOneShot(clip);
     }
 
     private void LoadDrawings()
     {
         var profile = ProfileManager.ActiveProfile;
-        if (profile == null || profile.savedDrawings == null) return;
+        if (profile == null || profile.savedDrawings == null)
+        {
+            if (emptyText != null) emptyText.SetActive(true);
+            return;
+        }
 
         string basePath = Application.persistentDataPath;
 
@@ -57,6 +66,10 @@ public class DrawingGalleryController : MonoBehaviour
             loadedTextures.Add(tex);
             CreateThumbnail(tex, drawing.animalId);
         }
+
+        // Show/hide empty state
+        if (emptyText != null)
+            emptyText.SetActive(loadedTextures.Count == 0);
     }
 
     private void CreateThumbnail(Texture2D tex, string animalId)

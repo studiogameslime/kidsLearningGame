@@ -178,8 +178,8 @@ public class CountingGameSetup : EditorWindow
         titleRT.offsetMin = new Vector2(100, 0);
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "?\u05DB\u05DE\u05D4 \u05D9\u05E9"; // ?כמה יש
-        titleTMP.isRightToLeftText = true;
+        titleTMP.text = HebrewFixer.Fix("?\u05DB\u05DE\u05D4 \u05D9\u05E9"); // ?כמה יש
+        titleTMP.isRightToLeftText = false;
         titleTMP.fontSize = 48;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;

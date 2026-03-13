@@ -125,11 +125,13 @@ public class MemoryGameController : MonoBehaviour
             // First card of the pair
             firstFlipped = card;
             card.FlipToFront();
+            PlayCardAnimalName(card);
         }
         else if (secondFlipped == null && card != firstFlipped)
         {
             // Second card of the pair
             secondFlipped = card;
+            PlayCardAnimalName(card);
             card.FlipToFront(() =>
             {
                 // Check for match after flip animation completes
@@ -204,6 +206,16 @@ public class MemoryGameController : MonoBehaviour
     public void OnRestartPressed()
     {
         SetupGame();
+    }
+
+    private void PlayCardAnimalName(MemoryCard card)
+    {
+        if (card == null || string.IsNullOrEmpty(card.FaceSpriteName)) return;
+        // Sprite names are like "Bear", "Cat Main", etc.
+        string name = card.FaceSpriteName;
+        if (name.Contains(" "))
+            name = name.Substring(0, name.IndexOf(' '));
+        SoundLibrary.PlayAnimalName(name);
     }
 
     // ── Utility ──

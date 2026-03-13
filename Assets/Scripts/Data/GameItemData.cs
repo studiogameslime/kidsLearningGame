@@ -28,7 +28,7 @@ public class GameItemData : ScriptableObject
     [Header("Sub-Selection")]
     public bool hasSubItems;
     [Tooltip("Title shown at the top of the selection screen, e.g. 'Choose a Category'.")]
-    public string selectionScreenTitle = "Choose";
+    public string selectionScreenTitle = "\u05D1\u05D7\u05E8\u05D5"; // בחרו
     public List<SubItemData> subItems = new List<SubItemData>();
 }
 

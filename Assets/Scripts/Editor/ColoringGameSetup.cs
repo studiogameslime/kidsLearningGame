@@ -276,8 +276,8 @@ public class ColoringGameSetup : EditorWindow
         titleRT.offsetMin = new Vector2(100, 0);
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "\u05E6\u05D1\u05D9\u05E2\u05D4"; // צביעה
-        titleTMP.isRightToLeftText = true;
+        titleTMP.text = HebrewFixer.Fix("\u05E6\u05D1\u05D9\u05E2\u05D4"); // צביעה
+        titleTMP.isRightToLeftText = false;
         titleTMP.fontSize = 48;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;
@@ -289,17 +289,23 @@ public class ColoringGameSetup : EditorWindow
         var homeGO = CreateIconButton(topBar.transform, "HomeButton", homeIcon,
             new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(16, -15), new Vector2(90, 90));
 
-        // Undo button (top-right area)
-        var undoGO = CreateToolButton(topBar.transform, "UndoButton", "\u21A9", roundedRect,
-            new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-120, -18), new Vector2(90, 90));
+        // Undo button (top-right area) — return arrow icon
+        var undoIcon = LoadSprite("Assets/Art/Icons/return.png");
+        var undoGO = CreateIconButton(topBar.transform, "UndoButton", undoIcon,
+            new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-120, -18), new Vector2(70, 70));
+        undoGO.GetComponent<Image>().color = Color.black;
 
-        // Save button (top-right, before undo/clear)
-        var saveGO = CreateToolButton(topBar.transform, "SaveButton", "\u2714", roundedRect,
-            new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-220, -18), new Vector2(90, 90));
+        // Save button (top-right, before undo/clear) — save icon
+        var saveIcon = LoadSprite("Assets/Art/Icons/save.png");
+        var saveGO = CreateIconButton(topBar.transform, "SaveButton", saveIcon,
+            new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-210, -18), new Vector2(70, 70));
+        saveGO.GetComponent<Image>().color = Color.black;
 
-        // Clear button (top-right)
-        var clearGO = CreateToolButton(topBar.transform, "ClearButton", "\u2715", roundedRect,
-            new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-20, -18), new Vector2(90, 90));
+        // Clear button (top-right) — trashcan icon
+        var trashIcon = LoadSprite("Assets/Art/Icons/trashcan.png");
+        var clearGO = CreateIconButton(topBar.transform, "ClearButton", trashIcon,
+            new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-30, -18), new Vector2(70, 70));
+        clearGO.GetComponent<Image>().color = Color.black;
 
         // ── COLOR PALETTE (scrollable horizontal row, ABOVE the canvas) ──
         var paletteBar = new GameObject("PaletteBar");
@@ -372,9 +378,18 @@ public class ColoringGameSetup : EditorWindow
         brushLayout.childForceExpandHeight = false;
         brushLayout.padding = new RectOffset(24, 24, 4, 4);
 
-        // Eraser button
-        var eraserGO = CreateToolButton(brushBar.transform, "EraserButton", "E", roundedRect,
-            Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(68, 68), false);
+        // Eraser button — phone icon
+        var phoneIcon = LoadSprite("Assets/Art/Icons/phone.png");
+        var eraserGO = new GameObject("EraserButton");
+        eraserGO.transform.SetParent(brushBar.transform, false);
+        var eraserRT = eraserGO.AddComponent<RectTransform>();
+        eraserRT.sizeDelta = new Vector2(56, 56);
+        var eraserImg = eraserGO.AddComponent<Image>();
+        eraserImg.sprite = phoneIcon;
+        eraserImg.preserveAspect = true;
+        eraserImg.color = Color.black;
+        eraserImg.raycastTarget = true;
+        eraserGO.AddComponent<Button>().targetGraphic = eraserImg;
         var eraserHL = new GameObject("EraserHighlight");
         eraserHL.transform.SetParent(eraserGO.transform, false);
         var eraserHLRT = eraserHL.AddComponent<RectTransform>();
@@ -527,6 +542,48 @@ public class ColoringGameSetup : EditorWindow
 
         var btn = go.AddComponent<Button>();
         btn.targetGraphic = img;
+
+        return go;
+    }
+
+    private static GameObject CreateIconToolButton(Transform parent, string name, Sprite icon,
+        Sprite bg, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot,
+        Vector2 pos, Vector2 size, bool useAnchors = true)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        if (useAnchors)
+        {
+            rt.anchorMin = anchorMin;
+            rt.anchorMax = anchorMax;
+            rt.pivot = pivot;
+            rt.anchoredPosition = pos;
+        }
+        rt.sizeDelta = size;
+
+        var img = go.AddComponent<Image>();
+        img.sprite = bg;
+        img.type = Image.Type.Sliced;
+        img.color = Color.white;
+        img.raycastTarget = true;
+
+        var btn = go.AddComponent<Button>();
+        btn.targetGraphic = img;
+
+        // Icon child (black tint)
+        var iconGO = new GameObject("Icon");
+        iconGO.transform.SetParent(go.transform, false);
+        var iconRT = iconGO.AddComponent<RectTransform>();
+        iconRT.anchorMin = new Vector2(0.15f, 0.15f);
+        iconRT.anchorMax = new Vector2(0.85f, 0.85f);
+        iconRT.offsetMin = Vector2.zero;
+        iconRT.offsetMax = Vector2.zero;
+        var iconImg = iconGO.AddComponent<Image>();
+        iconImg.sprite = icon;
+        iconImg.preserveAspect = true;
+        iconImg.color = Color.black;
+        iconImg.raycastTarget = false;
 
         return go;
     }

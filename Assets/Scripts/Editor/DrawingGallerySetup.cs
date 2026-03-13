@@ -93,12 +93,12 @@ public class DrawingGallerySetup : EditorWindow
         titleRT.offsetMin = new Vector2(100, 0);
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "הציורים שלי";
+        titleTMP.text = HebrewFixer.Fix("הציורים שלי");
         titleTMP.fontSize = 42;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;
         titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.isRightToLeftText = true;
+        titleTMP.isRightToLeftText = false;
         titleTMP.raycastTarget = false;
 
         // Home button
@@ -129,12 +129,13 @@ public class DrawingGallerySetup : EditorWindow
         gridRT.anchoredPosition = Vector2.zero;
 
         var grid = gridGO.AddComponent<GridLayoutGroup>();
-        grid.cellSize = new Vector2(300, 300);
-        grid.spacing = new Vector2(24, 24);
-        grid.padding = new RectOffset(40, 40, 24, 24);
+        grid.cellSize = new Vector2(470, 470);
+        grid.spacing = new Vector2(30, 30);
+        grid.padding = new RectOffset(30, 30, 24, 24);
         grid.childAlignment = TextAnchor.UpperCenter;
         grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = 3;
+        grid.constraintCount = 2;
+        grid.startCorner = GridLayoutGroup.Corner.UpperLeft;
 
         var csf = gridGO.AddComponent<ContentSizeFitter>();
         csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
@@ -191,7 +192,7 @@ public class DrawingGallerySetup : EditorWindow
         controller.fullscreenCloseButton = closeBtn;
         controller.roundedRectSprite = roundedRect;
 
-        // ── Empty state text ──
+        // ── Empty state text (hidden by controller when drawings exist) ──
         var emptyGO = new GameObject("EmptyText");
         emptyGO.transform.SetParent(scrollArea.transform, false);
         var emptyRT = emptyGO.AddComponent<RectTransform>();
@@ -200,12 +201,14 @@ public class DrawingGallerySetup : EditorWindow
         emptyRT.offsetMin = Vector2.zero;
         emptyRT.offsetMax = Vector2.zero;
         var emptyTMP = emptyGO.AddComponent<TextMeshProUGUI>();
-        emptyTMP.text = "עדיין אין ציורים!\nצבעו ושמרו ציור כדי לראות אותו כאן";
+        emptyTMP.text = HebrewFixer.Fix("עדיין אין ציורים!\nצבעו ושמרו ציור כדי לראות אותו כאן");
         emptyTMP.fontSize = 36;
         emptyTMP.color = new Color(0.5f, 0.4f, 0.4f);
         emptyTMP.alignment = TextAlignmentOptions.Center;
-        emptyTMP.isRightToLeftText = true;
+        emptyTMP.isRightToLeftText = false;
         emptyTMP.raycastTarget = false;
+
+        controller.emptyText = emptyGO;
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/DrawingGallery.unity");
     }

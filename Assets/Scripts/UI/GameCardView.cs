@@ -27,7 +27,7 @@ public class GameCardView : MonoBehaviour
     {
         // Title
         if (titleText != null)
-            titleText.text = title;
+            titleText.text = HebrewFixer.Fix(title);
 
         // Background color — no longer used (frame is always black)
 

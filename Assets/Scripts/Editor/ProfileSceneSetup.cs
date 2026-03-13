@@ -179,7 +179,7 @@ public class ProfileSceneSetup : EditorWindow
         nameRT.anchoredPosition = new Vector2(0, 20);
         nameRT.sizeDelta = new Vector2(0, 160);
         var nameTMP = nameGO.AddComponent<TextMeshProUGUI>();
-        nameTMP.text = "Name";
+        nameTMP.text = "\u05E9\u05DD"; // שם
         nameTMP.fontSize = 56;
         nameTMP.fontStyle = FontStyles.Bold;
         nameTMP.color = DarkText;
@@ -249,12 +249,12 @@ public class ProfileSceneSetup : EditorWindow
         titleRT.offsetMin = new Vector2(40, 0);
         titleRT.offsetMax = new Vector2(-40, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "\u05DE\u05D9 \u05DE\u05E9\u05D7\u05E7?"; // מי משחק? (Who's playing?)
+        titleTMP.text = HebrewFixer.Fix("\u05DE\u05D9 \u05DE\u05E9\u05D7\u05E7?"); // מי משחק? (Who's playing?)
         titleTMP.fontSize = 64;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = DarkText;
         titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.isRightToLeftText = true;
+        titleTMP.isRightToLeftText = false;
         titleTMP.raycastTarget = false;
 
         // ── Profile grid area (centered) ──
@@ -330,11 +330,11 @@ public class ProfileSceneSetup : EditorWindow
         addLabelRT.anchoredPosition = new Vector2(0, 20);
         addLabelRT.sizeDelta = new Vector2(0, 160);
         var addLabelTMP = addLabelGO.AddComponent<TextMeshProUGUI>();
-        addLabelTMP.text = "\u05D4\u05D5\u05E1\u05E4\u05D4"; // הוספה (Add)
+        addLabelTMP.text = HebrewFixer.Fix("\u05D4\u05D5\u05E1\u05E4\u05D4"); // הוספה (Add)
         addLabelTMP.fontSize = 56;
         addLabelTMP.color = HexColor("#999999");
         addLabelTMP.alignment = TextAlignmentOptions.Center;
-        addLabelTMP.isRightToLeftText = true;
+        addLabelTMP.isRightToLeftText = false;
         addLabelTMP.raycastTarget = false;
 
         // ── Controller ──
@@ -505,7 +505,7 @@ public class ProfileSceneSetup : EditorWindow
         inputTMP.fontSize = 40;
         inputTMP.color = DarkText;
         inputTMP.alignment = TextAlignmentOptions.Center;
-        inputTMP.isRightToLeftText = true;
+        inputTMP.isRightToLeftText = false;
 
         // Placeholder
         var placeholderGO = new GameObject("Placeholder");
@@ -513,12 +513,12 @@ public class ProfileSceneSetup : EditorWindow
         var placeholderRT = placeholderGO.AddComponent<RectTransform>();
         StretchFull(placeholderRT);
         var placeholderTMP = placeholderGO.AddComponent<TextMeshProUGUI>();
-        placeholderTMP.text = "\u05DB\u05EA\u05D1\u05D5 \u05DB\u05D0\u05DF..."; // ...כתבו כאן
+        placeholderTMP.text = HebrewFixer.Fix("\u05DB\u05EA\u05D1\u05D5 \u05DB\u05D0\u05DF..."); // ...כתבו כאן
         placeholderTMP.fontSize = 40;
         placeholderTMP.fontStyle = FontStyles.Italic;
         placeholderTMP.color = new Color(0.6f, 0.6f, 0.6f, 0.8f);
         placeholderTMP.alignment = TextAlignmentOptions.Center;
-        placeholderTMP.isRightToLeftText = true;
+        placeholderTMP.isRightToLeftText = false;
 
         // TMP_InputField component
         var inputField = inputGO.AddComponent<TMP_InputField>();
@@ -692,12 +692,12 @@ public class ProfileSceneSetup : EditorWindow
             var nameLabelTMP = nameLabelGO.AddComponent<TextMeshProUGUI>();
             // Hebrew names
             string[] hebrewNames = { "\u05D7\u05EA\u05D5\u05DC", "\u05DB\u05DC\u05D1", "\u05D3\u05D5\u05D1" }; // חתול, כלב, דוב
-            nameLabelTMP.text = hebrewNames[i];
+            nameLabelTMP.text = HebrewFixer.Fix(hebrewNames[i]);
             nameLabelTMP.fontSize = 28;
             nameLabelTMP.fontStyle = FontStyles.Bold;
             nameLabelTMP.color = DarkText;
             nameLabelTMP.alignment = TextAlignmentOptions.Center;
-            nameLabelTMP.isRightToLeftText = true;
+            nameLabelTMP.isRightToLeftText = false;
             nameLabelTMP.raycastTarget = false;
         }
 
@@ -780,7 +780,7 @@ public class ProfileSceneSetup : EditorWindow
         cpNameTMP.alignment = TextAlignmentOptions.Center;
         cpNameTMP.enableWordWrapping = false;
         cpNameTMP.overflowMode = TextOverflowModes.Ellipsis;
-        cpNameTMP.isRightToLeftText = true;
+        cpNameTMP.isRightToLeftText = false;
         cpNameTMP.raycastTarget = false;
 
         // Take Selfie button (below preview, above color grid)
@@ -886,7 +886,7 @@ public class ProfileSceneSetup : EditorWindow
         doneNameTMP.fontStyle = FontStyles.Bold;
         doneNameTMP.color = DarkText;
         doneNameTMP.alignment = TextAlignmentOptions.Center;
-        doneNameTMP.isRightToLeftText = true;
+        doneNameTMP.isRightToLeftText = false;
         doneNameTMP.raycastTarget = false;
 
         var doneBtn = CreateBigButton(stepDone.transform, "DoneButton",
@@ -1060,12 +1060,12 @@ public class ProfileSceneSetup : EditorWindow
         rt.offsetMin = Vector2.zero;
         rt.offsetMax = Vector2.zero;
         var tmp = go.AddComponent<TextMeshProUGUI>();
-        tmp.text = text;
+        tmp.text = rtl ? HebrewFixer.Fix(text) : text;
         tmp.fontSize = fontSize;
         tmp.fontStyle = FontStyles.Bold;
         tmp.color = color;
         tmp.alignment = TextAlignmentOptions.Center;
-        tmp.isRightToLeftText = rtl;
+        tmp.isRightToLeftText = false;
         tmp.raycastTarget = false;
         return go;
     }
@@ -1098,12 +1098,12 @@ public class ProfileSceneSetup : EditorWindow
         var labelRT = labelGO.AddComponent<RectTransform>();
         StretchFull(labelRT);
         var labelTMP = labelGO.AddComponent<TextMeshProUGUI>();
-        labelTMP.text = label;
+        labelTMP.text = rtl ? HebrewFixer.Fix(label) : label;
         labelTMP.fontSize = 42;
         labelTMP.fontStyle = FontStyles.Bold;
         labelTMP.color = Color.white;
         labelTMP.alignment = TextAlignmentOptions.Center;
-        labelTMP.isRightToLeftText = rtl;
+        labelTMP.isRightToLeftText = false;
         labelTMP.raycastTarget = false;
 
         return go;
@@ -1195,12 +1195,12 @@ public class ProfileSceneSetup : EditorWindow
         labelRT.offsetMin = Vector2.zero;
         labelRT.offsetMax = Vector2.zero;
         var labelTMP = labelGO.AddComponent<TextMeshProUGUI>();
-        labelTMP.text = label;
+        labelTMP.text = HebrewFixer.Fix(label);
         labelTMP.fontSize = 34;
         labelTMP.fontStyle = FontStyles.Bold;
         labelTMP.color = Color.white;
         labelTMP.alignment = TextAlignmentOptions.Center;
-        labelTMP.isRightToLeftText = true;
+        labelTMP.isRightToLeftText = false;
         labelTMP.raycastTarget = false;
 
         return go;

@@ -103,8 +103,8 @@ public class ColorMixingSetup : EditorWindow
         titleRT.offsetMin = new Vector2(100, 0);
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "\u05E2\u05E8\u05D1\u05D5\u05D1 \u05E6\u05D1\u05E2\u05D9\u05DD"; // ערבוב צבעים
-        titleTMP.isRightToLeftText = true;
+        titleTMP.text = HebrewFixer.Fix("\u05E2\u05E8\u05D1\u05D5\u05D1 \u05E6\u05D1\u05E2\u05D9\u05DD"); // ערבוב צבעים
+        titleTMP.isRightToLeftText = false;
         titleTMP.fontSize = 48;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;
@@ -145,7 +145,8 @@ public class ColorMixingSetup : EditorWindow
         targetLabelRT.anchoredPosition = new Vector2(0, -20);
         targetLabelRT.sizeDelta = new Vector2(400, 60);
         var labelTMP = targetLabel.AddComponent<TextMeshProUGUI>();
-        labelTMP.text = "Make this color!";
+        labelTMP.text = HebrewFixer.Fix("!\u05E6\u05E8\u05D5 \u05D0\u05EA \u05D4\u05E6\u05D1\u05E2 \u05D4\u05D6\u05D4"); // !צרו את הצבע הזה
+        labelTMP.isRightToLeftText = false;
         labelTMP.fontSize = 38;
         labelTMP.fontStyle = FontStyles.Bold;
         labelTMP.color = HexColor("#7B1FA2");

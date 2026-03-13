@@ -273,6 +273,9 @@ public class ColorMixingController : MonoBehaviour
         else
             slotRightColorId = dc.colorId;
 
+        // Play the dragged color name
+        SoundLibrary.PlayColorName(GetColorSoundName(dc.colorId));
+
         // Set exact color with full opacity
         slotImg.color = new Color(fillColor.r, fillColor.g, fillColor.b, 1f);
 
@@ -359,6 +362,12 @@ public class ColorMixingController : MonoBehaviour
 
         // Sparkles from center
         SpawnSplash(center, resultColor);
+
+        // Play the mixed color name
+        string mixKey = slotLeftColorId + "+" + slotRightColorId;
+        string resultName = GetMixedColorName(mixKey);
+        if (!string.IsNullOrEmpty(resultName))
+            SoundLibrary.PlayColorName(resultName);
 
         yield return new WaitForSeconds(0.3f);
 
@@ -582,5 +591,31 @@ public class ColorMixingController : MonoBehaviour
         StopAllCoroutines();
         ResetSlotPositions();
         StartNewRound();
+    }
+
+    private static string GetColorSoundName(string colorId)
+    {
+        switch (colorId)
+        {
+            case "red":    return "Red";
+            case "blue":   return "Blue";
+            case "yellow": return "Yellow";
+            case "white":  return "White";
+            default:       return colorId;
+        }
+    }
+
+    private static string GetMixedColorName(string mixKey)
+    {
+        // Normalize key order
+        switch (mixKey)
+        {
+            case "red+yellow":  case "yellow+red":  return "Orange";
+            case "blue+yellow": case "yellow+blue": return "Green";
+            case "red+blue":    case "blue+red":    return "Purple";
+            case "red+white":   case "white+red":   return "Pink";
+            case "blue+white":  case "white+blue":  return "Light Blue";
+            default: return null;
+        }
     }
 }

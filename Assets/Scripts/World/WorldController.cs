@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -42,6 +43,27 @@ public class WorldController : MonoBehaviour
         BuildAnimalSpriteLookup();
         UpdateProfileAvatar();
         BuildWorld();
+        StartCoroutine(PlayWorldIntro());
+    }
+
+    private IEnumerator PlayWorldIntro()
+    {
+        // "This is your world"
+        var introClip = SoundLibrary.WorldIntro();
+        if (introClip != null)
+        {
+            BackgroundMusicManager.PlayOneShot(introClip);
+            yield return new WaitForSeconds(introClip.length + 1f);
+        }
+        else
+        {
+            yield return new WaitForSeconds(1f);
+        }
+
+        // "Here all your discovered animals and colors"
+        var followUp = SoundLibrary.WorldAnimalsAndColors();
+        if (followUp != null)
+            BackgroundMusicManager.PlayOneShot(followUp);
     }
 
     private void BuildAnimalSpriteLookup()

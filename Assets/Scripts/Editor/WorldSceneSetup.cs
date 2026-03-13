@@ -345,7 +345,8 @@ public class WorldSceneSetup : EditorWindow
         titleRT.offsetMin = new Vector2(100, 0);
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "My World";
+        titleTMP.text = HebrewFixer.Fix("\u05D4\u05E2\u05D5\u05DC\u05DD \u05E9\u05DC\u05D9"); // העולם שלי
+        titleTMP.isRightToLeftText = false;
         titleTMP.fontSize = 42;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;

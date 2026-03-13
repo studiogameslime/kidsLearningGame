@@ -100,6 +100,18 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
         return drawTexture != null ? drawTexture.EncodeToPNG() : null;
     }
 
+    /// <summary>Returns the current drawing pixels for compositing.</summary>
+    public Color[] GetPixels()
+    {
+        return drawTexture != null ? drawTexture.GetPixels() : null;
+    }
+
+    /// <summary>Returns the drawing texture dimensions.</summary>
+    public Vector2Int GetTextureSize()
+    {
+        return drawTexture != null ? new Vector2Int(drawTexture.width, drawTexture.height) : Vector2Int.zero;
+    }
+
     // ── Input Handling ──
 
     public void OnPointerDown(PointerEventData eventData)

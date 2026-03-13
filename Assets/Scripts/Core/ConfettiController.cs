@@ -103,6 +103,7 @@ public class ConfettiController : MonoBehaviour
     {
         if (isPlaying) return;
         GameCompletionBridge.Instance?.OnConfettiPlayed();
+        SoundLibrary.PlayRandomFeedback();
         StartCoroutine(PlayConfetti(ParticleCount));
     }
 

@@ -261,8 +261,8 @@ public class DiscoveryRevealController : MonoBehaviour
         var discovery = JourneyManager.Instance?.ActiveDiscovery;
         if (nameText != null && discovery != null)
         {
-            nameText.text = GetHebrewName(discovery);
-            nameText.isRightToLeftText = true;
+            nameText.text = HebrewFixer.Fix(GetHebrewName(discovery));
+            nameText.isRightToLeftText = false;
             nameText.gameObject.SetActive(true);
         }
 

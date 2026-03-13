@@ -505,7 +505,7 @@ public class ProjectSetup : EditorWindow
         coloring.cardColor = ColoringColor;
         coloring.targetSceneName = "ColoringGame";
         coloring.hasSubItems = true;
-        coloring.selectionScreenTitle = "Choose a Picture";
+        coloring.selectionScreenTitle = "\u05D1\u05D7\u05E8\u05D5 \u05E6\u05D9\u05D5\u05E8"; // בחרו ציור
         coloring.thumbnail = LoadSprite($"{previewPath}/Painting.png");
         coloring.nameClip = LoadAudioClip("Assets/Sounds/Games Names/Painting.mp3");
         coloring.subItems = new List<SubItemData>();
@@ -973,12 +973,12 @@ public class ProjectSetup : EditorWindow
         titleRT.offsetMin = new Vector2(showBack ? 120 : 40, 10);
         titleRT.offsetMax = new Vector2(-40, -10);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = title;
+        titleTMP.text = HebrewFixer.Fix(title);
         titleTMP.fontSize = 52;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = HexColor("#4A4A4A");
         titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.isRightToLeftText = true;
+        titleTMP.isRightToLeftText = false;
         titleTMP.enableWordWrapping = false;
         titleTMP.overflowMode = TextOverflowModes.Ellipsis;
         titleTMP.raycastTarget = false;
@@ -1034,8 +1034,8 @@ public class ProjectSetup : EditorWindow
         titleRT.offsetMin = new Vector2(120, 10);
         titleRT.offsetMax = new Vector2(-120, -10);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = title;
-        titleTMP.isRightToLeftText = true;
+        titleTMP.text = HebrewFixer.Fix(title);
+        titleTMP.isRightToLeftText = false;
         titleTMP.fontSize = 48;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = HexColor("#4A4A4A");

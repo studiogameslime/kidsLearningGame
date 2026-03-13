@@ -62,6 +62,9 @@ public class WorldAnimal : MonoBehaviour
         if (spriteAnim != null)
             spriteAnim.PlaySuccess();
 
+        // Play animal name voice
+        SoundLibrary.PlayAnimalName(animalId);
+
         // Bounce scale
         StopAllCoroutines();
         StartCoroutine(BounceAnim());
