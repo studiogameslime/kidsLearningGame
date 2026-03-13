@@ -37,20 +37,6 @@ public class MemoryGameSetup : EditorWindow
     private const int CardFramePadding = 12; // white border thickness
     private const int CardCornerRadius = 24;
 
-    [MenuItem("Tools/Kids Learning Game/Setup Memory Game")]
-    public static void RunSetup()
-    {
-        if (!EditorUtility.DisplayDialog(
-            "Memory Game Setup",
-            "This will create/overwrite:\n• MemoryCard prefab\n• Animals MemoryCategory data\n• MemoryGame scene\n\nContinue?",
-            "Build", "Cancel"))
-            return;
-
-        RunSetupSilent();
-        EditorSceneManager.OpenScene("Assets/Scenes/MemoryGame.unity");
-        EditorUtility.DisplayDialog("Done!", "Memory Game scene built successfully.\nPress Play to test!", "OK");
-    }
-
     public static void RunSetupSilent()
     {
         try

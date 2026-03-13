@@ -55,7 +55,7 @@ public class WorldSceneSetup : EditorWindow
     //  ANIMAL ANIMATION DATA
     // ─────────────────────────────────────────
 
-    private static void BuildAnimalData()
+    public static void BuildAnimalData()
     {
         // Create per-animal SOs in Resources/AnimalAnim for on-demand loading
         EnsureFolder("Assets/Resources");
@@ -64,54 +64,112 @@ public class WorldSceneSetup : EditorWindow
         int count = 0;
         foreach (var animalId in AllAnimals)
         {
-            string animDir = $"Assets/Art/Animals/{animalId}/Animations";
-            string idleClipPath = $"{animDir}/{animalId}Idle.anim";
-            string floatingClipPath = $"{animDir}/{animalId}Floating.anim";
-            string successClipPath = $"{animDir}/{animalId}Success.anim";
-
-            // Handle Dog's lowercase idle
-            if (animalId == "Dog")
-                idleClipPath = $"{animDir}/dogIdle.anim";
+            string artDir = $"Assets/Art/Animals/{animalId}/Art";
 
             string assetPath = $"Assets/Resources/AnimalAnim/{animalId}.asset";
-            // Delete and recreate to ensure script reference is valid
+            // Delete old asset
             if (AssetDatabase.LoadMainAssetAtPath(assetPath) != null)
                 AssetDatabase.DeleteAsset(assetPath);
-            var data = ScriptableObject.CreateInstance<AnimalAnimData>();
-            AssetDatabase.CreateAsset(data, assetPath);
 
+            // Populate ALL data BEFORE CreateAsset so it serializes with values
+            var data = ScriptableObject.CreateInstance<AnimalAnimData>();
             data.animalId = animalId;
 
-            var idleClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(idleClipPath);
-            var floatingClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(floatingClipPath);
-            var successClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(successClipPath);
+            // Load sprites directly from Art folders
+            data.idleFrames = LoadSpritesFromFolder($"{artDir}/Idle");
+            data.floatingFrames = LoadSpritesFromFolder($"{artDir}/Floating");
+            data.successFrames = LoadSpritesFromFolder($"{artDir}/Success");
 
-            data.idleFrames = idleClip != null ? ExtractSprites(idleClip) : null;
+            // Get FPS from .anim clips if available
+            string animDir = $"Assets/Art/Animals/{animalId}/Animations";
+            string idleClipPath = animalId == "Dog"
+                ? $"{animDir}/dogIdle.anim"
+                : $"{animDir}/{animalId}Idle.anim";
+            var idleClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(idleClipPath);
             data.idleFps = idleClip != null ? idleClip.frameRate : 30f;
-            data.floatingFrames = floatingClip != null ? ExtractSprites(floatingClip) : null;
+
+            var floatingClip = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{animDir}/{animalId}Floating.anim");
             data.floatingFps = floatingClip != null ? floatingClip.frameRate : 30f;
-            data.successFrames = successClip != null ? ExtractSprites(successClip) : null;
+
+            var successClip = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{animDir}/{animalId}Success.anim");
             data.successFps = successClip != null ? successClip.frameRate : 30f;
 
-            EditorUtility.SetDirty(data);
+            // NOW create asset — serializes with all data already set
+            AssetDatabase.CreateAsset(data, assetPath);
             count++;
+
+            Debug.Log($"[BuildAnimalData] {animalId}: idle={data.idleFrames?.Length ?? 0}, floating={data.floatingFrames?.Length ?? 0}, success={data.successFrames?.Length ?? 0}, idleFps={data.idleFps}");
+            if (data.idleFrames == null || data.idleFrames.Length == 0)
+                Debug.LogWarning($"AnimalAnimData: No idle frames found for {animalId} in {artDir}/Idle");
         }
+
+        // Also copy main puzzle sprites to Resources for fallback loading
+        EnsureFolder("Assets/Resources/AnimalSprites");
+        foreach (var animalId in AllAnimals)
+        {
+            string srcPath = $"Assets/Art/Animals/{animalId}/Art/Puzzle/{animalId} Main.png";
+            string dstPath = $"Assets/Resources/AnimalSprites/{animalId}.png";
+            if (!AssetDatabase.CopyAsset(srcPath, dstPath))
+            {
+                // Already exists or source missing, try overwrite
+                if (System.IO.File.Exists(srcPath))
+                {
+                    System.IO.File.Copy(srcPath, dstPath, true);
+                    AssetDatabase.ImportAsset(dstPath);
+                }
+            }
+            // Ensure copied sprite has correct import settings
+            var copiedImporter = AssetImporter.GetAtPath(dstPath) as TextureImporter;
+            if (copiedImporter != null && copiedImporter.textureType != TextureImporterType.Sprite)
+            {
+                copiedImporter.textureType = TextureImporterType.Sprite;
+                copiedImporter.spriteImportMode = SpriteImportMode.Single;
+                copiedImporter.SaveAndReimport();
+            }
+        }
+
+        // Force save so sprite references persist
+        AssetDatabase.SaveAssets();
 
         Debug.Log($"AnimalAnimData: built {count} per-animal assets in Resources/AnimalAnim/.");
     }
 
-    private static Sprite[] ExtractSprites(AnimationClip clip)
+    /// <summary>
+    /// Loads all sprite PNGs from a folder, sorted by name (e.g. 0001.png, 0002.png...).
+    /// </summary>
+    private static Sprite[] LoadSpritesFromFolder(string folderPath)
     {
-        var sprites = new List<Sprite>();
-        var bindings = AnimationUtility.GetObjectReferenceCurveBindings(clip);
+        if (!AssetDatabase.IsValidFolder(folderPath))
+            return new Sprite[0];
 
-        foreach (var binding in bindings)
+        var guids = AssetDatabase.FindAssets("t:Texture2D", new[] { folderPath });
+        var sprites = new List<Sprite>();
+
+        // Sort by asset path to ensure correct frame order (0001.png, 0002.png...)
+        var paths = new List<string>();
+        foreach (var guid in guids)
+            paths.Add(AssetDatabase.GUIDToAssetPath(guid));
+        paths.Sort();
+
+        foreach (var path in paths)
         {
-            var keyframes = AnimationUtility.GetObjectReferenceCurve(clip, binding);
-            foreach (var kf in keyframes)
+            // Load as Sprite (sub-asset of the Texture2D)
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (sprite != null)
             {
-                if (kf.value is Sprite sprite)
-                    sprites.Add(sprite);
+                sprites.Add(sprite);
+            }
+            else
+            {
+                // Fallback: search all sub-assets for a Sprite
+                var allAssets = AssetDatabase.LoadAllAssetsAtPath(path);
+                if (allAssets != null)
+                {
+                    foreach (var asset in allAssets)
+                    {
+                        if (asset is Sprite s) { sprites.Add(s); break; }
+                    }
+                }
             }
         }
 
@@ -371,6 +429,56 @@ public class WorldSceneSetup : EditorWindow
         controller.homeButton = homeGO.GetComponent<Button>();
         controller.profileAvatar = profileBtnImg;
         controller.profileInitial = profileInitialTMP;
+
+        // ── Drawing Gallery Easel (on grass, far left) ──
+        var easelGO = new GameObject("GalleryEasel");
+        easelGO.transform.SetParent(grassAreaGO.transform, false);
+        var easelRT = easelGO.AddComponent<RectTransform>();
+        easelRT.anchorMin = new Vector2(0, 0);
+        easelRT.anchorMax = new Vector2(0, 0);
+        easelRT.pivot = new Vector2(0.5f, 0);
+        easelRT.sizeDelta = new Vector2(160, 200);
+        easelRT.anchoredPosition = new Vector2(80, 30);
+
+        // Easel board (brown rectangle)
+        var boardImg = easelGO.AddComponent<Image>();
+        boardImg.color = HexColor("#8D6E63"); // brown wood
+        boardImg.raycastTarget = true;
+
+        // White canvas on the easel
+        var canvasOnEasel = new GameObject("Canvas");
+        canvasOnEasel.transform.SetParent(easelGO.transform, false);
+        var canvasRT = canvasOnEasel.AddComponent<RectTransform>();
+        canvasRT.anchorMin = new Vector2(0.1f, 0.25f);
+        canvasRT.anchorMax = new Vector2(0.9f, 0.85f);
+        canvasRT.offsetMin = Vector2.zero;
+        canvasRT.offsetMax = Vector2.zero;
+        var canvasImg = canvasOnEasel.AddComponent<Image>();
+        canvasImg.color = Color.white;
+        canvasImg.raycastTarget = false;
+
+        // Colorful paint dots on the canvas
+        var dotColors = new Color[] { HexColor("#EF4444"), HexColor("#3B82F6"), HexColor("#FACC15"), HexColor("#22C55E") };
+        for (int d = 0; d < dotColors.Length; d++)
+        {
+            var dotGO = new GameObject($"Dot{d}");
+            dotGO.transform.SetParent(canvasOnEasel.transform, false);
+            var dotRT = dotGO.AddComponent<RectTransform>();
+            float dx = 0.15f + d * 0.22f;
+            float dy = 0.3f + (d % 2) * 0.3f;
+            dotRT.anchorMin = new Vector2(dx, dy);
+            dotRT.anchorMax = new Vector2(dx + 0.18f, dy + 0.25f);
+            dotRT.offsetMin = Vector2.zero;
+            dotRT.offsetMax = Vector2.zero;
+            var dotImg = dotGO.AddComponent<Image>();
+            if (circleSprite != null) dotImg.sprite = circleSprite;
+            dotImg.color = dotColors[d];
+            dotImg.raycastTarget = false;
+        }
+
+        var easelBtn = easelGO.AddComponent<Button>();
+        easelBtn.targetGraphic = boardImg;
+        controller.galleryButton = easelBtn;
 
         // ── Input Handler ──
         var inputHandler = canvasGO.AddComponent<WorldInputHandler>();

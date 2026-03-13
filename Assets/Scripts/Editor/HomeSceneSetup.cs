@@ -4,6 +4,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
+using System.IO;
 
 /// <summary>
 /// Builds the HomeScene — the main entry point after profile selection.
@@ -15,7 +16,7 @@ public class HomeSceneSetup : EditorWindow
     private static readonly Vector2 Ref = new Vector2(1080, 1920);
 
     private static readonly Color BgColor = HexColor("#F0F4FF");       // soft blue-white
-    private static readonly Color PlayColor = HexColor("#4CAF50");      // green
+    private static readonly Color PlayColor = HexColor("#4CAF50");      // green (placeholder, colored at runtime)
     private static readonly Color WorldColor = HexColor("#42A5F5");     // blue
     private static readonly Color AllGamesColor = HexColor("#999999");  // muted gray
 
@@ -24,6 +25,7 @@ public class HomeSceneSetup : EditorWindow
         try
         {
             EditorUtility.DisplayProgressBar("Home Scene Setup", "Building scene…", 0.5f);
+            CreateArrowSprite();
             CreateScene();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -34,10 +36,89 @@ public class HomeSceneSetup : EditorWindow
         }
     }
 
+    private static Sprite CreateArrowSprite()
+    {
+        EnsureFolder("Assets/UI/Sprites");
+        string path = "Assets/UI/Sprites/Arrow.png";
+
+        int w = 64, h = 128;
+        var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+        var pixels = new Color[w * h];
+
+        float cx = w / 2f;
+        int headHeight = 36;
+        int shaftHalfWidth = 5;
+        int headHalfWidth = 28;
+
+        for (int y = 0; y < h; y++)
+        {
+            for (int x = 0; x < w; x++)
+            {
+                float dx = x - cx;
+                bool inside = false;
+
+                if (y < h - headHeight)
+                {
+                    // Shaft
+                    inside = Mathf.Abs(dx) <= shaftHalfWidth;
+                }
+                else
+                {
+                    // Triangle head — wider at bottom of head, narrows to tip at top
+                    float progress = (float)(y - (h - headHeight)) / headHeight;
+                    float halfW = headHalfWidth * (1f - progress);
+                    inside = Mathf.Abs(dx) <= halfW;
+                }
+
+                // Soft edge anti-aliasing
+                if (inside)
+                {
+                    float edgeDist;
+                    if (y < h - headHeight)
+                        edgeDist = shaftHalfWidth - Mathf.Abs(dx);
+                    else
+                    {
+                        float progress = (float)(y - (h - headHeight)) / headHeight;
+                        edgeDist = headHalfWidth * (1f - progress) - Mathf.Abs(dx);
+                    }
+                    float alpha = Mathf.Clamp01(edgeDist * 2f);
+                    pixels[y * w + x] = new Color(1f, 1f, 1f, alpha);
+                }
+                else
+                {
+                    pixels[y * w + x] = Color.clear;
+                }
+            }
+        }
+
+        tex.SetPixels(pixels);
+        tex.Apply();
+
+        File.WriteAllBytes(path, tex.EncodeToPNG());
+        Object.DestroyImmediate(tex);
+        AssetDatabase.ImportAsset(path);
+
+        var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+        if (importer != null)
+        {
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spritePixelsPerUnit = 100;
+            importer.mipmapEnabled = false;
+            importer.alphaIsTransparency = true;
+            importer.SaveAndReimport();
+        }
+
+        return AssetDatabase.LoadAssetAtPath<Sprite>(path);
+    }
+
     private static void CreateScene()
     {
         EnsureFolder("Assets/Scenes");
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+        var circleSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/Circle.png");
+        var roundedRect = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/RoundedRect.png");
+        var arrowSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/Arrow.png");
 
         // Camera
         var camGO = new GameObject("Main Camera");
@@ -89,7 +170,6 @@ public class HomeSceneSetup : EditorWindow
         profileBtnRT.sizeDelta = new Vector2(100, 100);
 
         var profileBtnImg = profileBtn.AddComponent<Image>();
-        var circleSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/Circle.png");
         if (circleSprite != null) profileBtnImg.sprite = circleSprite;
         profileBtnImg.color = HexColor("#90CAF9");
         var profileBtnButton = profileBtn.AddComponent<Button>();
@@ -123,6 +203,11 @@ public class HomeSceneSetup : EditorWindow
         var playBtnButton = playBtn.AddComponent<Button>();
         playBtnButton.targetGraphic = playBtnImg;
 
+        // Play shadow
+        var playShadow = playBtn.AddComponent<Shadow>();
+        playShadow.effectColor = new Color(0, 0, 0, 0.25f);
+        playShadow.effectDistance = new Vector2(3, -4);
+
         // Play icon (triangle/text)
         var playLabel = new GameObject("PlayLabel");
         playLabel.transform.SetParent(playBtn.transform, false);
@@ -135,6 +220,20 @@ public class HomeSceneSetup : EditorWindow
         playLabelTMP.alignment = TextAlignmentOptions.Center;
         playLabelTMP.raycastTarget = false;
 
+        // ── Arrows pointing TO the play button ──
+
+        // Arrow from profile area → play (rotated, pointing down-right)
+        var arrow1 = CreateArrowImage(safeArea.transform, "ArrowFromProfile", arrowSprite,
+            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+            new Vector2(-160, 350), new Vector2(40, 80),
+            PlayColor, -35f); // angled down-right
+
+        // Arrow from world → play (pointing up)
+        var arrow2 = CreateArrowImage(safeArea.transform, "ArrowFromWorld", arrowSprite,
+            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+            new Vector2(0, -15), new Vector2(36, 70),
+            PlayColor, 0f); // straight up
+
         // ── World Button (below play) ──
         var worldBtn = new GameObject("WorldButton");
         worldBtn.transform.SetParent(safeArea.transform, false);
@@ -145,7 +244,6 @@ public class HomeSceneSetup : EditorWindow
         worldBtnRT.anchoredPosition = new Vector2(0, -120);
 
         var worldBtnImg = worldBtn.AddComponent<Image>();
-        var roundedRect = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/RoundedRect.png");
         if (roundedRect != null)
         {
             worldBtnImg.sprite = roundedRect;
@@ -160,11 +258,12 @@ public class HomeSceneSetup : EditorWindow
         var worldLabelRT = worldLabel.AddComponent<RectTransform>();
         StretchFull(worldLabelRT);
         var worldLabelTMP = worldLabel.AddComponent<TextMeshProUGUI>();
-        worldLabelTMP.text = "\uD83C\uDF0D My World"; // 🌍 My World
+        worldLabelTMP.text = "\u05D4\u05E2\u05D5\u05DC\u05DD \u05E9\u05DC\u05D9"; // העולם שלי
         worldLabelTMP.fontSize = 32;
         worldLabelTMP.fontStyle = FontStyles.Bold;
         worldLabelTMP.color = Color.white;
         worldLabelTMP.alignment = TextAlignmentOptions.Center;
+        worldLabelTMP.isRightToLeftText = true;
         worldLabelTMP.raycastTarget = false;
 
         // ── All Games (bottom, small text) ──
@@ -178,10 +277,11 @@ public class HomeSceneSetup : EditorWindow
         allGamesBtnRT.sizeDelta = new Vector2(300, 60);
 
         var allGamesTMP = allGamesBtn.AddComponent<TextMeshProUGUI>();
-        allGamesTMP.text = "All Games";
+        allGamesTMP.text = "\u05DB\u05DC \u05D4\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD"; // כל המשחקים
         allGamesTMP.fontSize = 24;
         allGamesTMP.color = AllGamesColor;
         allGamesTMP.alignment = TextAlignmentOptions.Center;
+        allGamesTMP.isRightToLeftText = true;
         var allGamesButton = allGamesBtn.AddComponent<Button>();
         allGamesButton.targetGraphic = allGamesTMP;
 
@@ -189,16 +289,40 @@ public class HomeSceneSetup : EditorWindow
         var controller = canvasGO.AddComponent<HomeController>();
         controller.gameDatabase = AssetDatabase.LoadAssetAtPath<GameDatabase>("Assets/Data/Games/GameDatabase.asset");
         controller.playButton = playBtnButton;
+        controller.playButtonImage = playBtnImg;
         controller.worldButton = worldBtnButton;
         controller.profileButton = profileBtnButton;
         controller.allGamesButton = allGamesButton;
         controller.profileAvatar = profileBtnImg;
         controller.profileInitial = initialTMP;
+        controller.arrowImages = new Image[] {
+            arrow1.GetComponent<Image>(),
+            arrow2.GetComponent<Image>()
+        };
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/HomeScene.unity");
     }
 
     // ── Helpers ──
+
+    private static GameObject CreateArrowImage(Transform parent, string name, Sprite arrowSprite,
+        Vector2 anchorMin, Vector2 anchorMax, Vector2 pos, Vector2 size, Color color, float zRotation)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = anchorMin;
+        rt.anchorMax = anchorMax;
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = size;
+        rt.localEulerAngles = new Vector3(0, 0, zRotation);
+        var img = go.AddComponent<Image>();
+        if (arrowSprite != null) img.sprite = arrowSprite;
+        img.color = new Color(color.r, color.g, color.b, 0.5f);
+        img.preserveAspect = true;
+        img.raycastTarget = false;
+        return go;
+    }
 
     private static GameObject CreateStretchImage(Transform parent, string name, Color color)
     {

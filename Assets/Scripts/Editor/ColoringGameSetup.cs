@@ -30,20 +30,6 @@ public class ColoringGameSetup : EditorWindow
     private const int RefImageSize = 220;     // colored reference sprite preview (1.5x bigger)
     private const int ColorCircleSize = 86;   // big color circles for kids
 
-    [MenuItem("Tools/Kids Learning Game/Setup Coloring Game")]
-    public static void RunSetup()
-    {
-        if (!EditorUtility.DisplayDialog(
-            "Coloring Game Setup",
-            "This will create/overwrite:\n• Color button & brush size prefabs\n• ColoringGame scene\n• Update Coloring data with Free Draw + animal contentAssets\n\nContinue?",
-            "Build", "Cancel"))
-            return;
-
-        RunSetupSilent();
-        EditorSceneManager.OpenScene("Assets/Scenes/ColoringGame.unity");
-        EditorUtility.DisplayDialog("Done!", "Coloring Game built.\nPress Play to test!", "OK");
-    }
-
     public static void RunSetupSilent()
     {
         try
@@ -307,6 +293,10 @@ public class ColoringGameSetup : EditorWindow
         var undoGO = CreateToolButton(topBar.transform, "UndoButton", "\u21A9", roundedRect,
             new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-120, -18), new Vector2(90, 90));
 
+        // Save button (top-right, before undo/clear)
+        var saveGO = CreateToolButton(topBar.transform, "SaveButton", "\u2714", roundedRect,
+            new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-220, -18), new Vector2(90, 90));
+
         // Clear button (top-right)
         var clearGO = CreateToolButton(topBar.transform, "ClearButton", "\u2715", roundedRect,
             new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-20, -18), new Vector2(90, 90));
@@ -493,6 +483,7 @@ public class ColoringGameSetup : EditorWindow
         controller.undoButton = undoGO.GetComponent<Button>();
         controller.clearButton = clearGO.GetComponent<Button>();
         controller.eraserHighlight = eraserHLImg;
+        controller.saveDrawingButton = saveGO.GetComponent<Button>();
 
         // Wire home button
         UnityEditor.Events.UnityEventTools.AddPersistentListener(

@@ -17,6 +17,7 @@ public class WorldController : MonoBehaviour
     public RectTransform skyArea;        // top 60% of content
     public RectTransform grassArea;      // bottom 40% of content
     public Button homeButton;
+    public Button galleryButton;
     public Image profileAvatar;
     public TMPro.TextMeshProUGUI profileInitial;
 
@@ -36,6 +37,7 @@ public class WorldController : MonoBehaviour
     private void Start()
     {
         if (homeButton != null) homeButton.onClick.AddListener(OnHomePressed);
+        if (galleryButton != null) galleryButton.onClick.AddListener(OnGalleryPressed);
 
         BuildAnimalSpriteLookup();
         UpdateProfileAvatar();
@@ -85,8 +87,12 @@ public class WorldController : MonoBehaviour
         // Seed starters if world is visited before first journey
         if (jp.unlockedAnimalIds.Count == 0)
         {
-            foreach (var id in DiscoveryCatalog.StarterAnimals)
-                if (!jp.unlockedAnimalIds.Contains(id)) jp.unlockedAnimalIds.Add(id);
+            // Only unlock the favorite animal
+            string favAnimal = profile.favoriteAnimalId;
+            if (string.IsNullOrEmpty(favAnimal)) favAnimal = "Cat";
+            if (!jp.unlockedAnimalIds.Contains(favAnimal))
+                jp.unlockedAnimalIds.Add(favAnimal);
+
             foreach (var id in DiscoveryCatalog.StarterColors)
                 if (!jp.unlockedColorIds.Contains(id)) jp.unlockedColorIds.Add(id);
             foreach (var id in DiscoveryCatalog.StarterGameIds)
@@ -272,5 +278,10 @@ public class WorldController : MonoBehaviour
     public void OnHomePressed()
     {
         NavigationManager.GoToHome();
+    }
+
+    public void OnGalleryPressed()
+    {
+        NavigationManager.GoToDrawingGallery();
     }
 }

@@ -31,13 +31,6 @@ public class HebrewFontSetup : EditorWindow
         "\u00A0\u00AB\u00BB\u00BF\u2013\u2014\u2018\u2019\u201C\u201D\u2026" +
         "?!.,;:'\"()-+";
 
-    [MenuItem("Tools/Kids Learning Game/Setup Hebrew Font")]
-    public static void RunSetup()
-    {
-        RunSetupSilent();
-        EditorUtility.DisplayDialog("Done!", "Hebrew fonts generated and set as default TMP font.\n\nAll new TMP text will use Rubik.", "OK");
-    }
-
     public static void RunSetupSilent()
     {
         EnsureFolder("Assets/Fonts");

@@ -12,9 +12,10 @@ public static class DiscoveryCatalog
     public static readonly string[] StarterColors = { "Red", "Blue", "Yellow" };
     public static readonly string[] StarterGameIds = { "popthebubbles", "findthecount", "findtheobject" };
 
-    // Discovery order (excludes starters)
+    // Discovery order (includes Cat/Dog/Bear since only the favorite is seeded)
     private static readonly string[] AnimalOrder =
     {
+        "Dog", "Cat", "Bear",
         "Duck", "Fish", "Frog", "Bird", "Cow", "Horse", "Lion", "Monkey",
         "Elephant", "Giraffe", "Zebra", "Turtle", "Snake", "Sheep", "Chicken", "Donkey"
     };

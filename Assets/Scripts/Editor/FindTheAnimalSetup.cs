@@ -31,20 +31,6 @@ public class FindTheAnimalSetup : EditorWindow
         HexColor("#F8BBD0")
     };
 
-    [MenuItem("Tools/Kids Learning Game/Setup Find The Animal")]
-    public static void RunSetup()
-    {
-        if (!EditorUtility.DisplayDialog(
-            "Find The Animal Setup",
-            "This will create/overwrite:\n• FindTheAnimal scene\n• Update FindTheObject.asset with animal data\n\nContinue?",
-            "Build", "Cancel"))
-            return;
-
-        RunSetupSilent();
-        EditorSceneManager.OpenScene("Assets/Scenes/FindTheAnimal.unity");
-        EditorUtility.DisplayDialog("Done!", "Find The Animal built.\nPress Play to test!", "OK");
-    }
-
     public static void RunSetupSilent()
     {
         try

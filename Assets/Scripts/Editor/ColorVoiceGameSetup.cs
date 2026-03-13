@@ -20,20 +20,6 @@ public class ColorVoiceGameSetup : EditorWindow
     private const int TopBarHeight   = 130;
     private const int BottomBarHeight = 120;
 
-    [MenuItem("Tools/Kids Learning Game/Setup Color Voice Game")]
-    public static void RunSetup()
-    {
-        if (!EditorUtility.DisplayDialog(
-            "Color Voice Game Setup",
-            "This will create/overwrite:\n• ColorVoice scene\n\nContinue?",
-            "Build", "Cancel"))
-            return;
-
-        RunSetupSilent();
-        EditorSceneManager.OpenScene("Assets/Scenes/ColorVoice.unity");
-        EditorUtility.DisplayDialog("Done!", "Color Voice Game built.\nPress Play to test!", "OK");
-    }
-
     public static void RunSetupSilent()
     {
         try

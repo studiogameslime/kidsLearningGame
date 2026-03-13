@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -25,6 +27,7 @@ public class ColoringGameController : MonoBehaviour
     public Button undoButton;
     public Button clearButton;
     public Button doneButton;         // shown only during journey mode
+    public Button saveDrawingButton;  // saves drawing to gallery
     public Image eraserHighlight;     // visual indicator when eraser is active
 
     [Header("Settings")]
@@ -111,6 +114,10 @@ public class ColoringGameController : MonoBehaviour
                 doneButton.gameObject.SetActive(false);
             }
         }
+
+        // Wire save drawing button
+        if (saveDrawingButton != null)
+            saveDrawingButton.onClick.AddListener(OnSaveDrawing);
     }
 
     private void SetupOutline()
@@ -298,6 +305,52 @@ public class ColoringGameController : MonoBehaviour
     {
         if (eraserHighlight != null)
             eraserHighlight.gameObject.SetActive(isEraserActive);
+    }
+
+    /// <summary>Called by Save Drawing button — captures and saves the drawing.</summary>
+    public void OnSaveDrawing()
+    {
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null || drawingCanvas == null) return;
+
+        byte[] png = drawingCanvas.EncodeToPNG();
+        if (png == null) return;
+
+        string folder = ProfileManager.Instance.GetProfileFolder(profile.id);
+        string drawingsDir = Path.Combine(folder, "drawings");
+        if (!Directory.Exists(drawingsDir))
+            Directory.CreateDirectory(drawingsDir);
+
+        long timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        string fileName = $"drawing_{timestamp}.png";
+        string fullPath = Path.Combine(drawingsDir, fileName);
+        File.WriteAllBytes(fullPath, png);
+
+        string animalId = GameContext.CurrentSelection != null
+            ? GameContext.CurrentSelection.categoryKey
+            : "free";
+
+        var drawing = new SavedDrawing
+        {
+            imagePath = Path.Combine("profiles", profile.id, "drawings", fileName),
+            animalId = animalId,
+            createdAt = timestamp
+        };
+        profile.savedDrawings.Add(drawing);
+        ProfileManager.Instance.Save();
+
+        // Brief visual feedback — disable button momentarily
+        if (saveDrawingButton != null)
+        {
+            saveDrawingButton.interactable = false;
+            StartCoroutine(ReEnableSaveButton());
+        }
+    }
+
+    private System.Collections.IEnumerator ReEnableSaveButton()
+    {
+        yield return new WaitForSeconds(1.5f);
+        if (saveDrawingButton != null) saveDrawingButton.interactable = true;
     }
 
     /// <summary>Called by Done button during journey mode.</summary>

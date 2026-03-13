@@ -21,20 +21,6 @@ public class MazeGameSetup : EditorWindow
     private const int TopBarHeight   = 130;
     private const int BottomBarHeight = 120;
 
-    [MenuItem("Tools/Kids Learning Game/Setup Maze Game")]
-    public static void RunSetup()
-    {
-        if (!EditorUtility.DisplayDialog(
-            "Maze Game Setup",
-            "This will create/overwrite:\n• MazeGame scene\n\nContinue?",
-            "Build", "Cancel"))
-            return;
-
-        RunSetupSilent();
-        EditorSceneManager.OpenScene("Assets/Scenes/MazeGame.unity");
-        EditorUtility.DisplayDialog("Done!", "Maze Game built.\nPress Play to test!", "OK");
-    }
-
     public static void RunSetupSilent()
     {
         try

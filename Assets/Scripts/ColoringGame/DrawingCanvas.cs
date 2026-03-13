@@ -94,6 +94,12 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
 
     public bool CanUndo => undoStack.Count > 0;
 
+    /// <summary>Returns a PNG-encoded copy of the current drawing.</summary>
+    public byte[] EncodeToPNG()
+    {
+        return drawTexture != null ? drawTexture.EncodeToPNG() : null;
+    }
+
     // ── Input Handling ──
 
     public void OnPointerDown(PointerEventData eventData)

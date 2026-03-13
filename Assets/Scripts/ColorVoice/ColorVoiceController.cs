@@ -77,7 +77,7 @@ public class ColorVoiceController : MonoBehaviour
 
         ShuffleColors();
         currentRound = 0;
-        StartCoroutine(StartRoundSequence());
+        StartCoroutine(WaitForInitThenStart());
     }
 
     private void OnDestroy()
@@ -109,6 +109,22 @@ public class ColorVoiceController : MonoBehaviour
             shuffledColors[i] = shuffledColors[j];
             shuffledColors[j] = temp;
         }
+    }
+
+    private IEnumerator WaitForInitThenStart()
+    {
+        // Wait for recognizer to finish async initialization (Android runs on UI thread)
+        float waited = 0f;
+        while (!recognizer.IsInitialized && waited < 5f)
+        {
+            yield return null;
+            waited += Time.deltaTime;
+        }
+
+        if (!recognizer.IsInitialized)
+            Debug.LogWarning("[ColorVoice] Speech recognizer failed to initialize after 5s");
+
+        StartCoroutine(StartRoundSequence());
     }
 
     private IEnumerator StartRoundSequence()

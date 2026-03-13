@@ -15,6 +15,7 @@ public class ProfileCreationController : MonoBehaviour
     public GameObject stepRecordName;
     public GameObject stepTypeName;
     public GameObject stepChooseAge;
+    public GameObject stepChooseAnimal;
     public GameObject stepChooseColor;
     public GameObject stepDone;
 
@@ -37,6 +38,12 @@ public class ProfileCreationController : MonoBehaviour
     public Transform ageButtonContainer;
     public Button[] ageButtons; // ages 1-8
     public Button ageNextButton;
+
+    [Header("Animal Step")]
+    public Button[] animalButtons; // 3 buttons: Cat, Dog, Bear
+    public Image[] animalImages;   // corresponding animal images
+    public Sprite[] animalSprites; // fallback static sprites (set by editor)
+    public Button animalNextButton;
 
     [Header("Color Step")]
     public Transform colorButtonContainer;
@@ -71,6 +78,8 @@ public class ProfileCreationController : MonoBehaviour
     private int currentStep;
     private string recordedName;
     private int selectedAge = 3;
+    private string selectedAnimalId = "Cat";
+    private UISpriteAnimator[] animalAnimators;
     private string selectedColorHex = "#90CAF9";
     private string recordedAudioPath;
     private AudioClip recordedClip;
@@ -125,6 +134,22 @@ public class ProfileCreationController : MonoBehaviour
         if (ageNextButton != null)
             ageNextButton.onClick.AddListener(() => GoToStep(4));
 
+        // Wire animal buttons
+        string[] animalIds = { "Cat", "Dog", "Bear" };
+        if (animalButtons != null)
+        {
+            for (int i = 0; i < animalButtons.Length && i < animalIds.Length; i++)
+            {
+                int idx = i;
+                string id = animalIds[i];
+                animalButtons[i].onClick.AddListener(() => OnAnimalSelected(idx, id));
+            }
+        }
+        if (animalNextButton != null)
+            animalNextButton.onClick.AddListener(() => GoToStep(5));
+
+        InitAnimalAnimations();
+
         // Wire color buttons
         for (int i = 0; i < AvatarColors.Length && colorButtons != null && i < colorButtons.Length; i++)
         {
@@ -133,7 +158,7 @@ public class ProfileCreationController : MonoBehaviour
             colorButtons[i].onClick.AddListener(() => OnColorSelected(idx, hex));
         }
         if (colorNextButton != null)
-            colorNextButton.onClick.AddListener(() => GoToStep(5));
+            colorNextButton.onClick.AddListener(() => GoToStep(6));
 
         // Wire pick photo button
         if (pickPhotoButton != null)
@@ -167,15 +192,16 @@ public class ProfileCreationController : MonoBehaviour
         if (stepRecordName != null) stepRecordName.SetActive(step == 1);
         if (stepTypeName != null) stepTypeName.SetActive(step == 2);
         if (stepChooseAge != null) stepChooseAge.SetActive(step == 3);
+        if (stepChooseAnimal != null) stepChooseAnimal.SetActive(step == 4);
         if (stepChooseColor != null)
         {
-            stepChooseColor.SetActive(step == 4);
-            if (step == 4) UpdateColorPreview();
+            stepChooseColor.SetActive(step == 5);
+            if (step == 5) UpdateColorPreview();
         }
         if (stepDone != null)
         {
-            stepDone.SetActive(step == 5);
-            if (step == 5) UpdateDoneStep();
+            stepDone.SetActive(step == 6);
+            if (step == 6) UpdateDoneStep();
         }
 
         // Play step sound
@@ -191,7 +217,7 @@ public class ProfileCreationController : MonoBehaviour
 
         // Update back button visibility
         if (backButton != null)
-            backButton.gameObject.SetActive(step > 0 && step < 5);
+            backButton.gameObject.SetActive(step > 0 && step < 6);
     }
 
     private void OnBackPressed()
@@ -321,6 +347,45 @@ public class ProfileCreationController : MonoBehaviour
         }
 
         if (ageNextButton != null) ageNextButton.interactable = true;
+    }
+
+    // ── Animal ──
+
+    private void InitAnimalAnimations()
+    {
+        // UISpriteAnimators are pre-built in the scene by ProfileSceneSetup.
+        // Just find the existing components on the animal images.
+        animalAnimators = new UISpriteAnimator[3];
+
+        if (animalImages == null) return;
+
+        for (int i = 0; i < animalImages.Length && i < 3; i++)
+        {
+            if (animalImages[i] == null) continue;
+            animalAnimators[i] = animalImages[i].GetComponent<UISpriteAnimator>();
+        }
+    }
+
+    private void OnAnimalSelected(int index, string animalId)
+    {
+        selectedAnimalId = animalId;
+
+        // Highlight selected
+        if (animalButtons != null)
+        {
+            for (int i = 0; i < animalButtons.Length; i++)
+            {
+                var outline = animalButtons[i].GetComponent<Outline>();
+                if (outline != null)
+                    outline.enabled = (i == index);
+            }
+        }
+
+        // Play success animation on selected animal
+        if (animalAnimators != null && index < animalAnimators.Length && animalAnimators[index] != null)
+            animalAnimators[index].PlaySuccess();
+
+        if (animalNextButton != null) animalNextButton.interactable = true;
     }
 
     // ── Color / Photo ──
@@ -541,11 +606,14 @@ public class ProfileCreationController : MonoBehaviour
             profile.nameAudioPath = Path.Combine("profiles", profile.id, "name.wav");
         }
 
+        // Save favorite animal
+        profile.favoriteAnimalId = selectedAnimalId;
+
         ProfileManager.Instance.UpdateProfile(profile);
 
-        // Set as active and go to main menu
+        // Set as active and go to home
         ProfileManager.Instance.SetActiveProfile(profile);
-        NavigationManager.GoToMainMenu();
+        NavigationManager.GoToHome();
     }
 
     // ── WAV Save Helper ──

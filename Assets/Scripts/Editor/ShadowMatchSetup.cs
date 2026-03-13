@@ -30,20 +30,6 @@ public class ShadowMatchSetup : EditorWindow
         HexColor("#F8BBD0")
     };
 
-    [MenuItem("Tools/Kids Learning Game/Setup Shadow Match")]
-    public static void RunSetup()
-    {
-        if (!EditorUtility.DisplayDialog(
-            "Shadow Match Setup",
-            "This will create/overwrite:\n• ShadowMatch scene\n• Update Shadows.asset with animal data\n\nContinue?",
-            "Build", "Cancel"))
-            return;
-
-        RunSetupSilent();
-        EditorSceneManager.OpenScene("Assets/Scenes/ShadowMatch.unity");
-        EditorUtility.DisplayDialog("Done!", "Shadow Match built.\nPress Play to test!", "OK");
-    }
-
     public static void RunSetupSilent()
     {
         try

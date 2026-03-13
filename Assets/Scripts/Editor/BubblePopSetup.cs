@@ -30,20 +30,6 @@ public class BubblePopSetup : EditorWindow
         HexColor("#F8BBD0")
     };
 
-    [MenuItem("Tools/Kids Learning Game/Setup Bubble Pop")]
-    public static void RunSetup()
-    {
-        if (!EditorUtility.DisplayDialog(
-            "Bubble Pop Setup",
-            "This will create/overwrite:\n• BubblePop scene\n• Update PopTheBubbles.asset with animal data\n\nContinue?",
-            "Build", "Cancel"))
-            return;
-
-        RunSetupSilent();
-        EditorSceneManager.OpenScene("Assets/Scenes/BubblePop.unity");
-        EditorUtility.DisplayDialog("Done!", "Bubble Pop built.\nPress Play to test!", "OK");
-    }
-
     public static void RunSetupSilent()
     {
         try

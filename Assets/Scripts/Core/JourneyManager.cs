@@ -82,8 +82,13 @@ public class JourneyManager : MonoBehaviour
         {
             foreach (var id in DiscoveryCatalog.StarterGameIds)
                 if (!jp.unlockedGameIds.Contains(id)) jp.unlockedGameIds.Add(id);
-            foreach (var id in DiscoveryCatalog.StarterAnimals)
-                if (!jp.unlockedAnimalIds.Contains(id)) jp.unlockedAnimalIds.Add(id);
+
+            // Only unlock the favorite animal (not all 3 starters)
+            string favAnimal = profile.favoriteAnimalId;
+            if (string.IsNullOrEmpty(favAnimal)) favAnimal = "Cat";
+            if (!jp.unlockedAnimalIds.Contains(favAnimal))
+                jp.unlockedAnimalIds.Add(favAnimal);
+
             foreach (var id in DiscoveryCatalog.StarterColors)
                 if (!jp.unlockedColorIds.Contains(id)) jp.unlockedColorIds.Add(id);
             jp.gamesUntilNextDiscovery = 1; // First discovery after game 1
@@ -99,6 +104,19 @@ public class JourneyManager : MonoBehaviour
         ActiveDiscovery = null;
 
         IsJourneyActive = true;
+
+        // First game uses the favorite animal — pick a game that actually has it as sub-item
+        if (sessionGamesPlayed == 0)
+        {
+            string favAnimal = profile.favoriteAnimalId;
+            if (string.IsNullOrEmpty(favAnimal)) favAnimal = "Cat";
+            string bestGame = FindGameWithAnimal(favAnimal, jp.unlockedGameIds);
+            if (bestGame == null)
+                bestGame = jp.unlockedGameIds[Random.Range(0, jp.unlockedGameIds.Count)];
+            LoadGame(bestGame, favAnimal);
+            return;
+        }
+
         PickNextGame();
     }
 
@@ -264,6 +282,34 @@ public class JourneyManager : MonoBehaviour
         lastPlayedGameId = picked;
 
         LoadGame(picked, null);
+    }
+
+    private string FindGameWithAnimal(string animalId, List<string> gameIds)
+    {
+        var db = GetGameDb();
+        if (db == null) return null;
+
+        string lowerAnimal = animalId.ToLower();
+        var matches = new List<string>();
+
+        foreach (var gameId in gameIds)
+        {
+            foreach (var g in db.games)
+            {
+                if (g.id != gameId || !g.hasSubItems || g.subItems == null) continue;
+                foreach (var sub in g.subItems)
+                {
+                    if (sub.categoryKey != null && sub.categoryKey.ToLower() == lowerAnimal)
+                    {
+                        matches.Add(gameId);
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+
+        return matches.Count > 0 ? matches[Random.Range(0, matches.Count)] : null;
     }
 
     private void LoadChainedGame()

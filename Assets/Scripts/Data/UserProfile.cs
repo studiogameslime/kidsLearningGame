@@ -15,10 +15,12 @@ public class UserProfile
     public string avatarColorHex = "#90CAF9";
     public string avatarImagePath; // relative path in persistentDataPath, null if using color+initial
     public string nameAudioPath;  // relative path to recorded name audio clip
+    public string favoriteAnimalId; // chosen during profile creation (Cat, Dog, or Bear)
     public long createdAt;
     public long lastPlayedAt;
     public GameProgress progress = new GameProgress();
     public JourneyProgress journey = new JourneyProgress();
+    public List<SavedDrawing> savedDrawings = new List<SavedDrawing>();
 
     public UserProfile()
     {
@@ -107,6 +109,17 @@ public class GameStat
     public int timesPlayed;
     public int bestScore;
     public long lastPlayedAt;
+}
+
+/// <summary>
+/// A saved drawing from the coloring game.
+/// </summary>
+[Serializable]
+public class SavedDrawing
+{
+    public string imagePath;   // relative path in persistentDataPath
+    public string animalId;    // which animal was being colored (or "free")
+    public long createdAt;
 }
 
 /// <summary>

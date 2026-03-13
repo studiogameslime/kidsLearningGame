@@ -50,7 +50,7 @@ public class GameCompletionBridge : MonoBehaviour
 
         // Only fire from actual game scenes, not DiscoveryReveal/Home/World
         string sceneName = SceneManager.GetActiveScene().name;
-        if (sceneName == "DiscoveryReveal" || sceneName == "HomeScene" || sceneName == "WorldScene")
+        if (sceneName == "DiscoveryReveal" || sceneName == "HomeScene" || sceneName == "WorldScene" || sceneName == "DrawingGallery")
             return;
 
         _hasFiredThisScene = true;

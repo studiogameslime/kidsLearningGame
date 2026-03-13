@@ -19,20 +19,6 @@ public class ColorMixingSetup : EditorWindow
     private const int TopBarHeight   = 130;
     private const int BottomBarHeight = 120;
 
-    [MenuItem("Tools/Kids Learning Game/Setup Color Mixing")]
-    public static void RunSetup()
-    {
-        if (!EditorUtility.DisplayDialog(
-            "Color Mixing Setup",
-            "This will create/overwrite:\n• ColorMixing scene\n\nContinue?",
-            "Build", "Cancel"))
-            return;
-
-        RunSetupSilent();
-        EditorSceneManager.OpenScene("Assets/Scenes/ColorMixing.unity");
-        EditorUtility.DisplayDialog("Done!", "Color Mixing built.\nPress Play to test!", "OK");
-    }
-
     public static void RunSetupSilent()
     {
         try

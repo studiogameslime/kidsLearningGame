@@ -19,6 +19,9 @@ public interface ISpeechRecognizer
     /// <summary>True if currently listening.</summary>
     bool IsListening { get; }
 
+    /// <summary>True after Initialize() has completed.</summary>
+    bool IsInitialized { get; }
+
     /// <summary>Fired when the recognizer is ready to accept speech.</summary>
     event System.Action OnReady;
 

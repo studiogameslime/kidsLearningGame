@@ -9,6 +9,7 @@ using UnityEngine;
 public class AndroidSpeechRecognizer : MonoBehaviour, ISpeechRecognizer
 {
     public bool IsListening { get; private set; }
+    public bool IsInitialized { get; private set; }
 
     public event System.Action OnReady;
     public event System.Action<string[]> OnResults;
@@ -19,7 +20,6 @@ public class AndroidSpeechRecognizer : MonoBehaviour, ISpeechRecognizer
     private AndroidJavaObject speechRecognizer;
     private AndroidJavaObject activity;
     private string languageCode;
-    private bool isInitialized;
 
     // Thread-safe action queue for dispatching Android callbacks to Unity main thread
     private readonly Queue<System.Action> mainThreadQueue = new Queue<System.Action>();
@@ -50,7 +50,7 @@ public class AndroidSpeechRecognizer : MonoBehaviour, ISpeechRecognizer
 
                 speechRecognizer = srClass.CallStatic<AndroidJavaObject>("createSpeechRecognizer", activity);
                 speechRecognizer.Call("setRecognitionListener", new SpeechListener(this));
-                isInitialized = true;
+                IsInitialized = true;
                 Debug.Log("[AndroidSpeechRecognizer] Initialized successfully");
             }
         }));
@@ -58,7 +58,7 @@ public class AndroidSpeechRecognizer : MonoBehaviour, ISpeechRecognizer
 
     public void StartListening()
     {
-        if (!isInitialized || IsListening) return;
+        if (!IsInitialized || IsListening) return;
         IsListening = true;
 
         activity.Call("runOnUiThread", new AndroidJavaRunnable(() =>
@@ -85,7 +85,7 @@ public class AndroidSpeechRecognizer : MonoBehaviour, ISpeechRecognizer
     public void StopListening()
     {
         IsListening = false;
-        if (!isInitialized) return;
+        if (!IsInitialized) return;
 
         activity.Call("runOnUiThread", new AndroidJavaRunnable(() =>
         {
@@ -97,7 +97,7 @@ public class AndroidSpeechRecognizer : MonoBehaviour, ISpeechRecognizer
     public void Destroy()
     {
         IsListening = false;
-        isInitialized = false;
+        IsInitialized = false;
 
         if (activity != null)
         {

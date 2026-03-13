@@ -36,6 +36,8 @@ public static class NavigationManager
     private const string SelectionMenuScene = "SelectionMenu";
     private const string ProfileSelectionScene = "ProfileSelection";
     private const string ProfileCreationScene = "ProfileCreation";
+    private const string WorldSceneName = "WorldScene";
+    private const string DrawingGalleryScene = "DrawingGallery";
 
     /// <summary>Go to the home screen (main entry point after profile selection).</summary>
     public static void GoToHome()
@@ -67,6 +69,19 @@ public static class NavigationManager
         }
         GameContext.Clear();
         SceneManager.LoadScene(MainMenuScene);
+    }
+
+    /// <summary>Go to the World scene.</summary>
+    public static void GoToWorld()
+    {
+        GameContext.Clear();
+        SceneManager.LoadScene(WorldSceneName);
+    }
+
+    /// <summary>Go to the drawing gallery.</summary>
+    public static void GoToDrawingGallery()
+    {
+        SceneManager.LoadScene(DrawingGalleryScene);
     }
 
     /// <summary>Open the reusable selection screen for a game that has sub-items.</summary>

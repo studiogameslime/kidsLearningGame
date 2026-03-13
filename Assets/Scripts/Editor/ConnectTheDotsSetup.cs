@@ -23,20 +23,6 @@ public class ConnectTheDotsSetup : EditorWindow
     private const int BottomBarHeight = 120;
     private const float DotSize     = 80f;
 
-    [MenuItem("Tools/Kids Learning Game/Setup Connect The Dots")]
-    public static void RunSetup()
-    {
-        if (!EditorUtility.DisplayDialog(
-            "Connect The Dots Setup",
-            "This will create/overwrite:\n• ConnectTheDots scene\n• Update FillTheDots.asset\n\nContinue?",
-            "Build", "Cancel"))
-            return;
-
-        RunSetupSilent();
-        EditorSceneManager.OpenScene("Assets/Scenes/ConnectTheDots.unity");
-        EditorUtility.DisplayDialog("Done!", "Connect The Dots built.\nPress Play to test!", "OK");
-    }
-
     public static void RunSetupSilent()
     {
         try

@@ -7,23 +7,22 @@ using UnityEngine;
 public class MockSpeechRecognizer : MonoBehaviour, ISpeechRecognizer
 {
     public bool IsListening { get; private set; }
+    public bool IsInitialized { get; private set; }
 
     public event System.Action OnReady;
     public event System.Action<string[]> OnResults;
     public event System.Action<string> OnPartialResult;
     public event System.Action<string> OnError;
 
-    private bool isInitialized;
-
     public void Initialize(string languageCode)
     {
-        isInitialized = true;
+        IsInitialized = true;
         Debug.Log($"[MockSpeechRecognizer] Initialized with language: {languageCode}");
     }
 
     public void StartListening()
     {
-        if (!isInitialized) return;
+        if (!IsInitialized) return;
         IsListening = true;
         Debug.Log("[MockSpeechRecognizer] Listening started — use on-screen buttons or number keys 1-7");
         OnReady?.Invoke();
@@ -36,7 +35,7 @@ public class MockSpeechRecognizer : MonoBehaviour, ISpeechRecognizer
 
     public void Destroy()
     {
-        isInitialized = false;
+        IsInitialized = false;
         IsListening = false;
     }
 

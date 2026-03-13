@@ -14,11 +14,13 @@ public class HomeController : MonoBehaviour
 
     [Header("UI References")]
     public Button playButton;
+    public Image playButtonImage;
     public Button worldButton;
     public Button profileButton;
     public Button allGamesButton;
     public Image profileAvatar;
     public TextMeshProUGUI profileInitial;
+    public Image[] arrowImages;
 
     private void Start()
     {
@@ -33,6 +35,7 @@ public class HomeController : MonoBehaviour
 
         UpdateProfileAvatar();
         StartCoroutine(PulsePlayButton());
+        StartCoroutine(BobArrows());
     }
 
     private void UpdateProfileAvatar()
@@ -44,6 +47,19 @@ public class HomeController : MonoBehaviour
             profileAvatar.color = profile.AvatarColor;
         if (profileInitial != null)
             profileInitial.text = profile.Initial;
+
+        // Color play button with profile's chosen color
+        if (playButtonImage != null)
+            playButtonImage.color = profile.AvatarColor;
+
+        // Color arrows to match
+        if (arrowImages != null)
+        {
+            Color arrowColor = new Color(
+                profile.AvatarColor.r, profile.AvatarColor.g, profile.AvatarColor.b, 0.6f);
+            foreach (var arrow in arrowImages)
+                if (arrow != null) arrow.color = arrowColor;
+        }
     }
 
     private IEnumerator PulsePlayButton()
@@ -56,6 +72,35 @@ public class HomeController : MonoBehaviour
         {
             yield return ScaleTo(rt, Vector3.one * 1.08f, 0.8f);
             yield return ScaleTo(rt, Vector3.one, 0.8f);
+        }
+    }
+
+    private IEnumerator BobArrows()
+    {
+        if (arrowImages == null || arrowImages.Length == 0) yield break;
+
+        var rts = new RectTransform[arrowImages.Length];
+        var basePos = new Vector2[arrowImages.Length];
+        for (int i = 0; i < arrowImages.Length; i++)
+        {
+            if (arrowImages[i] == null) continue;
+            rts[i] = arrowImages[i].GetComponent<RectTransform>();
+            if (rts[i] != null) basePos[i] = rts[i].anchoredPosition;
+        }
+
+        float t = 0f;
+        while (true)
+        {
+            t += Time.deltaTime;
+            for (int i = 0; i < rts.Length; i++)
+            {
+                if (rts[i] == null) continue;
+                // Bob along arrow direction (use local up)
+                float offset = Mathf.Sin(t * 3f + i * 1.5f) * 8f;
+                Vector2 dir = rts[i].up.normalized;
+                rts[i].anchoredPosition = basePos[i] + new Vector2(dir.x, dir.y) * offset;
+            }
+            yield return null;
         }
     }
 

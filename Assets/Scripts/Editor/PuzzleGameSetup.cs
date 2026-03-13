@@ -33,20 +33,6 @@ public class PuzzleGameSetup : EditorWindow
         HexColor("#F8BBD0")
     };
 
-    [MenuItem("Tools/Kids Learning Game/Setup Puzzle Game")]
-    public static void RunSetup()
-    {
-        if (!EditorUtility.DisplayDialog(
-            "Puzzle Game Setup",
-            "This will create/overwrite:\n• PuzzleGame scene\n• Update Puzzle.asset with animal sub-items\n\nContinue?",
-            "Build", "Cancel"))
-            return;
-
-        RunSetupSilent();
-        EditorSceneManager.OpenScene("Assets/Scenes/PuzzleGame.unity");
-        EditorUtility.DisplayDialog("Done!", "Puzzle Game built.\nPress Play to test!", "OK");
-    }
-
     public static void RunSetupSilent()
     {
         try

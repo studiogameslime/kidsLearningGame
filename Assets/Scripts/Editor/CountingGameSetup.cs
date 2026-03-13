@@ -30,20 +30,6 @@ public class CountingGameSetup : EditorWindow
         HexColor("#F8BBD0")
     };
 
-    [MenuItem("Tools/Kids Learning Game/Setup Counting Game")]
-    public static void RunSetup()
-    {
-        if (!EditorUtility.DisplayDialog(
-            "Counting Game Setup",
-            "This will create/overwrite:\n• CountingGame scene\n• Update FindTheCount.asset with animal data\n\nContinue?",
-            "Build", "Cancel"))
-            return;
-
-        RunSetupSilent();
-        EditorSceneManager.OpenScene("Assets/Scenes/CountingGame.unity");
-        EditorUtility.DisplayDialog("Done!", "Counting Game built.\nPress Play to test!", "OK");
-    }
-
     public static void RunSetupSilent()
     {
         try

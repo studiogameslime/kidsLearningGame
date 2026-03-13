@@ -66,18 +66,16 @@ public class DiscoveryRevealController : MonoBehaviour
 
     private void SetupAnimalReveal(string animalId)
     {
-        // Try to load the animal sprite
-        string[] paths = {
-            $"Animals/{animalId}/{animalId}Sprite",
-            $"Animals/{animalId}/{animalId}"
-        };
-
         Sprite sprite = null;
-        foreach (var path in paths)
-        {
-            sprite = Resources.Load<Sprite>(path);
-            if (sprite != null) break;
-        }
+
+        // Try animated data first
+        var animData = AnimalAnimData.Load(animalId);
+        if (animData != null && animData.idleFrames != null && animData.idleFrames.Length > 0)
+            sprite = animData.idleFrames[0];
+
+        // Fallback to static sprite in Resources
+        if (sprite == null)
+            sprite = Resources.Load<Sprite>($"AnimalSprites/{animalId}");
 
         if (sprite != null && revealImage != null)
         {

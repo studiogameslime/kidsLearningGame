@@ -76,6 +76,31 @@ public class ProjectSetup : EditorWindow
     //  MENU ENTRY
     // ─────────────────────────────────────────────
 
+    [MenuItem("Tools/Kids Learning Game/Reset Save Data")]
+    public static void ResetSaveData()
+    {
+        if (!EditorUtility.DisplayDialog(
+            "Reset Save Data",
+            "This will delete ALL saved profiles, drawings, and recordings.\n\nThe app will start fresh as if newly installed.\n\nThis cannot be undone!",
+            "Reset Everything", "Cancel"))
+            return;
+
+        string persistentPath = Application.persistentDataPath;
+
+        // Delete profiles.json
+        string profilesJson = System.IO.Path.Combine(persistentPath, "profiles.json");
+        if (System.IO.File.Exists(profilesJson))
+            System.IO.File.Delete(profilesJson);
+
+        // Delete profiles/ directory (audio, drawings, etc.)
+        string profilesDir = System.IO.Path.Combine(persistentPath, "profiles");
+        if (System.IO.Directory.Exists(profilesDir))
+            System.IO.Directory.Delete(profilesDir, true);
+
+        Debug.Log($"Save data reset. Deleted: {profilesJson}, {profilesDir}");
+        EditorUtility.DisplayDialog("Done!", "All save data has been deleted.\n\nThe app will start fresh on next Play.", "OK");
+    }
+
     [MenuItem("Tools/Kids Learning Game/Setup Project")]
     public static void RunSetup()
     {
@@ -144,6 +169,9 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Color Voice Game…", 0.97f);
             ColorVoiceGameSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Animal Data…", 0.965f);
+            WorldSceneSetup.BuildAnimalData();
+
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Profile Scenes…", 0.97f);
             ProfileSceneSetup.RunSetupSilent();
 
@@ -152,6 +180,9 @@ public class ProjectSetup : EditorWindow
 
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Discovery Reveal…", 0.985f);
             DiscoveryRevealSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Drawing Gallery…", 0.992f);
+            DrawingGallerySetup.RunSetupSilent();
 
             EditorUtility.DisplayProgressBar("Setting up project…", "Building World Scene…", 0.99f);
             WorldSceneSetup.RunSetupSilent();
@@ -1204,6 +1235,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/CountingGame.unity",
             $"{ScenesPath}/ColorVoice.unity",
             $"{ScenesPath}/DiscoveryReveal.unity",
+            $"{ScenesPath}/DrawingGallery.unity",
             $"{ScenesPath}/WorldScene.unity",
         };
 

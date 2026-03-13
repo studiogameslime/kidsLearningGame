@@ -28,20 +28,6 @@ public class ProfileSceneSetup : EditorWindow
         "#FFF59D", "#FFCC80", "#FFAB91", "#BCAAA4"
     };
 
-    [MenuItem("Tools/Kids Learning Game/Setup Profile Scenes")]
-    public static void RunSetup()
-    {
-        if (!EditorUtility.DisplayDialog(
-            "Profile Scenes Setup",
-            "This will create/overwrite:\n• ProfileSelection scene\n• ProfileCreation scene\n• ProfileCard prefab\n\nContinue?",
-            "Build", "Cancel"))
-            return;
-
-        RunSetupSilent();
-        EditorSceneManager.OpenScene("Assets/Scenes/ProfileSelection.unity");
-        EditorUtility.DisplayDialog("Done!", "Profile scenes built successfully.\nPress Play to test!", "OK");
-    }
-
     public static void RunSetupSilent()
     {
         try
@@ -604,7 +590,122 @@ public class ProfileSceneSetup : EditorWindow
             new Vector2(0.15f, 0.08f), new Vector2(0.85f, 0.22f), roundedRect, true);
         ageNextBtn.GetComponent<Button>().interactable = false;
 
-        // ── STEP 4: Choose Color ──
+        // ── STEP 4: Choose Animal ──
+        var stepAnimal = CreateStepPanel(contentArea.transform, "StepChooseAnimal");
+        CreateText(stepAnimal.transform, "AnimalTitle",
+            "\u05D1\u05D7\u05E8\u05D5 \u05D7\u05D9\u05D4", 48, DarkText, // בחרו חיה
+            new Vector2(0, 0.82f), new Vector2(1, 0.95f), true);
+        CreateText(stepAnimal.transform, "AnimalSub",
+            "\u05DE\u05D9 \u05D9\u05D7\u05DB\u05D4 \u05DC\u05DB\u05DD \u05D1\u05E2\u05D5\u05DC\u05DD?", 32, HexColor("#777777"), // ?מי יחכה לכם בעולם
+            new Vector2(0, 0.74f), new Vector2(1, 0.84f), true);
+
+        // Animal buttons (Cat, Dog, Bear) — large images in a row
+        string[] animalIds = { "Cat", "Dog", "Bear" };
+        var animalGridGO = new GameObject("AnimalGrid");
+        animalGridGO.transform.SetParent(stepAnimal.transform, false);
+        var animalGridRT = animalGridGO.AddComponent<RectTransform>();
+        animalGridRT.anchorMin = new Vector2(0.05f, 0.30f);
+        animalGridRT.anchorMax = new Vector2(0.95f, 0.75f);
+        animalGridRT.offsetMin = Vector2.zero;
+        animalGridRT.offsetMax = Vector2.zero;
+        var animalLayout = animalGridGO.AddComponent<HorizontalLayoutGroup>();
+        animalLayout.spacing = 24;
+        animalLayout.childAlignment = TextAnchor.MiddleCenter;
+        animalLayout.childForceExpandWidth = false;
+        animalLayout.childForceExpandHeight = false;
+
+        var animalButtons = new Button[3];
+        var animalImages = new Image[3];
+        for (int i = 0; i < 3; i++)
+        {
+            var animalBtnGO = new GameObject($"Animal_{animalIds[i]}");
+            animalBtnGO.transform.SetParent(animalGridGO.transform, false);
+            var animalBtnRT = animalBtnGO.AddComponent<RectTransform>();
+            animalBtnRT.sizeDelta = new Vector2(250, 250);
+
+            // Background circle
+            var animalBgImg = animalBtnGO.AddComponent<Image>();
+            animalBgImg.sprite = circle;
+            animalBgImg.color = new Color(0.95f, 0.92f, 0.88f); // warm light bg
+
+            var animalShadow = animalBtnGO.AddComponent<Shadow>();
+            animalShadow.effectColor = new Color(0, 0, 0, 0.15f);
+            animalShadow.effectDistance = new Vector2(1, -2);
+
+            var animalBtnComp = animalBtnGO.AddComponent<Button>();
+            animalBtnComp.targetGraphic = animalBgImg;
+            animalButtons[i] = animalBtnComp;
+
+            // Selection outline (disabled by default)
+            var animalOutline = animalBtnGO.AddComponent<Outline>();
+            animalOutline.effectColor = AccentColor;
+            animalOutline.effectDistance = new Vector2(4, 4);
+            animalOutline.enabled = false;
+
+            // Animal image
+            var animalImgGO = new GameObject("AnimalImage");
+            animalImgGO.transform.SetParent(animalBtnGO.transform, false);
+            var animalImgRT = animalImgGO.AddComponent<RectTransform>();
+            animalImgRT.anchorMin = new Vector2(0.05f, 0.05f);
+            animalImgRT.anchorMax = new Vector2(0.95f, 0.95f);
+            animalImgRT.offsetMin = Vector2.zero;
+            animalImgRT.offsetMax = Vector2.zero;
+            var animalImg = animalImgGO.AddComponent<Image>();
+            animalImg.preserveAspect = true;
+            animalImg.raycastTarget = false;
+            animalImages[i] = animalImg;
+
+            // Load animation frames directly from Art folders
+            string artDir = $"Assets/Art/Animals/{animalIds[i]}/Art";
+            var idleFrames = LoadSpritesFromFolder($"{artDir}/Idle");
+            var floatingFrames = LoadSpritesFromFolder($"{artDir}/Floating");
+            var successFrames = LoadSpritesFromFolder($"{artDir}/Success");
+
+            // Get FPS from .anim clip
+            string animDir = $"Assets/Art/Animals/{animalIds[i]}/Animations";
+            string clipName = animalIds[i] == "Dog" ? "dogIdle" : $"{animalIds[i]}Idle";
+            var idleClip = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{animDir}/{clipName}.anim");
+            float fps = idleClip != null ? idleClip.frameRate : 30f;
+
+            // Set first frame as static sprite
+            if (idleFrames != null && idleFrames.Length > 0)
+                animalImg.sprite = idleFrames[0];
+            else
+                Debug.LogWarning($"ProfileSceneSetup: No idle frames for {animalIds[i]} in {artDir}/Idle");
+
+            // Add UISpriteAnimator directly in scene (no runtime loading needed)
+            var uiAnim = animalImgGO.AddComponent<UISpriteAnimator>();
+            uiAnim.targetImage = animalImg;
+            uiAnim.idleFrames = idleFrames;
+            uiAnim.floatingFrames = floatingFrames;
+            uiAnim.successFrames = successFrames;
+            uiAnim.framesPerSecond = fps;
+
+            // Name label below
+            var nameLabelGO = new GameObject("Name");
+            nameLabelGO.transform.SetParent(animalBtnGO.transform, false);
+            var nameLabelRT = nameLabelGO.AddComponent<RectTransform>();
+            nameLabelRT.anchorMin = new Vector2(0, -0.15f);
+            nameLabelRT.anchorMax = new Vector2(1, 0.05f);
+            nameLabelRT.offsetMin = Vector2.zero;
+            nameLabelRT.offsetMax = Vector2.zero;
+            var nameLabelTMP = nameLabelGO.AddComponent<TextMeshProUGUI>();
+            // Hebrew names
+            string[] hebrewNames = { "\u05D7\u05EA\u05D5\u05DC", "\u05DB\u05DC\u05D1", "\u05D3\u05D5\u05D1" }; // חתול, כלב, דוב
+            nameLabelTMP.text = hebrewNames[i];
+            nameLabelTMP.fontSize = 28;
+            nameLabelTMP.fontStyle = FontStyles.Bold;
+            nameLabelTMP.color = DarkText;
+            nameLabelTMP.alignment = TextAlignmentOptions.Center;
+            nameLabelTMP.isRightToLeftText = true;
+            nameLabelTMP.raycastTarget = false;
+        }
+
+        var animalNextBtn = CreateBigButton(stepAnimal.transform, "AnimalNextButton",
+            "\u05D4\u05DE\u05E9\u05DA", AccentColor, // המשך
+            new Vector2(0.15f, 0.08f), new Vector2(0.85f, 0.22f), roundedRect, true);
+
+        // ── STEP 5: Choose Color ──
         var stepColor = CreateStepPanel(contentArea.transform, "StepChooseColor");
         CreateText(stepColor.transform, "ColorTitle",
             "\u05D1\u05D7\u05E8\u05D5 \u05E6\u05D1\u05E2", 48, DarkText, // בחרו צבע
@@ -872,6 +973,22 @@ public class ProfileSceneSetup : EditorWindow
         controller.ageButtons = ageButtons;
         controller.ageNextButton = ageNextBtn.GetComponent<Button>();
 
+        controller.stepChooseAnimal = stepAnimal;
+        controller.animalButtons = animalButtons;
+        controller.animalImages = animalImages;
+        controller.animalNextButton = animalNextBtn.GetComponent<Button>();
+
+        // Wire fallback static sprites (idle frames, not puzzle images)
+        var fallbackSprites = new Sprite[3];
+        for (int i = 0; i < animalIds.Length; i++)
+        {
+            var animAsset = AssetDatabase.LoadAssetAtPath<AnimalAnimData>(
+                $"Assets/Resources/AnimalAnim/{animalIds[i]}.asset");
+            if (animAsset != null && animAsset.idleFrames != null && animAsset.idleFrames.Length > 0)
+                fallbackSprites[i] = animAsset.idleFrames[0];
+        }
+        controller.animalSprites = fallbackSprites;
+
         controller.colorButtons = colorButtons;
         controller.colorPreview = colorPreviewImg;
         controller.colorPreviewPhoto = cpPhotoImg;
@@ -901,12 +1018,14 @@ public class ProfileSceneSetup : EditorWindow
             "What is your name.mp3",
             "Write your name.mp3",
             "What is your age.mp3",
+            "",                                  // step 4: choose animal (no audio yet)
             "What is you favorite color.mp3",
             "Lets play.mp3"
         };
         var stepClips = new AudioClip[stepSoundFiles.Length];
         for (int i = 0; i < stepSoundFiles.Length; i++)
         {
+            if (string.IsNullOrEmpty(stepSoundFiles[i])) continue;
             stepClips[i] = AssetDatabase.LoadAssetAtPath<AudioClip>(soundFolder + stepSoundFiles[i]);
             if (stepClips[i] == null)
                 Debug.LogWarning($"Onboarding sound not found: {soundFolder}{stepSoundFiles[i]}");
@@ -1208,14 +1327,73 @@ public class ProfileSceneSetup : EditorWindow
         return c;
     }
 
+    private static Sprite[] LoadSpritesFromFolder(string folderPath)
+    {
+        if (!AssetDatabase.IsValidFolder(folderPath))
+            return new Sprite[0];
+
+        var guids = AssetDatabase.FindAssets("t:Texture2D", new[] { folderPath });
+        var sprites = new List<Sprite>();
+
+        var paths = new List<string>();
+        foreach (var guid in guids)
+            paths.Add(AssetDatabase.GUIDToAssetPath(guid));
+        paths.Sort();
+
+        foreach (var path in paths)
+        {
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (sprite != null)
+            {
+                sprites.Add(sprite);
+            }
+            else
+            {
+                var allAssets = AssetDatabase.LoadAllAssetsAtPath(path);
+                if (allAssets != null)
+                    foreach (var asset in allAssets)
+                        if (asset is Sprite s) { sprites.Add(s); break; }
+            }
+        }
+
+        return sprites.ToArray();
+    }
+
     private static Sprite LoadSprite(string path)
     {
         var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
         if (sprite != null) return sprite;
+
+        // Try loading all sub-assets (handles non-standard sprite IDs)
         var allAssets = AssetDatabase.LoadAllAssetsAtPath(path);
         if (allAssets != null)
             foreach (var asset in allAssets)
                 if (asset is Sprite s) return s;
+
+        // Force reimport and retry — handles textures with stale import state
+        if (System.IO.File.Exists(path))
+        {
+            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer != null)
+            {
+                importer.textureType = TextureImporterType.Sprite;
+                importer.spriteImportMode = SpriteImportMode.Single;
+                importer.SaveAndReimport();
+            }
+            else
+            {
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+            }
+
+            sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (sprite != null) return sprite;
+
+            allAssets = AssetDatabase.LoadAllAssetsAtPath(path);
+            if (allAssets != null)
+                foreach (var asset in allAssets)
+                    if (asset is Sprite s2) return s2;
+        }
+
         return null;
     }
 }
