@@ -56,15 +56,15 @@ public class WorldEnvironment : MonoBehaviour
 
     private void Start()
     {
-        // Calculate positions based on parent
-        // Sun/moon use anchor at 0.93 of content height, so anchoredPosition.y=0 is the rest position.
-        // offScreenY is a negative offset that moves them down behind the ground layers.
-        sunRestY = sunRT != null ? sunRT.anchoredPosition.y : 0f;
-        moonRestY = moonRT != null ? moonRT.anchoredPosition.y : 0f;
+        // Sun/moon use anchor (1,1) pivot (1,1). anchoredPosition.y is negative (from top).
+        // Rest positions are their initial Y. To hide, move them far down (large negative Y
+        // relative to anchor at top = off the bottom of the content).
+        sunRestY = sunRT != null ? sunRT.anchoredPosition.y : -30f;
+        moonRestY = moonRT != null ? moonRT.anchoredPosition.y : -45f;
         RectTransform parentRT = sunRT != null ? sunRT.parent as RectTransform : null;
-        float contentHeight = parentRT != null ? parentRT.rect.height : 1810f;
-        // Move from anchor 0.93 down to ~0.30 of content (behind ground at 0.45)
-        offScreenY = -(contentHeight * 0.63f);
+        float contentHeight = parentRT != null ? parentRT.rect.height : 1080f;
+        // Move down past the ground layers (anchor at top, so negative Y goes downward)
+        offScreenY = -(contentHeight * 0.7f);
 
         // Start in day mode
         IsNight = false;

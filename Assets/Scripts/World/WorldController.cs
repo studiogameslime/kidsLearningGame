@@ -34,8 +34,16 @@ public class WorldController : MonoBehaviour
     public int balloonsPerColor = 2;
     public float shadowOffsetY = -8f;
 
+    [Header("Exclusion Zones")]
+    public float easelAnchorX = 0.06f;
+    public float easelExclusionRadius = 160f;
+
     private List<WorldAnimal> spawnedAnimals = new List<WorldAnimal>();
     private List<WorldBalloon> spawnedBalloons = new List<WorldBalloon>();
+
+    // Static exclusion zone for props (easel etc.) — used by WorldAnimal on drag release
+    public static float ExclusionCenterX { get; private set; }
+    public static float ExclusionHalfWidth { get; private set; }
 
     // Lookup built from all game sub-items: categoryKey (lowercase) → sprite
     private Dictionary<string, Sprite> _animalSprites;
@@ -160,6 +168,10 @@ public class WorldController : MonoBehaviour
         if (cloudSystem != null)
             cloudSystem.worldWidth = worldWidth;
 
+        // Set static exclusion zone for easel (used by WorldAnimal on drag)
+        ExclusionCenterX = worldWidth * easelAnchorX;
+        ExclusionHalfWidth = easelExclusionRadius;
+
         // Spawn animals evenly on grass
         SpawnAnimals(jp.unlockedAnimalIds, worldWidth);
 
@@ -212,6 +224,20 @@ public class WorldController : MonoBehaviour
                 x = worldWidth * 0.5f; // single animal centered
             else
                 x = worldPadding + usableWidth * i / (animalIds.Count - 1);
+
+            // Avoid easel exclusion zone — nudge animal to nearest safe edge
+            float easelCenterX = worldWidth * easelAnchorX;
+            float halfAnimal = animalSize * 0.5f;
+            if (Mathf.Abs(x - easelCenterX) < easelExclusionRadius + halfAnimal)
+            {
+                float leftEdge = easelCenterX - easelExclusionRadius - halfAnimal;
+                float rightEdge = easelCenterX + easelExclusionRadius + halfAnimal;
+                // Nudge to whichever side is closer
+                x = (x < easelCenterX) ? Mathf.Min(x, leftEdge) : Mathf.Max(x, rightEdge);
+                // Clamp within world bounds
+                x = Mathf.Clamp(x, worldPadding, worldWidth - worldPadding);
+            }
+
             float y = Mathf.Lerp(placementMinY, placementMaxY, Random.Range(0f, 1f));
             // Alternate slight Y offset for visual interest
             if (i % 2 == 1) y += 15f;

@@ -129,6 +129,9 @@ public class WorldAnimal : MonoBehaviour
 
         isFalling = false;
 
+        // Nudge out of easel exclusion zone if dropped on it
+        NudgeFromExclusionZone();
+
         // Small bounce on landing
         yield return StartCoroutine(LandBounce());
 
@@ -186,6 +189,26 @@ public class WorldAnimal : MonoBehaviour
             yield return null;
         }
         transform.localScale = Vector3.one;
+    }
+
+    private void NudgeFromExclusionZone()
+    {
+        float halfW = WorldController.ExclusionHalfWidth;
+        if (halfW <= 0) return;
+
+        float cx = WorldController.ExclusionCenterX;
+        float x = rt.anchoredPosition.x;
+        float halfAnimal = rt.sizeDelta.x * 0.5f;
+        float dist = Mathf.Abs(x - cx);
+
+        if (dist < halfW + halfAnimal)
+        {
+            // Nudge to nearest edge of the exclusion zone
+            float edge = halfW + halfAnimal;
+            float newX = (x < cx) ? cx - edge : cx + edge;
+            rt.anchoredPosition = new Vector2(newX, rt.anchoredPosition.y);
+            UpdateShadow();
+        }
     }
 
     private void UpdateShadow()

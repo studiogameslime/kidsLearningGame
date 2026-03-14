@@ -411,16 +411,15 @@ public class WorldSceneSetup : EditorWindow
         var hillsGO = CreateSpriteLayer(worldContent.transform, "Hills", hillsSprite,
             new Vector2(0, 0.25f), new Vector2(1, 0.5f), DayHills);
 
-        // ── Sun (in sky, above clouds, behind ground) ──
-        // Proportional anchors for responsive positioning across resolutions
+        // ── Sun (top-right corner, equal padding from top and right) ──
         var sunGO = new GameObject("Sun");
         sunGO.transform.SetParent(worldContent.transform, false);
         var sunRT = sunGO.AddComponent<RectTransform>();
-        sunRT.anchorMin = new Vector2(0.75f, 0.93f);
-        sunRT.anchorMax = new Vector2(0.75f, 0.93f);
-        sunRT.pivot = new Vector2(0.5f, 0.5f);
+        sunRT.anchorMin = new Vector2(1, 1);
+        sunRT.anchorMax = new Vector2(1, 1);
+        sunRT.pivot = new Vector2(1, 1);
         sunRT.sizeDelta = new Vector2(160, 160);
-        sunRT.anchoredPosition = Vector2.zero;
+        sunRT.anchoredPosition = new Vector2(-30, -30);
         var sunImg = sunGO.AddComponent<Image>();
         sunImg.sprite = sunSprite;
         sunImg.preserveAspect = true;
@@ -441,15 +440,15 @@ public class WorldSceneSetup : EditorWindow
         sunGlowImg.color = new Color(1f, 0.95f, 0.6f, 0.25f);
         sunGlowImg.raycastTarget = false;
 
-        // ── Moon (same responsive position as sun, starts hidden below) ──
+        // ── Moon (same corner as sun, starts hidden below) ──
         var moonGO = new GameObject("Moon");
         moonGO.transform.SetParent(worldContent.transform, false);
         var moonRT = moonGO.AddComponent<RectTransform>();
-        moonRT.anchorMin = new Vector2(0.75f, 0.93f);
-        moonRT.anchorMax = new Vector2(0.75f, 0.93f);
-        moonRT.pivot = new Vector2(0.5f, 0.5f);
+        moonRT.anchorMin = new Vector2(1, 1);
+        moonRT.anchorMax = new Vector2(1, 1);
+        moonRT.pivot = new Vector2(1, 1);
         moonRT.sizeDelta = new Vector2(130, 130);
-        moonRT.anchoredPosition = Vector2.zero;
+        moonRT.anchoredPosition = new Vector2(-45, -45);
         var moonImg = moonGO.AddComponent<Image>();
         moonImg.sprite = moonSprite;
         moonImg.preserveAspect = true;
