@@ -5,7 +5,7 @@ using UnityEngine.UI;
 /// <summary>
 /// A single moving cloud in the World scene. Moves left or right based on speed sign.
 /// Positive speed = moving right, negative speed = moving left.
-/// Tappable: squash-bounce + cute rain shower from the cloud.
+/// Tappable: squash-bounce + cute UI rain shower from the cloud.
 /// </summary>
 public class WorldCloud : MonoBehaviour
 {
@@ -15,6 +15,12 @@ public class WorldCloud : MonoBehaviour
 
     private RectTransform rt;
     private bool isBouncing;
+
+    private static readonly Color[] RainColors = {
+        new Color(0.55f, 0.78f, 0.98f, 0.75f), // light blue
+        new Color(0.45f, 0.70f, 0.95f, 0.70f), // medium blue
+        new Color(0.60f, 0.82f, 1.00f, 0.65f), // pale blue
+    };
 
     private void Awake()
     {
@@ -50,22 +56,21 @@ public class WorldCloud : MonoBehaviour
         isBouncing = true;
 
         // Squash-bounce
+        float uniformScale = transform.localScale.z;
+        Vector3 target = Vector3.one * uniformScale;
+        Vector3 squash = new Vector3(1.2f * uniformScale, 0.85f * uniformScale, uniformScale);
+
         float dur = 0.1f;
         float elapsed = 0f;
-        Vector3 squash = new Vector3(1.2f, 0.85f, 1f);
         while (elapsed < dur)
         {
             elapsed += Time.deltaTime;
-            transform.localScale = Vector3.Lerp(transform.localScale, squash, elapsed / dur);
+            transform.localScale = Vector3.Lerp(target, squash, elapsed / dur);
             yield return null;
         }
 
         elapsed = 0f;
         dur = 0.15f;
-        Vector3 baseScale = Vector3.one * transform.localScale.z; // preserve cloud scale
-        // Recover original uniform scale from the z component (unaffected by squash)
-        float uniformScale = transform.localScale.z;
-        Vector3 target = Vector3.one * uniformScale;
         while (elapsed < dur)
         {
             elapsed += Time.deltaTime;
@@ -75,7 +80,7 @@ public class WorldCloud : MonoBehaviour
         }
         transform.localScale = target;
 
-        // Spawn rain
+        // Spawn rain drops
         SpawnRain();
 
         isBouncing = false;
@@ -83,72 +88,72 @@ public class WorldCloud : MonoBehaviour
 
     private void SpawnRain()
     {
-        // Create a temporary GameObject with ParticleSystem for rain
-        var rainGO = new GameObject("Rain");
-        rainGO.transform.SetParent(transform.parent, false);
+        // Get cloud's actual position in parent space (anchor + offset)
+        float cloudX = rt.anchoredPosition.x;
+        float cloudY = rt.anchoredPosition.y;
+        float cloudHalfW = rt.sizeDelta.x * rt.localScale.x * 0.35f;
 
-        // Position rain at the bottom of this cloud in world space
-        // Convert cloud's UI position to the parent's local space
-        rainGO.transform.position = transform.position;
-
-        var ps = rainGO.AddComponent<ParticleSystem>();
-        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        var main = ps.main;
-        main.duration = 1.2f;
-        main.loop = false;
-        main.startLifetime = new ParticleSystem.MinMaxCurve(0.6f, 1.0f);
-        main.startSpeed = new ParticleSystem.MinMaxCurve(120f, 200f);
-        main.startSize = new ParticleSystem.MinMaxCurve(3f, 6f);
-        main.startColor = new Color(0.55f, 0.75f, 0.95f, 0.7f); // soft blue
-        main.maxParticles = 40;
-        main.gravityModifier = 0.3f;
-        main.simulationSpace = ParticleSystemSimulationSpace.World;
-        main.scalingMode = ParticleSystemScalingMode.Hierarchy;
-
-        var emission = ps.emission;
-        emission.rateOverTime = 0f;
-        emission.SetBursts(new ParticleSystem.Burst[]
+        int dropCount = Random.Range(8, 14);
+        for (int i = 0; i < dropCount; i++)
         {
-            new ParticleSystem.Burst(0f, 15, 25),
-            new ParticleSystem.Burst(0.3f, 10, 15)
-        });
+            StartCoroutine(AnimateRainDrop(i, cloudX, cloudY, cloudHalfW));
+        }
+    }
 
-        var shape = ps.shape;
-        shape.shapeType = ParticleSystemShapeType.Box;
-        shape.scale = new Vector3(60f, 5f, 1f);
-        shape.rotation = new Vector3(90f, 0, 0); // emit downward
+    private IEnumerator AnimateRainDrop(int index, float cloudX, float cloudY, float cloudHalfW)
+    {
+        // Stagger start
+        yield return new WaitForSeconds(index * 0.04f);
 
-        var colorOverLifetime = ps.colorOverLifetime;
-        colorOverLifetime.enabled = true;
-        var gradient = new Gradient();
-        gradient.SetKeys(
-            new GradientColorKey[] {
-                new GradientColorKey(new Color(0.55f, 0.75f, 0.95f), 0f),
-                new GradientColorKey(new Color(0.65f, 0.82f, 1f), 1f)
-            },
-            new GradientAlphaKey[] {
-                new GradientAlphaKey(0.7f, 0f),
-                new GradientAlphaKey(0.4f, 0.7f),
-                new GradientAlphaKey(0f, 1f)
+        var dropGO = new GameObject($"Rain{index}");
+        dropGO.transform.SetParent(rt.parent, false);
+        var dropRT = dropGO.AddComponent<RectTransform>();
+        dropRT.anchorMin = Vector2.zero;
+        dropRT.anchorMax = Vector2.zero;
+        dropRT.pivot = new Vector2(0.5f, 0.5f);
+
+        // Raindrop size — thin elongated drop
+        float w = Random.Range(3f, 5f);
+        float h = Random.Range(8f, 14f);
+        dropRT.sizeDelta = new Vector2(w, h);
+
+        // Start from bottom of cloud, spread across cloud width
+        float startX = cloudX + Random.Range(-cloudHalfW, cloudHalfW);
+        float startY = cloudY - rt.sizeDelta.y * rt.localScale.y * 0.3f;
+        dropRT.anchoredPosition = new Vector2(startX, startY);
+
+        var img = dropGO.AddComponent<Image>();
+        Color dropColor = RainColors[Random.Range(0, RainColors.Length)];
+        img.color = dropColor;
+        img.raycastTarget = false;
+
+        // Fall animation
+        float dur = Random.Range(0.6f, 1.0f);
+        float elapsed = 0f;
+        float fallDistance = Random.Range(100f, 180f);
+        float driftX = Random.Range(-15f, 15f);
+        Vector2 startPos = dropRT.anchoredPosition;
+
+        while (elapsed < dur)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / dur;
+
+            // Accelerating fall
+            float fallY = fallDistance * t * t;
+            float drift = driftX * t;
+            dropRT.anchoredPosition = new Vector2(startPos.x + drift, startPos.y - fallY);
+
+            // Fade out in last 40%
+            if (t > 0.6f)
+            {
+                float fadeT = (t - 0.6f) / 0.4f;
+                img.color = new Color(dropColor.r, dropColor.g, dropColor.b, dropColor.a * (1f - fadeT));
             }
-        );
-        colorOverLifetime.color = gradient;
 
-        var sizeOverLifetime = ps.sizeOverLifetime;
-        sizeOverLifetime.enabled = true;
-        sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(
-            new Keyframe(0f, 1f),
-            new Keyframe(0.5f, 0.8f),
-            new Keyframe(1f, 0.3f)
-        ));
+            yield return null;
+        }
 
-        // Ensure the particle system renders in UI space
-        var renderer = rainGO.GetComponent<ParticleSystemRenderer>();
-        renderer.sortingOrder = 10;
-
-        ps.Play();
-
-        // Auto-destroy after particles finish
-        Destroy(rainGO, main.duration + main.startLifetime.constantMax + 0.5f);
+        Destroy(dropGO);
     }
 }

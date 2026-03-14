@@ -85,9 +85,12 @@ public class WorldProp : MonoBehaviour
         float leafSize = Random.Range(6f, 12f);
         leafRT.sizeDelta = new Vector2(leafSize, leafSize * 0.7f);
 
-        // Start near the top of the tree (upper 60%)
+        // Start near the top of the tree — compute actual X from anchor
         float treeHeight = rt.sizeDelta.y;
-        float startX = rt.anchoredPosition.x + Random.Range(-rt.sizeDelta.x * 0.35f, rt.sizeDelta.x * 0.35f);
+        RectTransform parentRT = rt.parent as RectTransform;
+        float parentWidth = parentRT != null ? parentRT.rect.width : 1920f;
+        float treeActualX = rt.anchorMin.x * parentWidth + rt.anchoredPosition.x;
+        float startX = treeActualX + Random.Range(-rt.sizeDelta.x * 0.35f, rt.sizeDelta.x * 0.35f);
         float startY = rt.anchoredPosition.y + treeHeight * Random.Range(0.4f, 0.9f);
         leafRT.anchoredPosition = new Vector2(startX, startY);
 
