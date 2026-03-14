@@ -7,18 +7,31 @@ using TMPro;
 using System.Collections.Generic;
 
 /// <summary>
-/// Builds the ShadowMatch scene and updates Shadows.asset data.
-/// Run via Tools > Kids Learning Game > Setup Shadow Match.
+/// Builds the ShadowMatch scene completely from scratch.
+///
+/// Visual hierarchy (back to front):
+///   Sky → Cloud wisp → Mountains → Hills → Grass → [props] → Shadows → Animals
+///
+/// Design goals:
+///   - Clean, spacious, toddler-readable
+///   - Distinct from the World scene (different composition, fewer layers)
+///   - Gameplay zones are visually dominant
+///   - Background supports but never competes
 /// </summary>
 public class ShadowMatchSetup : EditorWindow
 {
     private static readonly Vector2 Ref = new Vector2(1080, 1920);
 
-    private static readonly Color BgColor     = HexColor("#E0F7FA"); // light cyan
-    private static readonly Color TopBarColor = HexColor("#4DD0E1"); // cyan bar
+    // Palette — soft lavender sky, muted landscape
+    private static readonly Color SkyColor      = HexColor("#C9D8FF");
+    private static readonly Color CloudColor    = HexColor("#E8F0FF");
+    private static readonly Color MountainColor = HexColor("#C8D7EE");
+    private static readonly Color HillColor     = HexColor("#AFCFC8");
+    private static readonly Color GrassColor    = HexColor("#9FD78D");
+    private static readonly Color TopBarColor   = HexColor("#8BAAC8");
+    private static readonly Color PropColor     = HexColor("#BFCFC6");
 
-    private const int TopBarHeight   = 130;
-    private const int BottomBarHeight = 120;
+    private const int TopBarHeight = 110;
 
     private static readonly Color[] AnimalColors = {
         HexColor("#EF9A9A"), HexColor("#F48FB1"), HexColor("#CE93D8"),
@@ -34,113 +47,93 @@ public class ShadowMatchSetup : EditorWindow
     {
         try
         {
-            EditorUtility.DisplayProgressBar("Shadow Match Setup", "Updating data…", 0.2f);
+            EditorUtility.DisplayProgressBar("Shadow Match", "Data...", 0.2f);
             UpdateGameData();
-
-            EditorUtility.DisplayProgressBar("Shadow Match Setup", "Building scene…", 0.5f);
-            var roundedRect = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/RoundedRect.png");
-            var circleSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/Circle.png");
-            CreateScene(roundedRect, circleSprite);
-
+            EditorUtility.DisplayProgressBar("Shadow Match", "Scene...", 0.6f);
+            BuildScene();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }
-        finally
-        {
-            EditorUtility.ClearProgressBar();
-        }
+        finally { EditorUtility.ClearProgressBar(); }
     }
 
-    // ─────────────────────────────────────────
-    //  DATA
-    // ─────────────────────────────────────────
+    // ─── DATA ───────────────────────────────
 
     private static void UpdateGameData()
     {
         var game = AssetDatabase.LoadAssetAtPath<GameItemData>("Assets/Data/Games/Shadows.asset");
-        if (game == null)
-        {
-            Debug.LogError("Shadows.asset not found. Run Setup Project first.");
-            return;
-        }
+        if (game == null) { Debug.LogError("Shadows.asset not found."); return; }
 
         game.targetSceneName = "ShadowMatch";
         game.hasSubItems = false;
 
-        string[] animals = {
-            "Bear", "Bird", "Cat", "Chicken", "Cow", "Dog", "Donkey", "Duck",
-            "Elephant", "Fish", "Frog", "Giraffe", "Horse", "Lion", "Monkey",
-            "Sheep", "Snake", "Turtle", "Zebra"
+        string[] names = {
+            "Bear","Bird","Cat","Chicken","Cow","Dog","Donkey","Duck",
+            "Elephant","Fish","Frog","Giraffe","Horse","Lion","Monkey",
+            "Sheep","Snake","Turtle","Zebra"
         };
 
-        if (game.subItems == null)
-            game.subItems = new List<SubItemData>();
+        if (game.subItems == null) game.subItems = new List<SubItemData>();
         game.subItems.Clear();
 
-        for (int i = 0; i < animals.Length; i++)
+        for (int i = 0; i < names.Length; i++)
         {
-            string name = animals[i];
-            string mainPath = $"Assets/Art/Animals/{name}/Art/Puzzle/{name} Main.png";
-            var mainSprite = LoadSprite(mainPath);
+            string n = names[i];
+            Sprite spr = LoadSprite($"Assets/Art/Animals/{n}/Art/{n}Sprite.png")
+                      ?? LoadSprite($"Assets/Art/Animals/{n}/Art/{n}.png");
+            if (spr == null) continue;
 
-            Sprite thumbSprite = null;
-            string[] thumbPaths = {
-                $"Assets/Art/Animals/{name}/Art/{name}Sprite.png",
-                $"Assets/Art/Animals/{name}/Art/{name}.png"
-            };
-            foreach (var tp in thumbPaths)
-            {
-                thumbSprite = LoadSprite(tp);
-                if (thumbSprite != null) break;
-            }
-
-            if (mainSprite == null && thumbSprite == null) continue;
-
-            game.subItems.Add(new SubItemData
-            {
-                id = $"shadow_{name.ToLower()}",
-                title = name,
+            game.subItems.Add(new SubItemData {
+                id = $"shadow_{n.ToLower()}",
+                title = n,
                 cardColor = AnimalColors[i % AnimalColors.Length],
-                categoryKey = name.ToLower(),
+                categoryKey = n.ToLower(),
                 targetSceneName = "ShadowMatch",
-                contentAsset = mainSprite != null ? mainSprite : thumbSprite,
-                thumbnail = thumbSprite != null ? thumbSprite : mainSprite
+                contentAsset = spr,
+                thumbnail = spr
             });
         }
 
         EditorUtility.SetDirty(game);
-        Debug.Log($"ShadowMatch data updated with {game.subItems.Count} animals.");
     }
 
-    // ─────────────────────────────────────────
-    //  SCENE
-    // ─────────────────────────────────────────
+    // ─── SCENE ──────────────────────────────
 
-    private static void CreateScene(Sprite roundedRect, Sprite circleSprite)
+    private static void BuildScene()
     {
         EnsureFolder("Assets/Scenes");
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        string a = "Assets/Art/World";
 
-        // Camera
+        // Sprites
+        var mountainsSpr = LoadSprite($"{a}/mountains.png");
+        var hillsSpr     = LoadSprite($"{a}/hillsLarge.png");
+        var grassSpr     = LoadSprite($"{a}/groundLayer1.png");
+        var cloudSpr     = LoadSprite($"{a}/cloudLayerB1.png");
+        var house1       = LoadSprite($"{a}/houseSmall1.png");
+        var house2       = LoadSprite($"{a}/houseSmall2.png");
+        var circleSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/Circle.png");
+
+        // ── Camera ──
         var camGO = new GameObject("Main Camera");
         camGO.tag = "MainCamera";
         camGO.AddComponent<AudioListener>();
         var cam = camGO.AddComponent<Camera>();
         cam.clearFlags = CameraClearFlags.SolidColor;
-        cam.backgroundColor = BgColor;
+        cam.backgroundColor = SkyColor;
         cam.orthographic = true;
-        var urpType = System.Type.GetType("UnityEngine.Rendering.Universal.UniversalAdditionalCameraData, Unity.RenderPipelines.Universal.Runtime");
-        if (urpType != null) camGO.AddComponent(urpType);
+        var urp = System.Type.GetType("UnityEngine.Rendering.Universal.UniversalAdditionalCameraData, Unity.RenderPipelines.Universal.Runtime");
+        if (urp != null) camGO.AddComponent(urp);
 
-        // EventSystem
+        // ── EventSystem ──
         var esGO = new GameObject("EventSystem");
         esGO.AddComponent<EventSystem>();
-        var inputType = System.Type.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem");
-        if (inputType != null) esGO.AddComponent(inputType);
+        var inp = System.Type.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem");
+        if (inp != null) esGO.AddComponent(inp);
         else esGO.AddComponent<StandaloneInputModule>();
 
-        // Canvas
-        var canvasGO = new GameObject("ShadowCanvas");
+        // ── Canvas ──
+        var canvasGO = new GameObject("Canvas");
         var canvas = canvasGO.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         var scaler = canvasGO.AddComponent<CanvasScaler>();
@@ -148,121 +141,189 @@ public class ShadowMatchSetup : EditorWindow
         scaler.referenceResolution = Ref;
         scaler.matchWidthOrHeight = 0f;
         canvasGO.AddComponent<GraphicRaycaster>();
+        var root = canvasGO.transform;
 
-        // Background
-        var bg = CreateStretchImage(canvasGO.transform, "Background", BgColor);
-        bg.GetComponent<Image>().raycastTarget = false;
+        // ═══════════════════════════════════
+        //  BACKGROUND — 5 layers only
+        //
+        //  The scene is split roughly:
+        //    Top 50%  = sky + shadows (open, clean)
+        //    Bot 50%  = landscape + animals
+        //
+        //  Clouds stay HIGH in the sky.
+        //  Nothing decorative in the gameplay zones.
+        // ═══════════════════════════════════
 
-        // Safe area
-        var safeArea = new GameObject("SafeArea");
-        safeArea.transform.SetParent(canvasGO.transform, false);
-        var safeRT = safeArea.AddComponent<RectTransform>();
-        StretchFull(safeRT);
-        safeArea.AddComponent<SafeAreaHandler>();
+        // 1. SKY — full screen fill
+        Layer(root, "Sky", null, 0, 0, 1, 1, SkyColor);
 
-        // ── TOP BAR ──
-        var topBar = CreateStretchImage(safeArea.transform, "TopBar", TopBarColor);
-        var topBarRT = topBar.GetComponent<RectTransform>();
-        topBarRT.anchorMin = new Vector2(0, 1);
-        topBarRT.anchorMax = new Vector2(1, 1);
-        topBarRT.pivot = new Vector2(0.5f, 1);
-        topBarRT.sizeDelta = new Vector2(0, TopBarHeight);
-        topBar.GetComponent<Image>().raycastTarget = false;
-        topBar.AddComponent<ThemeHeader>();
+        // 2. CLOUD — one thin wisp, high in sky, very light
+        //    Sits above everything, purely atmospheric
+        Layer(root, "Cloud", cloudSpr, 0, 0.76f, 1, 0.90f, CloudColor);
+
+        // 3. MOUNTAINS — faint, distant, small presence
+        //    Anchored in mid-distance, low contrast
+        Layer(root, "Mountains", mountainsSpr, 0, 0.30f, 1, 0.48f, MountainColor);
+
+        // 4. HILLS — one soft layer, sits above the grass
+        Layer(root, "Hills", hillsSpr, 0, 0.18f, 1, 0.36f, HillColor);
+
+        // 5. GRASS — one clean field, the "ground" of the scene
+        Layer(root, "Grass", grassSpr, 0, 0, 1, 0.22f, GrassColor);
+
+        // ═══════════════════════════════════
+        //  PROPS — minimal, 2 tiny distant houses only
+        //  Placed on the hill ridge, far from gameplay
+        // ═══════════════════════════════════
+
+        Prop(root, "HouseL", house1, 100, 430, 50, 50);
+        Prop(root, "HouseR", house2, 980, 420, 45, 45);
+
+        // ═══════════════════════════════════
+        //  SAFE AREA + TOP BAR
+        // ═══════════════════════════════════
+
+        var safeGO = new GameObject("SafeArea");
+        safeGO.transform.SetParent(root, false);
+        var safeRT = safeGO.AddComponent<RectTransform>();
+        Full(safeRT);
+        safeGO.AddComponent<SafeAreaHandler>();
+
+        // Top bar
+        var bar = Fill(safeGO.transform, "TopBar", TopBarColor);
+        var barRT = bar.GetComponent<RectTransform>();
+        barRT.anchorMin = new Vector2(0, 1);
+        barRT.anchorMax = new Vector2(1, 1);
+        barRT.pivot = new Vector2(0.5f, 1);
+        barRT.sizeDelta = new Vector2(0, TopBarHeight);
+        bar.GetComponent<Image>().raycastTarget = false;
+        bar.AddComponent<ThemeHeader>();
 
         // Title
         var titleGO = new GameObject("Title");
-        titleGO.transform.SetParent(topBar.transform, false);
+        titleGO.transform.SetParent(bar.transform, false);
         var titleRT = titleGO.AddComponent<RectTransform>();
-        StretchFull(titleRT);
+        Full(titleRT);
         titleRT.offsetMin = new Vector2(100, 0);
         titleRT.offsetMax = new Vector2(-100, 0);
-        var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = HebrewFixer.Fix("\u05D4\u05EA\u05D0\u05DE\u05EA \u05E6\u05DC\u05DC\u05D9\u05DD"); // התאמת צללים
-        titleTMP.isRightToLeftText = false;
-        titleTMP.fontSize = 48;
-        titleTMP.fontStyle = FontStyles.Bold;
-        titleTMP.color = Color.white;
-        titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.raycastTarget = false;
+        var tmp = titleGO.AddComponent<TextMeshProUGUI>();
+        tmp.text = HebrewFixer.Fix("\u05D4\u05EA\u05D0\u05DE\u05EA \u05E6\u05DC\u05DC\u05D9\u05DD");
+        tmp.isRightToLeftText = false;
+        tmp.fontSize = 42;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.color = Color.white;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.raycastTarget = false;
 
-        // Home button (top-left)
+        // Home button
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
-        var homeGO = CreateIconButton(topBar.transform, "HomeButton", homeIcon,
-            new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1),
-            new Vector2(16, -15), new Vector2(90, 90));
+        var homeGO = Btn(bar.transform, "HomeButton", homeIcon, 16, -10, 90);
 
-        // ── BOTTOM BAR ──
-        var bottomBar = CreateStretchImage(safeArea.transform, "BottomBar", new Color(1, 1, 1, 0));
-        var bottomBarRT = bottomBar.GetComponent<RectTransform>();
-        bottomBarRT.anchorMin = new Vector2(0, 0);
-        bottomBarRT.anchorMax = new Vector2(1, 0);
-        bottomBarRT.pivot = new Vector2(0.5f, 0);
-        bottomBarRT.sizeDelta = new Vector2(0, BottomBarHeight);
-        bottomBar.GetComponent<Image>().raycastTarget = false;
+        // ═══════════════════════════════════
+        //  GAMEPLAY ZONES
+        //
+        //  Shadow zone: upper half, clean sky behind
+        //    anchors 0.10–0.90 horiz, 0.52–0.92 vert
+        //    → shadows sit against open sky, nothing behind
+        //
+        //  Animal zone: lower half, on the grass
+        //    anchors 0.10–0.90 horiz, 0.04–0.40 vert
+        //    → animals sit on the green field
+        //
+        //  Gap between zones (0.40–0.52) = hills/landscape
+        //    → natural visual separator
+        // ═══════════════════════════════════
 
-        // ── PLAY AREA ──
+        var shadowsGO = new GameObject("ShadowsArea");
+        shadowsGO.transform.SetParent(safeGO.transform, false);
+        var shadowsRT = shadowsGO.AddComponent<RectTransform>();
+        shadowsRT.anchorMin = new Vector2(0.10f, 0.52f);
+        shadowsRT.anchorMax = new Vector2(0.90f, 0.92f);
+        shadowsRT.offsetMin = Vector2.zero;
+        shadowsRT.offsetMax = Vector2.zero;
 
-        // ShadowsColumn (left half - shadow silhouettes)
-        var shadowsCol = new GameObject("ShadowsColumn");
-        shadowsCol.transform.SetParent(safeArea.transform, false);
-        var shadowsColRT = shadowsCol.AddComponent<RectTransform>();
-        shadowsColRT.anchorMin = new Vector2(0.02f, 0.08f);
-        shadowsColRT.anchorMax = new Vector2(0.48f, 0.92f);
-        shadowsColRT.pivot = new Vector2(0.5f, 0.5f);
-        shadowsColRT.offsetMin = Vector2.zero;
-        shadowsColRT.offsetMax = Vector2.zero;
+        var animalsGO = new GameObject("AnimalsArea");
+        animalsGO.transform.SetParent(safeGO.transform, false);
+        var animalsRT = animalsGO.AddComponent<RectTransform>();
+        animalsRT.anchorMin = new Vector2(0.10f, 0.04f);
+        animalsRT.anchorMax = new Vector2(0.90f, 0.40f);
+        animalsRT.offsetMin = Vector2.zero;
+        animalsRT.offsetMax = Vector2.zero;
 
-        // AnimalsColumn (right half - draggable animal sprites)
-        var animalsCol = new GameObject("AnimalsColumn");
-        animalsCol.transform.SetParent(safeArea.transform, false);
-        var animalsColRT = animalsCol.AddComponent<RectTransform>();
-        animalsColRT.anchorMin = new Vector2(0.52f, 0.08f);
-        animalsColRT.anchorMax = new Vector2(0.98f, 0.92f);
-        animalsColRT.pivot = new Vector2(0.5f, 0.5f);
-        animalsColRT.offsetMin = Vector2.zero;
-        animalsColRT.offsetMax = Vector2.zero;
+        // ═══════════════════════════════════
+        //  CONTROLLER
+        // ═══════════════════════════════════
 
-        // ── CONTROLLER ──
-        var controller = canvasGO.AddComponent<ShadowMatchController>();
-        controller.animalsColumn = animalsColRT;
-        controller.shadowsColumn = shadowsColRT;
-        controller.animalCount = 4;
-        controller.cardSize = 360f;
+        var ctrl = canvasGO.AddComponent<ShadowMatchController>();
+        ctrl.shadowsArea = shadowsRT;
+        ctrl.animalsRow = animalsRT;
+        ctrl.circleSprite = circleSprite;
+        ctrl.animalCount = 4;
+        ctrl.shadowSize = 240f;
+        ctrl.animalSize = 260f;
 
-        // Wire buttons
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
-            homeGO.GetComponent<Button>().onClick, controller.OnHomePressed);
+            homeGO.GetComponent<Button>().onClick, ctrl.OnHomePressed);
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/ShadowMatch.unity");
     }
 
-    // ─────────────────────────────────────────
-    //  HELPERS
-    // ─────────────────────────────────────────
+    // ─── HELPERS ────────────────────────────
 
-    private static GameObject CreateStretchImage(Transform parent, string name, Color color)
+    private static GameObject Layer(Transform p, string name, Sprite spr,
+        float x0, float y0, float x1, float y1, Color c)
     {
         var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
+        go.transform.SetParent(p, false);
         var rt = go.AddComponent<RectTransform>();
-        StretchFull(rt);
+        rt.anchorMin = new Vector2(x0, y0);
+        rt.anchorMax = new Vector2(x1, y1);
+        rt.offsetMin = rt.offsetMax = Vector2.zero;
         var img = go.AddComponent<Image>();
-        img.color = color;
+        if (spr != null) img.sprite = spr;
+        img.color = c;
+        img.preserveAspect = false;
+        img.raycastTarget = false;
         return go;
     }
 
-    private static GameObject CreateIconButton(Transform parent, string name, Sprite icon,
-        Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 pos, Vector2 size)
+    private static void Prop(Transform p, string name, Sprite spr, float x, float y, float w, float h)
+    {
+        if (spr == null) return;
+        var go = new GameObject(name);
+        go.transform.SetParent(p, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = Vector2.zero;
+        rt.pivot = new Vector2(0.5f, 0f);
+        rt.anchoredPosition = new Vector2(x, y);
+        rt.sizeDelta = new Vector2(w, h);
+        var img = go.AddComponent<Image>();
+        img.sprite = spr;
+        img.preserveAspect = true;
+        img.color = PropColor;
+        img.raycastTarget = true;
+        go.AddComponent<ShadowMatchProp>();
+    }
+
+    private static GameObject Fill(Transform p, string name, Color c)
     {
         var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
+        go.transform.SetParent(p, false);
         var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = anchorMin;
-        rt.anchorMax = anchorMax;
-        rt.pivot = pivot;
-        rt.anchoredPosition = pos;
-        rt.sizeDelta = size;
+        Full(rt);
+        go.AddComponent<Image>().color = c;
+        return go;
+    }
+
+    private static GameObject Btn(Transform p, string name, Sprite icon, float x, float y, float sz)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(p, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(0, 1);
+        rt.pivot = new Vector2(0, 1);
+        rt.anchoredPosition = new Vector2(x, y);
+        rt.sizeDelta = new Vector2(sz, sz);
         var img = go.AddComponent<Image>();
         img.sprite = icon;
         img.preserveAspect = true;
@@ -273,38 +334,35 @@ public class ShadowMatchSetup : EditorWindow
         return go;
     }
 
-    private static void StretchFull(RectTransform rt)
+    private static void Full(RectTransform rt)
     {
         rt.anchorMin = Vector2.zero;
         rt.anchorMax = Vector2.one;
-        rt.offsetMin = Vector2.zero;
-        rt.offsetMax = Vector2.zero;
+        rt.offsetMin = rt.offsetMax = Vector2.zero;
     }
 
     private static void EnsureFolder(string path)
     {
         if (AssetDatabase.IsValidFolder(path)) return;
-        string[] parts = path.Split('/');
-        string current = parts[0];
+        var parts = path.Split('/');
+        string cur = parts[0];
         for (int i = 1; i < parts.Length; i++)
         {
-            string next = current + "/" + parts[i];
+            string next = cur + "/" + parts[i];
             if (!AssetDatabase.IsValidFolder(next))
-                AssetDatabase.CreateFolder(current, parts[i]);
-            current = next;
+                AssetDatabase.CreateFolder(cur, parts[i]);
+            cur = next;
         }
     }
 
     private static Sprite LoadSprite(string path)
     {
-        var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-        if (sprite != null) return sprite;
-        var allAssets = AssetDatabase.LoadAllAssetsAtPath(path);
-        if (allAssets != null)
-        {
-            foreach (var asset in allAssets)
-                if (asset is Sprite s) return s;
-        }
+        var s = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        if (s != null) return s;
+        var all = AssetDatabase.LoadAllAssetsAtPath(path);
+        if (all != null)
+            foreach (var o in all)
+                if (o is Sprite sp) return sp;
         return null;
     }
 

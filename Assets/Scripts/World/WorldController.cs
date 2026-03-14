@@ -18,6 +18,7 @@ public class WorldController : MonoBehaviour
     public RectTransform skyArea;        // sky portion of content
     public RectTransform grassArea;      // grass portion of content
     public Button homeButton;
+    public Button gamesButton;
     public Image profileAvatar;
     public TMPro.TextMeshProUGUI profileInitial;
 
@@ -42,6 +43,7 @@ public class WorldController : MonoBehaviour
     private void Start()
     {
         if (homeButton != null) homeButton.onClick.AddListener(OnHomePressed);
+        if (gamesButton != null) gamesButton.onClick.AddListener(OnGamesPressed);
 
         BuildAnimalSpriteLookup();
         UpdateProfileAvatar();
@@ -333,4 +335,8 @@ public class WorldController : MonoBehaviour
         NavigationManager.GoToProfileSelection();
     }
 
+    public void OnGamesPressed()
+    {
+        NavigationManager.GoToGamesCollection();
+    }
 }

@@ -83,6 +83,13 @@ public static class NavigationManager
         SceneManager.LoadScene(WorldSceneName);
     }
 
+    /// <summary>Go to the games collection (MainMenu scene).</summary>
+    public static void GoToGamesCollection()
+    {
+        GameContext.Clear();
+        SceneManager.LoadScene(MainMenuScene);
+    }
+
     /// <summary>Go to the drawing gallery.</summary>
     public static void GoToDrawingGallery()
     {

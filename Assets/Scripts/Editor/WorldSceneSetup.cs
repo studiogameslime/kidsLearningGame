@@ -344,6 +344,12 @@ public class WorldSceneSetup : EditorWindow
             new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1),
             new Vector2(16, -10), new Vector2(90, 90));
 
+        // Games collection button (top-right, before profile avatar)
+        var gamesIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/menuGrid.png");
+        var gamesGO = CreateIconButton(topBar.transform, "GamesButton", gamesIcon,
+            new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f),
+            new Vector2(-96, 0), new Vector2(70, 70));
+
         // Profile avatar
         var profileBtn = new GameObject("ProfileButton");
         profileBtn.transform.SetParent(topBar.transform, false);
@@ -766,6 +772,7 @@ public class WorldSceneSetup : EditorWindow
         controller.skyArea = skyAreaRT;
         controller.grassArea = grassAreaRT;
         controller.homeButton = homeGO.GetComponent<Button>();
+        controller.gamesButton = gamesGO.GetComponent<Button>();
         controller.profileAvatar = profileBtnImg;
         controller.profileInitial = profileInitialTMP;
         controller.environment = envComponent;
