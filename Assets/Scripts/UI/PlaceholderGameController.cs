@@ -56,7 +56,7 @@ public class PlaceholderGameController : MonoBehaviour
     public void OnRestartPressed()
     {
         // Reload the current scene with the same context
-        UnityEngine.SceneManagement.SceneManager.LoadScene(
+        BubbleTransition.LoadScene(
             UnityEngine.SceneManagement.SceneManager.GetActiveScene().name
         );
     }

@@ -133,9 +133,8 @@ public class HomeController : MonoBehaviour
         // Disable button to prevent double-tap
         if (worldButton != null) worldButton.interactable = false;
 
-        var op = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("WorldScene");
-        while (!op.isDone)
-            yield return null;
+        BubbleTransition.LoadScene("WorldScene");
+        yield break;
     }
 
     public void OnProfilePressed()

@@ -219,7 +219,7 @@ public class SelectionMenuController : MonoBehaviour
         GameContext.CurrentGame = game;
         GameContext.CurrentSelection = null;
         GameContext.CustomTexture = tex;
-        UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
+        BubbleTransition.LoadScene(sceneName);
     }
 
     public void OnBackPressed()

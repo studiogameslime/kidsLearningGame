@@ -169,7 +169,7 @@ public class JourneyManager : MonoBehaviour
             jp.discoveryQueue.Add(ActiveDiscovery);
             jp.gamesUntilNextDiscovery = DiscoveryScheduler.CalcNextInterval(jp);
             ProfileManager.Instance.Save();
-            SceneManager.LoadScene(DiscoveryScene);
+            BubbleTransition.LoadScene(DiscoveryScene);
             return;
         }
 
@@ -230,7 +230,7 @@ public class JourneyManager : MonoBehaviour
         pendingChainAnimalId = null;
         ActiveDiscovery = null;
         ProfileManager.Instance?.Save();
-        SceneManager.LoadScene(HomeScene);
+        BubbleTransition.LoadScene(HomeScene);
     }
 
     private void PickNextGame()
@@ -417,6 +417,6 @@ public class JourneyManager : MonoBehaviour
             ? GameContext.CurrentSelection.targetSceneName
             : gameData.targetSceneName;
 
-        SceneManager.LoadScene(scene);
+        BubbleTransition.LoadScene(scene);
     }
 }

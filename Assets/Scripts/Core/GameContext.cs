@@ -48,20 +48,20 @@ public static class NavigationManager
             return;
         }
         GameContext.Clear();
-        SceneManager.LoadScene(WorldSceneName);
+        BubbleTransition.LoadScene(WorldSceneName);
     }
 
     /// <summary>Go to the profile selection screen.</summary>
     public static void GoToProfileSelection()
     {
         GameContext.Clear();
-        SceneManager.LoadScene(ProfileSelectionScene);
+        BubbleTransition.LoadScene(ProfileSelectionScene);
     }
 
     /// <summary>Go to the profile creation onboarding flow.</summary>
     public static void GoToProfileCreation()
     {
-        SceneManager.LoadScene(ProfileCreationScene);
+        BubbleTransition.LoadScene(ProfileCreationScene);
     }
 
     /// <summary>Go back to the World scene (main hub). If a journey is active, ends it first.</summary>
@@ -73,27 +73,27 @@ public static class NavigationManager
             return;
         }
         GameContext.Clear();
-        SceneManager.LoadScene(WorldSceneName);
+        BubbleTransition.LoadScene(WorldSceneName);
     }
 
     /// <summary>Go to the World scene (main hub).</summary>
     public static void GoToWorld()
     {
         GameContext.Clear();
-        SceneManager.LoadScene(WorldSceneName);
+        BubbleTransition.LoadScene(WorldSceneName);
     }
 
     /// <summary>Go to the games collection (MainMenu scene).</summary>
     public static void GoToGamesCollection()
     {
         GameContext.Clear();
-        SceneManager.LoadScene(MainMenuScene);
+        BubbleTransition.LoadScene(MainMenuScene);
     }
 
     /// <summary>Go to the drawing gallery.</summary>
     public static void GoToDrawingGallery()
     {
-        SceneManager.LoadScene(DrawingGalleryScene);
+        BubbleTransition.LoadScene(DrawingGalleryScene);
     }
 
     /// <summary>Open the reusable selection screen for a game that has sub-items.</summary>
@@ -101,7 +101,7 @@ public static class NavigationManager
     {
         GameContext.CurrentGame = game;
         GameContext.CurrentSelection = null;
-        SceneManager.LoadScene(SelectionMenuScene);
+        BubbleTransition.LoadScene(SelectionMenuScene);
     }
 
     /// <summary>Open a game scene directly (no sub-selection).</summary>
@@ -109,7 +109,7 @@ public static class NavigationManager
     {
         GameContext.CurrentGame = game;
         GameContext.CurrentSelection = null;
-        SceneManager.LoadScene(game.targetSceneName);
+        BubbleTransition.LoadScene(game.targetSceneName);
     }
 
     /// <summary>Open a game scene with a specific sub-item selected.</summary>
@@ -122,6 +122,6 @@ public static class NavigationManager
             ? selection.targetSceneName
             : game.targetSceneName;
 
-        SceneManager.LoadScene(scene);
+        BubbleTransition.LoadScene(scene);
     }
 }
