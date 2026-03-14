@@ -7,19 +7,40 @@ using TMPro;
 using System.Collections.Generic;
 
 /// <summary>
-/// Builds the FindTheAnimal scene and updates FindTheObject.asset data.
-/// Run via Tools > Kids Learning Game > Setup Find The Animal.
+/// Builds the FindTheAnimal scene in LANDSCAPE with structured zone-based world.
+/// Layer order (back→front): Sky → Horizon (mountains) → Clouds → Ground → BackRow → Animals → FrontRow → UI.
+/// All gameplay layers are full-stretch with same coordinate system.
 /// </summary>
 public class FindTheAnimalSetup : EditorWindow
 {
-    private static readonly Vector2 Ref = new Vector2(1080, 1920);
+    private static readonly Vector2 Ref = new Vector2(1920, 1080);
 
-    private static readonly Color BgColor     = HexColor("#FFF3E0"); // warm orange-ish
-    private static readonly Color TopBarColor = HexColor("#FFB74D"); // orange bar
+    private const int TopBarHeight = 80;
+    private const float GroundTop = 0.45f;
+    private const float GroundFrontTop = 0.20f;
 
-    private const int TopBarHeight     = 130;
-    private const int BottomBarHeight  = 120;
-    private const int TargetAreaHeight = 200;
+    private static readonly Color TopBarColor = HexColor("#FFB74D");
+    private const string WorldArt = "Assets/Art/World/";
+
+    private static readonly string[] CloudNames = { "cloud1", "cloud2", "cloud3", "cloud4", "cloud5", "cloud6", "cloud7", "cloud8" };
+    private static readonly string[] TreeNames = {
+        "tree", "treeLong", "treeLongOrange", "treeOrange", "treePine", "treePineFrozen",
+        "treePineOrange", "treePalm", "treeFrozen", "treeSnow", "treeLongSnow"
+    };
+    private static readonly string[] SmallTreeNames = {
+        "treeSmall_green1", "treeSmall_green2", "treeSmall_green3",
+        "treeSmall_greenAlt1", "treeSmall_greenAlt2", "treeSmall_greenAlt3",
+        "treeSmall_orange1", "treeSmall_orange2", "treeSmall_orange3"
+    };
+    private static readonly string[] BushNames = {
+        "bush1", "bush2", "bush3", "bush4",
+        "bushAlt1", "bushAlt2", "bushAlt3", "bushAlt4",
+        "bushOrange1", "bushOrange2", "bushOrange3", "bushOrange4"
+    };
+    private static readonly string[] HouseNames = {
+        "houseSmall1", "houseSmall2", "houseSmallAlt1", "houseSmallAlt2"
+    };
+    private static readonly string[] FenceNames = { "fence", "fenceIron" };
 
     private static readonly Color[] AnimalColors = {
         HexColor("#EF9A9A"), HexColor("#F48FB1"), HexColor("#CE93D8"),
@@ -35,7 +56,10 @@ public class FindTheAnimalSetup : EditorWindow
     {
         try
         {
-            EditorUtility.DisplayProgressBar("Find The Animal Setup", "Updating data…", 0.2f);
+            EditorUtility.DisplayProgressBar("Find The Animal Setup", "Ensuring sprite imports…", 0.1f);
+            EnsureWorldSpriteImports();
+
+            EditorUtility.DisplayProgressBar("Find The Animal Setup", "Updating data…", 0.3f);
             UpdateGameData();
 
             EditorUtility.DisplayProgressBar("Find The Animal Setup", "Building scene…", 0.5f);
@@ -52,18 +76,28 @@ public class FindTheAnimalSetup : EditorWindow
         }
     }
 
-    // ─────────────────────────────────────────
-    //  DATA
-    // ─────────────────────────────────────────
+    private static void EnsureWorldSpriteImports()
+    {
+        var guids = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Art/World" });
+        foreach (var guid in guids)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            var imp = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (imp != null && imp.textureType != TextureImporterType.Sprite)
+            {
+                imp.textureType = TextureImporterType.Sprite;
+                imp.spriteImportMode = SpriteImportMode.Single;
+                imp.alphaIsTransparency = true;
+                imp.mipmapEnabled = false;
+                imp.SaveAndReimport();
+            }
+        }
+    }
 
     private static void UpdateGameData()
     {
         var game = AssetDatabase.LoadAssetAtPath<GameItemData>("Assets/Data/Games/FindTheObject.asset");
-        if (game == null)
-        {
-            Debug.LogError("FindTheObject.asset not found. Run Setup Project first.");
-            return;
-        }
+        if (game == null) { Debug.LogError("FindTheObject.asset not found."); return; }
 
         game.targetSceneName = "FindTheAnimal";
         game.hasSubItems = false;
@@ -74,43 +108,33 @@ public class FindTheAnimalSetup : EditorWindow
             "Sheep", "Snake", "Turtle", "Zebra"
         };
 
-        if (game.subItems == null)
-            game.subItems = new List<SubItemData>();
+        if (game.subItems == null) game.subItems = new List<SubItemData>();
         game.subItems.Clear();
 
         for (int i = 0; i < animals.Length; i++)
         {
             string name = animals[i];
-            string mainPath = $"Assets/Art/Animals/{name}/Art/Puzzle/{name} Main.png";
-            var mainSprite = LoadSprite(mainPath);
-
+            var mainSprite = LoadSprite($"Assets/Art/Animals/{name}/Art/Puzzle/{name} Main.png");
             Sprite thumbSprite = null;
-            string[] thumbPaths = {
+            foreach (var tp in new[] {
                 $"Assets/Art/Animals/{name}/Art/{name}Sprite.png",
                 $"Assets/Art/Animals/{name}/Art/{name}.png"
-            };
-            foreach (var tp in thumbPaths)
+            })
             {
                 thumbSprite = LoadSprite(tp);
                 if (thumbSprite != null) break;
             }
-
             if (mainSprite == null && thumbSprite == null) continue;
 
-            game.subItems.Add(new SubItemData
-            {
-                id = $"find_{name.ToLower()}",
-                title = name,
+            game.subItems.Add(new SubItemData {
+                id = $"find_{name.ToLower()}", title = name,
                 cardColor = AnimalColors[i % AnimalColors.Length],
-                categoryKey = name.ToLower(),
-                targetSceneName = "FindTheAnimal",
-                contentAsset = mainSprite != null ? mainSprite : thumbSprite,
-                thumbnail = thumbSprite != null ? thumbSprite : mainSprite
+                categoryKey = name.ToLower(), targetSceneName = "FindTheAnimal",
+                contentAsset = mainSprite ?? thumbSprite,
+                thumbnail = thumbSprite ?? mainSprite
             });
         }
-
         EditorUtility.SetDirty(game);
-        Debug.Log($"FindTheAnimal data updated with {game.subItems.Count} animals.");
     }
 
     // ─────────────────────────────────────────
@@ -124,243 +148,281 @@ public class FindTheAnimalSetup : EditorWindow
 
         // Camera
         var camGO = new GameObject("Main Camera");
-        camGO.tag = "MainCamera";
-        camGO.AddComponent<AudioListener>();
+        camGO.tag = "MainCamera"; camGO.AddComponent<AudioListener>();
         var cam = camGO.AddComponent<Camera>();
         cam.clearFlags = CameraClearFlags.SolidColor;
-        cam.backgroundColor = BgColor;
+        cam.backgroundColor = HexColor("#B8DBF7");
         cam.orthographic = true;
-        var urpType = System.Type.GetType("UnityEngine.Rendering.Universal.UniversalAdditionalCameraData, Unity.RenderPipelines.Universal.Runtime");
-        if (urpType != null) camGO.AddComponent(urpType);
+        var urp = System.Type.GetType(
+            "UnityEngine.Rendering.Universal.UniversalAdditionalCameraData, Unity.RenderPipelines.Universal.Runtime");
+        if (urp != null) camGO.AddComponent(urp);
 
         // EventSystem
-        var esGO = new GameObject("EventSystem");
-        esGO.AddComponent<EventSystem>();
-        var inputType = System.Type.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem");
-        if (inputType != null) esGO.AddComponent(inputType);
-        else esGO.AddComponent<StandaloneInputModule>();
+        var esGO = new GameObject("EventSystem"); esGO.AddComponent<EventSystem>();
+        var inp = System.Type.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem");
+        if (inp != null) esGO.AddComponent(inp); else esGO.AddComponent<StandaloneInputModule>();
 
-        // Canvas
+        // Canvas (landscape)
         var canvasGO = new GameObject("FindAnimalCanvas");
         var canvas = canvasGO.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         var scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = Ref;
-        scaler.matchWidthOrHeight = 0f;
+        scaler.matchWidthOrHeight = 0.5f;
         canvasGO.AddComponent<GraphicRaycaster>();
 
-        // Background
-        var bg = CreateStretchImage(canvasGO.transform, "Background", BgColor);
-        bg.GetComponent<Image>().raycastTarget = false;
+        var safeGO = new GameObject("SafeArea");
+        safeGO.transform.SetParent(canvasGO.transform, false);
+        Full(safeGO.AddComponent<RectTransform>());
+        safeGO.AddComponent<SafeAreaHandler>();
 
-        // Safe area
-        var safeArea = new GameObject("SafeArea");
-        safeArea.transform.SetParent(canvasGO.transform, false);
-        var safeRT = safeArea.AddComponent<RectTransform>();
-        StretchFull(safeRT);
-        safeArea.AddComponent<SafeAreaHandler>();
-
-        // ── TOP BAR ──
-        var topBar = CreateStretchImage(safeArea.transform, "TopBar", TopBarColor);
+        // Top bar
+        var topBar = StretchImg(safeGO.transform, "TopBar", TopBarColor);
         var topBarRT = topBar.GetComponent<RectTransform>();
-        topBarRT.anchorMin = new Vector2(0, 1);
-        topBarRT.anchorMax = new Vector2(1, 1);
-        topBarRT.pivot = new Vector2(0.5f, 1);
-        topBarRT.sizeDelta = new Vector2(0, TopBarHeight);
+        topBarRT.anchorMin = new Vector2(0, 1); topBarRT.anchorMax = new Vector2(1, 1);
+        topBarRT.pivot = new Vector2(0.5f, 1); topBarRT.sizeDelta = new Vector2(0, TopBarHeight);
         topBar.GetComponent<Image>().raycastTarget = false;
         topBar.AddComponent<ThemeHeader>();
 
-        // Title
         var titleGO = new GameObject("Title");
         titleGO.transform.SetParent(topBar.transform, false);
         var titleRT = titleGO.AddComponent<RectTransform>();
-        StretchFull(titleRT);
-        titleRT.offsetMin = new Vector2(100, 0);
-        titleRT.offsetMax = new Vector2(-100, 0);
+        Full(titleRT); titleRT.offsetMin = new Vector2(100, 0); titleRT.offsetMax = new Vector2(-200, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = HebrewFixer.Fix("\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05D7\u05D9\u05D4"); // מצא את החיה
-        titleTMP.isRightToLeftText = false;
-        titleTMP.fontSize = 48;
-        titleTMP.fontStyle = FontStyles.Bold;
-        titleTMP.color = Color.white;
-        titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.raycastTarget = false;
+        titleTMP.text = HebrewFixer.Fix("\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05D7\u05D9\u05D4");
+        titleTMP.isRightToLeftText = false; titleTMP.fontSize = 36;
+        titleTMP.fontStyle = FontStyles.Bold; titleTMP.color = Color.white;
+        titleTMP.alignment = TextAlignmentOptions.Center; titleTMP.raycastTarget = false;
 
-        // Home button (top-left)
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
-        var homeGO = CreateIconButton(topBar.transform, "HomeButton", homeIcon,
-            new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1),
-            new Vector2(16, -15), new Vector2(90, 90));
+        var homeGO = IconBtn(topBar.transform, "HomeButton", homeIcon,
+            new Vector2(0, 1), new Vector2(0, 1), new Vector2(16, -8), new Vector2(64, 64));
 
-        // ── BOTTOM BAR ──
-        var bottomBar = CreateStretchImage(safeArea.transform, "BottomBar", new Color(1, 1, 1, 0));
-        var bottomBarRT = bottomBar.GetComponent<RectTransform>();
-        bottomBarRT.anchorMin = new Vector2(0, 0);
-        bottomBarRT.anchorMax = new Vector2(1, 0);
-        bottomBarRT.pivot = new Vector2(0.5f, 0);
-        bottomBarRT.sizeDelta = new Vector2(0, BottomBarHeight);
-        bottomBar.GetComponent<Image>().raycastTarget = false;
+        // ═══════════════════════════════════════
+        //  WORLD AREA — below top bar
+        //  Layer order (back→front):
+        //  Sky → HorizonLayer → CloudLayer → Ground → GroundFront → BackRow → Animals → FrontRow
+        // ═══════════════════════════════════════
 
-        // ── PLAY AREA (between top and bottom bars) ──
-        var playArea = new GameObject("PlayArea");
-        playArea.transform.SetParent(safeArea.transform, false);
-        var playAreaRT = playArea.AddComponent<RectTransform>();
-        StretchFull(playAreaRT);
-        playAreaRT.offsetMax = new Vector2(0, -TopBarHeight);
-        playAreaRT.offsetMin = new Vector2(0, BottomBarHeight);
+        var worldGO = new GameObject("WorldArea");
+        worldGO.transform.SetParent(safeGO.transform, false);
+        var worldRT = worldGO.AddComponent<RectTransform>();
+        Full(worldRT);
+        worldRT.offsetMax = new Vector2(0, -TopBarHeight);
 
-        // ── TARGET AREA (top of play area, height 200) ──
-        var targetArea = new GameObject("TargetArea");
-        targetArea.transform.SetParent(playArea.transform, false);
-        var targetAreaRT = targetArea.AddComponent<RectTransform>();
-        targetAreaRT.anchorMin = new Vector2(0, 1);
-        targetAreaRT.anchorMax = new Vector2(1, 1);
-        targetAreaRT.pivot = new Vector2(0.5f, 1);
-        targetAreaRT.sizeDelta = new Vector2(0, TargetAreaHeight);
+        // 1. Sky (full background)
+        var skyGO = StretchImg(worldGO.transform, "Sky", HexColor("#B8DBF7"));
+        skyGO.GetComponent<Image>().raycastTarget = false;
+        var skyImg = skyGO.GetComponent<Image>();
 
-        // White rounded rect background for target
-        var targetBgGO = new GameObject("TargetBackground");
-        targetBgGO.transform.SetParent(targetArea.transform, false);
-        var targetBgRT = targetBgGO.AddComponent<RectTransform>();
-        targetBgRT.anchorMin = new Vector2(0.5f, 0.5f);
-        targetBgRT.anchorMax = new Vector2(0.5f, 0.5f);
-        targetBgRT.sizeDelta = new Vector2(280, 180);
-        var targetBgImg = targetBgGO.AddComponent<Image>();
-        targetBgImg.color = Color.white;
-        if (roundedRect != null)
-        {
-            targetBgImg.sprite = roundedRect;
-            targetBgImg.type = Image.Type.Sliced;
-        }
-        targetBgImg.raycastTarget = false;
+        // 2. Cloud layer
+        var cloudGO = new GameObject("CloudLayer");
+        cloudGO.transform.SetParent(worldGO.transform, false);
+        var cloudRT = cloudGO.AddComponent<RectTransform>();
+        Full(cloudRT);
 
-        // Target image (left side of background)
-        var targetImgGO = new GameObject("TargetImage");
-        targetImgGO.transform.SetParent(targetBgGO.transform, false);
-        var targetImgRT = targetImgGO.AddComponent<RectTransform>();
-        targetImgRT.anchorMin = new Vector2(0, 0.5f);
-        targetImgRT.anchorMax = new Vector2(0, 0.5f);
-        targetImgRT.pivot = new Vector2(0, 0.5f);
-        targetImgRT.anchoredPosition = new Vector2(15, 0);
-        targetImgRT.sizeDelta = new Vector2(130, 130);
-        var targetImg = targetImgGO.AddComponent<Image>();
-        targetImg.preserveAspect = true;
-        targetImg.color = Color.white;
-        targetImg.raycastTarget = false;
+        // 4. Ground (warm sand, bottom 45%)
+        var groundGO = StretchImg(worldGO.transform, "Ground", HexColor("#E8D5A3"));
+        groundGO.GetComponent<Image>().raycastTarget = false;
+        var groundRT = groundGO.GetComponent<RectTransform>();
+        groundRT.anchorMin = Vector2.zero;
+        groundRT.anchorMax = new Vector2(1, GroundTop);
+        groundRT.offsetMin = Vector2.zero; groundRT.offsetMax = Vector2.zero;
+        var groundImg = groundGO.GetComponent<Image>();
 
-        // Remaining count text (right side of background)
+        // 5. Ground front strip (lighter sand, bottom 20%)
+        var groundFrontGO = StretchImg(worldGO.transform, "GroundFront", HexColor("#F0E0B5"));
+        groundFrontGO.GetComponent<Image>().raycastTarget = false;
+        var groundFrontRT = groundFrontGO.GetComponent<RectTransform>();
+        groundFrontRT.anchorMin = Vector2.zero;
+        groundFrontRT.anchorMax = new Vector2(1, GroundFrontTop);
+        groundFrontRT.offsetMin = Vector2.zero; groundFrontRT.offsetMax = Vector2.zero;
+        var groundFrontImg = groundFrontGO.GetComponent<Image>();
+
+        // 6. Back row layer (full stretch — decorations near horizon, behind animals)
+        var backRowGO = new GameObject("BackRowLayer");
+        backRowGO.transform.SetParent(worldGO.transform, false);
+        var backRowRT = backRowGO.AddComponent<RectTransform>();
+        Full(backRowRT);
+
+        // 7. Animal layer (full stretch — same coord system as other layers)
+        var animalGO = new GameObject("AnimalLayer");
+        animalGO.transform.SetParent(worldGO.transform, false);
+        var animalRT = animalGO.AddComponent<RectTransform>();
+        Full(animalRT);
+
+        // 8. Front row layer (full stretch — foreground + hiding objects, on top of animals)
+        var frontRowGO = new GameObject("FrontRowLayer");
+        frontRowGO.transform.SetParent(worldGO.transform, false);
+        var frontRowRT = frontRowGO.AddComponent<RectTransform>();
+        Full(frontRowRT);
+
+        // ═══════════════════════════════════════
+        //  TARGET DISPLAY — large, center-top
+        //  Shows animal image + "× N" count, clear for toddlers
+        // ═══════════════════════════════════════
+
+        var targetCardGO = new GameObject("TargetDisplay");
+        targetCardGO.transform.SetParent(worldGO.transform, false);
+        var targetCardRT = targetCardGO.AddComponent<RectTransform>();
+        targetCardRT.anchorMin = new Vector2(0.5f, 1);
+        targetCardRT.anchorMax = new Vector2(0.5f, 1);
+        targetCardRT.pivot = new Vector2(0.5f, 1);
+        targetCardRT.anchoredPosition = new Vector2(0, -10);
+        targetCardRT.sizeDelta = new Vector2(300, 130);
+        var targetCardImg = targetCardGO.AddComponent<Image>();
+        if (roundedRect != null) { targetCardImg.sprite = roundedRect; targetCardImg.type = Image.Type.Sliced; }
+        targetCardImg.color = new Color(1, 1, 1, 0.93f);
+        targetCardImg.raycastTarget = false;
+
+        // Drop shadow behind card
+        var shadowGO = new GameObject("Shadow");
+        shadowGO.transform.SetParent(targetCardGO.transform, false);
+        shadowGO.transform.SetAsFirstSibling();
+        var shadowRT = shadowGO.AddComponent<RectTransform>();
+        shadowRT.anchorMin = Vector2.zero; shadowRT.anchorMax = Vector2.one;
+        shadowRT.offsetMin = new Vector2(-4, -6); shadowRT.offsetMax = new Vector2(4, 2);
+        var shadowImg = shadowGO.AddComponent<Image>();
+        if (roundedRect != null) { shadowImg.sprite = roundedRect; shadowImg.type = Image.Type.Sliced; }
+        shadowImg.color = new Color(0, 0, 0, 0.12f);
+        shadowImg.raycastTarget = false;
+
+        // Animal image — left side, large
+        var tImgGO = new GameObject("TargetImage");
+        tImgGO.transform.SetParent(targetCardGO.transform, false);
+        var tImgRT = tImgGO.AddComponent<RectTransform>();
+        tImgRT.anchorMin = new Vector2(0, 0.5f); tImgRT.anchorMax = new Vector2(0, 0.5f);
+        tImgRT.pivot = new Vector2(0, 0.5f);
+        tImgRT.anchoredPosition = new Vector2(12, 0); tImgRT.sizeDelta = new Vector2(105, 105);
+        var tImg = tImgGO.AddComponent<Image>();
+        tImg.preserveAspect = true; tImg.color = Color.white; tImg.raycastTarget = false;
+
+        // "×" label
+        var multiplyGO = new GameObject("MultiplyLabel");
+        multiplyGO.transform.SetParent(targetCardGO.transform, false);
+        var multiplyRT = multiplyGO.AddComponent<RectTransform>();
+        multiplyRT.anchorMin = new Vector2(0.5f, 0.5f); multiplyRT.anchorMax = new Vector2(0.5f, 0.5f);
+        multiplyRT.pivot = new Vector2(0.5f, 0.5f);
+        multiplyRT.anchoredPosition = new Vector2(10, 0); multiplyRT.sizeDelta = new Vector2(40, 60);
+        var multiplyTMP = multiplyGO.AddComponent<TextMeshProUGUI>();
+        multiplyTMP.text = "\u00D7"; multiplyTMP.fontSize = 46;
+        multiplyTMP.fontStyle = FontStyles.Bold; multiplyTMP.color = HexColor("#9E9E9E");
+        multiplyTMP.alignment = TextAlignmentOptions.Center; multiplyTMP.raycastTarget = false;
+
+        // Count number — right side with colored circle bg
+        var countBgGO = new GameObject("CountBg");
+        countBgGO.transform.SetParent(targetCardGO.transform, false);
+        var countBgRT = countBgGO.AddComponent<RectTransform>();
+        countBgRT.anchorMin = new Vector2(1, 0.5f); countBgRT.anchorMax = new Vector2(1, 0.5f);
+        countBgRT.pivot = new Vector2(1, 0.5f);
+        countBgRT.anchoredPosition = new Vector2(-18, 0); countBgRT.sizeDelta = new Vector2(72, 72);
+        var countBgImg = countBgGO.AddComponent<Image>();
+        if (circleSprite != null) countBgImg.sprite = circleSprite;
+        countBgImg.color = new Color(1, 0.44f, 0.26f, 0.18f); countBgImg.raycastTarget = false;
+
         var countGO = new GameObject("RemainingCount");
-        countGO.transform.SetParent(targetBgGO.transform, false);
+        countGO.transform.SetParent(targetCardGO.transform, false);
         var countRT = countGO.AddComponent<RectTransform>();
-        countRT.anchorMin = new Vector2(1, 0.5f);
-        countRT.anchorMax = new Vector2(1, 0.5f);
+        countRT.anchorMin = new Vector2(1, 0.5f); countRT.anchorMax = new Vector2(1, 0.5f);
         countRT.pivot = new Vector2(1, 0.5f);
-        countRT.anchoredPosition = new Vector2(-20, 0);
-        countRT.sizeDelta = new Vector2(100, 130);
+        countRT.anchoredPosition = new Vector2(-18, 0); countRT.sizeDelta = new Vector2(72, 72);
         var countTMP = countGO.AddComponent<TextMeshProUGUI>();
-        countTMP.text = "0";
-        countTMP.fontSize = 64;
-        countTMP.fontStyle = FontStyles.Bold;
-        countTMP.color = HexColor("#FF7043");
-        countTMP.alignment = TextAlignmentOptions.Center;
-        countTMP.raycastTarget = false;
+        countTMP.text = "0"; countTMP.fontSize = 56;
+        countTMP.fontStyle = FontStyles.Bold; countTMP.color = HexColor("#FF7043");
+        countTMP.alignment = TextAlignmentOptions.Center; countTMP.raycastTarget = false;
 
-        // ── ANIMAL AREA (fills remaining play area below target area) ──
-        var animalArea = new GameObject("AnimalArea");
-        animalArea.transform.SetParent(playArea.transform, false);
-        var animalAreaRT = animalArea.AddComponent<RectTransform>();
-        StretchFull(animalAreaRT);
-        animalAreaRT.offsetMax = new Vector2(0, -TargetAreaHeight);
+        // ═══════════════════════════════════════
+        //  LOAD WORLD ART + WIRE CONTROLLER
+        // ═══════════════════════════════════════
 
-        // ── CONTROLLER ──
-        var controller = canvasGO.AddComponent<FindTheAnimalController>();
-        controller.playArea = animalAreaRT;
-        controller.targetImage = targetImg;
-        controller.remainingText = countTMP;
-        controller.animalSize = 280f;
+        var ctrl = canvasGO.AddComponent<FindTheAnimalController>();
 
-        // Wire buttons
+        ctrl.targetImage = tImg;
+        ctrl.remainingText = countTMP;
+
+        ctrl.skyImage = skyImg;
+        ctrl.groundImage = groundImg;
+        ctrl.groundFrontImage = groundFrontImg;
+        ctrl.cloudLayer = cloudRT;
+        ctrl.backRowLayer = backRowRT;
+        ctrl.animalLayer = animalRT;
+        ctrl.frontRowLayer = frontRowRT;
+
+        ctrl.cloudSprites = LoadSprites(CloudNames);
+        ctrl.treeSprites = LoadSprites(TreeNames);
+        ctrl.smallTreeSprites = LoadSprites(SmallTreeNames);
+        ctrl.bushSprites = LoadSprites(BushNames);
+        ctrl.houseSprites = LoadSprites(HouseNames);
+        ctrl.fenceSprites = LoadSprites(FenceNames);
+
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
-            homeGO.GetComponent<Button>().onClick, controller.OnHomePressed);
+            homeGO.GetComponent<Button>().onClick, ctrl.OnHomePressed);
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/FindTheAnimal.unity");
     }
 
-    // ─────────────────────────────────────────
-    //  HELPERS
-    // ─────────────────────────────────────────
+    // ─── Helpers ───
 
-    private static GameObject CreateStretchImage(Transform parent, string name, Color color)
+    private static Sprite[] LoadSprites(string[] names)
+    {
+        var list = new List<Sprite>();
+        foreach (var n in names) { var s = LoadSprite(WorldArt + n + ".png"); if (s != null) list.Add(s); }
+        return list.ToArray();
+    }
+
+    private static GameObject StretchImg(Transform parent, string name, Color color)
     {
         var go = new GameObject(name);
         go.transform.SetParent(parent, false);
-        var rt = go.AddComponent<RectTransform>();
-        StretchFull(rt);
-        var img = go.AddComponent<Image>();
-        img.color = color;
+        Full(go.AddComponent<RectTransform>());
+        go.AddComponent<Image>().color = color;
         return go;
     }
 
-    private static GameObject CreateIconButton(Transform parent, string name, Sprite icon,
-        Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 pos, Vector2 size)
+    private static GameObject IconBtn(Transform p, string name, Sprite icon,
+        Vector2 anchor, Vector2 pivot, Vector2 pos, Vector2 size)
     {
-        var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
+        var go = new GameObject(name); go.transform.SetParent(p, false);
         var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = anchorMin;
-        rt.anchorMax = anchorMax;
-        rt.pivot = pivot;
-        rt.anchoredPosition = pos;
-        rt.sizeDelta = size;
+        rt.anchorMin = anchor; rt.anchorMax = anchor; rt.pivot = pivot;
+        rt.anchoredPosition = pos; rt.sizeDelta = size;
         var img = go.AddComponent<Image>();
-        img.sprite = icon;
-        img.preserveAspect = true;
-        img.color = Color.white;
-        img.raycastTarget = true;
-        var btn = go.AddComponent<Button>();
-        btn.targetGraphic = img;
+        img.sprite = icon; img.preserveAspect = true; img.color = Color.white;
+        go.AddComponent<Button>().targetGraphic = img;
         return go;
     }
 
-    private static void StretchFull(RectTransform rt)
+    private static void Full(RectTransform rt)
     {
-        rt.anchorMin = Vector2.zero;
-        rt.anchorMax = Vector2.one;
-        rt.offsetMin = Vector2.zero;
-        rt.offsetMax = Vector2.zero;
+        rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
     }
 
     private static void EnsureFolder(string path)
     {
         if (AssetDatabase.IsValidFolder(path)) return;
-        string[] parts = path.Split('/');
-        string current = parts[0];
+        var parts = path.Split('/');
+        string cur = parts[0];
         for (int i = 1; i < parts.Length; i++)
         {
-            string next = current + "/" + parts[i];
-            if (!AssetDatabase.IsValidFolder(next))
-                AssetDatabase.CreateFolder(current, parts[i]);
-            current = next;
+            string next = cur + "/" + parts[i];
+            if (!AssetDatabase.IsValidFolder(next)) AssetDatabase.CreateFolder(cur, parts[i]);
+            cur = next;
         }
     }
 
     private static Sprite LoadSprite(string path)
     {
-        var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-        if (sprite != null) return sprite;
-        var allAssets = AssetDatabase.LoadAllAssetsAtPath(path);
-        if (allAssets != null)
-        {
-            foreach (var asset in allAssets)
-                if (asset is Sprite s) return s;
-        }
+        var s = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        if (s != null) return s;
+        var all = AssetDatabase.LoadAllAssetsAtPath(path);
+        if (all != null) foreach (var o in all) if (o is Sprite sp) return sp;
         return null;
     }
 
     private static Color HexColor(string hex)
     {
-        ColorUtility.TryParseHtmlString(hex, out Color c);
-        return c;
+        ColorUtility.TryParseHtmlString(hex, out Color c); return c;
     }
 }
