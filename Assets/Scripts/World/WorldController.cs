@@ -357,6 +357,18 @@ public class WorldController : MonoBehaviour
                 shineDotImg.color = new Color(1f, 1f, 1f, 0.6f);
                 shineDotImg.raycastTarget = false;
 
+                // String hanging below balloon
+                var stringGO = new GameObject("String");
+                stringGO.transform.SetParent(go.transform, false);
+                var stringRT = stringGO.AddComponent<RectTransform>();
+                stringRT.anchorMin = new Vector2(0.48f, -0.6f);
+                stringRT.anchorMax = new Vector2(0.52f, 0.02f);
+                stringRT.offsetMin = Vector2.zero;
+                stringRT.offsetMax = Vector2.zero;
+                var stringImg = stringGO.AddComponent<Image>();
+                stringImg.color = new Color(bubbleColor.r * 0.6f, bubbleColor.g * 0.6f, bubbleColor.b * 0.6f, 0.5f);
+                stringImg.raycastTarget = false;
+
                 var balloon = go.AddComponent<WorldBalloon>();
                 balloon.bubbleColor = bubbleColor;
                 balloon.circleSprite = circleSprite;

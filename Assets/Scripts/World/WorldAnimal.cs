@@ -20,6 +20,12 @@ public class WorldAnimal : MonoBehaviour
     private bool isFalling;
     private Vector2 dragOffset; // offset between finger and animal position at drag start
 
+    // Shadow scaling based on height
+    private Vector2 baseShadowSize;
+    private float baseShadowAlpha;
+    private Image shadowImage;
+    private float maxLiftHeight = 500f; // height at which shadow reaches minimum size
+
     private void Awake()
     {
         rt = GetComponent<RectTransform>();
@@ -30,6 +36,15 @@ public class WorldAnimal : MonoBehaviour
         // UISpriteAnimator may be added after Awake by WorldController, so fetch in Start
         if (spriteAnim == null)
             spriteAnim = GetComponent<UISpriteAnimator>();
+
+        // Cache base shadow properties for height-based scaling
+        if (shadowTransform != null)
+        {
+            baseShadowSize = shadowTransform.sizeDelta;
+            shadowImage = shadowTransform.GetComponent<Image>();
+            if (shadowImage != null)
+                baseShadowAlpha = shadowImage.color.a;
+        }
     }
 
     public void OnTouchStart(Vector2 screenPos)
@@ -214,7 +229,24 @@ public class WorldAnimal : MonoBehaviour
     private void UpdateShadow()
     {
         if (shadowTransform == null) return;
+
         // Shadow stays at ground level, follows X position
         shadowTransform.anchoredPosition = new Vector2(rt.anchoredPosition.x, groundY - 8f);
+
+        // Scale shadow based on height above ground
+        float lift = Mathf.Max(0f, rt.anchoredPosition.y - groundY);
+        float t = Mathf.Clamp01(lift / maxLiftHeight);
+
+        // Shadow shrinks to 30% at max height
+        float scaleFactor = Mathf.Lerp(1f, 0.3f, t);
+        shadowTransform.sizeDelta = baseShadowSize * scaleFactor;
+
+        // Shadow fades slightly when high
+        if (shadowImage != null)
+        {
+            float alpha = Mathf.Lerp(baseShadowAlpha, baseShadowAlpha * 0.3f, t);
+            var c = shadowImage.color;
+            shadowImage.color = new Color(c.r, c.g, c.b, alpha);
+        }
     }
 }
