@@ -115,12 +115,7 @@ public class WorldCloud : MonoBehaviour
         var shape = ps.shape;
         shape.shapeType = ParticleSystemShapeType.Box;
         shape.scale = new Vector3(60f, 5f, 1f);
-        shape.rotation = new Vector3(0, 0, 0);
-
-        var vel = ps.velocityOverLifetime;
-        vel.enabled = true;
-        vel.x = new ParticleSystem.MinMaxCurve(-10f, 10f);
-        vel.y = new ParticleSystem.MinMaxCurve(-50f, -20f);
+        shape.rotation = new Vector3(90f, 0, 0); // emit downward
 
         var colorOverLifetime = ps.colorOverLifetime;
         colorOverLifetime.enabled = true;
