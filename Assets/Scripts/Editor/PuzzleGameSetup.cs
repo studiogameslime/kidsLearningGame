@@ -9,18 +9,27 @@ using System.IO;
 
 /// <summary>
 /// Builds the PuzzleGame scene and updates Puzzle.asset with animal sub-items.
-/// Run via Tools > Kids Learning Game > Setup Puzzle Game.
+///
+/// Layout (portrait):
+///   Top bar (80px, matches Shadow Match / World)
+///   Right side — 3x3 puzzle board with faded preview image
+///   Left side  — scattered puzzle pieces
+///
+/// Background: warm desert/sand theme (distinct from other mini-games)
 /// </summary>
 public class PuzzleGameSetup : EditorWindow
 {
     private static readonly Vector2 Ref = new Vector2(1080, 1920);
 
-    // Colors
-    private static readonly Color BgColor      = HexColor("#F5EDE3");
-    private static readonly Color TopBarColor  = HexColor("#E8D5C0");
+    // Desert palette — warm pastel tones
+    private static readonly Color SkyColor       = HexColor("#E8D8C8");  // warm sandy sky
+    private static readonly Color SkyTopColor    = HexColor("#D4C4B0");  // slightly darker sky top
+    private static readonly Color HillFarColor   = HexColor("#D5C0A8");  // distant sandy hills
+    private static readonly Color HillNearColor  = HexColor("#CCAB8A");  // nearer warm hills
+    private static readonly Color GroundColor    = HexColor("#E0C9A0");  // soft sand floor
+    private static readonly Color TopBarColor    = HexColor("#C4A882");  // warm brown header
 
-    // Layout
-    private const int TopBarHeight = 130;
+    private const int TopBarHeight = 80;
 
     // Animal colors for cards
     private static readonly Color[] AnimalColors = {
@@ -37,12 +46,11 @@ public class PuzzleGameSetup : EditorWindow
     {
         try
         {
-            EditorUtility.DisplayProgressBar("Puzzle Game Setup", "Updating puzzle data…", 0.2f);
+            EditorUtility.DisplayProgressBar("Puzzle Game Setup", "Updating puzzle data...", 0.2f);
             UpdatePuzzleData();
 
-            EditorUtility.DisplayProgressBar("Puzzle Game Setup", "Building scene…", 0.5f);
-            var roundedRect = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/RoundedRect.png");
-            CreatePuzzleScene(roundedRect);
+            EditorUtility.DisplayProgressBar("Puzzle Game Setup", "Building scene...", 0.5f);
+            CreatePuzzleScene();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -136,30 +144,34 @@ public class PuzzleGameSetup : EditorWindow
     //  SCENE
     // ─────────────────────────────────────────
 
-    private static void CreatePuzzleScene(Sprite roundedRect)
+    private static void CreatePuzzleScene()
     {
         EnsureFolder("Assets/Scenes");
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        string artPath = "Assets/Art/World";
 
-        // Camera
+        var hillsSpr = LoadSprite($"{artPath}/hillsLarge.png");
+        var grassSpr = LoadSprite($"{artPath}/groundLayer1.png");
+
+        // ── Camera ──
         var camGO = new GameObject("Main Camera");
         camGO.tag = "MainCamera";
         camGO.AddComponent<AudioListener>();
         var cam = camGO.AddComponent<Camera>();
         cam.clearFlags = CameraClearFlags.SolidColor;
-        cam.backgroundColor = BgColor;
+        cam.backgroundColor = SkyColor;
         cam.orthographic = true;
         var urpType = System.Type.GetType("UnityEngine.Rendering.Universal.UniversalAdditionalCameraData, Unity.RenderPipelines.Universal.Runtime");
         if (urpType != null) camGO.AddComponent(urpType);
 
-        // EventSystem
+        // ── EventSystem ──
         var esGO = new GameObject("EventSystem");
         esGO.AddComponent<EventSystem>();
         var inputType = System.Type.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem");
         if (inputType != null) esGO.AddComponent(inputType);
         else esGO.AddComponent<StandaloneInputModule>();
 
-        // Canvas
+        // ── Canvas ──
         var canvasGO = new GameObject("PuzzleCanvas");
         var canvas = canvasGO.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -168,84 +180,121 @@ public class PuzzleGameSetup : EditorWindow
         scaler.referenceResolution = Ref;
         scaler.matchWidthOrHeight = 0f;
         canvasGO.AddComponent<GraphicRaycaster>();
+        var root = canvasGO.transform;
 
-        // Background
-        var bg = CreateStretchImage(canvasGO.transform, "Background", BgColor);
-        bg.GetComponent<Image>().raycastTarget = false;
+        // ═══════════════════════════════════
+        //  BACKGROUND — warm desert/sand theme
+        //
+        //  Top ~55%  = warm sandy sky
+        //  Middle    = sandy hills
+        //  Bottom ~40% = sand floor
+        // ═══════════════════════════════════
 
-        // Safe area
-        var safeArea = new GameObject("SafeArea");
-        safeArea.transform.SetParent(canvasGO.transform, false);
-        var safeRT = safeArea.AddComponent<RectTransform>();
-        StretchFull(safeRT);
-        safeArea.AddComponent<SafeAreaHandler>();
+        // 1. SKY — warm sandy gradient base
+        Layer(root, "Sky", null, 0, 0, 1, 1, SkyColor);
 
-        // ── TOP BAR ──
-        var topBar = CreateStretchImage(safeArea.transform, "TopBar", TopBarColor);
-        var topBarRT = topBar.GetComponent<RectTransform>();
-        topBarRT.anchorMin = new Vector2(0, 1);
-        topBarRT.anchorMax = new Vector2(1, 1);
-        topBarRT.pivot = new Vector2(0.5f, 1);
-        topBarRT.sizeDelta = new Vector2(0, TopBarHeight);
-        topBar.GetComponent<Image>().raycastTarget = false;
-        topBar.AddComponent<ThemeHeader>();
+        // 2. SKY TOP — slightly darker warm tone at top
+        Layer(root, "SkyTop", null, 0, 0.75f, 1, 1, SkyTopColor);
+
+        // 3. DISTANT HILLS — sandy dunes
+        Layer(root, "HillsFar", hillsSpr, 0, 0.38f, 1, 0.55f, HillFarColor);
+
+        // 4. NEAR HILLS — warmer brown dunes
+        Layer(root, "HillsNear", hillsSpr, 0, 0.33f, 1, 0.48f, HillNearColor);
+
+        // 5. GROUND — soft sand floor (bottom 40%)
+        Layer(root, "Ground", grassSpr, 0, 0, 1, 0.40f, GroundColor);
+
+        // ═══════════════════════════════════
+        //  SAFE AREA + TOP BAR
+        // ═══════════════════════════════════
+
+        var safeGO = new GameObject("SafeArea");
+        safeGO.transform.SetParent(root, false);
+        var safeRT = safeGO.AddComponent<RectTransform>();
+        Full(safeRT);
+        safeGO.AddComponent<SafeAreaHandler>();
+
+        // Top bar — matches Shadow Match / World header
+        var bar = FillGO(safeGO.transform, "TopBar", TopBarColor);
+        var barRT = bar.GetComponent<RectTransform>();
+        barRT.anchorMin = new Vector2(0, 1);
+        barRT.anchorMax = new Vector2(1, 1);
+        barRT.pivot = new Vector2(0.5f, 1);
+        barRT.sizeDelta = new Vector2(0, TopBarHeight);
+        bar.GetComponent<Image>().raycastTarget = false;
+        bar.AddComponent<ThemeHeader>();
 
         // Title
         var titleGO = new GameObject("Title");
-        titleGO.transform.SetParent(topBar.transform, false);
+        titleGO.transform.SetParent(bar.transform, false);
         var titleRT = titleGO.AddComponent<RectTransform>();
-        StretchFull(titleRT);
+        Full(titleRT);
         titleRT.offsetMin = new Vector2(100, 0);
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
         titleTMP.text = HebrewFixer.Fix("\u05E4\u05D0\u05D6\u05DC"); // פאזל
         titleTMP.isRightToLeftText = false;
-        titleTMP.fontSize = 48;
+        titleTMP.fontSize = 36;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.raycastTarget = false;
 
-        // Home button
+        // Home button — matches Shadow Match exactly
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
-        var homeGO = CreateIconButton(topBar.transform, "HomeButton", homeIcon,
-            new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1),
-            new Vector2(16, -15), new Vector2(90, 90));
+        var homeGO = Btn(bar.transform, "HomeButton", homeIcon, 16, -8, 64);
 
-        // ── PUZZLE AREA (fills space below top bar) ──
-        var puzzleArea = new GameObject("PuzzleArea");
-        puzzleArea.transform.SetParent(safeArea.transform, false);
-        var puzzleAreaRT = puzzleArea.AddComponent<RectTransform>();
-        StretchFull(puzzleAreaRT);
-        puzzleAreaRT.offsetMax = new Vector2(0, -TopBarHeight);
-        puzzleAreaRT.offsetMin = Vector2.zero;
+        // ═══════════════════════════════════
+        //  GAMEPLAY ZONES (portrait — left/right split)
+        //
+        //  Left side:  scattered puzzle pieces
+        //    anchors: x 0.02–0.48, y 0.03–0.92 (below bar)
+        //
+        //  Right side: puzzle board with faded reference
+        //    anchors: x 0.52–0.98, y 0.03–0.92
+        //
+        //  Vertical divider gap (0.48–0.52)
+        // ═══════════════════════════════════
 
-        // ── REFERENCE IMAGE (big, centered, faded) ──
+        // Pieces area (left side)
+        var piecesGO = new GameObject("PiecesArea");
+        piecesGO.transform.SetParent(safeGO.transform, false);
+        var piecesRT = piecesGO.AddComponent<RectTransform>();
+        piecesRT.anchorMin = new Vector2(0.02f, 0.03f);
+        piecesRT.anchorMax = new Vector2(0.48f, 0.92f);
+        piecesRT.offsetMin = Vector2.zero;
+        piecesRT.offsetMax = Vector2.zero;
+
+        // Board area (right side)
+        var boardGO = new GameObject("BoardArea");
+        boardGO.transform.SetParent(safeGO.transform, false);
+        var boardRT = boardGO.AddComponent<RectTransform>();
+        boardRT.anchorMin = new Vector2(0.52f, 0.03f);
+        boardRT.anchorMax = new Vector2(0.98f, 0.92f);
+        boardRT.offsetMin = Vector2.zero;
+        boardRT.offsetMax = Vector2.zero;
+
+        // Reference image (centered in board area, resized by controller)
         var refGO = new GameObject("ReferenceImage");
-        refGO.transform.SetParent(puzzleArea.transform, false);
+        refGO.transform.SetParent(boardGO.transform, false);
         var refRT = refGO.AddComponent<RectTransform>();
         refRT.anchorMin = new Vector2(0.5f, 0.5f);
         refRT.anchorMax = new Vector2(0.5f, 0.5f);
-        refRT.sizeDelta = new Vector2(500, 500); // resized by controller at runtime
+        refRT.sizeDelta = new Vector2(400, 400); // resized by controller at runtime
         var refRaw = refGO.AddComponent<RawImage>();
-        refRaw.color = new Color(1f, 1f, 1f, 0.3f);
+        refRaw.color = new Color(1f, 1f, 1f, 0.25f);
         refRaw.raycastTarget = false;
 
-        // ── PIECE TRAY (bottom portion, just for sizing reference) ──
-        var tray = new GameObject("PieceTray");
-        tray.transform.SetParent(puzzleArea.transform, false);
-        var trayRT = tray.AddComponent<RectTransform>();
-        trayRT.anchorMin = new Vector2(0, 0);
-        trayRT.anchorMax = new Vector2(1, 0.25f);
-        trayRT.offsetMin = Vector2.zero;
-        trayRT.offsetMax = Vector2.zero;
+        // ═══════════════════════════════════
+        //  CONTROLLER
+        // ═══════════════════════════════════
 
-        // ── CONTROLLER ──
         var controller = canvasGO.AddComponent<PuzzleGameController>();
-        controller.puzzleArea = puzzleAreaRT;
+        controller.boardArea = boardRT;
+        controller.piecesArea = piecesRT;
         controller.referenceImage = refRaw;
-        controller.pieceTray = trayRT;
-        controller.referenceAlpha = 0.3f;
+        controller.referenceAlpha = 0.25f;
 
         // Wire home button
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
@@ -258,47 +307,57 @@ public class PuzzleGameSetup : EditorWindow
     //  HELPERS
     // ─────────────────────────────────────────
 
-    private static GameObject CreateStretchImage(Transform parent, string name, Color color)
+    private static GameObject Layer(Transform p, string name, Sprite spr,
+        float x0, float y0, float x1, float y1, Color c)
     {
         var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
+        go.transform.SetParent(p, false);
         var rt = go.AddComponent<RectTransform>();
-        StretchFull(rt);
+        rt.anchorMin = new Vector2(x0, y0);
+        rt.anchorMax = new Vector2(x1, y1);
+        rt.offsetMin = rt.offsetMax = Vector2.zero;
         var img = go.AddComponent<Image>();
-        img.color = color;
+        if (spr != null) img.sprite = spr;
+        img.color = c;
+        img.preserveAspect = false;
+        img.raycastTarget = false;
         return go;
     }
 
-    private static GameObject CreateIconButton(Transform parent, string name, Sprite icon,
-        Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 pos, Vector2 size)
+    private static GameObject FillGO(Transform p, string name, Color c)
     {
         var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
+        go.transform.SetParent(p, false);
         var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = anchorMin;
-        rt.anchorMax = anchorMax;
-        rt.pivot = pivot;
-        rt.anchoredPosition = pos;
-        rt.sizeDelta = size;
+        Full(rt);
+        go.AddComponent<Image>().color = c;
+        return go;
+    }
 
+    private static GameObject Btn(Transform p, string name, Sprite icon, float x, float y, float sz)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(p, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(0, 1);
+        rt.pivot = new Vector2(0, 1);
+        rt.anchoredPosition = new Vector2(x, y);
+        rt.sizeDelta = new Vector2(sz, sz);
         var img = go.AddComponent<Image>();
         img.sprite = icon;
         img.preserveAspect = true;
         img.color = Color.white;
         img.raycastTarget = true;
-
         var btn = go.AddComponent<Button>();
         btn.targetGraphic = img;
-
         return go;
     }
 
-    private static void StretchFull(RectTransform rt)
+    private static void Full(RectTransform rt)
     {
         rt.anchorMin = Vector2.zero;
         rt.anchorMax = Vector2.one;
-        rt.offsetMin = Vector2.zero;
-        rt.offsetMax = Vector2.zero;
+        rt.offsetMin = rt.offsetMax = Vector2.zero;
     }
 
     private static void EnsureFolder(string path)

@@ -4,26 +4,31 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Puzzle game: shows a faded reference image in the center.
-/// 4 pieces (2x2) sit at the bottom — player drags them onto
-/// the reference. Pieces snap and stick when placed correctly.
-/// On completion, loads a new random puzzle after a short delay.
+/// Puzzle game: 3x3 grid (9 pieces).
+///
+/// Layout (portrait):
+///   Right side — puzzle board with faded reference image and grid slots
+///   Left side  — 9 scattered puzzle pieces for the child to drag
+///
+/// Children drag pieces from the left onto matching slots on the right.
+/// Pieces snap when placed correctly. Confetti on completion.
 /// </summary>
 public class PuzzleGameController : MonoBehaviour
 {
     [Header("UI References")]
-    public RectTransform puzzleArea;        // main area (below top bar)
-    public RawImage referenceImage;         // big faded reference in center
-    public RectTransform pieceTray;         // bottom tray where pieces start
+    public RectTransform boardArea;          // right side — puzzle board
+    public RectTransform piecesArea;         // left side — scattered pieces
+    public RawImage referenceImage;          // faded preview in board area
 
     [Header("Settings")]
-    public float referenceAlpha = 0.3f;     // opacity of the guide image
+    public float referenceAlpha = 0.25f;
 
     private Canvas canvas;
     private List<PuzzlePiece> pieces = new List<PuzzlePiece>();
     private List<GameObject> slotObjects = new List<GameObject>();
     private int placedCount = 0;
-    private const int GridSize = 2; // 2x2 = 4 pieces
+    private const int GridSize = 3; // 3x3 = 9 pieces
+    private int totalPieces => GridSize * GridSize;
     private int lastAnimalIndex = -1;
 
     private void Start()
@@ -38,7 +43,7 @@ public class PuzzleGameController : MonoBehaviour
         if (GameContext.CurrentSelection != null)
         {
             var sprite = GameContext.CurrentSelection.contentAsset;
-            GameContext.CurrentSelection = null; // clear so next round is random
+            GameContext.CurrentSelection = null;
             return sprite;
         }
 
@@ -46,7 +51,6 @@ public class PuzzleGameController : MonoBehaviour
         var game = GameContext.CurrentGame;
         if (game != null && game.subItems != null && game.subItems.Count > 0)
         {
-            // Build list of valid sub-items (those with content assets)
             var validItems = new List<int>();
             for (int i = 0; i < game.subItems.Count; i++)
             {
@@ -63,7 +67,6 @@ public class PuzzleGameController : MonoBehaviour
             }
             else
             {
-                // Avoid repeating the same animal
                 do { pick = Random.Range(0, validItems.Count); }
                 while (validItems[pick] == lastAnimalIndex);
             }
@@ -82,7 +85,6 @@ public class PuzzleGameController : MonoBehaviour
             var tex = GameContext.CustomTexture;
             GameContext.CustomTexture = null;
 
-            // Create a sprite from the runtime texture
             var sprite = Sprite.Create(
                 tex,
                 new Rect(0, 0, tex.width, tex.height),
@@ -106,7 +108,6 @@ public class PuzzleGameController : MonoBehaviour
 
     private void ClearPuzzle()
     {
-        // Destroy old pieces
         foreach (var piece in pieces)
         {
             if (piece != null)
@@ -114,7 +115,6 @@ public class PuzzleGameController : MonoBehaviour
         }
         pieces.Clear();
 
-        // Destroy old slot overlays
         foreach (var slot in slotObjects)
         {
             if (slot != null)
@@ -131,43 +131,45 @@ public class PuzzleGameController : MonoBehaviour
         int srcW = source.width;
         int srcH = source.height;
 
-        // ── Reference image: fill most of the puzzle area ──
-        float areaW = puzzleArea.rect.width;
-        float areaH = puzzleArea.rect.height;
+        // ── Board area dimensions ──
+        float boardW = boardArea.rect.width;
+        float boardH = boardArea.rect.height;
+        if (boardW <= 0) boardW = 480f;
+        if (boardH <= 0) boardH = 1600f;
 
-        // Reserve bottom 30% for piece tray, use top 70% for reference
-        float refAreaH = areaH * 0.65f;
-        float refAreaW = areaW * 0.9f;
+        // Fit reference image into board area (90% width, 60% height max)
+        float maxRefW = boardW * 0.92f;
+        float maxRefH = boardH * 0.65f;
 
         float aspect = (float)srcW / srcH;
         float refW, refH;
-        if (aspect > refAreaW / refAreaH)
+        if (aspect > maxRefW / maxRefH)
         {
-            refW = refAreaW;
-            refH = refAreaW / aspect;
+            refW = maxRefW;
+            refH = maxRefW / aspect;
         }
         else
         {
-            refH = refAreaH;
-            refW = refAreaH * aspect;
+            refH = maxRefH;
+            refW = maxRefH * aspect;
         }
 
-        // Position reference image centered in upper portion
+        // Position reference image centered in board area
         referenceImage.rectTransform.sizeDelta = new Vector2(refW, refH);
-        referenceImage.rectTransform.anchoredPosition = new Vector2(0, areaH * 0.12f);
+        referenceImage.rectTransform.anchoredPosition = Vector2.zero;
         referenceImage.texture = sourceSprite.texture;
         referenceImage.color = new Color(1f, 1f, 1f, referenceAlpha);
 
-        // Piece dimensions on screen
+        // Piece dimensions on screen (matching reference grid)
         float pieceW = refW / GridSize;
         float pieceH = refH / GridSize;
 
-        // The reference image's center in puzzleArea local space
-        Vector2 refCenter = referenceImage.rectTransform.anchoredPosition;
+        // The reference image center in board area local space
+        Vector2 refCenter = Vector2.zero;
         float refLeft = refCenter.x - refW / 2f;
         float refTop = refCenter.y + refH / 2f;
 
-        // Correct positions for each piece (relative to puzzleArea)
+        // Correct positions for each piece (relative to boardArea)
         List<Vector2> correctPositions = new List<Vector2>();
         for (int row = 0; row < GridSize; row++)
         {
@@ -179,7 +181,7 @@ public class PuzzleGameController : MonoBehaviour
             }
         }
 
-        // Slice source texture
+        // Slice source texture into 3x3 pieces
         int sliceW = srcW / GridSize;
         int sliceH = srcH / GridSize;
         List<Texture2D> pieceTextures = new List<Texture2D>();
@@ -200,10 +202,10 @@ public class PuzzleGameController : MonoBehaviour
             }
         }
 
-        // Shuffle order for tray placement
+        // Shuffle order for left-side placement
         List<int> indices = new List<int>();
-        for (int i = 0; i < 4; i++) indices.Add(i);
-        for (int i = 3; i > 0; i--)
+        for (int i = 0; i < totalPieces; i++) indices.Add(i);
+        for (int i = totalPieces - 1; i > 0; i--)
         {
             int j = Random.Range(0, i + 1);
             int tmp = indices[i];
@@ -211,21 +213,35 @@ public class PuzzleGameController : MonoBehaviour
             indices[j] = tmp;
         }
 
-        // Place pieces in the tray (bottom area)
-        float trayW = pieceTray.rect.width;
-        float trayPieceW = Mathf.Min(pieceW * 0.85f, trayW / 4f - 10f);
-        float trayPieceH = trayPieceW / ((float)sliceW / sliceH);
-        float trayStartX = -((4 * trayPieceW + 3 * 10f) / 2f) + trayPieceW / 2f;
+        // ── Scatter pieces on left side ──
+        float piecesW = piecesArea.rect.width;
+        float piecesH = piecesArea.rect.height;
+        if (piecesW <= 0) piecesW = 480f;
+        if (piecesH <= 0) piecesH = 1600f;
 
-        for (int i = 0; i < 4; i++)
+        // Scale pieces to fit comfortably on left side
+        // Target: pieces fill ~85% of left area width in a 3-column layout
+        float scatterPieceW = (piecesW * 0.85f) / 3f;
+        float pieceScale = scatterPieceW / pieceW;
+        float scatterPieceH = pieceH * pieceScale;
+
+        // Arrange in a 3x3 scattered grid with jitter
+        float marginX = piecesW * 0.08f;
+        float marginY = piecesH * 0.05f;
+        float usableW = piecesW - marginX * 2f;
+        float usableH = piecesH - marginY * 2f;
+        float cellW = usableW / 3f;
+        float cellH = usableH / 3f;
+
+        for (int i = 0; i < totalPieces; i++)
         {
             int idx = indices[i];
 
             var pieceGO = new GameObject($"Piece_{idx}");
-            pieceGO.transform.SetParent(puzzleArea, false);
+            pieceGO.transform.SetParent(piecesArea, false);
 
             var rt = pieceGO.AddComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(pieceW - 4, pieceH - 4);
+            rt.sizeDelta = new Vector2(pieceW - 3, pieceH - 3);
 
             var rawImg = pieceGO.AddComponent<RawImage>();
             rawImg.texture = pieceTextures[idx];
@@ -233,22 +249,62 @@ public class PuzzleGameController : MonoBehaviour
 
             pieceGO.AddComponent<CanvasGroup>();
             var piece = pieceGO.AddComponent<PuzzlePiece>();
-            piece.Init(idx, correctPositions[idx], canvas, this);
 
-            // Position in tray row at bottom
-            float trayX = trayStartX + i * (trayPieceW + 10f);
-            Vector2 trayLocalPos = new Vector2(trayX, -areaH / 2f + trayPieceH / 2f + 30f);
-            rt.anchoredPosition = trayLocalPos;
-            rt.localScale = new Vector3(trayPieceW / (pieceW - 4), trayPieceH / (pieceH - 4), 1f);
+            // Convert correct position from boardArea space to piecesArea space
+            Vector2 correctInBoard = correctPositions[idx];
+            Vector3 worldPos = boardArea.TransformPoint(correctInBoard);
+            Vector2 correctInPieces;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                piecesArea, RectTransformUtility.WorldToScreenPoint(null, worldPos),
+                null, out correctInPieces);
 
-            piece.SetStartPosition(trayLocalPos);
-            piece.SetTrayScale(rt.localScale);
+            // Actually, pieces snap in their parent's coordinate space.
+            // Since pieces are parented to piecesArea but snap targets are in boardArea,
+            // we need to store the world-space target and convert on snap.
+            // Simpler: parent pieces to a shared container. Use canvas root.
+
+            // Re-parent piece to canvas so it can move freely across both areas
+            pieceGO.transform.SetParent(canvas.transform, false);
+            piece.Init(idx, correctPositions[idx], canvas, this, boardArea);
+
+            // Scatter position: grid cell + jitter (in piecesArea local space, then convert)
+            int scatterCol = i % 3;
+            int scatterRow = i / 3;
+            float baseX = -piecesW / 2f + marginX + cellW * scatterCol + cellW / 2f;
+            float baseY = piecesH / 2f - marginY - cellH * scatterRow - cellH / 2f;
+            float jitterX = Random.Range(-cellW * 0.15f, cellW * 0.15f);
+            float jitterY = Random.Range(-cellH * 0.12f, cellH * 0.12f);
+
+            // Convert piecesArea local position to canvas local position
+            Vector2 localInPieces = new Vector2(baseX + jitterX, baseY + jitterY);
+            Vector3 worldScatter = piecesArea.TransformPoint(localInPieces);
+            Vector2 canvasLocal;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                canvas.GetComponent<RectTransform>(),
+                RectTransformUtility.WorldToScreenPoint(null, worldScatter),
+                null, out canvasLocal);
+
+            rt.anchoredPosition = canvasLocal;
+            Vector3 trayScaleVec = Vector3.one * pieceScale;
+            rt.localScale = trayScaleVec;
+
+            // Convert board correct position to canvas space
+            Vector3 worldCorrect = boardArea.TransformPoint(correctPositions[idx]);
+            Vector2 canvasCorrect;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                canvas.GetComponent<RectTransform>(),
+                RectTransformUtility.WorldToScreenPoint(null, worldCorrect),
+                null, out canvasCorrect);
+
+            piece.SetCorrectCanvasPos(canvasCorrect);
+            piece.SetStartPosition(canvasLocal);
+            piece.SetTrayScale(trayScaleVec);
             piece.SetFullScale(Vector3.one);
 
             pieces.Add(piece);
         }
 
-        // Draw subtle grid lines on the reference
+        // Draw subtle grid overlay on the board
         CreateGridOverlay(refW, refH, pieceW, pieceH, refCenter);
 
         if (source != sourceSprite.texture)
@@ -265,18 +321,18 @@ public class PuzzleGameController : MonoBehaviour
             for (int col = 0; col < GridSize; col++)
             {
                 var slotGO = new GameObject($"Slot_{row}_{col}");
-                slotGO.transform.SetParent(puzzleArea, false);
+                slotGO.transform.SetParent(boardArea, false);
                 slotGO.transform.SetAsFirstSibling();
 
                 var slotRT = slotGO.AddComponent<RectTransform>();
-                slotRT.sizeDelta = new Vector2(pieceW - 4, pieceH - 4);
+                slotRT.sizeDelta = new Vector2(pieceW - 3, pieceH - 3);
                 slotRT.anchoredPosition = new Vector2(
                     refLeft + col * pieceW + pieceW / 2f,
                     refTop - row * pieceH - pieceH / 2f
                 );
 
                 var slotImg = slotGO.AddComponent<Image>();
-                slotImg.color = new Color(0.85f, 0.82f, 0.78f, 0.35f);
+                slotImg.color = new Color(0.78f, 0.70f, 0.58f, 0.30f); // warm sandy slot color
                 slotImg.raycastTarget = false;
 
                 slotObjects.Add(slotGO);
@@ -287,11 +343,9 @@ public class PuzzleGameController : MonoBehaviour
     public void OnPiecePlaced()
     {
         placedCount++;
-        if (placedCount >= 4)
+        if (placedCount >= totalPieces)
         {
-            // Puzzle complete — hide reference, show completed image briefly, then load next
             referenceImage.color = new Color(1f, 1f, 1f, 0f);
-            Debug.Log("Puzzle complete!");
             ConfettiController.Instance.Play();
             StartCoroutine(LoadNextPuzzleAfterDelay(1.5f));
         }

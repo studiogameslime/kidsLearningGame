@@ -7,29 +7,27 @@ using TMPro;
 using System.Collections.Generic;
 
 /// <summary>
-/// Builds the ShadowMatch scene completely from scratch.
+/// Builds the ShadowMatch scene completely from scratch (portrait layout).
 ///
 /// Visual hierarchy (back to front):
-///   Sky → Cloud wisp → Mountains → Hills → Grass → [props] → Shadows → Animals
+///   Sky → Distant hills → Ground → Top bar → Shadows row → Animals row
 ///
 /// Design goals:
-///   - Clean, spacious, toddler-readable
-///   - Distinct from the World scene (different composition, fewer layers)
-///   - Gameplay zones are visually dominant
-///   - Background supports but never competes
+///   - Two clear rows: shadows in the sky, animals on the ground
+///   - Large ground area with soft pastel green (distinct from World scene)
+///   - Clean, calm background — no distracting decorations
+///   - Large, easy-to-grab animals for toddlers
 /// </summary>
 public class ShadowMatchSetup : EditorWindow
 {
-    private static readonly Vector2 Ref = new Vector2(1920, 1080);
+    private static readonly Vector2 Ref = new Vector2(1080, 1920);
 
-    // Palette — soft lavender sky, muted landscape
-    private static readonly Color SkyColor      = HexColor("#C9D8FF");
-    private static readonly Color CloudColor    = HexColor("#E8F0FF");
-    private static readonly Color MountainColor = HexColor("#C8D7EE");
-    private static readonly Color HillColor     = HexColor("#AFCFC8");
-    private static readonly Color GrassColor    = HexColor("#9FD78D");
+    // Palette — calm sky, soft pastel ground
+    private static readonly Color SkyColor      = HexColor("#D0E4FF");
+    private static readonly Color HillFarColor  = HexColor("#C4D8EC");
+    private static readonly Color HillNearColor = HexColor("#B5CFBE");
+    private static readonly Color GroundColor   = HexColor("#C8E6B0"); // soft pastel green, different from world
     private static readonly Color TopBarColor   = HexColor("#8BAAC8");
-    private static readonly Color PropColor     = HexColor("#BFCFC6");
 
     private const int TopBarHeight = 80;
 
@@ -106,12 +104,8 @@ public class ShadowMatchSetup : EditorWindow
         string a = "Assets/Art/World";
 
         // Sprites
-        var mountainsSpr = LoadSprite($"{a}/mountains.png");
-        var hillsSpr     = LoadSprite($"{a}/hillsLarge.png");
-        var grassSpr     = LoadSprite($"{a}/groundLayer1.png");
-        var cloudSpr     = LoadSprite($"{a}/cloudLayerB1.png");
-        var house1       = LoadSprite($"{a}/houseSmall1.png");
-        var house2       = LoadSprite($"{a}/houseSmall2.png");
+        var hillsSpr = LoadSprite($"{a}/hillsLarge.png");
+        var grassSpr = LoadSprite($"{a}/groundLayer1.png");
         var circleSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/Circle.png");
 
         // ── Camera ──
@@ -139,42 +133,29 @@ public class ShadowMatchSetup : EditorWindow
         var scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = Ref;
-        scaler.matchWidthOrHeight = 0.5f;
+        scaler.matchWidthOrHeight = 0f; // match width for portrait
         canvasGO.AddComponent<GraphicRaycaster>();
         var root = canvasGO.transform;
 
         // ═══════════════════════════════════
-        //  BACKGROUND — 5 layers (landscape)
+        //  BACKGROUND — 3 simple layers
         //
-        //  Left half  = shadows (against open sky)
-        //  Right half = draggable animals (on grass)
-        //
-        //  Clouds stay HIGH in the sky.
-        //  Nothing decorative in the gameplay zones.
+        //  Top ~55%  = sky (open, calm)
+        //  Middle    = gentle hills transition
+        //  Bottom ~45% = ground (pastel green play field)
         // ═══════════════════════════════════
 
-        // 1. SKY — full screen fill
+        // 1. SKY — full screen fill (camera bg color handles it, but explicit layer for safety)
         Layer(root, "Sky", null, 0, 0, 1, 1, SkyColor);
 
-        // 2. CLOUD — thin wisp, high in sky
-        Layer(root, "Cloud", cloudSpr, 0, 0.78f, 1, 0.92f, CloudColor);
+        // 2. DISTANT HILLS — soft transition between sky and ground
+        Layer(root, "HillsFar", hillsSpr, 0, 0.42f, 1, 0.58f, HillFarColor);
 
-        // 3. MOUNTAINS — faint, distant
-        Layer(root, "Mountains", mountainsSpr, 0, 0.28f, 1, 0.50f, MountainColor);
+        // 3. HILLS NEAR — slightly lower, blending into ground
+        Layer(root, "HillsNear", hillsSpr, 0, 0.38f, 1, 0.52f, HillNearColor);
 
-        // 4. HILLS — soft layer above grass
-        Layer(root, "Hills", hillsSpr, 0, 0.15f, 1, 0.35f, HillColor);
-
-        // 5. GRASS — ground field
-        Layer(root, "Grass", grassSpr, 0, 0, 1, 0.20f, GrassColor);
-
-        // ═══════════════════════════════════
-        //  PROPS — minimal, 2 tiny distant houses only
-        //  Placed on the hill ridge, far from gameplay
-        // ═══════════════════════════════════
-
-        Prop(root, "HouseL", house1, 180, 380, 50, 50);
-        Prop(root, "HouseR", house2, 1740, 370, 45, 45);
+        // 4. GROUND — large pastel green play field (bottom 45%)
+        Layer(root, "Ground", grassSpr, 0, 0, 1, 0.45f, GroundColor);
 
         // ═══════════════════════════════════
         //  SAFE AREA + TOP BAR
@@ -217,32 +198,32 @@ public class ShadowMatchSetup : EditorWindow
         var homeGO = Btn(bar.transform, "HomeButton", homeIcon, 16, -8, 64);
 
         // ═══════════════════════════════════
-        //  GAMEPLAY ZONES (landscape)
+        //  GAMEPLAY ZONES (portrait — two horizontal rows)
         //
-        //  Shadow zone: left half, clean sky behind
-        //    anchors 0.02–0.48 horiz, 0.08–0.88 vert
-        //    → 2x2 grid of shadows against open sky
+        //  Shadow row: upper portion, in the sky
+        //    anchors: x 0.03–0.97, y 0.58–0.78
+        //    → single horizontal row of 4 silhouettes
         //
-        //  Animal zone: right half, on grass/hills
-        //    anchors 0.52–0.98 horiz, 0.08–0.88 vert
-        //    → 2x2 grid of draggable animals
+        //  Animal row: lower portion, on the ground
+        //    anchors: x 0.03–0.97, y 0.10–0.38
+        //    → single horizontal row of 4 draggable animals
         //
-        //  Vertical gap (0.48–0.52) = natural separator
+        //  Clear vertical gap between rows (~20% of screen)
         // ═══════════════════════════════════
 
         var shadowsGO = new GameObject("ShadowsArea");
         shadowsGO.transform.SetParent(safeGO.transform, false);
         var shadowsRT = shadowsGO.AddComponent<RectTransform>();
-        shadowsRT.anchorMin = new Vector2(0.02f, 0.08f);
-        shadowsRT.anchorMax = new Vector2(0.48f, 0.88f);
+        shadowsRT.anchorMin = new Vector2(0.03f, 0.58f);
+        shadowsRT.anchorMax = new Vector2(0.97f, 0.78f);
         shadowsRT.offsetMin = Vector2.zero;
         shadowsRT.offsetMax = Vector2.zero;
 
         var animalsGO = new GameObject("AnimalsArea");
         animalsGO.transform.SetParent(safeGO.transform, false);
         var animalsRT = animalsGO.AddComponent<RectTransform>();
-        animalsRT.anchorMin = new Vector2(0.52f, 0.08f);
-        animalsRT.anchorMax = new Vector2(0.98f, 0.88f);
+        animalsRT.anchorMin = new Vector2(0.03f, 0.18f);
+        animalsRT.anchorMax = new Vector2(0.97f, 0.42f);
         animalsRT.offsetMin = Vector2.zero;
         animalsRT.offsetMax = Vector2.zero;
 
@@ -255,8 +236,8 @@ public class ShadowMatchSetup : EditorWindow
         ctrl.animalsRow = animalsRT;
         ctrl.circleSprite = circleSprite;
         ctrl.animalCount = 4;
-        ctrl.shadowSize = 200f;
-        ctrl.animalSize = 220f;
+        ctrl.shadowSize = 220f;
+        ctrl.animalSize = 240f;
 
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
             homeGO.GetComponent<Button>().onClick, ctrl.OnHomePressed);
@@ -281,24 +262,6 @@ public class ShadowMatchSetup : EditorWindow
         img.preserveAspect = false;
         img.raycastTarget = false;
         return go;
-    }
-
-    private static void Prop(Transform p, string name, Sprite spr, float x, float y, float w, float h)
-    {
-        if (spr == null) return;
-        var go = new GameObject(name);
-        go.transform.SetParent(p, false);
-        var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = rt.anchorMax = Vector2.zero;
-        rt.pivot = new Vector2(0.5f, 0f);
-        rt.anchoredPosition = new Vector2(x, y);
-        rt.sizeDelta = new Vector2(w, h);
-        var img = go.AddComponent<Image>();
-        img.sprite = spr;
-        img.preserveAspect = true;
-        img.color = PropColor;
-        img.raycastTarget = true;
-        go.AddComponent<ShadowMatchProp>();
     }
 
     private static GameObject Fill(Transform p, string name, Color c)

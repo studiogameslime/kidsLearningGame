@@ -6,9 +6,9 @@ using UnityEngine.UI;
 /// <summary>
 /// Shadow Match game controller.
 ///
-/// Layout:
-///   Upper half — 4 animal silhouettes in a 2x2 grid
-///   Lower half — 4 draggable animals in a 2x2 grid
+/// Layout (portrait):
+///   Top row  — 4 animal silhouettes in a single horizontal row (in the sky)
+///   Bottom row — 4 draggable animals in a single horizontal row (on the ground)
 ///
 /// The child drags each animal onto its matching shadow.
 /// Proximity hints pulse the correct shadow when an animal is dragged near.
@@ -25,14 +25,26 @@ public class ShadowMatchController : MonoBehaviour
     public float shadowSize = 240f;
     public float animalSize = 260f;
 
+    private static readonly Color SilhouetteColor = new Color(0.15f, 0.15f, 0.18f, 0.90f);
+
     private Canvas canvas;
     private List<DraggableAnimal> animals = new List<DraggableAnimal>();
     private List<ShadowSlot> shadows = new List<ShadowSlot>();
     private int matchedCount;
+    private Material silhouetteMaterial;
 
     private void Start()
     {
         canvas = GetComponentInParent<Canvas>();
+
+        // Create silhouette material — uses alpha from sprite, replaces RGB with solid color
+        var silShader = Shader.Find("UI/Silhouette");
+        if (silShader != null)
+        {
+            silhouetteMaterial = new Material(silShader);
+            silhouetteMaterial.SetColor("_Color", SilhouetteColor);
+        }
+
         LoadRound();
     }
 
@@ -56,9 +68,13 @@ public class ShadowMatchController : MonoBehaviour
         for (int i = 0; i < animalCount; i++)
             picked.Add(game.subItems[pool[i]]);
 
-        // ── Shadows: 2x2 grid ──
-        float sGapX = shadowSize * 1.5f;
-        float sGapY = shadowSize * 1.35f;
+        // ── Shadows: single horizontal row ──
+        float shadowAreaW = shadowsArea.rect.width;
+        if (shadowAreaW <= 0) shadowAreaW = 900f;
+
+        float sPadding = shadowSize * 0.3f;
+        float sUsable = shadowAreaW - sPadding * 2f;
+        float sSpacing = sUsable / animalCount;
 
         for (int i = 0; i < animalCount; i++)
         {
@@ -66,21 +82,28 @@ public class ShadowMatchController : MonoBehaviour
             Sprite spr = item.thumbnail ?? item.contentAsset;
             if (spr == null) continue;
 
-            int col = i % 2, row = i / 2;
-
             var go = new GameObject($"Shadow_{i}");
             go.transform.SetParent(shadowsArea, false);
 
             var rt = go.AddComponent<RectTransform>();
             rt.sizeDelta = new Vector2(shadowSize, shadowSize);
-            rt.anchoredPosition = new Vector2(
-                (col - 0.5f) * sGapX,
-                (0.5f - row) * sGapY);
+            // Evenly spaced along horizontal center line
+            float x = -sUsable * 0.5f + sSpacing * 0.5f + sSpacing * i;
+            rt.anchoredPosition = new Vector2(x, 0f);
 
-            // Silhouette: idle sprite tinted dark
+            // True silhouette: shader replaces all RGB with solid color, keeps alpha shape
             var img = go.AddComponent<Image>();
             img.sprite = spr;
-            img.color = new Color(0.231f, 0.231f, 0.231f, 0.85f); // #3B3B3B
+            if (silhouetteMaterial != null)
+            {
+                img.material = silhouetteMaterial;
+                img.color = Color.white;
+            }
+            else
+            {
+                // Fallback if shader not found — tint dark
+                img.color = SilhouetteColor;
+            }
             img.preserveAspect = true;
             img.raycastTarget = false;
 
@@ -89,13 +112,17 @@ public class ShadowMatchController : MonoBehaviour
             shadows.Add(slot);
         }
 
-        // ── Animals: shuffled 2x2 grid ──
+        // ── Animals: shuffled single horizontal row ──
         var order = new List<int>();
         for (int i = 0; i < animalCount; i++) order.Add(i);
         Shuffle(order);
 
-        float aGapX = animalSize * 1.4f;
-        float aGapY = animalSize * 1.15f;
+        float animalAreaW = animalsRow.rect.width;
+        if (animalAreaW <= 0) animalAreaW = 900f;
+
+        float aPadding = animalSize * 0.2f;
+        float aUsable = animalAreaW - aPadding * 2f;
+        float aSpacing = aUsable / animalCount;
 
         for (int i = 0; i < animalCount; i++)
         {
@@ -104,16 +131,14 @@ public class ShadowMatchController : MonoBehaviour
             Sprite spr = item.thumbnail ?? item.contentAsset;
             if (spr == null) continue;
 
-            int col = i % 2, row = i / 2;
-
             var go = new GameObject($"Animal_{idx}");
             go.transform.SetParent(animalsRow, false);
 
             var rt = go.AddComponent<RectTransform>();
             rt.sizeDelta = new Vector2(animalSize, animalSize);
-            rt.anchoredPosition = new Vector2(
-                (col - 0.5f) * aGapX,
-                (0.5f - row) * aGapY);
+            // Evenly spaced along horizontal center line
+            float x = -aUsable * 0.5f + aSpacing * 0.5f + aSpacing * i;
+            rt.anchoredPosition = new Vector2(x, 0f);
 
             var img = go.AddComponent<Image>();
             img.sprite = spr;

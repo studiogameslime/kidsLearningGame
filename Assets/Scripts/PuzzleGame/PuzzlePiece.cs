@@ -4,7 +4,9 @@ using UnityEngine.EventSystems;
 
 /// <summary>
 /// A draggable puzzle piece. Scales up when dragged, snaps into
-/// its correct position on the reference image when close enough.
+/// its correct position on the board when close enough.
+/// Pieces live on the canvas root so they can move freely between
+/// the left pieces area and the right board area.
 /// </summary>
 public class PuzzlePiece : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerDownHandler
 {
@@ -14,7 +16,9 @@ public class PuzzlePiece : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
     private RectTransform rectTransform;
     private Canvas canvas;
     private CanvasGroup canvasGroup;
-    private Vector2 correctAnchoredPos;
+    private Vector2 correctBoardPos;       // correct position in boardArea local space
+    private Vector2 correctCanvasPos;      // correct position in canvas local space
+    private RectTransform boardAreaRT;
     private PuzzleGameController controller;
     private Vector3 trayScale = Vector3.one;
     private Vector3 fullScale = Vector3.one;
@@ -28,14 +32,17 @@ public class PuzzlePiece : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
     }
 
-    public void Init(int index, Vector2 correctPos, Canvas parentCanvas, PuzzleGameController ctrl)
+    public void Init(int index, Vector2 correctBoardLocalPos, Canvas parentCanvas,
+                     PuzzleGameController ctrl, RectTransform boardArea)
     {
         correctIndex = index;
-        correctAnchoredPos = correctPos;
+        correctBoardPos = correctBoardLocalPos;
         canvas = parentCanvas;
         controller = ctrl;
+        boardAreaRT = boardArea;
     }
 
+    public void SetCorrectCanvasPos(Vector2 pos) => correctCanvasPos = pos;
     public void SetTrayScale(Vector3 scale) => trayScale = scale;
     public void SetFullScale(Vector3 scale) => fullScale = scale;
     public void SetStartPosition(Vector2 pos) => startPosition = pos;
@@ -67,11 +74,12 @@ public class PuzzlePiece : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
         canvasGroup.blocksRaycasts = true;
         canvasGroup.alpha = 1f;
 
+        // Check snap distance against the canvas-space correct position
         float snapDistance = rectTransform.sizeDelta.x * 0.4f;
-        if (Vector2.Distance(rectTransform.anchoredPosition, correctAnchoredPos) < snapDistance)
+        if (Vector2.Distance(rectTransform.anchoredPosition, correctCanvasPos) < snapDistance)
         {
             // Snap into place
-            rectTransform.anchoredPosition = correctAnchoredPos;
+            rectTransform.anchoredPosition = correctCanvasPos;
             rectTransform.localScale = fullScale;
             isPlaced = true;
             canvasGroup.blocksRaycasts = false;
@@ -81,7 +89,7 @@ public class PuzzlePiece : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
         }
         else
         {
-            // Return to initial tray position and scale
+            // Return to initial scattered position and scale
             rectTransform.anchoredPosition = startPosition;
             rectTransform.localScale = trayScale;
         }
