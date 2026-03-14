@@ -11,7 +11,7 @@ using TMPro;
 /// </summary>
 public class DiscoveryRevealSetup : EditorWindow
 {
-    private static readonly Vector2 Ref = new Vector2(1080, 1920);
+    private static readonly Vector2 Ref = new Vector2(1920, 1080);
     private static readonly Color BgColor = HexColor("#FFF8E8"); // warm gold-ish
 
     public static void RunSetupSilent()
@@ -59,7 +59,7 @@ public class DiscoveryRevealSetup : EditorWindow
         var scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = Ref;
-        scaler.matchWidthOrHeight = 0f;
+        scaler.matchWidthOrHeight = 0.5f;
         canvasGO.AddComponent<GraphicRaycaster>();
 
         // Background
@@ -80,7 +80,7 @@ public class DiscoveryRevealSetup : EditorWindow
         var revealRT = revealGO.AddComponent<RectTransform>();
         revealRT.anchorMin = new Vector2(0.5f, 0.5f);
         revealRT.anchorMax = new Vector2(0.5f, 0.5f);
-        revealRT.sizeDelta = new Vector2(500, 500);
+        revealRT.sizeDelta = new Vector2(420, 420);
         revealRT.anchoredPosition = Vector2.zero;
         var revealImg = revealGO.AddComponent<Image>();
         revealImg.preserveAspect = true;
@@ -93,7 +93,7 @@ public class DiscoveryRevealSetup : EditorWindow
         var overlayRT = overlayGO.AddComponent<RectTransform>();
         overlayRT.anchorMin = new Vector2(0.5f, 0.5f);
         overlayRT.anchorMax = new Vector2(0.5f, 0.5f);
-        overlayRT.sizeDelta = new Vector2(540, 960);
+        overlayRT.sizeDelta = new Vector2(960, 540);
         overlayRT.anchoredPosition = Vector2.zero;
         var overlayRawImg = overlayGO.AddComponent<RawImage>();
         overlayRawImg.color = Color.white;
@@ -106,10 +106,10 @@ public class DiscoveryRevealSetup : EditorWindow
         nameRT.anchorMin = new Vector2(0.5f, 0.5f);
         nameRT.anchorMax = new Vector2(0.5f, 0.5f);
         nameRT.sizeDelta = new Vector2(800, 100);
-        nameRT.anchoredPosition = new Vector2(0, -350);
+        nameRT.anchoredPosition = new Vector2(0, -300);
         var nameTMP = nameGO.AddComponent<TextMeshProUGUI>();
         nameTMP.text = "";
-        nameTMP.fontSize = 64;
+        nameTMP.fontSize = 52;
         nameTMP.fontStyle = FontStyles.Bold;
         nameTMP.color = HexColor("#333333");
         nameTMP.alignment = TextAlignmentOptions.Center;

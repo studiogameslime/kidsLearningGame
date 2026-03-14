@@ -14,7 +14,7 @@ using System.Linq;
 /// </summary>
 public class ProfileSceneSetup : EditorWindow
 {
-    private static readonly Vector2 Ref = new Vector2(1080, 1920);
+    private static readonly Vector2 Ref = new Vector2(1920, 1080);
 
     // Colors
     private static readonly Color BgColor = HexColor("#F5F0EB");
@@ -109,7 +109,7 @@ public class ProfileSceneSetup : EditorWindow
 
         var root = new GameObject("ProfileCard");
         var rootRT = root.AddComponent<RectTransform>();
-        rootRT.sizeDelta = new Vector2(480, 600);
+        rootRT.sizeDelta = new Vector2(320, 420);
 
         // Invisible button hit area
         var hitImg = root.AddComponent<Image>();
@@ -131,8 +131,8 @@ public class ProfileSceneSetup : EditorWindow
         avatarRT.anchorMin = new Vector2(0.5f, 1f);
         avatarRT.anchorMax = new Vector2(0.5f, 1f);
         avatarRT.pivot = new Vector2(0.5f, 1f);
-        avatarRT.anchoredPosition = new Vector2(0, -20);
-        avatarRT.sizeDelta = new Vector2(360, 360);
+        avatarRT.anchoredPosition = new Vector2(0, -16);
+        avatarRT.sizeDelta = new Vector2(240, 240);
         var avatarImg = avatarGO.AddComponent<Image>();
         avatarImg.sprite = circle;
         avatarImg.color = AccentColor;
@@ -163,7 +163,7 @@ public class ProfileSceneSetup : EditorWindow
         StretchFull(initialRT);
         var initialTMP = initialGO.AddComponent<TextMeshProUGUI>();
         initialTMP.text = "?";
-        initialTMP.fontSize = 144;
+        initialTMP.fontSize = 96;
         initialTMP.fontStyle = FontStyles.Bold;
         initialTMP.color = Color.white;
         initialTMP.alignment = TextAlignmentOptions.Center;
@@ -176,11 +176,11 @@ public class ProfileSceneSetup : EditorWindow
         nameRT.anchorMin = new Vector2(0, 0);
         nameRT.anchorMax = new Vector2(1, 0);
         nameRT.pivot = new Vector2(0.5f, 0);
-        nameRT.anchoredPosition = new Vector2(0, 20);
-        nameRT.sizeDelta = new Vector2(0, 160);
+        nameRT.anchoredPosition = new Vector2(0, 16);
+        nameRT.sizeDelta = new Vector2(0, 120);
         var nameTMP = nameGO.AddComponent<TextMeshProUGUI>();
         nameTMP.text = "\u05E9\u05DD"; // שם
-        nameTMP.fontSize = 56;
+        nameTMP.fontSize = 40;
         nameTMP.fontStyle = FontStyles.Bold;
         nameTMP.color = DarkText;
         nameTMP.alignment = TextAlignmentOptions.Center;
@@ -226,7 +226,7 @@ public class ProfileSceneSetup : EditorWindow
         var scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = Ref;
-        scaler.matchWidthOrHeight = 0f;
+        scaler.matchWidthOrHeight = 0.5f;
         canvasGO.AddComponent<GraphicRaycaster>();
 
         // Background
@@ -244,13 +244,13 @@ public class ProfileSceneSetup : EditorWindow
         var titleGO = new GameObject("Title");
         titleGO.transform.SetParent(safeArea.transform, false);
         var titleRT = titleGO.AddComponent<RectTransform>();
-        titleRT.anchorMin = new Vector2(0, 0.88f);
-        titleRT.anchorMax = new Vector2(1, 0.97f);
+        titleRT.anchorMin = new Vector2(0, 0.82f);
+        titleRT.anchorMax = new Vector2(1, 0.96f);
         titleRT.offsetMin = new Vector2(40, 0);
         titleRT.offsetMax = new Vector2(-40, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
         titleTMP.text = HebrewFixer.Fix("\u05DE\u05D9 \u05DE\u05E9\u05D7\u05E7?"); // מי משחק? (Who's playing?)
-        titleTMP.fontSize = 64;
+        titleTMP.fontSize = 52;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = DarkText;
         titleTMP.alignment = TextAlignmentOptions.Center;
@@ -261,25 +261,25 @@ public class ProfileSceneSetup : EditorWindow
         var gridArea = new GameObject("ProfileGrid");
         gridArea.transform.SetParent(safeArea.transform, false);
         var gridAreaRT = gridArea.AddComponent<RectTransform>();
-        gridAreaRT.anchorMin = new Vector2(0, 0.10f);
-        gridAreaRT.anchorMax = new Vector2(1, 0.85f);
-        gridAreaRT.offsetMin = new Vector2(40, 0);
-        gridAreaRT.offsetMax = new Vector2(-40, 0);
+        gridAreaRT.anchorMin = new Vector2(0.05f, 0.05f);
+        gridAreaRT.anchorMax = new Vector2(0.95f, 0.80f);
+        gridAreaRT.offsetMin = Vector2.zero;
+        gridAreaRT.offsetMax = Vector2.zero;
 
-        // Grid layout
+        // Grid layout — horizontal row in landscape
         var grid = gridArea.AddComponent<GridLayoutGroup>();
-        grid.cellSize = new Vector2(480, 600);
-        grid.spacing = new Vector2(32, 32);
+        grid.cellSize = new Vector2(320, 420);
+        grid.spacing = new Vector2(40, 20);
         grid.childAlignment = TextAnchor.MiddleCenter;
-        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = 2;
+        grid.constraint = GridLayoutGroup.Constraint.FixedRowCount;
+        grid.constraintCount = 1;
         grid.padding = new RectOffset(20, 20, 20, 20);
 
         // ── Add Profile Card (built into scene, not instantiated) ──
         var addCardGO = new GameObject("AddProfileCard");
         addCardGO.transform.SetParent(gridArea.transform, false);
         var addCardRT = addCardGO.AddComponent<RectTransform>();
-        addCardRT.sizeDelta = new Vector2(480, 600);
+        addCardRT.sizeDelta = new Vector2(320, 420);
 
         // Hit area
         var addHitImg = addCardGO.AddComponent<Image>();
@@ -296,8 +296,8 @@ public class ProfileSceneSetup : EditorWindow
         plusCircleRT.anchorMin = new Vector2(0.5f, 1f);
         plusCircleRT.anchorMax = new Vector2(0.5f, 1f);
         plusCircleRT.pivot = new Vector2(0.5f, 1f);
-        plusCircleRT.anchoredPosition = new Vector2(0, -20);
-        plusCircleRT.sizeDelta = new Vector2(360, 360);
+        plusCircleRT.anchoredPosition = new Vector2(0, -16);
+        plusCircleRT.sizeDelta = new Vector2(240, 240);
         var plusCircleImg = plusCircleGO.AddComponent<Image>();
         plusCircleImg.sprite = circle;
         plusCircleImg.color = new Color(0.85f, 0.85f, 0.85f, 1f);
@@ -315,7 +315,7 @@ public class ProfileSceneSetup : EditorWindow
         StretchFull(plusTextRT);
         var plusTMP = plusTextGO.AddComponent<TextMeshProUGUI>();
         plusTMP.text = "+";
-        plusTMP.fontSize = 160;
+        plusTMP.fontSize = 100;
         plusTMP.color = HexColor("#999999");
         plusTMP.alignment = TextAlignmentOptions.Center;
         plusTMP.raycastTarget = false;
@@ -327,11 +327,11 @@ public class ProfileSceneSetup : EditorWindow
         addLabelRT.anchorMin = new Vector2(0, 0);
         addLabelRT.anchorMax = new Vector2(1, 0);
         addLabelRT.pivot = new Vector2(0.5f, 0);
-        addLabelRT.anchoredPosition = new Vector2(0, 20);
-        addLabelRT.sizeDelta = new Vector2(0, 160);
+        addLabelRT.anchoredPosition = new Vector2(0, 16);
+        addLabelRT.sizeDelta = new Vector2(0, 120);
         var addLabelTMP = addLabelGO.AddComponent<TextMeshProUGUI>();
         addLabelTMP.text = HebrewFixer.Fix("\u05D4\u05D5\u05E1\u05E4\u05D4"); // הוספה (Add)
-        addLabelTMP.fontSize = 56;
+        addLabelTMP.fontSize = 40;
         addLabelTMP.color = HexColor("#999999");
         addLabelTMP.alignment = TextAlignmentOptions.Center;
         addLabelTMP.isRightToLeftText = false;
@@ -376,7 +376,7 @@ public class ProfileSceneSetup : EditorWindow
         var scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = Ref;
-        scaler.matchWidthOrHeight = 0f;
+        scaler.matchWidthOrHeight = 0.5f;
         canvasGO.AddComponent<GraphicRaycaster>();
 
         // Background
@@ -393,41 +393,41 @@ public class ProfileSceneSetup : EditorWindow
         // Back button (top-left, home icon)
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
         var backBtnGO = CreateIconButton(safeArea.transform, "BackButton", homeIcon,
-            new Vector2(16, -15), new Vector2(0, 1), new Vector2(0, 1), new Vector2(90, 90));
+            new Vector2(16, -12), new Vector2(0, 1), new Vector2(0, 1), new Vector2(70, 70));
 
-        // ── Content area ──
+        // ── Content area (landscape — wider, shorter) ──
         var contentArea = new GameObject("ContentArea");
         contentArea.transform.SetParent(safeArea.transform, false);
         var contentRT = contentArea.AddComponent<RectTransform>();
-        contentRT.anchorMin = new Vector2(0.05f, 0.05f);
-        contentRT.anchorMax = new Vector2(0.95f, 0.90f);
+        contentRT.anchorMin = new Vector2(0.08f, 0.05f);
+        contentRT.anchorMax = new Vector2(0.92f, 0.88f);
         contentRT.offsetMin = Vector2.zero;
         contentRT.offsetMax = Vector2.zero;
 
         // ── STEP 0: Greeting ──
         var stepGreeting = CreateStepPanel(contentArea.transform, "StepGreeting");
         var greetTitle = CreateText(stepGreeting.transform, "GreetTitle",
-            "\u05E9\u05DC\u05D5\u05DD!", 72, DarkText, // !שלום (Hello!)
-            new Vector2(0, 0.55f), new Vector2(1, 0.85f), true);
+            "\u05E9\u05DC\u05D5\u05DD!", 60, DarkText, // !שלום (Hello!)
+            new Vector2(0.1f, 0.50f), new Vector2(0.9f, 0.85f), true);
         var greetSub = CreateText(stepGreeting.transform, "GreetSub",
-            "\u05D1\u05D5\u05D0\u05D5 \u05E0\u05DB\u05D9\u05E8 \u05D0\u05D5\u05EA\u05DA!", 40, HexColor("#777777"), // !בואו נכיר אותך
-            new Vector2(0, 0.40f), new Vector2(1, 0.55f), true);
+            "\u05D1\u05D5\u05D0\u05D5 \u05E0\u05DB\u05D9\u05E8 \u05D0\u05D5\u05EA\u05DA!", 36, HexColor("#777777"), // !בואו נכיר אותך
+            new Vector2(0.1f, 0.35f), new Vector2(0.9f, 0.52f), true);
         var greetNextBtn = CreateBigButton(stepGreeting.transform, "NextButton",
             "\u05D9\u05D0\u05DC\u05DC\u05D4!", AccentColor, // !יאללה
-            new Vector2(0.15f, 0.15f), new Vector2(0.85f, 0.30f), roundedRect, true);
+            new Vector2(0.25f, 0.08f), new Vector2(0.75f, 0.28f), roundedRect, true);
 
         // ── STEP 1: Record Name ──
         var stepRecord = CreateStepPanel(contentArea.transform, "StepRecordName");
         CreateText(stepRecord.transform, "RecordTitle",
-            "\u05D0\u05DE\u05D5\u05E8 \u05D0\u05EA \u05D4\u05E9\u05DD \u05E9\u05DC\u05DA", 48, DarkText, // אמור את השם שלך
-            new Vector2(0, 0.70f), new Vector2(1, 0.90f), true);
+            "\u05D0\u05DE\u05D5\u05E8 \u05D0\u05EA \u05D4\u05E9\u05DD \u05E9\u05DC\u05DA", 42, DarkText, // אמור את השם שלך
+            new Vector2(0, 0.75f), new Vector2(1, 0.95f), true);
 
         // Record indicator (red circle)
         var recIndicator = new GameObject("RecordIndicator");
         recIndicator.transform.SetParent(stepRecord.transform, false);
         var recIndRT = recIndicator.AddComponent<RectTransform>();
-        recIndRT.anchorMin = new Vector2(0.5f, 0.55f);
-        recIndRT.anchorMax = new Vector2(0.5f, 0.55f);
+        recIndRT.anchorMin = new Vector2(0.5f, 0.60f);
+        recIndRT.anchorMax = new Vector2(0.5f, 0.60f);
         recIndRT.sizeDelta = new Vector2(30, 30);
         var recIndImg = recIndicator.AddComponent<Image>();
         recIndImg.sprite = circle;
@@ -437,43 +437,43 @@ public class ProfileSceneSetup : EditorWindow
         // Record button (big circle with microphone icon) — 3x size
         var micIcon = LoadSprite("Assets/Art/Microphone.png");
         var recordBtn = CreateSpriteCircleButton(stepRecord.transform, "RecordButton", circle, micIcon,
-            HexColor("#EF5350"), new Vector2(0.5f, 0.45f), new Vector2(360, 360));
+            HexColor("#EF5350"), new Vector2(0.5f, 0.48f), new Vector2(240, 240));
 
-        // Stop button (uses stop icon) — 3x size
+        // Stop button (uses stop icon)
         var stopIcon = LoadSprite("Assets/Art/Icons/stop.png");
         var stopBtn = CreateSpriteCircleButton(stepRecord.transform, "StopRecordButton", circle, stopIcon,
-            HexColor("#EF5350"), new Vector2(0.5f, 0.45f), new Vector2(360, 360));
+            HexColor("#EF5350"), new Vector2(0.5f, 0.48f), new Vector2(240, 240));
         stopBtn.SetActive(false);
 
-        // Play button (sound icon) — 3x size
+        // Play button (sound icon)
         var soundIcon = LoadSprite("Assets/Art/Sound.png");
         var playBtn = CreateSpriteCircleButton(stepRecord.transform, "PlayRecordButton", circle, soundIcon,
-            HexColor("#4CAF50"), new Vector2(0.5f, 0.25f), new Vector2(240, 240));
+            HexColor("#4CAF50"), new Vector2(0.5f, 0.25f), new Vector2(160, 160));
         playBtn.SetActive(false);
 
         // Skip button
         var skipBtn = CreateBigButton(stepRecord.transform, "SkipButton",
             "\u05D3\u05DC\u05D2", HexColor("#BDBDBD"), // דלג (Skip)
-            new Vector2(0.30f, 0.05f), new Vector2(0.70f, 0.15f), roundedRect, true);
+            new Vector2(0.30f, 0.02f), new Vector2(0.70f, 0.15f), roundedRect, true);
 
         // Next button (shown after recording)
         var recNextBtn = CreateBigButton(stepRecord.transform, "RecordNextButton",
             "\u05D4\u05DE\u05E9\u05DA", AccentColor, // המשך (Continue)
-            new Vector2(0.15f, 0.05f), new Vector2(0.85f, 0.18f), roundedRect, true);
+            new Vector2(0.25f, 0.02f), new Vector2(0.75f, 0.18f), roundedRect, true);
         recNextBtn.SetActive(false);
 
         // ── STEP 2: Type Name ──
         var stepName = CreateStepPanel(contentArea.transform, "StepTypeName");
         CreateText(stepName.transform, "NameTitle",
-            "\u05DE\u05D4 \u05D4\u05E9\u05DD \u05E9\u05DC\u05DA?", 48, DarkText, // ?מה השם שלך
-            new Vector2(0, 0.70f), new Vector2(1, 0.90f), true);
+            "\u05DE\u05D4 \u05D4\u05E9\u05DD \u05E9\u05DC\u05DA?", 42, DarkText, // ?מה השם שלך
+            new Vector2(0, 0.72f), new Vector2(1, 0.95f), true);
 
         // Name input field
         var inputGO = new GameObject("NameInput");
         inputGO.transform.SetParent(stepName.transform, false);
         var inputRT = inputGO.AddComponent<RectTransform>();
-        inputRT.anchorMin = new Vector2(0.1f, 0.45f);
-        inputRT.anchorMax = new Vector2(0.9f, 0.60f);
+        inputRT.anchorMin = new Vector2(0.15f, 0.45f);
+        inputRT.anchorMax = new Vector2(0.85f, 0.65f);
         inputRT.offsetMin = Vector2.zero;
         inputRT.offsetMax = Vector2.zero;
 
@@ -531,29 +531,29 @@ public class ProfileSceneSetup : EditorWindow
 
         var nameNextBtn = CreateBigButton(stepName.transform, "NameNextButton",
             "\u05D4\u05DE\u05E9\u05DA", AccentColor, // המשך
-            new Vector2(0.15f, 0.15f), new Vector2(0.85f, 0.30f), roundedRect, true);
+            new Vector2(0.25f, 0.10f), new Vector2(0.75f, 0.30f), roundedRect, true);
         nameNextBtn.GetComponent<Button>().interactable = false;
 
         // ── STEP 3: Choose Age ──
         var stepAge = CreateStepPanel(contentArea.transform, "StepChooseAge");
         CreateText(stepAge.transform, "AgeTitle",
-            "\u05D1\u05DF/\u05D1\u05EA \u05DB\u05DE\u05D4 \u05D0\u05EA/\u05D4?", 48, DarkText, // ?בן/בת כמה את/ה
-            new Vector2(0, 0.75f), new Vector2(1, 0.92f), true);
+            "\u05D1\u05DF/\u05D1\u05EA \u05DB\u05DE\u05D4 \u05D0\u05EA/\u05D4?", 42, DarkText, // ?בן/בת כמה את/ה
+            new Vector2(0, 0.75f), new Vector2(1, 0.95f), true);
 
-        // Age buttons (1-8 in a 4x2 grid)
+        // Age buttons (1-8 in a single row for landscape)
         var ageGridGO = new GameObject("AgeGrid");
         ageGridGO.transform.SetParent(stepAge.transform, false);
         var ageGridRT = ageGridGO.AddComponent<RectTransform>();
-        ageGridRT.anchorMin = new Vector2(0.05f, 0.30f);
-        ageGridRT.anchorMax = new Vector2(0.95f, 0.75f);
+        ageGridRT.anchorMin = new Vector2(0.02f, 0.30f);
+        ageGridRT.anchorMax = new Vector2(0.98f, 0.72f);
         ageGridRT.offsetMin = Vector2.zero;
         ageGridRT.offsetMax = Vector2.zero;
         var ageGrid = ageGridGO.AddComponent<GridLayoutGroup>();
-        ageGrid.cellSize = new Vector2(140, 140);
-        ageGrid.spacing = new Vector2(24, 24);
+        ageGrid.cellSize = new Vector2(100, 100);
+        ageGrid.spacing = new Vector2(20, 20);
         ageGrid.childAlignment = TextAnchor.MiddleCenter;
-        ageGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        ageGrid.constraintCount = 4;
+        ageGrid.constraint = GridLayoutGroup.Constraint.FixedRowCount;
+        ageGrid.constraintCount = 1;
 
         var ageButtons = new Button[8];
         for (int i = 0; i < 8; i++)
@@ -578,7 +578,7 @@ public class ProfileSceneSetup : EditorWindow
             StretchFull(ageLabelRT);
             var ageLabelTMP = ageLabelGO.AddComponent<TextMeshProUGUI>();
             ageLabelTMP.text = (i + 1).ToString();
-            ageLabelTMP.fontSize = 52;
+            ageLabelTMP.fontSize = 40;
             ageLabelTMP.fontStyle = FontStyles.Bold;
             ageLabelTMP.color = DarkText;
             ageLabelTMP.alignment = TextAlignmentOptions.Center;
@@ -587,25 +587,25 @@ public class ProfileSceneSetup : EditorWindow
 
         var ageNextBtn = CreateBigButton(stepAge.transform, "AgeNextButton",
             "\u05D4\u05DE\u05E9\u05DA", AccentColor,
-            new Vector2(0.15f, 0.08f), new Vector2(0.85f, 0.22f), roundedRect, true);
+            new Vector2(0.25f, 0.05f), new Vector2(0.75f, 0.22f), roundedRect, true);
         ageNextBtn.GetComponent<Button>().interactable = false;
 
         // ── STEP 4: Choose Animal ──
         var stepAnimal = CreateStepPanel(contentArea.transform, "StepChooseAnimal");
         CreateText(stepAnimal.transform, "AnimalTitle",
-            "\u05D1\u05D7\u05E8\u05D5 \u05D7\u05D9\u05D4", 48, DarkText, // בחרו חיה
-            new Vector2(0, 0.82f), new Vector2(1, 0.95f), true);
+            "\u05D1\u05D7\u05E8\u05D5 \u05D7\u05D9\u05D4", 42, DarkText, // בחרו חיה
+            new Vector2(0, 0.82f), new Vector2(1, 0.98f), true);
         CreateText(stepAnimal.transform, "AnimalSub",
-            "\u05DE\u05D9 \u05D9\u05D7\u05DB\u05D4 \u05DC\u05DB\u05DD \u05D1\u05E2\u05D5\u05DC\u05DD?", 32, HexColor("#777777"), // ?מי יחכה לכם בעולם
-            new Vector2(0, 0.74f), new Vector2(1, 0.84f), true);
+            "\u05DE\u05D9 \u05D9\u05D7\u05DB\u05D4 \u05DC\u05DB\u05DD \u05D1\u05E2\u05D5\u05DC\u05DD?", 28, HexColor("#777777"), // ?מי יחכה לכם בעולם
+            new Vector2(0, 0.72f), new Vector2(1, 0.84f), true);
 
         // Animal buttons (Cat, Dog, Bear) — large images in a row
         string[] animalIds = { "Cat", "Dog", "Bear" };
         var animalGridGO = new GameObject("AnimalGrid");
         animalGridGO.transform.SetParent(stepAnimal.transform, false);
         var animalGridRT = animalGridGO.AddComponent<RectTransform>();
-        animalGridRT.anchorMin = new Vector2(0.05f, 0.30f);
-        animalGridRT.anchorMax = new Vector2(0.95f, 0.75f);
+        animalGridRT.anchorMin = new Vector2(0.10f, 0.25f);
+        animalGridRT.anchorMax = new Vector2(0.90f, 0.72f);
         animalGridRT.offsetMin = Vector2.zero;
         animalGridRT.offsetMax = Vector2.zero;
         var animalLayout = animalGridGO.AddComponent<HorizontalLayoutGroup>();
@@ -621,7 +621,7 @@ public class ProfileSceneSetup : EditorWindow
             var animalBtnGO = new GameObject($"Animal_{animalIds[i]}");
             animalBtnGO.transform.SetParent(animalGridGO.transform, false);
             var animalBtnRT = animalBtnGO.AddComponent<RectTransform>();
-            animalBtnRT.sizeDelta = new Vector2(250, 250);
+            animalBtnRT.sizeDelta = new Vector2(200, 200);
 
             // Background circle
             var animalBgImg = animalBtnGO.AddComponent<Image>();
@@ -703,21 +703,21 @@ public class ProfileSceneSetup : EditorWindow
 
         var animalNextBtn = CreateBigButton(stepAnimal.transform, "AnimalNextButton",
             "\u05D4\u05DE\u05E9\u05DA", AccentColor, // המשך
-            new Vector2(0.15f, 0.08f), new Vector2(0.85f, 0.22f), roundedRect, true);
+            new Vector2(0.25f, 0.05f), new Vector2(0.75f, 0.20f), roundedRect, true);
 
         // ── STEP 5: Choose Color ──
         var stepColor = CreateStepPanel(contentArea.transform, "StepChooseColor");
         CreateText(stepColor.transform, "ColorTitle",
-            "\u05D1\u05D7\u05E8\u05D5 \u05E6\u05D1\u05E2", 48, DarkText, // בחרו צבע
-            new Vector2(0, 0.88f), new Vector2(1, 0.98f), true);
+            "\u05D1\u05D7\u05E8\u05D5 \u05E6\u05D1\u05E2", 42, DarkText, // בחרו צבע
+            new Vector2(0, 0.85f), new Vector2(1, 0.98f), true);
 
-        // ── Card Preview (mimics profile selection card) ──
+        // ── Card Preview (left side in landscape) ──
         var cardPreviewGO = new GameObject("CardPreview");
         cardPreviewGO.transform.SetParent(stepColor.transform, false);
         var cardPreviewRT = cardPreviewGO.AddComponent<RectTransform>();
-        cardPreviewRT.anchorMin = new Vector2(0.5f, 0.58f);
-        cardPreviewRT.anchorMax = new Vector2(0.5f, 0.58f);
-        cardPreviewRT.sizeDelta = new Vector2(260, 340);
+        cardPreviewRT.anchorMin = new Vector2(0.12f, 0.40f);
+        cardPreviewRT.anchorMax = new Vector2(0.12f, 0.40f);
+        cardPreviewRT.sizeDelta = new Vector2(200, 280);
 
         // Avatar circle (large, centered at top of card)
         var colorPreviewGO = new GameObject("AvatarCircle");
@@ -727,7 +727,7 @@ public class ProfileSceneSetup : EditorWindow
         colorPreviewRT.anchorMax = new Vector2(0.5f, 1f);
         colorPreviewRT.pivot = new Vector2(0.5f, 1f);
         colorPreviewRT.anchoredPosition = new Vector2(0, -5);
-        colorPreviewRT.sizeDelta = new Vector2(220, 220);
+        colorPreviewRT.sizeDelta = new Vector2(160, 160);
         var colorPreviewImg = colorPreviewGO.AddComponent<Image>();
         colorPreviewImg.sprite = circle;
         colorPreviewImg.color = AccentColor;
@@ -757,7 +757,7 @@ public class ProfileSceneSetup : EditorWindow
         StretchFull(cpInitRT);
         var cpInitTMP = colorPreviewInitialGO.AddComponent<TextMeshProUGUI>();
         cpInitTMP.text = "?";
-        cpInitTMP.fontSize = 96;
+        cpInitTMP.fontSize = 72;
         cpInitTMP.fontStyle = FontStyles.Bold;
         cpInitTMP.color = Color.white;
         cpInitTMP.alignment = TextAlignmentOptions.Center;
@@ -787,22 +787,22 @@ public class ProfileSceneSetup : EditorWindow
         var cameraIcon = LoadSprite("Assets/Art/Gallery.png");
         var pickPhotoBtn = CreateIconLabelButton(stepColor.transform, "PickPhotoButton",
             cameraIcon, "\u05E6\u05DC\u05DE\u05D5 \u05E1\u05DC\u05E4\u05D9", HexColor("#78909C"), // צלמו סלפי
-            new Vector2(0.10f, 0.42f), new Vector2(0.90f, 0.52f), roundedRect);
+            new Vector2(0.30f, 0.72f), new Vector2(0.70f, 0.84f), roundedRect);
 
-        // Color grid
+        // Color grid (right side in landscape)
         var colorGridGO = new GameObject("ColorGrid");
         colorGridGO.transform.SetParent(stepColor.transform, false);
         var colorGridRT = colorGridGO.AddComponent<RectTransform>();
-        colorGridRT.anchorMin = new Vector2(0.05f, 0.18f);
-        colorGridRT.anchorMax = new Vector2(0.95f, 0.42f);
+        colorGridRT.anchorMin = new Vector2(0.30f, 0.22f);
+        colorGridRT.anchorMax = new Vector2(0.98f, 0.70f);
         colorGridRT.offsetMin = Vector2.zero;
         colorGridRT.offsetMax = Vector2.zero;
         var colorGrid = colorGridGO.AddComponent<GridLayoutGroup>();
-        colorGrid.cellSize = new Vector2(90, 90);
-        colorGrid.spacing = new Vector2(16, 16);
+        colorGrid.cellSize = new Vector2(75, 75);
+        colorGrid.spacing = new Vector2(14, 14);
         colorGrid.childAlignment = TextAnchor.MiddleCenter;
         colorGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        colorGrid.constraintCount = 4;
+        colorGrid.constraintCount = 6;
 
         var colorButtons = new Button[AvatarColors.Length];
         for (int i = 0; i < AvatarColors.Length; i++)
@@ -827,14 +827,14 @@ public class ProfileSceneSetup : EditorWindow
 
         var colorNextBtn = CreateBigButton(stepColor.transform, "ColorNextButton",
             "\u05D4\u05DE\u05E9\u05DA", AccentColor,
-            new Vector2(0.15f, 0.03f), new Vector2(0.85f, 0.15f), roundedRect, true);
+            new Vector2(0.25f, 0.03f), new Vector2(0.75f, 0.18f), roundedRect, true);
         colorNextBtn.GetComponent<Button>().interactable = false;
 
         // ── STEP 5: Done ──
         var stepDone = CreateStepPanel(contentArea.transform, "StepDone");
         CreateText(stepDone.transform, "DoneTitle",
-            "\u05DE\u05E2\u05D5\u05DC\u05D4!", 64, DarkText, // !מעולה (Great!)
-            new Vector2(0, 0.70f), new Vector2(1, 0.88f), true);
+            "\u05DE\u05E2\u05D5\u05DC\u05D4!", 52, DarkText, // !מעולה (Great!)
+            new Vector2(0, 0.72f), new Vector2(1, 0.95f), true);
 
         // Done avatar
         var doneAvatarGO = new GameObject("DoneAvatar");
@@ -842,7 +842,7 @@ public class ProfileSceneSetup : EditorWindow
         var doneAvatarRT = doneAvatarGO.AddComponent<RectTransform>();
         doneAvatarRT.anchorMin = new Vector2(0.5f, 0.45f);
         doneAvatarRT.anchorMax = new Vector2(0.5f, 0.45f);
-        doneAvatarRT.sizeDelta = new Vector2(180, 180);
+        doneAvatarRT.sizeDelta = new Vector2(140, 140);
         var doneAvatarImg = doneAvatarGO.AddComponent<Image>();
         doneAvatarImg.sprite = circle;
         doneAvatarImg.color = AccentColor;
@@ -866,7 +866,7 @@ public class ProfileSceneSetup : EditorWindow
         StretchFull(doneInitRT);
         var doneInitTMP = doneInitialGO.AddComponent<TextMeshProUGUI>();
         doneInitTMP.text = "?";
-        doneInitTMP.fontSize = 72;
+        doneInitTMP.fontSize = 56;
         doneInitTMP.fontStyle = FontStyles.Bold;
         doneInitTMP.color = Color.white;
         doneInitTMP.alignment = TextAlignmentOptions.Center;
@@ -876,13 +876,13 @@ public class ProfileSceneSetup : EditorWindow
         var doneNameGO = new GameObject("DoneName");
         doneNameGO.transform.SetParent(stepDone.transform, false);
         var doneNameRT = doneNameGO.AddComponent<RectTransform>();
-        doneNameRT.anchorMin = new Vector2(0, 0.30f);
-        doneNameRT.anchorMax = new Vector2(1, 0.42f);
+        doneNameRT.anchorMin = new Vector2(0, 0.28f);
+        doneNameRT.anchorMax = new Vector2(1, 0.40f);
         doneNameRT.offsetMin = Vector2.zero;
         doneNameRT.offsetMax = Vector2.zero;
         var doneNameTMP = doneNameGO.AddComponent<TextMeshProUGUI>();
         doneNameTMP.text = "";
-        doneNameTMP.fontSize = 48;
+        doneNameTMP.fontSize = 38;
         doneNameTMP.fontStyle = FontStyles.Bold;
         doneNameTMP.color = DarkText;
         doneNameTMP.alignment = TextAlignmentOptions.Center;
@@ -891,7 +891,7 @@ public class ProfileSceneSetup : EditorWindow
 
         var doneBtn = CreateBigButton(stepDone.transform, "DoneButton",
             "\u05D9\u05D0\u05DC\u05DC\u05D4 \u05DC\u05E9\u05D7\u05E7!", AccentColor, // !יאללה לשחק
-            new Vector2(0.10f, 0.10f), new Vector2(0.90f, 0.25f), roundedRect, true);
+            new Vector2(0.20f, 0.05f), new Vector2(0.80f, 0.22f), roundedRect, true);
 
         // ── Webcam Panel (Desktop camera preview overlay) ──
         var webcamPanelGO = new GameObject("WebcamPanel");
@@ -910,8 +910,8 @@ public class ProfileSceneSetup : EditorWindow
         var webcamPreviewRT = webcamPreviewGO.AddComponent<RectTransform>();
         webcamPreviewRT.anchorMin = new Vector2(0.5f, 0.5f);
         webcamPreviewRT.anchorMax = new Vector2(0.5f, 0.5f);
-        webcamPreviewRT.sizeDelta = new Vector2(700, 700);
-        webcamPreviewRT.anchoredPosition = new Vector2(0, 80);
+        webcamPreviewRT.sizeDelta = new Vector2(500, 500);
+        webcamPreviewRT.anchoredPosition = new Vector2(0, 60);
         var webcamRawImage = webcamPreviewGO.AddComponent<RawImage>();
         webcamRawImage.color = Color.white;
 

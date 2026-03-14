@@ -20,7 +20,7 @@ using System.Collections.Generic;
 /// </summary>
 public class ShadowMatchSetup : EditorWindow
 {
-    private static readonly Vector2 Ref = new Vector2(1080, 1920);
+    private static readonly Vector2 Ref = new Vector2(1920, 1080);
 
     // Palette — soft lavender sky, muted landscape
     private static readonly Color SkyColor      = HexColor("#C9D8FF");
@@ -31,7 +31,7 @@ public class ShadowMatchSetup : EditorWindow
     private static readonly Color TopBarColor   = HexColor("#8BAAC8");
     private static readonly Color PropColor     = HexColor("#BFCFC6");
 
-    private const int TopBarHeight = 110;
+    private const int TopBarHeight = 80;
 
     private static readonly Color[] AnimalColors = {
         HexColor("#EF9A9A"), HexColor("#F48FB1"), HexColor("#CE93D8"),
@@ -139,16 +139,15 @@ public class ShadowMatchSetup : EditorWindow
         var scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = Ref;
-        scaler.matchWidthOrHeight = 0f;
+        scaler.matchWidthOrHeight = 0.5f;
         canvasGO.AddComponent<GraphicRaycaster>();
         var root = canvasGO.transform;
 
         // ═══════════════════════════════════
-        //  BACKGROUND — 5 layers only
+        //  BACKGROUND — 5 layers (landscape)
         //
-        //  The scene is split roughly:
-        //    Top 50%  = sky + shadows (open, clean)
-        //    Bot 50%  = landscape + animals
+        //  Left half  = shadows (against open sky)
+        //  Right half = draggable animals (on grass)
         //
         //  Clouds stay HIGH in the sky.
         //  Nothing decorative in the gameplay zones.
@@ -157,27 +156,25 @@ public class ShadowMatchSetup : EditorWindow
         // 1. SKY — full screen fill
         Layer(root, "Sky", null, 0, 0, 1, 1, SkyColor);
 
-        // 2. CLOUD — one thin wisp, high in sky, very light
-        //    Sits above everything, purely atmospheric
-        Layer(root, "Cloud", cloudSpr, 0, 0.76f, 1, 0.90f, CloudColor);
+        // 2. CLOUD — thin wisp, high in sky
+        Layer(root, "Cloud", cloudSpr, 0, 0.78f, 1, 0.92f, CloudColor);
 
-        // 3. MOUNTAINS — faint, distant, small presence
-        //    Anchored in mid-distance, low contrast
-        Layer(root, "Mountains", mountainsSpr, 0, 0.30f, 1, 0.48f, MountainColor);
+        // 3. MOUNTAINS — faint, distant
+        Layer(root, "Mountains", mountainsSpr, 0, 0.28f, 1, 0.50f, MountainColor);
 
-        // 4. HILLS — one soft layer, sits above the grass
-        Layer(root, "Hills", hillsSpr, 0, 0.18f, 1, 0.36f, HillColor);
+        // 4. HILLS — soft layer above grass
+        Layer(root, "Hills", hillsSpr, 0, 0.15f, 1, 0.35f, HillColor);
 
-        // 5. GRASS — one clean field, the "ground" of the scene
-        Layer(root, "Grass", grassSpr, 0, 0, 1, 0.22f, GrassColor);
+        // 5. GRASS — ground field
+        Layer(root, "Grass", grassSpr, 0, 0, 1, 0.20f, GrassColor);
 
         // ═══════════════════════════════════
         //  PROPS — minimal, 2 tiny distant houses only
         //  Placed on the hill ridge, far from gameplay
         // ═══════════════════════════════════
 
-        Prop(root, "HouseL", house1, 100, 430, 50, 50);
-        Prop(root, "HouseR", house2, 980, 420, 45, 45);
+        Prop(root, "HouseL", house1, 180, 380, 50, 50);
+        Prop(root, "HouseR", house2, 1740, 370, 45, 45);
 
         // ═══════════════════════════════════
         //  SAFE AREA + TOP BAR
@@ -209,7 +206,7 @@ public class ShadowMatchSetup : EditorWindow
         var tmp = titleGO.AddComponent<TextMeshProUGUI>();
         tmp.text = HebrewFixer.Fix("\u05D4\u05EA\u05D0\u05DE\u05EA \u05E6\u05DC\u05DC\u05D9\u05DD");
         tmp.isRightToLeftText = false;
-        tmp.fontSize = 42;
+        tmp.fontSize = 36;
         tmp.fontStyle = FontStyles.Bold;
         tmp.color = Color.white;
         tmp.alignment = TextAlignmentOptions.Center;
@@ -217,36 +214,35 @@ public class ShadowMatchSetup : EditorWindow
 
         // Home button
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
-        var homeGO = Btn(bar.transform, "HomeButton", homeIcon, 16, -10, 90);
+        var homeGO = Btn(bar.transform, "HomeButton", homeIcon, 16, -8, 64);
 
         // ═══════════════════════════════════
-        //  GAMEPLAY ZONES
+        //  GAMEPLAY ZONES (landscape)
         //
-        //  Shadow zone: upper half, clean sky behind
-        //    anchors 0.10–0.90 horiz, 0.52–0.92 vert
-        //    → shadows sit against open sky, nothing behind
+        //  Shadow zone: left half, clean sky behind
+        //    anchors 0.02–0.48 horiz, 0.08–0.88 vert
+        //    → 2x2 grid of shadows against open sky
         //
-        //  Animal zone: lower half, on the grass
-        //    anchors 0.10–0.90 horiz, 0.04–0.40 vert
-        //    → animals sit on the green field
+        //  Animal zone: right half, on grass/hills
+        //    anchors 0.52–0.98 horiz, 0.08–0.88 vert
+        //    → 2x2 grid of draggable animals
         //
-        //  Gap between zones (0.40–0.52) = hills/landscape
-        //    → natural visual separator
+        //  Vertical gap (0.48–0.52) = natural separator
         // ═══════════════════════════════════
 
         var shadowsGO = new GameObject("ShadowsArea");
         shadowsGO.transform.SetParent(safeGO.transform, false);
         var shadowsRT = shadowsGO.AddComponent<RectTransform>();
-        shadowsRT.anchorMin = new Vector2(0.10f, 0.52f);
-        shadowsRT.anchorMax = new Vector2(0.90f, 0.92f);
+        shadowsRT.anchorMin = new Vector2(0.02f, 0.08f);
+        shadowsRT.anchorMax = new Vector2(0.48f, 0.88f);
         shadowsRT.offsetMin = Vector2.zero;
         shadowsRT.offsetMax = Vector2.zero;
 
         var animalsGO = new GameObject("AnimalsArea");
         animalsGO.transform.SetParent(safeGO.transform, false);
         var animalsRT = animalsGO.AddComponent<RectTransform>();
-        animalsRT.anchorMin = new Vector2(0.10f, 0.04f);
-        animalsRT.anchorMax = new Vector2(0.90f, 0.40f);
+        animalsRT.anchorMin = new Vector2(0.52f, 0.08f);
+        animalsRT.anchorMax = new Vector2(0.98f, 0.88f);
         animalsRT.offsetMin = Vector2.zero;
         animalsRT.offsetMax = Vector2.zero;
 
@@ -259,8 +255,8 @@ public class ShadowMatchSetup : EditorWindow
         ctrl.animalsRow = animalsRT;
         ctrl.circleSprite = circleSprite;
         ctrl.animalCount = 4;
-        ctrl.shadowSize = 240f;
-        ctrl.animalSize = 260f;
+        ctrl.shadowSize = 200f;
+        ctrl.animalSize = 220f;
 
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
             homeGO.GetComponent<Button>().onClick, ctrl.OnHomePressed);

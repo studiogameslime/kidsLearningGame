@@ -13,9 +13,9 @@ using System.Collections.Generic;
 /// </summary>
 public class WorldSceneSetup : EditorWindow
 {
-    private static readonly Vector2 Ref = new Vector2(1080, 1920);
+    private static readonly Vector2 Ref = new Vector2(1920, 1080);
     private static readonly Color TopBarColor = HexColor("#5BA84C");
-    private const int TopBarHeight = 110;
+    private const int TopBarHeight = 80;
 
     // Day mode default colors (environment handles transitions)
     private static readonly Color DaySky = HexColor("#8FD4F5");
@@ -302,7 +302,7 @@ public class WorldSceneSetup : EditorWindow
         var scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = Ref;
-        scaler.matchWidthOrHeight = 0f;
+        scaler.matchWidthOrHeight = 0.5f;
         canvasGO.AddComponent<GraphicRaycaster>();
 
         // Safe area
@@ -332,7 +332,7 @@ public class WorldSceneSetup : EditorWindow
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
         titleTMP.text = HebrewFixer.Fix("\u05D4\u05E2\u05D5\u05DC\u05DD \u05E9\u05DC\u05D9");
         titleTMP.isRightToLeftText = false;
-        titleTMP.fontSize = 42;
+        titleTMP.fontSize = 36;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;
         titleTMP.alignment = TextAlignmentOptions.Center;
@@ -342,13 +342,13 @@ public class WorldSceneSetup : EditorWindow
         var homeIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/home.png");
         var homeGO = CreateIconButton(topBar.transform, "HomeButton", homeIcon,
             new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1),
-            new Vector2(16, -10), new Vector2(90, 90));
+            new Vector2(16, -8), new Vector2(64, 64));
 
         // Games collection button (top-right, before profile avatar)
         var gamesIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/menuGrid.png");
         var gamesGO = CreateIconButton(topBar.transform, "GamesButton", gamesIcon,
             new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f),
-            new Vector2(-96, 0), new Vector2(70, 70));
+            new Vector2(-80, 0), new Vector2(56, 56));
 
         // Profile avatar
         var profileBtn = new GameObject("ProfileButton");
@@ -358,7 +358,7 @@ public class WorldSceneSetup : EditorWindow
         profileBtnRT.anchorMax = new Vector2(1, 0.5f);
         profileBtnRT.pivot = new Vector2(1, 0.5f);
         profileBtnRT.anchoredPosition = new Vector2(-16, 0);
-        profileBtnRT.sizeDelta = new Vector2(70, 70);
+        profileBtnRT.sizeDelta = new Vector2(56, 56);
         var profileBtnImg = profileBtn.AddComponent<Image>();
         if (circleSprite != null) profileBtnImg.sprite = circleSprite;
         profileBtnImg.color = HexColor("#90CAF9");
@@ -369,7 +369,7 @@ public class WorldSceneSetup : EditorWindow
         StretchFull(profileInitialRT);
         var profileInitialTMP = profileInitialGO.AddComponent<TextMeshProUGUI>();
         profileInitialTMP.text = "?";
-        profileInitialTMP.fontSize = 30;
+        profileInitialTMP.fontSize = 24;
         profileInitialTMP.fontStyle = FontStyles.Bold;
         profileInitialTMP.color = Color.white;
         profileInitialTMP.alignment = TextAlignmentOptions.Center;
@@ -383,15 +383,14 @@ public class WorldSceneSetup : EditorWindow
         viewportRT.offsetMax = new Vector2(0, -TopBarHeight);
         viewport.AddComponent<RectMask2D>();
 
-        // ── World Content (wide horizontal container) ──
+        // ── World Content (fills viewport; runtime expands when more animals unlock) ──
         var worldContent = new GameObject("WorldContent");
         worldContent.transform.SetParent(viewport.transform, false);
         var worldContentRT = worldContent.AddComponent<RectTransform>();
-        worldContentRT.anchorMin = new Vector2(0, 0);
-        worldContentRT.anchorMax = new Vector2(0, 1);
-        worldContentRT.pivot = new Vector2(0, 0.5f);
-        worldContentRT.sizeDelta = new Vector2(2000, 0);
-        worldContentRT.anchoredPosition = Vector2.zero;
+        worldContentRT.anchorMin = Vector2.zero;
+        worldContentRT.anchorMax = Vector2.one;
+        worldContentRT.offsetMin = Vector2.zero;
+        worldContentRT.offsetMax = Vector2.zero;
 
         // ════════════════════════════════════════
         //  LAYERED BACKGROUND (far to near)
@@ -431,15 +430,15 @@ public class WorldSceneSetup : EditorWindow
             new Vector2(0, 0.4f), new Vector2(1, 0.65f), DayCloudTint);
 
         // ── Sun (in sky, above clouds, behind ground) ──
-        // Anchored at 93% height for responsive vertical positioning across resolutions
+        // Proportional anchors for responsive positioning across resolutions
         var sunGO = new GameObject("Sun");
         sunGO.transform.SetParent(worldContent.transform, false);
         var sunRT = sunGO.AddComponent<RectTransform>();
-        sunRT.anchorMin = new Vector2(0, 0.93f);
-        sunRT.anchorMax = new Vector2(0, 0.93f);
+        sunRT.anchorMin = new Vector2(0.75f, 0.93f);
+        sunRT.anchorMax = new Vector2(0.75f, 0.93f);
         sunRT.pivot = new Vector2(0.5f, 0.5f);
-        sunRT.sizeDelta = new Vector2(180, 180);
-        sunRT.anchoredPosition = new Vector2(900, 0);
+        sunRT.sizeDelta = new Vector2(160, 160);
+        sunRT.anchoredPosition = Vector2.zero;
         var sunImg = sunGO.AddComponent<Image>();
         sunImg.sprite = sunSprite;
         sunImg.preserveAspect = true;
@@ -464,11 +463,11 @@ public class WorldSceneSetup : EditorWindow
         var moonGO = new GameObject("Moon");
         moonGO.transform.SetParent(worldContent.transform, false);
         var moonRT = moonGO.AddComponent<RectTransform>();
-        moonRT.anchorMin = new Vector2(0, 0.93f);
-        moonRT.anchorMax = new Vector2(0, 0.93f);
+        moonRT.anchorMin = new Vector2(0.75f, 0.93f);
+        moonRT.anchorMax = new Vector2(0.75f, 0.93f);
         moonRT.pivot = new Vector2(0.5f, 0.5f);
-        moonRT.sizeDelta = new Vector2(150, 150);
-        moonRT.anchoredPosition = new Vector2(900, 0);
+        moonRT.sizeDelta = new Vector2(130, 130);
+        moonRT.anchoredPosition = Vector2.zero;
         var moonImg = moonGO.AddComponent<Image>();
         moonImg.sprite = moonSprite;
         moonImg.preserveAspect = true;
@@ -502,29 +501,34 @@ public class WorldSceneSetup : EditorWindow
         grassAreaRT.offsetMin = Vector2.zero;
         grassAreaRT.offsetMax = Vector2.zero;
 
-        // ── Trees & Bushes (interactive props on ground) ──
-        // Tree 1 — large tree on the left (upper grass ridge, safe margin from edge)
-        CreateProp(grassAreaGO.transform, "Tree1", treeSprite, WorldProp.PropType.Tree,
-            new Vector2(250, 600), new Vector2(180, 300));
-        // Tree 2 — tall tree in the middle
-        CreateProp(grassAreaGO.transform, "Tree2", treeLongSprite, WorldProp.PropType.Tree,
-            new Vector2(800, 580), new Vector2(160, 340));
-        // Tree 3 — small tree on the right (safe margin from right edge)
-        CreateProp(grassAreaGO.transform, "Tree3", treeSmall1Sprite, WorldProp.PropType.Tree,
-            new Vector2(1350, 620), new Vector2(120, 200));
-        // ── Toy Box (between the trees on the upper grass ridge — main play button) ──
+        // ═══════════════════════════════════════
+        //  PROPS — anchor-proportional X positions
+        //  for responsive layout across resolutions
+        //
+        //  Composition (left → right):
+        //    Easel (6%) — Tree L (15%) — ToyBox (50%) — Tree R (85%)
+        //
+        //  Trees frame the scene, ToyBox is the focal point.
+        // ═══════════════════════════════════════
+
+        // Tree Left — background framing element, upper grass ridge
+        CreatePropAnchored(grassAreaGO.transform, "TreeLeft", treeSprite, WorldProp.PropType.Tree,
+            0.15f, 380, new Vector2(160, 260));
+        // Tree Right — background framing element, upper grass ridge
+        CreatePropAnchored(grassAreaGO.transform, "TreeRight", treeLongSprite, WorldProp.PropType.Tree,
+            0.85f, 360, new Vector2(140, 300));
+
+        // ── Toy Box — centered focal point, upper grass ridge ──
         var toyBoxSprite = LoadSprite("Assets/Art/Toy Box.png");
 
         var toyBoxGO = new GameObject("ToyBox");
         toyBoxGO.transform.SetParent(grassAreaGO.transform, false);
         var toyBoxRT = toyBoxGO.AddComponent<RectTransform>();
-        toyBoxRT.anchorMin = Vector2.zero;
-        toyBoxRT.anchorMax = Vector2.zero;
+        toyBoxRT.anchorMin = new Vector2(0.50f, 0);
+        toyBoxRT.anchorMax = new Vector2(0.50f, 0);
         toyBoxRT.pivot = new Vector2(0.5f, 0);
-        // Centered between Tree1 (X=250) and Tree2 (X=800) = 525
-        // On the upper grass ridge with the trees (Y=560, trees are at 580-620)
-        toyBoxRT.sizeDelta = new Vector2(350, 380);  // ~1.3x animal size (280)
-        toyBoxRT.anchoredPosition = new Vector2(525, 560);
+        toyBoxRT.sizeDelta = new Vector2(300, 330);
+        toyBoxRT.anchoredPosition = new Vector2(0, 330);
 
         var toyBoxImg = toyBoxGO.AddComponent<Image>();
         toyBoxImg.sprite = toyBoxSprite;
@@ -534,16 +538,16 @@ public class WorldSceneSetup : EditorWindow
 
         var worldToyBox = toyBoxGO.AddComponent<WorldToyBox>();
 
-        // ── Painting Easel (on grass, left side — gallery entry point) ──
+        // ── Painting Easel — far left, lower grass ──
         var easelSprite = LoadSprite("Assets/Art/Easel.png");
         var easelGO = new GameObject("PaintingEasel");
         easelGO.transform.SetParent(grassAreaGO.transform, false);
         var easelRT = easelGO.AddComponent<RectTransform>();
-        easelRT.anchorMin = Vector2.zero;
-        easelRT.anchorMax = Vector2.zero;
+        easelRT.anchorMin = new Vector2(0.06f, 0);
+        easelRT.anchorMax = new Vector2(0.06f, 0);
         easelRT.pivot = new Vector2(0.5f, 0);
-        easelRT.sizeDelta = new Vector2(180, 220);
-        easelRT.anchoredPosition = new Vector2(150, 200);
+        easelRT.sizeDelta = new Vector2(160, 200);
+        easelRT.anchoredPosition = new Vector2(0, 150);
 
         var easelImg = easelGO.AddComponent<Image>();
         easelImg.sprite = easelSprite;
@@ -572,8 +576,8 @@ public class WorldSceneSetup : EditorWindow
         var galleryPanel = new GameObject("GalleryPanel");
         galleryPanel.transform.SetParent(galleryOverlay.transform, false);
         var galleryPanelRT = galleryPanel.AddComponent<RectTransform>();
-        galleryPanelRT.anchorMin = new Vector2(0.08f, 0.25f);
-        galleryPanelRT.anchorMax = new Vector2(0.92f, 0.75f);
+        galleryPanelRT.anchorMin = new Vector2(0.15f, 0.10f);
+        galleryPanelRT.anchorMax = new Vector2(0.85f, 0.90f);
         galleryPanelRT.offsetMin = Vector2.zero;
         galleryPanelRT.offsetMax = Vector2.zero;
         var galleryPanelImg = galleryPanel.AddComponent<Image>();
@@ -704,13 +708,13 @@ public class WorldSceneSetup : EditorWindow
         gridContentRT.pivot = new Vector2(0.5f, 1);
         gridContentRT.sizeDelta = new Vector2(0, 0);
         var gridLayout = gridContentGO.AddComponent<GridLayoutGroup>();
-        gridLayout.cellSize = new Vector2(280, 280);
+        gridLayout.cellSize = new Vector2(240, 240);
         gridLayout.spacing = new Vector2(20, 20);
         gridLayout.startCorner = GridLayoutGroup.Corner.UpperLeft;
         gridLayout.startAxis = GridLayoutGroup.Axis.Horizontal;
         gridLayout.childAlignment = TextAnchor.UpperCenter;
         gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        gridLayout.constraintCount = 2;
+        gridLayout.constraintCount = 3;
         gridLayout.padding = new RectOffset(10, 10, 10, 10);
         var contentSizeFitter = gridContentGO.AddComponent<ContentSizeFitter>();
         contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
@@ -830,16 +834,20 @@ public class WorldSceneSetup : EditorWindow
         return go;
     }
 
-    private static void CreateProp(Transform parent, string name, Sprite sprite,
-        WorldProp.PropType type, Vector2 pos, Vector2 size)
+    /// <summary>
+    /// Create a prop with proportional X anchor and absolute Y position.
+    /// X adapts to any world width; Y is relative to parent bottom.
+    /// </summary>
+    private static void CreatePropAnchored(Transform parent, string name, Sprite sprite,
+        WorldProp.PropType type, float anchorX, float posY, Vector2 size)
     {
         var go = new GameObject(name);
         go.transform.SetParent(parent, false);
         var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = Vector2.zero;
-        rt.anchorMax = Vector2.zero;
+        rt.anchorMin = new Vector2(anchorX, 0);
+        rt.anchorMax = new Vector2(anchorX, 0);
         rt.pivot = new Vector2(0.5f, 0);
-        rt.anchoredPosition = pos;
+        rt.anchoredPosition = new Vector2(0, posY);
         rt.sizeDelta = size;
 
         var img = go.AddComponent<Image>();

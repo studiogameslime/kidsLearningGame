@@ -126,10 +126,35 @@ public class WorldController : MonoBehaviour
             ProfileManager.Instance.Save();
         }
 
-        // Size the world content — minimum 1.5 screens wide
+        // Size the world — fills viewport by default, expands only when needed
         int animalCount = jp.unlockedAnimalIds.Count;
-        float worldWidth = Mathf.Max(1600f, animalCount * animalSpacing + worldPadding * 2);
-        worldContent.sizeDelta = new Vector2(worldWidth, worldContent.sizeDelta.y);
+        float viewportWidth = 1920f;
+        var viewportParent = worldContent.parent as RectTransform;
+        if (viewportParent != null && viewportParent.rect.width > 0)
+            viewportWidth = viewportParent.rect.width;
+
+        float neededWidth = animalCount * animalSpacing + worldPadding * 2;
+        float worldWidth;
+
+        if (neededWidth > viewportWidth)
+        {
+            // Many animals — expand beyond viewport for scrolling
+            worldContent.anchorMin = new Vector2(0, 0);
+            worldContent.anchorMax = new Vector2(0, 1);
+            worldContent.pivot = new Vector2(0, 0.5f);
+            worldContent.sizeDelta = new Vector2(neededWidth, 0);
+            worldContent.anchoredPosition = Vector2.zero;
+            worldWidth = neededWidth;
+        }
+        else
+        {
+            // Content fits viewport — stretch to fill, no scrolling
+            worldContent.anchorMin = Vector2.zero;
+            worldContent.anchorMax = Vector2.one;
+            worldContent.offsetMin = Vector2.zero;
+            worldContent.offsetMax = Vector2.zero;
+            worldWidth = viewportWidth;
+        }
 
         // Update cloud system with world width
         if (cloudSystem != null)
@@ -180,8 +205,13 @@ public class WorldController : MonoBehaviour
             var rt = go.AddComponent<RectTransform>();
             rt.sizeDelta = new Vector2(animalSize, animalSize);
 
-            // Evenly spaced horizontally, slight random Y variation
-            float x = worldPadding + i * animalSpacing;
+            // Distribute animals evenly across the width with safe margins
+            float usableWidth = worldWidth - worldPadding * 2;
+            float x;
+            if (animalIds.Count <= 1)
+                x = worldWidth * 0.5f; // single animal centered
+            else
+                x = worldPadding + usableWidth * i / (animalIds.Count - 1);
             float y = Mathf.Lerp(placementMinY, placementMaxY, Random.Range(0f, 1f));
             // Alternate slight Y offset for visual interest
             if (i % 2 == 1) y += 15f;

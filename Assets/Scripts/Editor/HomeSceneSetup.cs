@@ -13,7 +13,7 @@ using System.IO;
 /// </summary>
 public class HomeSceneSetup : EditorWindow
 {
-    private static readonly Vector2 Ref = new Vector2(1080, 1920);
+    private static readonly Vector2 Ref = new Vector2(1920, 1080);
 
     private static readonly Color BgColor = HexColor("#F0F4FF");       // soft blue-white
     private static readonly Color PlayColor = HexColor("#4CAF50");      // green (placeholder, colored at runtime)
@@ -145,7 +145,7 @@ public class HomeSceneSetup : EditorWindow
         var scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = Ref;
-        scaler.matchWidthOrHeight = 0f;
+        scaler.matchWidthOrHeight = 0.5f;
         canvasGO.AddComponent<GraphicRaycaster>();
 
         // Background
@@ -166,8 +166,8 @@ public class HomeSceneSetup : EditorWindow
         profileBtnRT.anchorMin = new Vector2(0, 1);
         profileBtnRT.anchorMax = new Vector2(0, 1);
         profileBtnRT.pivot = new Vector2(0, 1);
-        profileBtnRT.anchoredPosition = new Vector2(30, -30);
-        profileBtnRT.sizeDelta = new Vector2(100, 100);
+        profileBtnRT.anchoredPosition = new Vector2(24, -20);
+        profileBtnRT.sizeDelta = new Vector2(80, 80);
 
         var profileBtnImg = profileBtn.AddComponent<Image>();
         if (circleSprite != null) profileBtnImg.sprite = circleSprite;
@@ -182,7 +182,7 @@ public class HomeSceneSetup : EditorWindow
         StretchFull(initialRT);
         var initialTMP = initialGO.AddComponent<TextMeshProUGUI>();
         initialTMP.text = "?";
-        initialTMP.fontSize = 42;
+        initialTMP.fontSize = 34;
         initialTMP.fontStyle = FontStyles.Bold;
         initialTMP.color = Color.white;
         initialTMP.alignment = TextAlignmentOptions.Center;
@@ -194,8 +194,8 @@ public class HomeSceneSetup : EditorWindow
         var playBtnRT = playBtn.AddComponent<RectTransform>();
         playBtnRT.anchorMin = new Vector2(0.5f, 0.5f);
         playBtnRT.anchorMax = new Vector2(0.5f, 0.5f);
-        playBtnRT.sizeDelta = new Vector2(320, 320);
-        playBtnRT.anchoredPosition = new Vector2(0, 100);
+        playBtnRT.sizeDelta = new Vector2(260, 260);
+        playBtnRT.anchoredPosition = new Vector2(0, 40);
 
         var playBtnImg = playBtn.AddComponent<Image>();
         if (circleSprite != null) playBtnImg.sprite = circleSprite;
@@ -215,7 +215,7 @@ public class HomeSceneSetup : EditorWindow
         StretchFull(playLabelRT);
         var playLabelTMP = playLabel.AddComponent<TextMeshProUGUI>();
         playLabelTMP.text = "\u25B6"; // ▶
-        playLabelTMP.fontSize = 100;
+        playLabelTMP.fontSize = 80;
         playLabelTMP.color = Color.white;
         playLabelTMP.alignment = TextAlignmentOptions.Center;
         playLabelTMP.raycastTarget = false;
@@ -225,14 +225,14 @@ public class HomeSceneSetup : EditorWindow
         // Arrow from profile area → play (rotated, pointing down-right)
         var arrow1 = CreateArrowImage(safeArea.transform, "ArrowFromProfile", arrowSprite,
             new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(-160, 350), new Vector2(40, 80),
-            PlayColor, -35f); // angled down-right
+            new Vector2(-130, 250), new Vector2(32, 64),
+            PlayColor, -35f);
 
         // Arrow from world → play (pointing up)
         var arrow2 = CreateArrowImage(safeArea.transform, "ArrowFromWorld", arrowSprite,
             new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(0, -15), new Vector2(36, 70),
-            PlayColor, 0f); // straight up
+            new Vector2(0, -30), new Vector2(30, 60),
+            PlayColor, 0f);
 
         // ── World Button (below play) ──
         var worldBtn = new GameObject("WorldButton");
@@ -240,7 +240,7 @@ public class HomeSceneSetup : EditorWindow
         var worldBtnRT = worldBtn.AddComponent<RectTransform>();
         worldBtnRT.anchorMin = new Vector2(0.5f, 0.5f);
         worldBtnRT.anchorMax = new Vector2(0.5f, 0.5f);
-        worldBtnRT.sizeDelta = new Vector2(260, 80);
+        worldBtnRT.sizeDelta = new Vector2(240, 70);
         worldBtnRT.anchoredPosition = new Vector2(0, -120);
 
         var worldBtnImg = worldBtn.AddComponent<Image>();
@@ -259,7 +259,7 @@ public class HomeSceneSetup : EditorWindow
         StretchFull(worldLabelRT);
         var worldLabelTMP = worldLabel.AddComponent<TextMeshProUGUI>();
         worldLabelTMP.text = HebrewFixer.Fix("\u05D4\u05E2\u05D5\u05DC\u05DD \u05E9\u05DC\u05D9"); // העולם שלי
-        worldLabelTMP.fontSize = 32;
+        worldLabelTMP.fontSize = 28;
         worldLabelTMP.fontStyle = FontStyles.Bold;
         worldLabelTMP.color = Color.white;
         worldLabelTMP.alignment = TextAlignmentOptions.Center;
@@ -273,7 +273,7 @@ public class HomeSceneSetup : EditorWindow
         allGamesBtnRT.anchorMin = new Vector2(0.5f, 0);
         allGamesBtnRT.anchorMax = new Vector2(0.5f, 0);
         allGamesBtnRT.pivot = new Vector2(0.5f, 0);
-        allGamesBtnRT.anchoredPosition = new Vector2(0, 60);
+        allGamesBtnRT.anchoredPosition = new Vector2(0, 40);
         allGamesBtnRT.sizeDelta = new Vector2(300, 60);
 
         var allGamesTMP = allGamesBtn.AddComponent<TextMeshProUGUI>();

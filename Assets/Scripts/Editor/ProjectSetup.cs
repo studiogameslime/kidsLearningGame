@@ -21,8 +21,8 @@ public class ProjectSetup : EditorWindow
     //  CONSTANTS
     // ─────────────────────────────────────────────
 
-    // Reference resolution for Canvas Scaler (portrait)
-    private static readonly Vector2 ReferenceResolution = new Vector2(1080, 1920);
+    // Reference resolution for Canvas Scaler (landscape)
+    private static readonly Vector2 ReferenceResolution = new Vector2(1920, 1080);
 
     // Grid layout
     private const int GridPaddingH = 48;
@@ -1190,15 +1190,15 @@ public class ProjectSetup : EditorWindow
 
     private static void ConfigurePlayerSettings()
     {
-        PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
-        PlayerSettings.allowedAutorotateToPortrait = true;
+        PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft;
+        PlayerSettings.allowedAutorotateToPortrait = false;
         PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
-        PlayerSettings.allowedAutorotateToLandscapeLeft = false;
-        PlayerSettings.allowedAutorotateToLandscapeRight = false;
+        PlayerSettings.allowedAutorotateToLandscapeLeft = true;
+        PlayerSettings.allowedAutorotateToLandscapeRight = true;
 
-        // Set default resolution for editor testing (portrait)
-        PlayerSettings.defaultScreenWidth = 1080;
-        PlayerSettings.defaultScreenHeight = 1920;
+        // Set default resolution for editor testing (landscape)
+        PlayerSettings.defaultScreenWidth = 1920;
+        PlayerSettings.defaultScreenHeight = 1080;
     }
 
     private static void ConfigureBuildSettings()

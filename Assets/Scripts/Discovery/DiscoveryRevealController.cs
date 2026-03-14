@@ -16,8 +16,8 @@ public class DiscoveryRevealController : MonoBehaviour
     public Image backgroundImage;      // full-screen background
 
     [Header("Settings")]
-    public int textureWidth = 540;
-    public int textureHeight = 960;
+    public int textureWidth = 960;
+    public int textureHeight = 540;
     public int brushRadius = 80;
     public float revealThreshold = 0.7f;
 
