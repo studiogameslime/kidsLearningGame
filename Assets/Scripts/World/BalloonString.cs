@@ -2,109 +2,101 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Creates a wavy curly ribbon below a balloon using small rotated segments.
-/// Sways gently over time for a natural hanging ribbon feel.
+/// Draws a smooth wavy ribbon below a balloon using a procedural texture.
+/// A single continuous curved line — no dots or gaps.
+/// Sways gently over time.
 /// </summary>
 public class BalloonString : MonoBehaviour
 {
     public Color ribbonColor = new Color(0.4f, 0.4f, 0.4f, 0.5f);
 
-    private const int SegmentCount = 10;
-    private const float SegmentWidth = 2.5f;
-    private const float WaveAmplitude = 6f;
-    private const float WaveFrequency = 2.5f;
+    private const int TexWidth = 32;
+    private const int TexHeight = 80;
+    private const float WaveAmplitude = 5f;   // pixels of horizontal wave in texture
+    private const float WaveFrequency = 2.2f; // number of half-waves along the ribbon
+    private const float LineThickness = 1.8f; // stroke width in texture pixels
     private const float SwaySpeed = 1.2f;
-    private const float SwayAmount = 2f;
+    private const float SwayAmount = 3f;
 
-    private RectTransform[] segments;
     private RectTransform rt;
+    private Image img;
+    private Texture2D ribbonTex;
     private float swayPhase;
+    private float baseRotation;
 
     private void Start()
     {
         rt = GetComponent<RectTransform>();
         swayPhase = Random.Range(0f, Mathf.PI * 2f);
-        BuildRibbon();
+        baseRotation = 0f;
+
+        BuildRibbonTexture();
+
+        img = GetComponent<Image>();
+        if (img == null) img = gameObject.AddComponent<Image>();
+        img.sprite = Sprite.Create(ribbonTex,
+            new Rect(0, 0, TexWidth, TexHeight),
+            new Vector2(0.5f, 1f), 100f);
+        img.color = ribbonColor;
+        img.raycastTarget = false;
+        img.preserveAspect = false;
     }
 
-    private void BuildRibbon()
+    private void BuildRibbonTexture()
     {
-        float totalHeight = rt.sizeDelta.y;
-        float segmentHeight = totalHeight / SegmentCount;
+        ribbonTex = new Texture2D(TexWidth, TexHeight, TextureFormat.RGBA32, false);
+        ribbonTex.filterMode = FilterMode.Bilinear;
+        ribbonTex.wrapMode = TextureWrapMode.Clamp;
 
-        segments = new RectTransform[SegmentCount];
+        var pixels = new Color32[TexWidth * TexHeight];
+        // Clear to transparent
+        for (int i = 0; i < pixels.Length; i++)
+            pixels[i] = new Color32(0, 0, 0, 0);
 
-        for (int i = 0; i < SegmentCount; i++)
+        float centerX = TexWidth * 0.5f;
+
+        // Draw smooth anti-aliased sine wave line
+        for (int y = 0; y < TexHeight; y++)
         {
-            var segGO = new GameObject($"Seg{i}");
-            segGO.transform.SetParent(transform, false);
+            float t = (float)y / TexHeight;
+            // Sine wave X offset
+            float waveX = Mathf.Sin(t * Mathf.PI * WaveFrequency) * WaveAmplitude;
+            float cx = centerX + waveX;
 
-            var segRT = segGO.AddComponent<RectTransform>();
-            segRT.pivot = new Vector2(0.5f, 1f);
+            // Fade alpha towards the bottom
+            float fade = Mathf.Lerp(1f, 0.35f, t * t);
 
-            // Position along the sine wave curve
-            float t = (float)i / SegmentCount;
-            float tNext = (float)(i + 1) / SegmentCount;
-
-            float y0 = -t * totalHeight;
-            float y1 = -tNext * totalHeight;
-            float x0 = Mathf.Sin(t * Mathf.PI * WaveFrequency) * WaveAmplitude;
-            float x1 = Mathf.Sin(tNext * Mathf.PI * WaveFrequency) * WaveAmplitude;
-
-            // Position at start of segment
-            segRT.anchorMin = new Vector2(0.5f, 1f);
-            segRT.anchorMax = new Vector2(0.5f, 1f);
-            segRT.anchoredPosition = new Vector2(x0, y0);
-
-            // Calculate angle to next point
-            float dx = x1 - x0;
-            float dy = y1 - y0;
-            float angle = Mathf.Atan2(dx, -dy) * Mathf.Rad2Deg;
-            segRT.localRotation = Quaternion.Euler(0, 0, -angle);
-
-            // Length is the distance between the two points
-            float segLen = Mathf.Sqrt(dx * dx + dy * dy);
-            segRT.sizeDelta = new Vector2(SegmentWidth, segLen + 1f); // +1 overlap
-
-            var img = segGO.AddComponent<Image>();
-            // Fade ribbon towards the end
-            float fade = Mathf.Lerp(1f, 0.4f, t);
-            img.color = new Color(ribbonColor.r, ribbonColor.g, ribbonColor.b, ribbonColor.a * fade);
-            img.raycastTarget = false;
-
-            segments[i] = segRT;
+            // Draw anti-aliased thick point at this Y
+            for (int x = 0; x < TexWidth; x++)
+            {
+                float dist = Mathf.Abs(x - cx);
+                if (dist < LineThickness + 1f)
+                {
+                    // Smooth falloff for anti-aliasing
+                    float alpha = Mathf.Clamp01(1f - (dist - LineThickness + 0.5f));
+                    alpha *= fade;
+                    byte a = (byte)(alpha * 255);
+                    if (a > pixels[y * TexWidth + x].a)
+                        pixels[y * TexWidth + x] = new Color32(255, 255, 255, a);
+                }
+            }
         }
+
+        ribbonTex.SetPixels32(pixels);
+        ribbonTex.Apply();
     }
 
     private void Update()
     {
-        if (segments == null) return;
-
-        float totalHeight = rt.sizeDelta.y;
+        if (rt == null) return;
+        // Gentle sway rotation
         float sway = Mathf.Sin(Time.time * SwaySpeed + swayPhase) * SwayAmount;
+        rt.localRotation = Quaternion.Euler(0, 0, sway);
+    }
 
-        for (int i = 0; i < segments.Length; i++)
-        {
-            if (segments[i] == null) continue;
-
-            float t = (float)i / SegmentCount;
-            float tNext = (float)(i + 1) / SegmentCount;
-
-            // Apply sway that increases towards the bottom
-            float swayT = t * t * sway;
-            float swayTNext = tNext * tNext * sway;
-
-            float y0 = -t * totalHeight;
-            float y1 = -tNext * totalHeight;
-            float x0 = Mathf.Sin(t * Mathf.PI * WaveFrequency) * WaveAmplitude + swayT;
-            float x1 = Mathf.Sin(tNext * Mathf.PI * WaveFrequency) * WaveAmplitude + swayTNext;
-
-            segments[i].anchoredPosition = new Vector2(x0, y0);
-
-            float dx = x1 - x0;
-            float dy = y1 - y0;
-            float angle = Mathf.Atan2(dx, -dy) * Mathf.Rad2Deg;
-            segments[i].localRotation = Quaternion.Euler(0, 0, -angle);
-        }
+    private void OnDestroy()
+    {
+        if (ribbonTex != null)
+            Destroy(ribbonTex);
     }
 }
