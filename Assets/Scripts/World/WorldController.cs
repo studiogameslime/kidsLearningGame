@@ -365,7 +365,7 @@ public class WorldController : MonoBehaviour
                 ribbonRT.anchorMax = new Vector2(0.5f, 0f);
                 ribbonRT.pivot = new Vector2(0.5f, 1f);
                 ribbonRT.anchoredPosition = Vector2.zero;
-                ribbonRT.sizeDelta = new Vector2(20f, sizeVariation * 0.65f);
+                ribbonRT.sizeDelta = new Vector2(20f, sizeVariation * 0.975f);
                 var ribbonString = ribbonGO.AddComponent<BalloonString>();
                 Color ribbonColor = new Color(bubbleColor.r * 0.65f, bubbleColor.g * 0.65f, bubbleColor.b * 0.65f, 0.55f);
                 ribbonString.ribbonColor = ribbonColor;
