@@ -35,7 +35,7 @@ public class ColoringGameSetup : EditorWindow
     // Layout
     private const int TopBarHeight    = 80;
     private const int CanvasPad       = 12;
-    private const int RefImageSize    = 220;
+    private const int RefImageSize    = 320;
     private const int ColorCircleSize = 54;
     private const int BrushBtnSize    = 80;
     private const int StickerSize     = 72;
@@ -55,7 +55,7 @@ public class ColoringGameSetup : EditorWindow
             var circleSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/Circle.png");
 
             var colorBtnPrefab = CreateColorButtonPrefab(circleSprite);
-            var brushBtnPrefab = CreateBrushButtonPrefab(roundedRect);
+            var brushBtnPrefab = CreateBrushButtonPrefab(roundedRect, circleSprite);
 
             EditorUtility.DisplayProgressBar("Coloring Game Setup", "Updating coloring data…", 0.3f);
             UpdateColoringData();
@@ -136,7 +136,7 @@ public class ColoringGameSetup : EditorWindow
         Object.DestroyImmediate(root); return p;
     }
 
-    private static GameObject CreateBrushButtonPrefab(Sprite roundedRect)
+    private static GameObject CreateBrushButtonPrefab(Sprite roundedRect, Sprite circleSprite)
     {
         EnsureFolder("Assets/Prefabs/UI");
         var root = new GameObject("BrushSizeButton");
@@ -154,6 +154,19 @@ public class ColoringGameSetup : EditorWindow
         iconRT.offsetMin = Vector2.zero; iconRT.offsetMax = Vector2.zero;
         var ii = icon.AddComponent<Image>();
         ii.preserveAspect = true; ii.color = Color.white; ii.raycastTarget = false;
+
+        // Tip color indicator — small paint mark at the brush bristles (top)
+        var tip = new GameObject("Tip");
+        tip.transform.SetParent(icon.transform, false);
+        var tipRT = tip.AddComponent<RectTransform>();
+        tipRT.anchorMin = new Vector2(0.35f, 0.82f);
+        tipRT.anchorMax = new Vector2(0.65f, 0.97f);
+        tipRT.offsetMin = Vector2.zero;
+        tipRT.offsetMax = Vector2.zero;
+        var tipImg = tip.AddComponent<Image>();
+        tipImg.sprite = circleSprite;
+        tipImg.color = Color.red; // updated at runtime
+        tipImg.raycastTarget = false;
 
         var p = PrefabUtility.SaveAsPrefabAsset(root, "Assets/Prefabs/UI/BrushSizeButton.prefab");
         Object.DestroyImmediate(root); return p;
@@ -334,7 +347,7 @@ public class ColoringGameSetup : EditorWindow
         panelRT.offsetMin = new Vector2(PanelPadH, 8);
         panelRT.offsetMax = new Vector2(-PanelPadH, -8);
         var panelVL = panelGO.AddComponent<VerticalLayoutGroup>();
-        panelVL.spacing = 8;
+        panelVL.spacing = 12;
         panelVL.childAlignment = TextAnchor.UpperCenter;
         panelVL.childForceExpandWidth = true;
         panelVL.childForceExpandHeight = false;

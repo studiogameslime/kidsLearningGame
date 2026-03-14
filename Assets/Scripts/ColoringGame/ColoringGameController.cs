@@ -65,6 +65,7 @@ public class ColoringGameController : MonoBehaviour
     private bool isEraserActive = false;
     private List<Image> colorIndicators = new List<Image>();
     private List<Image> brushIndicators = new List<Image>();
+    private List<Image> brushTipImages = new List<Image>();
     private List<Image> stickerIndicators = new List<Image>();
 
     private void Start()
@@ -242,6 +243,23 @@ public class ColoringGameController : MonoBehaviour
             {
                 var iconImg = icon.GetComponent<Image>();
                 if (iconImg != null) iconImg.sprite = brushIcons[i];
+
+                // Find tip color indicator and scale per brush size
+                var tip = icon.Find("Tip");
+                if (tip != null)
+                {
+                    var tipRT = tip.GetComponent<RectTransform>();
+                    if (tipRT != null)
+                    {
+                        // Small=0, Medium=1, Large=2 → progressively bigger circle
+                        float s = 0.05f + i * 0.03f;  // 0.05, 0.08, 0.11
+                        float cy = 0.88f; // center Y near top
+                        tipRT.anchorMin = new Vector2(0.5f - s, cy - s);
+                        tipRT.anchorMax = new Vector2(0.5f + s, cy + s);
+                    }
+                    var tipImg = tip.GetComponent<Image>();
+                    if (tipImg != null) brushTipImages.Add(tipImg);
+                }
             }
 
             var bgImg = go.GetComponent<Image>();
@@ -251,6 +269,7 @@ public class ColoringGameController : MonoBehaviour
         }
 
         UpdateBrushSelection();
+        UpdateBrushTipColors();
     }
 
     private void SelectColor(int index)
@@ -264,6 +283,7 @@ public class ColoringGameController : MonoBehaviour
         UpdateColorSelection();
         UpdateStickerSelection();
         UpdateEraserVisual();
+        UpdateBrushTipColors();
     }
 
     private void SelectBrushSize(int index)
@@ -285,6 +305,7 @@ public class ColoringGameController : MonoBehaviour
         UpdateEraserVisual();
         UpdateColorSelection();
         UpdateStickerSelection();
+        UpdateBrushTipColors();
     }
 
     private void OnUndo()
@@ -317,6 +338,13 @@ public class ColoringGameController : MonoBehaviour
                 ? new Color(0.85f, 0.85f, 0.85f, 1f)
                 : new Color(1f, 1f, 1f, 0.5f);
         }
+    }
+
+    private void UpdateBrushTipColors()
+    {
+        Color tipColor = isEraserActive ? Color.white : PaletteColors[selectedColorIndex];
+        foreach (var tip in brushTipImages)
+            tip.color = tipColor;
     }
 
     private void UpdateEraserVisual()
