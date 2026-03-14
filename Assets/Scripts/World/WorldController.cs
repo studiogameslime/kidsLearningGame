@@ -357,17 +357,18 @@ public class WorldController : MonoBehaviour
                 shineDotImg.color = new Color(1f, 1f, 1f, 0.6f);
                 shineDotImg.raycastTarget = false;
 
-                // String hanging below balloon
-                var stringGO = new GameObject("String");
-                stringGO.transform.SetParent(go.transform, false);
-                var stringRT = stringGO.AddComponent<RectTransform>();
-                stringRT.anchorMin = new Vector2(0.48f, -0.6f);
-                stringRT.anchorMax = new Vector2(0.52f, 0.02f);
-                stringRT.offsetMin = Vector2.zero;
-                stringRT.offsetMax = Vector2.zero;
-                var stringImg = stringGO.AddComponent<Image>();
-                stringImg.color = new Color(bubbleColor.r * 0.6f, bubbleColor.g * 0.6f, bubbleColor.b * 0.6f, 0.5f);
-                stringImg.raycastTarget = false;
+                // Curly ribbon string below balloon
+                var ribbonGO = new GameObject("Ribbon");
+                ribbonGO.transform.SetParent(go.transform, false);
+                var ribbonRT = ribbonGO.AddComponent<RectTransform>();
+                ribbonRT.anchorMin = new Vector2(0.5f, 0f);
+                ribbonRT.anchorMax = new Vector2(0.5f, 0f);
+                ribbonRT.pivot = new Vector2(0.5f, 1f);
+                ribbonRT.anchoredPosition = Vector2.zero;
+                ribbonRT.sizeDelta = new Vector2(20f, sizeVariation * 0.65f);
+                var ribbonString = ribbonGO.AddComponent<BalloonString>();
+                Color ribbonColor = new Color(bubbleColor.r * 0.65f, bubbleColor.g * 0.65f, bubbleColor.b * 0.65f, 0.55f);
+                ribbonString.ribbonColor = ribbonColor;
 
                 var balloon = go.AddComponent<WorldBalloon>();
                 balloon.bubbleColor = bubbleColor;
