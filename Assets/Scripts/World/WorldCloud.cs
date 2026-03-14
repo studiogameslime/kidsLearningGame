@@ -92,6 +92,7 @@ public class WorldCloud : MonoBehaviour
         rainGO.transform.position = transform.position;
 
         var ps = rainGO.AddComponent<ParticleSystem>();
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         var main = ps.main;
         main.duration = 1.2f;
         main.loop = false;
