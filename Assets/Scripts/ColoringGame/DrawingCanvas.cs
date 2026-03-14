@@ -19,6 +19,9 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
     public int brushSize = 20;
     public bool isEraser;
 
+    [Header("Sticker")]
+    public int stickerStampSize = 80;
+
     // The drawable texture and its UI display
     private Texture2D drawTexture;
     private RawImage rawImage;
@@ -31,6 +34,10 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
     // Tracks previous draw position for smooth line interpolation
     private Vector2? lastDrawPos;
     private bool isDrawing;
+
+    // Sticker stamp mode
+    private Sprite activeSticker;
+    public bool IsStickerMode => activeSticker != null;
 
     // Base color for the canvas (white) and the eraser
     private Color clearColor = Color.white;
@@ -68,6 +75,11 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
     public void SetEraser(bool eraser)
     {
         isEraser = eraser;
+    }
+
+    public void SetStickerMode(Sprite sticker)
+    {
+        activeSticker = sticker;
     }
 
     public void Clear()
@@ -119,12 +131,17 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
         // Save snapshot for undo before starting a new stroke
         SaveUndoSnapshot();
 
-        isDrawing = true;
-        lastDrawPos = null;
-
         Vector2 localPos;
         if (ScreenToTexturePos(eventData.position, out localPos))
         {
+            if (activeSticker != null)
+            {
+                StampSprite(activeSticker, localPos, stickerStampSize);
+                return;
+            }
+
+            isDrawing = true;
+            lastDrawPos = null;
             DrawCircle(localPos);
             lastDrawPos = localPos;
             drawTexture.Apply();
@@ -133,7 +150,7 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
 
     public void OnDrag(PointerEventData eventData)
     {
-        if (!isDrawing) return;
+        if (!isDrawing || activeSticker != null) return;
 
         Vector2 localPos;
         if (ScreenToTexturePos(eventData.position, out localPos))
@@ -191,6 +208,63 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
             Vector2 pos = Vector2.Lerp(from, to, t);
             DrawCircle(pos);
         }
+    }
+
+    /// <summary>Stamp a sprite onto the drawing texture at the given position.</summary>
+    private void StampSprite(Sprite sprite, Vector2 center, int stampSize)
+    {
+        if (sprite == null || sprite.texture == null) return;
+
+        // Blit full texture into a readable Texture2D via RenderTexture
+        int tw = sprite.texture.width;
+        int th = sprite.texture.height;
+        var rt = RenderTexture.GetTemporary(tw, th, 0, RenderTextureFormat.ARGB32);
+        var prev = RenderTexture.active;
+        Graphics.Blit(sprite.texture, rt);
+        RenderTexture.active = rt;
+        var readable = new Texture2D(tw, th, TextureFormat.RGBA32, false);
+        readable.ReadPixels(new Rect(0, 0, tw, th), 0, 0);
+        readable.Apply();
+        RenderTexture.active = prev;
+        RenderTexture.ReleaseTemporary(rt);
+
+        // Extract the sprite's sub-rect pixels
+        Rect srcRect = sprite.textureRect;
+        int srcX = (int)srcRect.x, srcY = (int)srcRect.y;
+        int srcW = (int)srcRect.width, srcH = (int)srcRect.height;
+
+        int cx = Mathf.RoundToInt(center.x);
+        int cy = Mathf.RoundToInt(center.y);
+        int halfSize = stampSize / 2;
+
+        for (int y = 0; y < stampSize; y++)
+        {
+            for (int x = 0; x < stampSize; x++)
+            {
+                // Sample from sprite rect
+                int sx = srcX + Mathf.Clamp((int)((float)x / stampSize * srcW), 0, srcW - 1);
+                int sy = srcY + Mathf.Clamp((int)((float)y / stampSize * srcH), 0, srcH - 1);
+                Color src = readable.GetPixel(sx, sy);
+
+                if (src.a < 0.05f) continue;
+
+                int dx = cx - halfSize + x;
+                int dy = cy - halfSize + y;
+                if (dx < 0 || dx >= textureWidth || dy < 0 || dy >= textureHeight) continue;
+
+                // Alpha blend onto drawing
+                Color dst = drawTexture.GetPixel(dx, dy);
+                float a = src.a;
+                drawTexture.SetPixel(dx, dy, new Color(
+                    src.r * a + dst.r * (1f - a),
+                    src.g * a + dst.g * (1f - a),
+                    src.b * a + dst.b * (1f - a),
+                    Mathf.Max(dst.a, a)));
+            }
+        }
+
+        Destroy(readable);
+        drawTexture.Apply();
     }
 
     // ── Coordinate Conversion ──

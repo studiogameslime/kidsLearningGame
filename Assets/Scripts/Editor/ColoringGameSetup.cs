@@ -5,30 +5,46 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
 using System.Collections.Generic;
-using System.IO;
 
 /// <summary>
-/// Builds the ColoringGame scene, palette prefabs, and updates coloring data.
-/// Run via Tools > Kids Learning Game > Setup Coloring Game.
+/// Builds the ColoringGame scene in LANDSCAPE orientation.
+///
+/// Layout:
+///   Header (80px) — home left, title center, save + done right
+///   Left ~64%  — drawing canvas with outline overlay
+///   Right ~36% — fixed tool panel (no scroll):
+///       1. Reference image (hidden by default)
+///       2. Action icons:  eraser | undo | clear
+///       3. צבעים:         6-column color grid
+///       4. מברשות:        3 brush icons
+///       5. מדבקות:        sticker grid (all sliced sprites, no scroll)
 /// </summary>
 public class ColoringGameSetup : EditorWindow
 {
-    private static readonly Vector2 Ref = new Vector2(1080, 1920);
+    private static readonly Vector2 Ref = new Vector2(1920, 1080);
 
     // Colors
-    private static readonly Color BgColor       = HexColor("#FFF8F0");  // warm cream
-    private static readonly Color TopBarColor   = HexColor("#F8E8D8");  // light peach
-    private static readonly Color BottomColor   = HexColor("#FAFAFA");  // near white
-    private static readonly Color ToolBtnColor  = HexColor("#F0F0F0");
-    private static readonly Color CanvasBorder  = HexColor("#E0D5C8");  // subtle warm border
+    private static readonly Color BgColor       = HexColor("#FFF8F0");
+    private static readonly Color TopBarColor   = HexColor("#F8E8D8");
+    private static readonly Color PanelColor    = HexColor("#FDF6EF");
+    private static readonly Color CanvasBorder  = HexColor("#E0D5C8");
+    private static readonly Color ActionBtnBg   = HexColor("#EEEEEE");
+    private static readonly Color SectionTitleColor = HexColor("#7A6A5A");
+    private static readonly Color ToolRowBg     = HexColor("#F5EDE4");
 
-    // Layout — sized for kids' fingers
-    private const int TopBarHeight = 130;
-    private const int PaletteHeight = 110;    // single scrollable row of big color circles
-    private const int BrushBarHeight = 80;
-    private const int CanvasPad = 16;
-    private const int RefImageSize = 220;     // colored reference sprite preview (1.5x bigger)
-    private const int ColorCircleSize = 86;   // big color circles for kids
+    // Layout
+    private const int TopBarHeight    = 80;
+    private const int CanvasPad       = 12;
+    private const int RefImageSize    = 220;
+    private const int ColorCircleSize = 54;
+    private const int BrushBtnSize    = 80;
+    private const int StickerSize     = 72;
+    private const int ToolBtnSize     = 60;
+    private const int SectionTitleFontSize = 20;
+    private const int PanelPadH       = 12; // horizontal padding inside right panel
+    private const int ToolRowHeight   = 72;
+
+    private const float LeftRatio = 0.64f;
 
     public static void RunSetupSilent()
     {
@@ -39,7 +55,7 @@ public class ColoringGameSetup : EditorWindow
             var circleSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/Circle.png");
 
             var colorBtnPrefab = CreateColorButtonPrefab(circleSprite);
-            var brushBtnPrefab = CreateBrushSizeButtonPrefab(roundedRect, circleSprite);
+            var brushBtnPrefab = CreateBrushButtonPrefab(roundedRect);
 
             EditorUtility.DisplayProgressBar("Coloring Game Setup", "Updating coloring data…", 0.3f);
             UpdateColoringData();
@@ -63,150 +79,84 @@ public class ColoringGameSetup : EditorWindow
     private static void UpdateColoringData()
     {
         var coloring = AssetDatabase.LoadAssetAtPath<GameItemData>("Assets/Data/Games/Coloring.asset");
-        if (coloring == null)
-        {
-            Debug.LogError("Coloring.asset not found. Run Setup Project first.");
-            return;
-        }
+        if (coloring == null) { Debug.LogError("Coloring.asset not found."); return; }
 
-        // Add "Free Draw" as first sub-item if not already present
-        bool hasFree = false;
-        foreach (var item in coloring.subItems)
-        {
-            if (item.categoryKey == "free") { hasFree = true; break; }
-        }
-
-        if (!hasFree)
-        {
-            coloring.subItems.Insert(0, new SubItemData
-            {
-                id = "coloring_free",
-                title = "\u05D3\u05E3 \u05D7\u05D3\u05E9", // דף חדש (New Page)
-                cardColor = HexColor("#FFD93D"),
-                categoryKey = "free",
-                targetSceneName = "ColoringGame"
+        if (!HasKey(coloring, "free"))
+            coloring.subItems.Insert(0, new SubItemData {
+                id = "coloring_free", title = "\u05D3\u05E3 \u05D7\u05D3\u05E9",
+                cardColor = HexColor("#FFD93D"), categoryKey = "free", targetSceneName = "ColoringGame"
             });
-        }
 
-        // Add "Selfie" option if not already present
-        bool hasSelfie = false;
-        foreach (var item in coloring.subItems)
-        {
-            if (item.categoryKey == "selfie") { hasSelfie = true; break; }
-        }
-
-        if (!hasSelfie)
-        {
-            var cameraIcon = LoadSprite("Assets/Art/Camera.png");
-            int insertIdx = 1;
-            coloring.subItems.Insert(insertIdx, new SubItemData
-            {
-                id = "coloring_selfie",
-                title = "\u05E1\u05DC\u05E4\u05D9", // סלפי (Selfie)
-                cardColor = HexColor("#F472B6"),
-                categoryKey = "selfie",
-                targetSceneName = "ColoringGame",
-                thumbnail = cameraIcon
+        if (!HasKey(coloring, "selfie"))
+            coloring.subItems.Insert(1, new SubItemData {
+                id = "coloring_selfie", title = "\u05E1\u05DC\u05E4\u05D9",
+                cardColor = HexColor("#F472B6"), categoryKey = "selfie",
+                targetSceneName = "ColoringGame", thumbnail = LoadSprite("Assets/Art/Camera.png")
             });
-        }
-
-        // Assign contentAsset sprites to each animal sub-item
-        string[] spriteNames = {
-            "Bear", "Bird", "Cat", "Chicken", "Cow", "Dog", "Donkey", "Duck",
-            "Elephant", "Fish", "Frog", "Giraffe", "Horse", "Lion", "Monkey",
-            "Sheep", "Snake", "Turtle", "Zebra"
-        };
 
         foreach (var item in coloring.subItems)
         {
             if (item.categoryKey == "free" || item.categoryKey == "selfie") continue;
-
             string name = char.ToUpper(item.categoryKey[0]) + item.categoryKey.Substring(1);
-
-            // Use puzzle Main image for both painting and outline generation
-            string mainPath = $"Assets/Art/Animals/{name}/Art/Puzzle/{name} Main.png";
-            var sprite = LoadSprite(mainPath);
-            if (sprite != null)
-            {
-                item.contentAsset = sprite;
-                item.thumbnail = sprite;
-            }
+            var spr = LoadSprite($"Assets/Art/Animals/{name}/Art/Puzzle/{name} Main.png");
+            if (spr != null) { item.contentAsset = spr; item.thumbnail = spr; }
         }
-
         EditorUtility.SetDirty(coloring);
+    }
+
+    private static bool HasKey(GameItemData g, string key)
+    {
+        foreach (var i in g.subItems) if (i.categoryKey == key) return true;
+        return false;
     }
 
     // ─────────────────────────────────────────
     //  PREFABS
     // ─────────────────────────────────────────
 
-    /// <summary>Color palette button: circle with a selection ring child.</summary>
     private static GameObject CreateColorButtonPrefab(Sprite circleSprite)
     {
         EnsureFolder("Assets/Prefabs/UI");
-
         var root = new GameObject("ColorButton");
-        var rootRT = root.AddComponent<RectTransform>();
-        rootRT.sizeDelta = new Vector2(ColorCircleSize, ColorCircleSize);
-
+        root.AddComponent<RectTransform>().sizeDelta = new Vector2(ColorCircleSize, ColorCircleSize);
         var img = root.AddComponent<Image>();
-        img.sprite = circleSprite;
-        img.color = Color.red; // placeholder, set at runtime
-        img.raycastTarget = true;
-
+        img.sprite = circleSprite; img.color = Color.red; img.raycastTarget = true;
         root.AddComponent<Button>().targetGraphic = img;
 
-        // Selection ring (hidden by default)
         var ring = new GameObject("Ring");
         ring.transform.SetParent(root.transform, false);
         var ringRT = ring.AddComponent<RectTransform>();
-        ringRT.anchorMin = Vector2.zero;
-        ringRT.anchorMax = Vector2.one;
-        ringRT.offsetMin = new Vector2(-6, -6);
-        ringRT.offsetMax = new Vector2(6, 6);
-        var ringImg = ring.AddComponent<Image>();
-        ringImg.sprite = circleSprite;
-        ringImg.color = new Color(0.3f, 0.3f, 0.3f, 0.5f);
-        ringImg.raycastTarget = false;
+        ringRT.anchorMin = Vector2.zero; ringRT.anchorMax = Vector2.one;
+        ringRT.offsetMin = new Vector2(-5, -5); ringRT.offsetMax = new Vector2(5, 5);
+        var ri = ring.AddComponent<Image>();
+        ri.sprite = circleSprite; ri.color = new Color(0.3f, 0.3f, 0.3f, 0.5f); ri.raycastTarget = false;
         ring.SetActive(false);
 
-        var prefab = PrefabUtility.SaveAsPrefabAsset(root, "Assets/Prefabs/UI/ColorButton.prefab");
-        Object.DestroyImmediate(root);
-        return prefab;
+        var p = PrefabUtility.SaveAsPrefabAsset(root, "Assets/Prefabs/UI/ColorButton.prefab");
+        Object.DestroyImmediate(root); return p;
     }
 
-    /// <summary>Brush size button: rounded rect with a dot inside showing relative size.</summary>
-    private static GameObject CreateBrushSizeButtonPrefab(Sprite roundedRect, Sprite circleSprite)
+    private static GameObject CreateBrushButtonPrefab(Sprite roundedRect)
     {
         EnsureFolder("Assets/Prefabs/UI");
-
         var root = new GameObject("BrushSizeButton");
-        var rootRT = root.AddComponent<RectTransform>();
-        rootRT.sizeDelta = new Vector2(68, 68);
-
+        root.AddComponent<RectTransform>().sizeDelta = new Vector2(BrushBtnSize, BrushBtnSize);
         var img = root.AddComponent<Image>();
-        img.sprite = roundedRect;
-        img.type = Image.Type.Sliced;
-        img.color = new Color(1f, 1f, 1f, 0.5f);
-        img.raycastTarget = true;
-
+        img.sprite = roundedRect; img.type = Image.Type.Sliced;
+        img.color = new Color(1f, 1f, 1f, 0.5f); img.raycastTarget = true;
         root.AddComponent<Button>().targetGraphic = img;
 
-        // Size indicator dot
-        var dot = new GameObject("Dot");
-        dot.transform.SetParent(root.transform, false);
-        var dotRT = dot.AddComponent<RectTransform>();
-        dotRT.anchorMin = new Vector2(0.5f, 0.5f);
-        dotRT.anchorMax = new Vector2(0.5f, 0.5f);
-        dotRT.sizeDelta = new Vector2(16, 16); // set at runtime
-        var dotImg = dot.AddComponent<Image>();
-        dotImg.sprite = circleSprite;
-        dotImg.color = new Color(0.25f, 0.25f, 0.25f, 1f);
-        dotImg.raycastTarget = false;
+        var icon = new GameObject("Icon");
+        icon.transform.SetParent(root.transform, false);
+        var iconRT = icon.AddComponent<RectTransform>();
+        iconRT.anchorMin = new Vector2(0.08f, 0.08f);
+        iconRT.anchorMax = new Vector2(0.92f, 0.92f);
+        iconRT.offsetMin = Vector2.zero; iconRT.offsetMax = Vector2.zero;
+        var ii = icon.AddComponent<Image>();
+        ii.preserveAspect = true; ii.color = Color.white; ii.raycastTarget = false;
 
-        var prefab = PrefabUtility.SaveAsPrefabAsset(root, "Assets/Prefabs/UI/BrushSizeButton.prefab");
-        Object.DestroyImmediate(root);
-        return prefab;
+        var p = PrefabUtility.SaveAsPrefabAsset(root, "Assets/Prefabs/UI/BrushSizeButton.prefab");
+        Object.DestroyImmediate(root); return p;
     }
 
     // ─────────────────────────────────────────
@@ -219,290 +169,338 @@ public class ColoringGameSetup : EditorWindow
         EnsureFolder("Assets/Scenes");
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-        // Camera
+        // ── Camera ──
         var camGO = new GameObject("Main Camera");
-        camGO.tag = "MainCamera";
-        camGO.AddComponent<AudioListener>();
+        camGO.tag = "MainCamera"; camGO.AddComponent<AudioListener>();
         var cam = camGO.AddComponent<Camera>();
-        cam.clearFlags = CameraClearFlags.SolidColor;
-        cam.backgroundColor = BgColor;
-        cam.orthographic = true;
-        var urpType = System.Type.GetType("UnityEngine.Rendering.Universal.UniversalAdditionalCameraData, Unity.RenderPipelines.Universal.Runtime");
-        if (urpType != null) camGO.AddComponent(urpType);
+        cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = BgColor; cam.orthographic = true;
+        var urp = System.Type.GetType("UnityEngine.Rendering.Universal.UniversalAdditionalCameraData, Unity.RenderPipelines.Universal.Runtime");
+        if (urp != null) camGO.AddComponent(urp);
 
-        // EventSystem
-        var esGO = new GameObject("EventSystem");
-        esGO.AddComponent<EventSystem>();
-        var inputType = System.Type.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem");
-        if (inputType != null) esGO.AddComponent(inputType);
-        else esGO.AddComponent<StandaloneInputModule>();
+        // ── EventSystem ──
+        var esGO = new GameObject("EventSystem"); esGO.AddComponent<EventSystem>();
+        var inp = System.Type.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem");
+        if (inp != null) esGO.AddComponent(inp); else esGO.AddComponent<StandaloneInputModule>();
 
-        // Canvas
+        // ── Canvas ──
         var canvasGO = new GameObject("ColoringCanvas");
         var canvas = canvasGO.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         var scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = Ref;
-        scaler.matchWidthOrHeight = 0f;
+        scaler.referenceResolution = Ref; scaler.matchWidthOrHeight = 0.5f;
         canvasGO.AddComponent<GraphicRaycaster>();
 
-        // Background
-        var bg = CreateStretchImage(canvasGO.transform, "Background", BgColor);
+        var bg = StretchImage(canvasGO.transform, "Background", BgColor);
         bg.GetComponent<Image>().raycastTarget = false;
 
-        // Safe area
-        var safeArea = new GameObject("SafeArea");
-        safeArea.transform.SetParent(canvasGO.transform, false);
-        var safeRT = safeArea.AddComponent<RectTransform>();
-        StretchFull(safeRT);
-        safeArea.AddComponent<SafeAreaHandler>();
+        var safeGO = new GameObject("SafeArea");
+        safeGO.transform.SetParent(canvasGO.transform, false);
+        Full(safeGO.AddComponent<RectTransform>());
+        safeGO.AddComponent<SafeAreaHandler>();
 
-        // ── TOP BAR ──
-        var topBar = CreateStretchImage(safeArea.transform, "TopBar", TopBarColor);
-        var topBarRT = topBar.GetComponent<RectTransform>();
-        topBarRT.anchorMin = new Vector2(0, 1);
-        topBarRT.anchorMax = new Vector2(1, 1);
-        topBarRT.pivot = new Vector2(0.5f, 1);
-        topBarRT.sizeDelta = new Vector2(0, TopBarHeight);
-        topBar.GetComponent<Image>().raycastTarget = false;
-        topBar.AddComponent<ThemeHeader>();
+        // ═══════════════════════════════════
+        //  HEADER (80px)
+        //  [Home]   [Title]   [Save] [Done]
+        // ═══════════════════════════════════
 
-        // Title
+        var bar = StretchImage(safeGO.transform, "TopBar", TopBarColor);
+        var barRT = bar.GetComponent<RectTransform>();
+        barRT.anchorMin = new Vector2(0, 1); barRT.anchorMax = new Vector2(1, 1);
+        barRT.pivot = new Vector2(0.5f, 1); barRT.sizeDelta = new Vector2(0, TopBarHeight);
+        bar.GetComponent<Image>().raycastTarget = false;
+        bar.AddComponent<ThemeHeader>();
+
         var titleGO = new GameObject("Title");
-        titleGO.transform.SetParent(topBar.transform, false);
+        titleGO.transform.SetParent(bar.transform, false);
         var titleRT = titleGO.AddComponent<RectTransform>();
-        StretchFull(titleRT);
-        titleRT.offsetMin = new Vector2(100, 0);
-        titleRT.offsetMax = new Vector2(-100, 0);
+        Full(titleRT); titleRT.offsetMin = new Vector2(100, 0); titleRT.offsetMax = new Vector2(-160, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = HebrewFixer.Fix("\u05E6\u05D1\u05D9\u05E2\u05D4"); // צביעה
-        titleTMP.isRightToLeftText = false;
-        titleTMP.fontSize = 48;
-        titleTMP.fontStyle = FontStyles.Bold;
-        titleTMP.color = Color.white;
-        titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.raycastTarget = false;
+        titleTMP.text = HebrewFixer.Fix("\u05E6\u05D1\u05D9\u05E2\u05D4");
+        titleTMP.isRightToLeftText = false; titleTMP.fontSize = 36;
+        titleTMP.fontStyle = FontStyles.Bold; titleTMP.color = Color.white;
+        titleTMP.alignment = TextAlignmentOptions.Center; titleTMP.raycastTarget = false;
 
         // Home button (top-left)
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
-        var homeGO = CreateIconButton(topBar.transform, "HomeButton", homeIcon,
-            new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(16, -15), new Vector2(90, 90));
+        var homeGO = IconBtn(bar.transform, "HomeButton", homeIcon,
+            new Vector2(0, 1), new Vector2(0, 1), new Vector2(16, -8), new Vector2(64, 64));
 
-        // Undo button (top-right area) — return arrow icon
-        var undoIcon = LoadSprite("Assets/Art/Icons/return.png");
-        var undoGO = CreateIconButton(topBar.transform, "UndoButton", undoIcon,
-            new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-120, -18), new Vector2(70, 70));
-        undoGO.GetComponent<Image>().color = Color.black;
-
-        // Save button (top-right, before undo/clear) — save icon
+        // Save button (top-right) — green tinted
         var saveIcon = LoadSprite("Assets/Art/Icons/save.png");
-        var saveGO = CreateIconButton(topBar.transform, "SaveButton", saveIcon,
-            new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-210, -18), new Vector2(70, 70));
-        saveGO.GetComponent<Image>().color = Color.black;
+        var saveGO = new GameObject("SaveButton");
+        saveGO.transform.SetParent(bar.transform, false);
+        var saveRT = saveGO.AddComponent<RectTransform>();
+        saveRT.anchorMin = new Vector2(1, 1); saveRT.anchorMax = new Vector2(1, 1);
+        saveRT.pivot = new Vector2(1, 1);
+        saveRT.anchoredPosition = new Vector2(-16, -8); saveRT.sizeDelta = new Vector2(64, 64);
+        var saveBgImg = saveGO.AddComponent<Image>();
+        saveBgImg.sprite = roundedRect; saveBgImg.type = Image.Type.Sliced;
+        saveBgImg.color = HexColor("#A5D6A7"); saveBgImg.raycastTarget = true;
+        saveGO.AddComponent<Button>().targetGraphic = saveBgImg;
+        var saveIconGO = new GameObject("Icon");
+        saveIconGO.transform.SetParent(saveGO.transform, false);
+        var saveIconRT = saveIconGO.AddComponent<RectTransform>();
+        saveIconRT.anchorMin = new Vector2(0.15f, 0.15f); saveIconRT.anchorMax = new Vector2(0.85f, 0.85f);
+        saveIconRT.offsetMin = Vector2.zero; saveIconRT.offsetMax = Vector2.zero;
+        var saveIconImg = saveIconGO.AddComponent<Image>();
+        saveIconImg.sprite = saveIcon; saveIconImg.preserveAspect = true;
+        saveIconImg.color = Color.white; saveIconImg.raycastTarget = false;
 
-        // Clear button (top-right) — trashcan icon
-        var trashIcon = LoadSprite("Assets/Art/Icons/trashcan.png");
-        var clearGO = CreateIconButton(topBar.transform, "ClearButton", trashIcon,
-            new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-30, -18), new Vector2(70, 70));
-        clearGO.GetComponent<Image>().color = Color.black;
+        // Done button (journey only, next to save)
+        var doneGO = new GameObject("DoneButton");
+        doneGO.transform.SetParent(bar.transform, false);
+        var doneRT = doneGO.AddComponent<RectTransform>();
+        doneRT.anchorMin = new Vector2(1, 1); doneRT.anchorMax = new Vector2(1, 1);
+        doneRT.pivot = new Vector2(1, 1);
+        doneRT.anchoredPosition = new Vector2(-88, -8); doneRT.sizeDelta = new Vector2(64, 64);
+        var doneImg = doneGO.AddComponent<Image>();
+        doneImg.sprite = roundedRect; doneImg.type = Image.Type.Sliced;
+        doneImg.color = HexColor("#4CAF50"); doneImg.raycastTarget = true;
+        doneGO.AddComponent<Button>().targetGraphic = doneImg;
+        var doneLbl = new GameObject("Label");
+        doneLbl.transform.SetParent(doneGO.transform, false);
+        Full(doneLbl.AddComponent<RectTransform>());
+        var doneTMP = doneLbl.AddComponent<TextMeshProUGUI>();
+        doneTMP.text = "\u2714"; doneTMP.fontSize = 30;
+        doneTMP.color = Color.white; doneTMP.alignment = TextAlignmentOptions.Center;
+        doneTMP.raycastTarget = false;
+        doneGO.SetActive(false);
 
-        // ── COLOR PALETTE (scrollable horizontal row, ABOVE the canvas) ──
-        var paletteBar = new GameObject("PaletteBar");
-        paletteBar.transform.SetParent(safeArea.transform, false);
-        var paletteBarRT = paletteBar.AddComponent<RectTransform>();
-        paletteBarRT.anchorMin = new Vector2(0, 1);
-        paletteBarRT.anchorMax = new Vector2(1, 1);
-        paletteBarRT.pivot = new Vector2(0.5f, 1);
-        paletteBarRT.anchoredPosition = new Vector2(0, -TopBarHeight);
-        paletteBarRT.sizeDelta = new Vector2(0, PaletteHeight);
+        // ═══════════════════════════════════
+        //  CONTENT — below header
+        // ═══════════════════════════════════
 
-        // Palette background (child, behind everything)
-        var paletteBgGO = CreateStretchImage(paletteBar.transform, "PaletteBg", BottomColor);
-        paletteBgGO.GetComponent<Image>().raycastTarget = false;
+        var contentGO = new GameObject("Content");
+        contentGO.transform.SetParent(safeGO.transform, false);
+        var contentRT = contentGO.AddComponent<RectTransform>();
+        Full(contentRT); contentRT.offsetMax = new Vector2(0, -TopBarHeight);
 
-        // Viewport (masks the scrollable content)
-        var viewport = new GameObject("Viewport");
-        viewport.transform.SetParent(paletteBar.transform, false);
-        var viewportRT = viewport.AddComponent<RectTransform>();
-        StretchFull(viewportRT);
-        var viewportImg = viewport.AddComponent<Image>();
-        viewportImg.color = new Color(1, 1, 1, 0); // transparent but needed for Mask
-        viewportImg.raycastTarget = true;
-        viewport.AddComponent<RectMask2D>(); // clips children without needing an opaque image
+        // ═══════════════════════════════════
+        //  LEFT — DRAWING CANVAS (64%)
+        // ═══════════════════════════════════
 
-        // Scrollable content with HorizontalLayout
-        var colorContainer = new GameObject("Colors");
-        colorContainer.transform.SetParent(viewport.transform, false);
-        var colorContainerRT = colorContainer.AddComponent<RectTransform>();
-        colorContainerRT.anchorMin = new Vector2(0, 0);
-        colorContainerRT.anchorMax = new Vector2(0, 1);
-        colorContainerRT.pivot = new Vector2(0, 0.5f);
-        colorContainerRT.sizeDelta = new Vector2(1200, 0); // initial width, grows with ContentSizeFitter
+        var leftGO = new GameObject("LeftPanel");
+        leftGO.transform.SetParent(contentGO.transform, false);
+        var leftRT = leftGO.AddComponent<RectTransform>();
+        leftRT.anchorMin = Vector2.zero; leftRT.anchorMax = new Vector2(LeftRatio, 1);
+        leftRT.offsetMin = Vector2.zero; leftRT.offsetMax = Vector2.zero;
 
-        var colorLayout = colorContainer.AddComponent<HorizontalLayoutGroup>();
-        colorLayout.spacing = 12;
-        colorLayout.childAlignment = TextAnchor.MiddleCenter;
-        colorLayout.childForceExpandWidth = false;
-        colorLayout.childForceExpandHeight = false;
-        colorLayout.padding = new RectOffset(16, 16, 8, 8);
-
-        var colorFitter = colorContainer.AddComponent<ContentSizeFitter>();
-        colorFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-        colorFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
-
-        // ScrollRect on the palette bar itself
-        var paletteScroll = paletteBar.AddComponent<ScrollRect>();
-        paletteScroll.horizontal = true;
-        paletteScroll.vertical = false;
-        paletteScroll.movementType = ScrollRect.MovementType.Elastic;
-        paletteScroll.elasticity = 0.1f;
-        paletteScroll.scrollSensitivity = 20f;
-        paletteScroll.content = colorContainerRT;
-        paletteScroll.viewport = viewportRT;
-
-        // ── BRUSH BAR (under palette, above canvas) ──
-        var brushBar = new GameObject("BrushBar");
-        brushBar.transform.SetParent(safeArea.transform, false);
-        var brushBarRT = brushBar.AddComponent<RectTransform>();
-        brushBarRT.anchorMin = new Vector2(0, 1);
-        brushBarRT.anchorMax = new Vector2(1, 1);
-        brushBarRT.pivot = new Vector2(0.5f, 1);
-        brushBarRT.anchoredPosition = new Vector2(0, -(TopBarHeight + PaletteHeight));
-        brushBarRT.sizeDelta = new Vector2(0, BrushBarHeight);
-
-        var brushLayout = brushBar.AddComponent<HorizontalLayoutGroup>();
-        brushLayout.spacing = 16;
-        brushLayout.childAlignment = TextAnchor.MiddleCenter;
-        brushLayout.childForceExpandWidth = false;
-        brushLayout.childForceExpandHeight = false;
-        brushLayout.padding = new RectOffset(24, 24, 4, 4);
-
-        // Eraser button — phone icon
-        var phoneIcon = LoadSprite("Assets/Art/Icons/phone.png");
-        var eraserGO = new GameObject("EraserButton");
-        eraserGO.transform.SetParent(brushBar.transform, false);
-        var eraserRT = eraserGO.AddComponent<RectTransform>();
-        eraserRT.sizeDelta = new Vector2(56, 56);
-        var eraserImg = eraserGO.AddComponent<Image>();
-        eraserImg.sprite = phoneIcon;
-        eraserImg.preserveAspect = true;
-        eraserImg.color = Color.black;
-        eraserImg.raycastTarget = true;
-        eraserGO.AddComponent<Button>().targetGraphic = eraserImg;
-        var eraserHL = new GameObject("EraserHighlight");
-        eraserHL.transform.SetParent(eraserGO.transform, false);
-        var eraserHLRT = eraserHL.AddComponent<RectTransform>();
-        StretchFull(eraserHLRT);
-        eraserHLRT.offsetMin = new Vector2(-4, -4);
-        eraserHLRT.offsetMax = new Vector2(4, 4);
-        var eraserHLImg = eraserHL.AddComponent<Image>();
-        eraserHLImg.sprite = roundedRect;
-        eraserHLImg.type = Image.Type.Sliced;
-        eraserHLImg.color = new Color(0.9f, 0.3f, 0.3f, 0.4f);
-        eraserHLImg.raycastTarget = false;
-        eraserHL.SetActive(false);
-
-        // Spacer
-        var spacer = new GameObject("Spacer");
-        spacer.transform.SetParent(brushBar.transform, false);
-        var spacerLE = spacer.AddComponent<LayoutElement>();
-        spacerLE.flexibleWidth = 1;
-
-        // Brush size buttons container
-        var brushContainer = new GameObject("BrushSizes");
-        brushContainer.transform.SetParent(brushBar.transform, false);
-        var brushContainerRT = brushContainer.AddComponent<RectTransform>();
-        brushContainerRT.sizeDelta = new Vector2(250, BrushBarHeight);
-        var brushContainerLayout = brushContainer.AddComponent<HorizontalLayoutGroup>();
-        brushContainerLayout.spacing = 14;
-        brushContainerLayout.childAlignment = TextAnchor.MiddleCenter;
-        brushContainerLayout.childForceExpandWidth = false;
-        brushContainerLayout.childForceExpandHeight = false;
-
-        // ── DRAWING AREA (below brush bar, fills remaining space) ──
-        int topOffset = TopBarHeight + PaletteHeight + BrushBarHeight;
-        var canvasFrame = CreateStretchImage(safeArea.transform, "CanvasFrame", CanvasBorder);
-        var canvasFrameRT = canvasFrame.GetComponent<RectTransform>();
-        StretchFull(canvasFrameRT);
-        canvasFrameRT.offsetMax = new Vector2(-CanvasPad, -(topOffset + 4));
-        canvasFrameRT.offsetMin = new Vector2(CanvasPad, 8);
+        var canvasFrame = StretchImage(leftGO.transform, "CanvasFrame", CanvasBorder);
+        var cfRT = canvasFrame.GetComponent<RectTransform>();
+        Full(cfRT); cfRT.offsetMin = new Vector2(CanvasPad, CanvasPad); cfRT.offsetMax = new Vector2(-CanvasPad, -CanvasPad);
         canvasFrame.GetComponent<Image>().raycastTarget = false;
 
-        // White canvas background
-        var canvasBg = CreateStretchImage(canvasFrame.transform, "CanvasWhite", Color.white);
-        var canvasBgRT = canvasBg.GetComponent<RectTransform>();
-        StretchFull(canvasBgRT);
-        canvasBgRT.offsetMin = new Vector2(4, 4);
-        canvasBgRT.offsetMax = new Vector2(-4, -4);
+        var canvasBg = StretchImage(canvasFrame.transform, "CanvasWhite", Color.white);
+        var cbRT = canvasBg.GetComponent<RectTransform>();
+        Full(cbRT); cbRT.offsetMin = new Vector2(3, 3); cbRT.offsetMax = new Vector2(-3, -3);
         canvasBg.GetComponent<Image>().raycastTarget = false;
 
-        // Drawing layer (RawImage + DrawingCanvas)
         var drawGO = new GameObject("DrawingLayer");
         drawGO.transform.SetParent(canvasBg.transform, false);
-        var drawRT = drawGO.AddComponent<RectTransform>();
-        StretchFull(drawRT);
-        var drawRaw = drawGO.AddComponent<RawImage>();
-        drawRaw.color = Color.white;
+        Full(drawGO.AddComponent<RectTransform>());
+        drawGO.AddComponent<RawImage>().color = Color.white;
         var drawCanvas = drawGO.AddComponent<DrawingCanvas>();
 
-        // Outline overlay (for coloring mode, on top of drawing)
         var outlineGO = new GameObject("OutlineOverlay");
         outlineGO.transform.SetParent(canvasBg.transform, false);
-        var outlineRT = outlineGO.AddComponent<RectTransform>();
-        StretchFull(outlineRT);
+        Full(outlineGO.AddComponent<RectTransform>());
         var outlineRaw = outlineGO.AddComponent<RawImage>();
-        outlineRaw.color = Color.white;
-        outlineRaw.raycastTarget = false;
+        outlineRaw.color = Color.white; outlineRaw.raycastTarget = false;
         outlineGO.SetActive(false);
 
-        // ── REFERENCE IMAGE (colored sprite, TOP-RIGHT overlaid on canvas) ──
+        // ═══════════════════════════════════
+        //  RIGHT — TOOL PANEL (36%)
+        //
+        //  NO SCROLL. Strict vertical order:
+        //   1. Reference image (hidden by default)
+        //   2. Action icons: eraser | undo | clear
+        //   3. צבעים — color grid (6/row)
+        //   4. מברשות — brush icons
+        //   5. מדבקות — sticker grid (5/row, no scroll)
+        // ═══════════════════════════════════
+
+        var rightGO = StretchImage(contentGO.transform, "RightPanel", PanelColor);
+        var rightRT = rightGO.GetComponent<RectTransform>();
+        rightRT.anchorMin = new Vector2(LeftRatio, 0); rightRT.anchorMax = new Vector2(1, 1);
+        rightRT.offsetMin = Vector2.zero; rightRT.offsetMax = Vector2.zero;
+        rightGO.GetComponent<Image>().raycastTarget = false;
+
+        // Main vertical layout — NO scroll
+        var panelGO = new GameObject("PanelLayout");
+        panelGO.transform.SetParent(rightGO.transform, false);
+        var panelRT = panelGO.AddComponent<RectTransform>();
+        Full(panelRT);
+        panelRT.offsetMin = new Vector2(PanelPadH, 8);
+        panelRT.offsetMax = new Vector2(-PanelPadH, -8);
+        var panelVL = panelGO.AddComponent<VerticalLayoutGroup>();
+        panelVL.spacing = 8;
+        panelVL.childAlignment = TextAnchor.UpperCenter;
+        panelVL.childForceExpandWidth = true;
+        panelVL.childForceExpandHeight = false;
+        panelVL.padding = new RectOffset(0, 0, 0, 0);
+
+        // ── 1. Reference Image (hidden by default, shown for animal coloring) ──
         var refBgGO = new GameObject("RefBackground");
-        refBgGO.transform.SetParent(safeArea.transform, false);
-        var refBgRT = refBgGO.AddComponent<RectTransform>();
-        refBgRT.anchorMin = new Vector2(1, 1);
-        refBgRT.anchorMax = new Vector2(1, 1);
-        refBgRT.pivot = new Vector2(1, 1);
-        refBgRT.anchoredPosition = new Vector2(-CanvasPad, -(topOffset + 8));
-        refBgRT.sizeDelta = new Vector2(RefImageSize + 16, RefImageSize + 16);
+        refBgGO.transform.SetParent(panelGO.transform, false);
+        refBgGO.AddComponent<RectTransform>();
+        var refBgLE = refBgGO.AddComponent<LayoutElement>();
+        refBgLE.preferredHeight = RefImageSize + 16;
+        refBgLE.preferredWidth = RefImageSize + 16;
+        refBgLE.flexibleWidth = 0;
         var refBgImg = refBgGO.AddComponent<Image>();
-        refBgImg.sprite = roundedRect;
-        refBgImg.type = Image.Type.Sliced;
-        refBgImg.color = new Color(1f, 1f, 1f, 0.92f);
-        refBgImg.raycastTarget = false;
+        refBgImg.sprite = roundedRect; refBgImg.type = Image.Type.Sliced;
+        refBgImg.color = new Color(1f, 1f, 1f, 0.95f); refBgImg.raycastTarget = false;
         refBgGO.SetActive(false);
 
-        // Colored sprite on top
         var refGO = new GameObject("ReferenceSprite");
         refGO.transform.SetParent(refBgGO.transform, false);
         var refRT = refGO.AddComponent<RectTransform>();
-        StretchFull(refRT);
-        refRT.offsetMin = new Vector2(8, 8);
-        refRT.offsetMax = new Vector2(-8, -8);
+        Full(refRT); refRT.offsetMin = new Vector2(8, 8); refRT.offsetMax = new Vector2(-8, -8);
         var refImg = refGO.AddComponent<Image>();
-        refImg.preserveAspect = true;
-        refImg.raycastTarget = false;
-        refImg.color = Color.white;
+        refImg.preserveAspect = true; refImg.raycastTarget = false; refImg.color = Color.white;
 
-        // ── CONTROLLER ──
-        var controller = canvasGO.AddComponent<ColoringGameController>();
-        controller.drawingCanvas = drawCanvas;
-        controller.outlineImage = outlineRaw;
-        controller.referenceImage = refImg;
-        controller.referenceContainer = refBgGO;
-        controller.colorButtonContainer = colorContainerRT;
-        controller.brushSizeContainer = brushContainerRT;
-        controller.colorButtonPrefab = colorBtnPrefab;
-        controller.brushSizeButtonPrefab = brushBtnPrefab;
-        controller.eraserButton = eraserGO.GetComponent<Button>();
-        controller.undoButton = undoGO.GetComponent<Button>();
-        controller.clearButton = clearGO.GetComponent<Button>();
-        controller.eraserHighlight = eraserHLImg;
-        controller.saveDrawingButton = saveGO.GetComponent<Button>();
+        // ── 2. Action Icons Row (no title) ──
+        var toolRowGO = StretchImage(panelGO.transform, "ToolRow", ToolRowBg);
+        toolRowGO.GetComponent<Image>().sprite = roundedRect;
+        toolRowGO.GetComponent<Image>().type = Image.Type.Sliced;
+        var toolRowLE = toolRowGO.AddComponent<LayoutElement>();
+        toolRowLE.preferredHeight = ToolRowHeight;
+        toolRowLE.flexibleWidth = 1;
 
-        // Wire home button
+        var toolRowLayout = toolRowGO.AddComponent<HorizontalLayoutGroup>();
+        toolRowLayout.spacing = 24;
+        toolRowLayout.childAlignment = TextAnchor.MiddleCenter;
+        toolRowLayout.childForceExpandWidth = false;
+        toolRowLayout.childForceExpandHeight = false;
+        toolRowLayout.padding = new RectOffset(20, 20, 6, 6);
+
+        var phoneIcon = LoadSprite("Assets/Art/Icons/phone.png");
+        var eraserGO = ToolButton(toolRowGO.transform, "EraserButton", phoneIcon, roundedRect);
+
+        var eraserHL = new GameObject("EraserHighlight");
+        eraserHL.transform.SetParent(eraserGO.transform, false);
+        var eraserHLRT = eraserHL.AddComponent<RectTransform>();
+        Full(eraserHLRT); eraserHLRT.offsetMin = new Vector2(-3, -3); eraserHLRT.offsetMax = new Vector2(3, 3);
+        var eraserHLImg = eraserHL.AddComponent<Image>();
+        eraserHLImg.sprite = roundedRect; eraserHLImg.type = Image.Type.Sliced;
+        eraserHLImg.color = new Color(0.9f, 0.3f, 0.3f, 0.4f); eraserHLImg.raycastTarget = false;
+        eraserHL.SetActive(false);
+
+        var undoIcon = LoadSprite("Assets/Art/Icons/return.png");
+        var undoGO = ToolButton(toolRowGO.transform, "UndoButton", undoIcon, roundedRect);
+
+        var trashIcon = LoadSprite("Assets/Art/Icons/trashcan.png");
+        var clearGO = ToolButton(toolRowGO.transform, "ClearButton", trashIcon, roundedRect);
+
+        // ── 3. צבעים (Colors) ──
+        SectionTitle(panelGO.transform, "\u05E6\u05D1\u05E2\u05D9\u05DD");
+
+        var paletteGO = new GameObject("ColorPalette");
+        paletteGO.transform.SetParent(panelGO.transform, false);
+        paletteGO.AddComponent<RectTransform>();
+        var paletteLE = paletteGO.AddComponent<LayoutElement>();
+        paletteLE.preferredHeight = ColorCircleSize * 2 + 10 + 8;
+        paletteLE.flexibleWidth = 1;
+
+        var paletteGrid = paletteGO.AddComponent<GridLayoutGroup>();
+        paletteGrid.cellSize = new Vector2(ColorCircleSize, ColorCircleSize);
+        paletteGrid.spacing = new Vector2(10, 10);
+        paletteGrid.childAlignment = TextAnchor.MiddleCenter;
+        paletteGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        paletteGrid.constraintCount = 6;
+        paletteGrid.padding = new RectOffset(2, 2, 2, 2);
+
+        // ── 4. מברשות (Brushes) ──
+        SectionTitle(panelGO.transform, "\u05DE\u05D1\u05E8\u05E9\u05D5\u05EA");
+
+        var brushGO = new GameObject("BrushSizes");
+        brushGO.transform.SetParent(panelGO.transform, false);
+        brushGO.AddComponent<RectTransform>();
+        var brushLE = brushGO.AddComponent<LayoutElement>();
+        brushLE.preferredHeight = BrushBtnSize + 8;
+        brushLE.flexibleWidth = 1;
+
+        var brushLayout = brushGO.AddComponent<HorizontalLayoutGroup>();
+        brushLayout.spacing = 20;
+        brushLayout.childAlignment = TextAnchor.MiddleCenter;
+        brushLayout.childForceExpandWidth = false;
+        brushLayout.childForceExpandHeight = false;
+        brushLayout.padding = new RectOffset(20, 20, 0, 0);
+
+        // ── 5. מדבקות (Stickers) — NO scroll, grid fills remaining space ──
+        SectionTitle(panelGO.transform, "\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA");
+
+        var stickerContentGO = new GameObject("StickerGrid");
+        stickerContentGO.transform.SetParent(panelGO.transform, false);
+        stickerContentGO.AddComponent<RectTransform>();
+        var stickerContentLE = stickerContentGO.AddComponent<LayoutElement>();
+        stickerContentLE.flexibleHeight = 1; // fill remaining space
+        stickerContentLE.flexibleWidth = 1;
+
+        var stickerGrid = stickerContentGO.AddComponent<GridLayoutGroup>();
+        stickerGrid.cellSize = new Vector2(StickerSize, StickerSize);
+        stickerGrid.spacing = new Vector2(10, 10);
+        stickerGrid.childAlignment = TextAnchor.UpperCenter;
+        stickerGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        stickerGrid.constraintCount = 5;
+        stickerGrid.padding = new RectOffset(2, 2, 2, 2);
+
+        // ═══════════════════════════════════
+        //  LOAD ASSETS
+        // ═══════════════════════════════════
+
+        var brushSmall  = LoadSprite("Assets/Art/Brushes/Small Brush.png");
+        var brushMedium = LoadSprite("Assets/Art/Brushes/Medium Brush.png");
+        var brushBig    = LoadSprite("Assets/Art/Brushes/Big Brush.png");
+
+        // Load all sliced sprites from sticker sprite sheet
+        var stickerSprites = new List<Sprite>();
+        var allStickerAssets = AssetDatabase.LoadAllAssetsAtPath("Assets/Art/Stickers/Sticker.png");
+        if (allStickerAssets != null)
+        {
+            foreach (var asset in allStickerAssets)
+            {
+                if (asset is Sprite spr)
+                    stickerSprites.Add(spr);
+            }
+        }
+        // Sort by name for consistent order (Sticker_0, Sticker_1, ..., Sticker_15)
+        stickerSprites.Sort((a, b) =>
+        {
+            int numA = 0, numB = 0;
+            var partsA = a.name.Split('_');
+            var partsB = b.name.Split('_');
+            if (partsA.Length > 1) int.TryParse(partsA[partsA.Length - 1], out numA);
+            if (partsB.Length > 1) int.TryParse(partsB[partsB.Length - 1], out numB);
+            return numA.CompareTo(numB);
+        });
+
+        // ═══════════════════════════════════
+        //  CONTROLLER
+        // ═══════════════════════════════════
+
+        var ctrl = canvasGO.AddComponent<ColoringGameController>();
+        ctrl.drawingCanvas = drawCanvas;
+        ctrl.outlineImage = outlineRaw;
+        ctrl.referenceImage = refImg;
+        ctrl.referenceContainer = refBgGO;
+        ctrl.colorButtonContainer = paletteGO.transform;
+        ctrl.brushSizeContainer = brushGO.transform;
+        ctrl.colorButtonPrefab = colorBtnPrefab;
+        ctrl.brushSizeButtonPrefab = brushBtnPrefab;
+        ctrl.eraserButton = eraserGO.GetComponent<Button>();
+        ctrl.undoButton = undoGO.GetComponent<Button>();
+        ctrl.clearButton = clearGO.GetComponent<Button>();
+        ctrl.eraserHighlight = eraserHLImg;
+        ctrl.saveDrawingButton = saveGO.GetComponent<Button>();
+        ctrl.doneButton = doneGO.GetComponent<Button>();
+        ctrl.brushIcons = new Sprite[] { brushSmall, brushMedium, brushBig };
+        ctrl.stickerContainer = stickerContentGO.transform;
+        ctrl.stickerSprites = stickerSprites.ToArray();
+
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
-            homeGO.GetComponent<Button>().onClick, controller.OnHomePressed);
+            homeGO.GetComponent<Button>().onClick, ctrl.OnHomePressed);
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/ColoringGame.unity");
     }
@@ -511,162 +509,97 @@ public class ColoringGameSetup : EditorWindow
     //  HELPERS
     // ─────────────────────────────────────────
 
-    private static GameObject CreateStretchImage(Transform parent, string name, Color color)
+    private static void SectionTitle(Transform parent, string hebrewText)
     {
-        var go = new GameObject(name);
+        var go = new GameObject("SectionTitle");
         go.transform.SetParent(parent, false);
-        var rt = go.AddComponent<RectTransform>();
-        StretchFull(rt);
-        var img = go.AddComponent<Image>();
-        img.color = color;
-        return go;
+        go.AddComponent<RectTransform>();
+        go.AddComponent<LayoutElement>().preferredHeight = SectionTitleFontSize + 10;
+        var tmp = go.AddComponent<TextMeshProUGUI>();
+        tmp.text = HebrewFixer.Fix(hebrewText);
+        tmp.isRightToLeftText = false;
+        tmp.fontSize = SectionTitleFontSize;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.color = SectionTitleColor;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.raycastTarget = false;
     }
 
-    private static GameObject CreateIconButton(Transform parent, string name, Sprite icon,
-        Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 pos, Vector2 size)
+    /// <summary>Tool button for the top row (eraser, undo, clear).</summary>
+    private static GameObject ToolButton(Transform parent, string name, Sprite icon, Sprite bg)
     {
         var go = new GameObject(name);
         go.transform.SetParent(parent, false);
-        var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = anchorMin;
-        rt.anchorMax = anchorMax;
-        rt.pivot = pivot;
-        rt.anchoredPosition = pos;
-        rt.sizeDelta = size;
-
+        go.AddComponent<RectTransform>().sizeDelta = new Vector2(ToolBtnSize, ToolBtnSize);
         var img = go.AddComponent<Image>();
-        img.sprite = icon;
-        img.preserveAspect = true;
-        img.color = Color.white;
-        img.raycastTarget = true;
+        img.sprite = bg; img.type = Image.Type.Sliced;
+        img.color = ActionBtnBg; img.raycastTarget = true;
+        go.AddComponent<Button>().targetGraphic = img;
 
-        var btn = go.AddComponent<Button>();
-        btn.targetGraphic = img;
-
-        return go;
-    }
-
-    private static GameObject CreateIconToolButton(Transform parent, string name, Sprite icon,
-        Sprite bg, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot,
-        Vector2 pos, Vector2 size, bool useAnchors = true)
-    {
-        var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
-        var rt = go.AddComponent<RectTransform>();
-        if (useAnchors)
-        {
-            rt.anchorMin = anchorMin;
-            rt.anchorMax = anchorMax;
-            rt.pivot = pivot;
-            rt.anchoredPosition = pos;
-        }
-        rt.sizeDelta = size;
-
-        var img = go.AddComponent<Image>();
-        img.sprite = bg;
-        img.type = Image.Type.Sliced;
-        img.color = Color.white;
-        img.raycastTarget = true;
-
-        var btn = go.AddComponent<Button>();
-        btn.targetGraphic = img;
-
-        // Icon child (black tint)
         var iconGO = new GameObject("Icon");
         iconGO.transform.SetParent(go.transform, false);
         var iconRT = iconGO.AddComponent<RectTransform>();
-        iconRT.anchorMin = new Vector2(0.15f, 0.15f);
-        iconRT.anchorMax = new Vector2(0.85f, 0.85f);
-        iconRT.offsetMin = Vector2.zero;
-        iconRT.offsetMax = Vector2.zero;
-        var iconImg = iconGO.AddComponent<Image>();
-        iconImg.sprite = icon;
-        iconImg.preserveAspect = true;
-        iconImg.color = Color.black;
-        iconImg.raycastTarget = false;
-
+        iconRT.anchorMin = new Vector2(0.15f, 0.15f); iconRT.anchorMax = new Vector2(0.85f, 0.85f);
+        iconRT.offsetMin = Vector2.zero; iconRT.offsetMax = Vector2.zero;
+        var ii = iconGO.AddComponent<Image>();
+        ii.sprite = icon; ii.preserveAspect = true;
+        ii.color = new Color(0.2f, 0.2f, 0.2f, 1f); ii.raycastTarget = false;
         return go;
     }
 
-    private static GameObject CreateToolButton(Transform parent, string name, string label,
-        Sprite bg, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot,
-        Vector2 pos, Vector2 size, bool useAnchors = true)
+    private static GameObject IconBtn(Transform p, string name, Sprite icon,
+        Vector2 anchor, Vector2 pivot, Vector2 pos, Vector2 size)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(p, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = anchor; rt.anchorMax = anchor; rt.pivot = pivot;
+        rt.anchoredPosition = pos; rt.sizeDelta = size;
+        var img = go.AddComponent<Image>();
+        img.sprite = icon; img.preserveAspect = true; img.color = Color.white; img.raycastTarget = true;
+        go.AddComponent<Button>().targetGraphic = img;
+        return go;
+    }
+
+    private static GameObject StretchImage(Transform parent, string name, Color color)
     {
         var go = new GameObject(name);
         go.transform.SetParent(parent, false);
-        var rt = go.AddComponent<RectTransform>();
-        if (useAnchors)
-        {
-            rt.anchorMin = anchorMin;
-            rt.anchorMax = anchorMax;
-            rt.pivot = pivot;
-            rt.anchoredPosition = pos;
-        }
-        rt.sizeDelta = size;
-
-        var img = go.AddComponent<Image>();
-        img.sprite = bg;
-        img.type = Image.Type.Sliced;
-        img.color = ToolBtnColor;
-        img.raycastTarget = true;
-
-        var btn = go.AddComponent<Button>();
-        btn.targetGraphic = img;
-
-        var labelGO = new GameObject("Label");
-        labelGO.transform.SetParent(go.transform, false);
-        var labelRT = labelGO.AddComponent<RectTransform>();
-        StretchFull(labelRT);
-        var tmp = labelGO.AddComponent<TextMeshProUGUI>();
-        tmp.text = label;
-        tmp.fontSize = 36;
-        tmp.fontStyle = FontStyles.Bold;
-        tmp.color = HexColor("#555555");
-        tmp.alignment = TextAlignmentOptions.Center;
-        tmp.raycastTarget = false;
-
+        Full(go.AddComponent<RectTransform>());
+        go.AddComponent<Image>().color = color;
         return go;
     }
 
-    private static void StretchFull(RectTransform rt)
+    private static void Full(RectTransform rt)
     {
-        rt.anchorMin = Vector2.zero;
-        rt.anchorMax = Vector2.one;
-        rt.offsetMin = Vector2.zero;
-        rt.offsetMax = Vector2.zero;
+        rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
     }
 
     private static void EnsureFolder(string path)
     {
         if (AssetDatabase.IsValidFolder(path)) return;
-        string[] parts = path.Split('/');
-        string current = parts[0];
+        var parts = path.Split('/');
+        string cur = parts[0];
         for (int i = 1; i < parts.Length; i++)
         {
-            string next = current + "/" + parts[i];
-            if (!AssetDatabase.IsValidFolder(next))
-                AssetDatabase.CreateFolder(current, parts[i]);
-            current = next;
+            string next = cur + "/" + parts[i];
+            if (!AssetDatabase.IsValidFolder(next)) AssetDatabase.CreateFolder(cur, parts[i]);
+            cur = next;
         }
     }
 
     private static Sprite LoadSprite(string path)
     {
-        var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-        if (sprite != null) return sprite;
-
-        var allAssets = AssetDatabase.LoadAllAssetsAtPath(path);
-        if (allAssets != null)
-        {
-            foreach (var asset in allAssets)
-                if (asset is Sprite s) return s;
-        }
+        var s = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        if (s != null) return s;
+        var all = AssetDatabase.LoadAllAssetsAtPath(path);
+        if (all != null) foreach (var o in all) if (o is Sprite sp) return sp;
         return null;
     }
 
     private static Color HexColor(string hex)
     {
-        ColorUtility.TryParseHtmlString(hex, out Color c);
-        return c;
+        ColorUtility.TryParseHtmlString(hex, out Color c); return c;
     }
 }

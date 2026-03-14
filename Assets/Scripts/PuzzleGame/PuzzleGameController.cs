@@ -220,14 +220,15 @@ public class PuzzleGameController : MonoBehaviour
         if (piecesH <= 0) piecesH = 1600f;
 
         // Scale pieces to fit comfortably on left side
-        // Target: pieces fill ~85% of left area width in a 3-column layout
-        float scatterPieceW = (piecesW * 0.85f) / 3f;
+        // Target: pieces fill ~70% of left area width in a 3-column layout
+        float scatterPieceW = (piecesW * 0.70f) / 3f;
         float pieceScale = scatterPieceW / pieceW;
         float scatterPieceH = pieceH * pieceScale;
 
         // Arrange in a 3x3 scattered grid with jitter
-        float marginX = piecesW * 0.08f;
-        float marginY = piecesH * 0.05f;
+        // Extra top margin to prevent overlap with header
+        float marginX = piecesW * 0.10f;
+        float marginY = piecesH * 0.08f;
         float usableW = piecesW - marginX * 2f;
         float usableH = piecesH - marginY * 2f;
         float cellW = usableW / 3f;

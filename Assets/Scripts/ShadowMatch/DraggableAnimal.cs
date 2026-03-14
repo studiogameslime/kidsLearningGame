@@ -8,10 +8,12 @@ using UnityEngine.UI;
 /// Switches to floating animation while dragged.
 /// Returns to start position with bounce if not matched.
 /// Locks in place with celebration if matched.
+/// Can play a subtle attention pulse to encourage the child to interact.
 /// </summary>
 public class DraggableAnimal : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerDownHandler
 {
     [HideInInspector] public string animalId;
+    public bool isPlaced => isLocked;
 
     private RectTransform rectTransform;
     private Canvas canvas;
@@ -20,6 +22,8 @@ public class DraggableAnimal : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private ShadowMatchController controller;
     private bool isLocked;
     private UISpriteAnimator animator;
+    private bool isPulsing;
+    private Coroutine pulseCoroutine;
 
     private void Awake()
     {
@@ -42,8 +46,56 @@ public class DraggableAnimal : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     public void Lock()
     {
         isLocked = true;
+        StopGuidancePulse();
         canvasGroup.blocksRaycasts = false;
     }
+
+    // ── Guidance pulse (attention animation) ──
+
+    /// <summary>Start a subtle attention pulse on this animal to encourage interaction.</summary>
+    public void StartGuidancePulse()
+    {
+        if (isLocked || isPulsing) return;
+        isPulsing = true;
+        pulseCoroutine = StartCoroutine(GuidancePulseLoop());
+    }
+
+    /// <summary>Stop the attention pulse.</summary>
+    public void StopGuidancePulse()
+    {
+        isPulsing = false;
+        if (pulseCoroutine != null)
+        {
+            StopCoroutine(pulseCoroutine);
+            pulseCoroutine = null;
+        }
+        if (rectTransform != null) rectTransform.localScale = Vector3.one;
+    }
+
+    private IEnumerator GuidancePulseLoop()
+    {
+        while (isPulsing && !isLocked)
+        {
+            // Gentle bounce up
+            float dur = 0.5f;
+            float elapsed = 0f;
+            while (elapsed < dur && isPulsing)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / dur;
+                float scale = 1f + 0.08f * Mathf.Sin(t * Mathf.PI);
+                rectTransform.localScale = Vector3.one * scale;
+                yield return null;
+            }
+
+            rectTransform.localScale = Vector3.one;
+            yield return new WaitForSeconds(1.0f);
+        }
+
+        rectTransform.localScale = Vector3.one;
+    }
+
+    // ── Drag handlers ──
 
     public void OnPointerDown(PointerEventData eventData)
     {
@@ -54,6 +106,10 @@ public class DraggableAnimal : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     public void OnBeginDrag(PointerEventData eventData)
     {
         if (isLocked) return;
+
+        // Stop pulse when child starts dragging
+        StopGuidancePulse();
+
         canvasGroup.blocksRaycasts = false;
         canvasGroup.alpha = 0.9f;
 

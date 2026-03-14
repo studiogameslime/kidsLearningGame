@@ -104,7 +104,29 @@ public class WorldAnimal : MonoBehaviour
             if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
                 parentRT, screenPos, null, out localPoint))
             {
-                rt.anchoredPosition = localPoint + dragOffset;
+                Vector2 pos = localPoint + dragOffset;
+
+                // Clamp to keep the full animal sprite inside the visible screen
+                float parentW = parentRT.rect.width;
+                float parentH = parentRT.rect.height;
+                float halfW = rt.sizeDelta.x * 0.5f;
+
+                // pivot is (0.5, 0) so bottom is at pos.y, top at pos.y + height
+                float minX = halfW;
+                float maxX = parentW - halfW;
+                float minY = 0f;
+
+                // Parent (grassArea) only covers bottom portion of screen.
+                // Convert screen top to parent local Y so animal can be dragged fully up.
+                float anchorSpan = parentRT.anchorMax.y - parentRT.anchorMin.y;
+                float maxY = (anchorSpan > 0f)
+                    ? ((1f - parentRT.anchorMin.y) / anchorSpan) * parentH - rt.sizeDelta.y
+                    : parentH - rt.sizeDelta.y;
+
+                pos.x = Mathf.Clamp(pos.x, minX, maxX);
+                pos.y = Mathf.Clamp(pos.y, minY, maxY);
+
+                rt.anchoredPosition = pos;
                 UpdateShadow();
             }
         }
@@ -143,6 +165,9 @@ public class WorldAnimal : MonoBehaviour
         }
 
         isFalling = false;
+
+        // Clamp X to stay within parent bounds after fall
+        ClampXToParent();
 
         // Nudge out of easel exclusion zone if dropped on it
         NudgeFromExclusionZone();
@@ -204,6 +229,18 @@ public class WorldAnimal : MonoBehaviour
             yield return null;
         }
         transform.localScale = Vector3.one;
+    }
+
+    private void ClampXToParent()
+    {
+        RectTransform parentRT = rt.parent as RectTransform;
+        if (parentRT == null) return;
+
+        float parentW = parentRT.rect.width;
+        float halfW = rt.sizeDelta.x * 0.5f;
+        float x = Mathf.Clamp(rt.anchoredPosition.x, halfW, parentW - halfW);
+        if (x != rt.anchoredPosition.x)
+            rt.anchoredPosition = new Vector2(x, rt.anchoredPosition.y);
     }
 
     private void NudgeFromExclusionZone()

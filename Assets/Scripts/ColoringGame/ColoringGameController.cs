@@ -30,6 +30,13 @@ public class ColoringGameController : MonoBehaviour
     public Button saveDrawingButton;  // saves drawing to gallery
     public Image eraserHighlight;     // visual indicator when eraser is active
 
+    [Header("Brushes")]
+    public Sprite[] brushIcons;       // Small, Medium, Big brush sprites
+
+    [Header("Stickers")]
+    public Transform stickerContainer;
+    public Sprite[] stickerSprites;   // available sticker stamps
+
     [Header("Settings")]
     public int outlineResolution = 1024;
 
@@ -54,9 +61,11 @@ public class ColoringGameController : MonoBehaviour
 
     private int selectedColorIndex = 0;
     private int selectedBrushIndex = 1; // medium default
+    private int selectedStickerIndex = -1; // -1 = no sticker
     private bool isEraserActive = false;
     private List<Image> colorIndicators = new List<Image>();
     private List<Image> brushIndicators = new List<Image>();
+    private List<Image> stickerIndicators = new List<Image>();
 
     private void Start()
     {
@@ -95,6 +104,7 @@ public class ColoringGameController : MonoBehaviour
         // Build palette UI
         BuildColorPalette();
         BuildBrushSizes();
+        BuildStickers();
 
         // Wire tool buttons
         if (eraserButton != null) eraserButton.onClick.AddListener(ToggleEraser);
@@ -226,13 +236,12 @@ public class ColoringGameController : MonoBehaviour
             var btn = go.GetComponent<Button>();
             int index = i;
 
-            // Size dot inside the button
-            var dot = go.transform.Find("Dot");
-            if (dot != null)
+            // Set brush icon sprite if available
+            var icon = go.transform.Find("Icon");
+            if (icon != null && brushIcons != null && i < brushIcons.Length)
             {
-                var dotRT = dot.GetComponent<RectTransform>();
-                float dotSize = 10 + BrushSizes[i] * 0.6f;
-                dotRT.sizeDelta = new Vector2(dotSize, dotSize);
+                var iconImg = icon.GetComponent<Image>();
+                if (iconImg != null) iconImg.sprite = brushIcons[i];
             }
 
             var bgImg = go.GetComponent<Image>();
@@ -247,26 +256,35 @@ public class ColoringGameController : MonoBehaviour
     private void SelectColor(int index)
     {
         selectedColorIndex = index;
+        selectedStickerIndex = -1;
         isEraserActive = false;
         drawingCanvas.SetColor(PaletteColors[index]);
         drawingCanvas.SetEraser(false);
+        drawingCanvas.SetStickerMode(null);
         UpdateColorSelection();
+        UpdateStickerSelection();
         UpdateEraserVisual();
     }
 
     private void SelectBrushSize(int index)
     {
         selectedBrushIndex = index;
+        selectedStickerIndex = -1;
         drawingCanvas.SetBrushSize(BrushSizes[index]);
+        drawingCanvas.SetStickerMode(null);
         UpdateBrushSelection();
+        UpdateStickerSelection();
     }
 
     private void ToggleEraser()
     {
         isEraserActive = !isEraserActive;
+        selectedStickerIndex = -1;
         drawingCanvas.SetEraser(isEraserActive);
+        drawingCanvas.SetStickerMode(null);
         UpdateEraserVisual();
         UpdateColorSelection();
+        UpdateStickerSelection();
     }
 
     private void OnUndo()
@@ -305,6 +323,68 @@ public class ColoringGameController : MonoBehaviour
     {
         if (eraserHighlight != null)
             eraserHighlight.gameObject.SetActive(isEraserActive);
+    }
+
+    // ── Stickers ──
+
+    private void BuildStickers()
+    {
+        if (stickerContainer == null || stickerSprites == null || stickerSprites.Length == 0) return;
+
+        for (int i = 0; i < stickerSprites.Length; i++)
+        {
+            if (stickerSprites[i] == null) continue;
+
+            var go = new GameObject($"Sticker_{i}");
+            go.transform.SetParent(stickerContainer, false);
+            var rt = go.AddComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(58, 58);
+
+            var img = go.AddComponent<Image>();
+            img.sprite = stickerSprites[i];
+            img.preserveAspect = true;
+            img.raycastTarget = true;
+
+            var btn = go.AddComponent<Button>();
+            btn.targetGraphic = img;
+
+            // Selection highlight (hidden by default)
+            var ring = new GameObject("Ring");
+            ring.transform.SetParent(go.transform, false);
+            var ringRT = ring.AddComponent<RectTransform>();
+            ringRT.anchorMin = Vector2.zero;
+            ringRT.anchorMax = Vector2.one;
+            ringRT.offsetMin = new Vector2(-4, -4);
+            ringRT.offsetMax = new Vector2(4, 4);
+            var ringImg = ring.AddComponent<Image>();
+            ringImg.color = new Color(0.3f, 0.7f, 1f, 0.4f);
+            ringImg.raycastTarget = false;
+            ring.SetActive(false);
+            stickerIndicators.Add(ringImg);
+
+            int index = i;
+            btn.onClick.AddListener(() => SelectSticker(index));
+        }
+    }
+
+    private void SelectSticker(int index)
+    {
+        selectedStickerIndex = index;
+        isEraserActive = false;
+        drawingCanvas.SetEraser(false);
+        drawingCanvas.SetStickerMode(stickerSprites[index]);
+        UpdateStickerSelection();
+        UpdateColorSelection();
+        UpdateEraserVisual();
+    }
+
+    private void UpdateStickerSelection()
+    {
+        for (int i = 0; i < stickerIndicators.Count; i++)
+        {
+            bool selected = i == selectedStickerIndex;
+            stickerIndicators[i].gameObject.SetActive(selected);
+        }
     }
 
     /// <summary>Called by Save Drawing button — captures and saves the drawing.</summary>

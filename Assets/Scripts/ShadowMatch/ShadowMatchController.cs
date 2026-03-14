@@ -168,7 +168,7 @@ public class ShadowMatchController : MonoBehaviour
             animals.Add(drag);
         }
 
-        // Pulse first unmatched shadow
+        // Pulse first unmatched animal to encourage interaction
         UpdateGuidedPulse();
 
         // Announce first animal name
@@ -218,7 +218,6 @@ public class ShadowMatchController : MonoBehaviour
             if (dist < shadowSize * 0.85f && slot.animalId == animal.animalId)
             {
                 slot.isMatched = true;
-                slot.StopPulse();
                 animal.GetComponent<RectTransform>().position =
                     slot.GetComponent<RectTransform>().position;
                 animal.Lock();
@@ -244,10 +243,11 @@ public class ShadowMatchController : MonoBehaviour
 
     private void UpdateGuidedPulse()
     {
-        foreach (var s in shadows) s.StopPulse();
-        foreach (var s in shadows)
+        // Stop all animal pulses, then pulse the first unmatched animal
+        foreach (var a in animals) a.StopGuidancePulse();
+        foreach (var a in animals)
         {
-            if (!s.isMatched) { s.StartPulse(); break; }
+            if (!a.isPlaced) { a.StartGuidancePulse(); break; }
         }
     }
 
