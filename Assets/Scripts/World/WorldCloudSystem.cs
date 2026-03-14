@@ -6,6 +6,7 @@ using UnityEngine.UI;
 /// Spawns and recycles moving clouds in the World sky area.
 /// Uses all 8 cloud sprites randomly with varied speed, scale, height, and direction.
 /// Clouds move left→right or right→left across the sky.
+/// Enforces minimum spacing to prevent clustering.
 /// </summary>
 public class WorldCloudSystem : MonoBehaviour
 {
@@ -18,6 +19,10 @@ public class WorldCloudSystem : MonoBehaviour
     public float minScale = 0.6f;
     public float maxScale = 1.3f;
     public float spawnInterval = 2f;
+
+    [Header("Spacing")]
+    public float minHorizontalSpacing = 250f;
+    public float minVerticalSpacing = 80f;
 
     private Sprite[] cloudSprites;
     private List<WorldCloud> activeClouds = new List<WorldCloud>();
@@ -32,13 +37,23 @@ public class WorldCloudSystem : MonoBehaviour
             cloudSprites[i - 1] = Resources.Load<Sprite>($"WorldArt/cloud{i}");
         }
 
-        // Spawn initial clouds spread across the sky
+        // Spawn initial clouds spread across the sky using even distribution
+        float skyHeight = skyArea != null ? skyArea.rect.height : 600f;
+        if (skyHeight <= 0) skyHeight = 600f;
+
         int initial = Mathf.Min(maxClouds, 8);
         for (int i = 0; i < initial; i++)
         {
-            float x = Random.Range(100f, worldWidth - 100f);
+            // Distribute initial clouds evenly across the width
+            float x = 100f + (worldWidth - 200f) * i / Mathf.Max(1, initial - 1);
+            // Stagger heights to avoid vertical stacking
+            float yMin = skyHeight * 0.15f;
+            float yMax = skyHeight * 0.90f;
+            float y = Mathf.Lerp(yMin, yMax, (i % 4) / 3f) + Random.Range(-30f, 30f);
+            y = Mathf.Clamp(y, yMin, yMax);
+
             bool goRight = Random.value > 0.5f;
-            SpawnCloud(x, goRight);
+            SpawnCloudAt(x, y, goRight);
         }
     }
 
@@ -61,22 +76,83 @@ public class WorldCloudSystem : MonoBehaviour
             if (spawnTimer >= spawnInterval)
             {
                 spawnTimer = 0f;
-
-                bool goRight = Random.value > 0.5f;
-                float spawnX;
-                if (goRight)
-                    spawnX = -Random.Range(50f, 250f);          // off left edge
-                else
-                    spawnX = worldWidth + Random.Range(50f, 250f); // off right edge
-
-                SpawnCloud(spawnX, goRight);
-                // Randomize next interval
+                TrySpawnEdgeCloud();
                 spawnInterval = Random.Range(1.5f, 4f);
             }
         }
     }
 
-    private void SpawnCloud(float x, bool movingRight)
+    private void TrySpawnEdgeCloud()
+    {
+        float skyHeight = skyArea != null ? skyArea.rect.height : 600f;
+        if (skyHeight <= 0) skyHeight = 600f;
+
+        bool goRight = Random.value > 0.5f;
+        float spawnX = goRight
+            ? -Random.Range(50f, 250f)
+            : worldWidth + Random.Range(50f, 250f);
+
+        // Try several Y positions to find one with good spacing
+        for (int attempt = 0; attempt < 6; attempt++)
+        {
+            float y = Random.Range(skyHeight * 0.15f, skyHeight * 0.90f);
+            if (HasGoodSpacing(spawnX, y))
+            {
+                SpawnCloudAt(spawnX, y, goRight);
+                return;
+            }
+        }
+
+        // Fallback: spawn anyway at best available Y
+        float bestY = FindLeastCrowdedY(spawnX, skyHeight);
+        SpawnCloudAt(spawnX, bestY, goRight);
+    }
+
+    private bool HasGoodSpacing(float x, float y)
+    {
+        foreach (var cloud in activeClouds)
+        {
+            if (cloud == null) continue;
+            var pos = cloud.GetPosition();
+            float dx = Mathf.Abs(pos.x - x);
+            float dy = Mathf.Abs(pos.y - y);
+            if (dx < minHorizontalSpacing && dy < minVerticalSpacing)
+                return false;
+        }
+        return true;
+    }
+
+    private float FindLeastCrowdedY(float x, float skyHeight)
+    {
+        float yMin = skyHeight * 0.15f;
+        float yMax = skyHeight * 0.90f;
+        float bestY = (yMin + yMax) * 0.5f;
+        float bestMinDist = 0f;
+
+        // Sample several candidates and pick the one farthest from any neighbor
+        for (int i = 0; i < 8; i++)
+        {
+            float candidateY = Mathf.Lerp(yMin, yMax, i / 7f);
+            float minDist = float.MaxValue;
+            foreach (var cloud in activeClouds)
+            {
+                if (cloud == null) continue;
+                var pos = cloud.GetPosition();
+                float dist = Mathf.Abs(pos.y - candidateY);
+                if (Mathf.Abs(pos.x - x) < minHorizontalSpacing)
+                    dist *= 0.5f; // penalize clouds that are also horizontally close
+                if (dist < minDist) minDist = dist;
+            }
+            if (minDist > bestMinDist)
+            {
+                bestMinDist = minDist;
+                bestY = candidateY;
+            }
+        }
+        return bestY;
+    }
+
+    private void SpawnCloudAt(float x, float y, bool movingRight)
     {
         if (skyArea == null || cloudSprites == null) return;
 
@@ -88,9 +164,6 @@ public class WorldCloudSystem : MonoBehaviour
             if (candidate != null) { sprite = candidate; break; }
         }
         if (sprite == null) return;
-
-        float skyHeight = skyArea.rect.height;
-        if (skyHeight <= 0) skyHeight = 600f;
 
         var go = new GameObject("Cloud");
         go.transform.SetParent(skyArea, false);
@@ -104,9 +177,6 @@ public class WorldCloudSystem : MonoBehaviour
         float w = sprite.rect.width * scale * 0.5f;
         float h = sprite.rect.height * scale * 0.5f;
         rt.sizeDelta = new Vector2(Mathf.Max(w, 120f), Mathf.Max(h, 60f));
-
-        // Spread clouds across the full sky height (keeping away from bottom near grass)
-        float y = Random.Range(skyHeight * 0.15f, skyHeight * 0.90f);
         rt.anchoredPosition = new Vector2(x, y);
         rt.localScale = Vector3.one * scale;
 
