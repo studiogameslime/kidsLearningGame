@@ -23,8 +23,6 @@ public class WorldSceneSetup : EditorWindow
     private static readonly Color DayHills = HexColor("#9FCBC5");
     private static readonly Color DayGroundBack = HexColor("#8ED36B");
     private static readonly Color DayGroundFront = HexColor("#79C956");
-    private static readonly Color DayCloudTint = HexColor("#F4FBFF");
-
     private static readonly string[] AllAnimals = {
         "Bear", "Bird", "Cat", "Chicken", "Cow", "Dog", "Donkey", "Duck",
         "Elephant", "Fish", "Frog", "Giraffe", "Horse", "Lion", "Monkey",
@@ -265,10 +263,6 @@ public class WorldSceneSetup : EditorWindow
         var hillsSprite = LoadSprite($"{artDir}/hills.png");
         var groundLayer1Sprite = LoadSprite($"{artDir}/groundLayer1.png");
         var groundLayer2Sprite = LoadSprite($"{artDir}/groundLayer2.png");
-        var cloudLayerB1Sprite = LoadSprite($"{artDir}/cloudLayerB1.png");
-        var cloudLayerB2Sprite = LoadSprite($"{artDir}/cloudLayerB2.png");
-        var cloudLayer1Sprite = LoadSprite($"{artDir}/cloudLayer1.png");
-        var cloudLayer2Sprite = LoadSprite($"{artDir}/cloudLayer2.png");
         var sunSprite = LoadSprite($"{artDir}/sun.png");
         var moonSprite = LoadSprite($"{artDir}/moonFull.png");
 
@@ -413,21 +407,9 @@ public class WorldSceneSetup : EditorWindow
         var hillsLargeGO = CreateSpriteLayer(worldContent.transform, "HillsLarge", hillsLargeSprite,
             new Vector2(0, 0.35f), new Vector2(1, 0.65f), DayHillsLarge);
 
-        // Layer 4: Cloud layer back (behind hills)
-        var cloudLayerB1GO = CreateSpriteLayer(worldContent.transform, "CloudLayerB1", cloudLayerB1Sprite,
-            new Vector2(0, 0.55f), new Vector2(1, 0.8f), DayCloudTint);
-        var cloudLayerB2GO = CreateSpriteLayer(worldContent.transform, "CloudLayerB2", cloudLayerB2Sprite,
-            new Vector2(0, 0.5f), new Vector2(1, 0.75f), DayCloudTint);
-
         // Layer 5: Small hills
         var hillsGO = CreateSpriteLayer(worldContent.transform, "Hills", hillsSprite,
             new Vector2(0, 0.25f), new Vector2(1, 0.5f), DayHills);
-
-        // Layer 6: Cloud layer front
-        var cloudLayer1GO = CreateSpriteLayer(worldContent.transform, "CloudLayer1", cloudLayer1Sprite,
-            new Vector2(0, 0.45f), new Vector2(1, 0.7f), DayCloudTint);
-        var cloudLayer2GO = CreateSpriteLayer(worldContent.transform, "CloudLayer2", cloudLayer2Sprite,
-            new Vector2(0, 0.4f), new Vector2(1, 0.65f), DayCloudTint);
 
         // ── Sun (in sky, above clouds, behind ground) ──
         // Proportional anchors for responsive positioning across resolutions
@@ -759,11 +741,6 @@ public class WorldSceneSetup : EditorWindow
         envComponent.moonImage = moonImg;
         envComponent.sunGlow = sunGlowImg;
         envComponent.starsContainer = starsRT;
-        envComponent.cloudLayerBack1 = cloudLayerB1GO.GetComponent<Image>();
-        envComponent.cloudLayerBack2 = cloudLayerB2GO.GetComponent<Image>();
-        envComponent.cloudLayerFront1 = cloudLayer1GO.GetComponent<Image>();
-        envComponent.cloudLayerFront2 = cloudLayer2GO.GetComponent<Image>();
-
         // ── Cloud System ──
         var cloudSystemComp = canvasGO.AddComponent<WorldCloudSystem>();
         cloudSystemComp.skyArea = skyAreaRT;

@@ -26,19 +26,12 @@ public class WorldEnvironment : MonoBehaviour
     [Header("Stars")]
     public RectTransform starsContainer;
 
-    [Header("Cloud Layers (static)")]
-    public Image cloudLayerBack1;
-    public Image cloudLayerBack2;
-    public Image cloudLayerFront1;
-    public Image cloudLayerFront2;
-
     // Day colors
     private static readonly Color DaySky = HexColor("#8FD4F5");
     private static readonly Color DayHillsLarge = HexColor("#B7D7D6");
     private static readonly Color DayHills = HexColor("#9FCBC5");
     private static readonly Color DayGroundBack = HexColor("#8ED36B");
     private static readonly Color DayGroundFront = HexColor("#79C956");
-    private static readonly Color DayCloudTint = HexColor("#F4FBFF");
     private static readonly Color DaySunGlow = new Color(1f, 0.95f, 0.6f, 0.25f);
 
     // Night colors
@@ -47,8 +40,6 @@ public class WorldEnvironment : MonoBehaviour
     private static readonly Color NightHills = HexColor("#5F8491");
     private static readonly Color NightGroundBack = HexColor("#4F8E4F");
     private static readonly Color NightGroundFront = HexColor("#447A44");
-    private static readonly Color NightCloudTint = HexColor("#BFCFE0");
-
     public bool IsNight { get; private set; }
     private bool isTransitioning;
 
@@ -296,12 +287,6 @@ public class WorldEnvironment : MonoBehaviour
         if (hillsLayer != null) hillsLayer.color = Color.Lerp(DayHills, NightHills, t);
         if (groundBackLayer != null) groundBackLayer.color = Color.Lerp(DayGroundBack, NightGroundBack, t);
         if (groundFrontLayer != null) groundFrontLayer.color = Color.Lerp(DayGroundFront, NightGroundFront, t);
-
-        Color cloudTint = Color.Lerp(DayCloudTint, NightCloudTint, t);
-        if (cloudLayerBack1 != null) cloudLayerBack1.color = cloudTint;
-        if (cloudLayerBack2 != null) cloudLayerBack2.color = cloudTint;
-        if (cloudLayerFront1 != null) cloudLayerFront1.color = cloudTint;
-        if (cloudLayerFront2 != null) cloudLayerFront2.color = cloudTint;
     }
 
     private IEnumerator SquashBounce(RectTransform rt, float duration)
@@ -330,7 +315,7 @@ public class WorldEnvironment : MonoBehaviour
 
     public Color GetCurrentCloudTint()
     {
-        return IsNight ? NightCloudTint : DayCloudTint;
+        return IsNight ? HexColor("#BFCFE0") : HexColor("#F4FBFF");
     }
 
     private static Color HexColor(string hex)

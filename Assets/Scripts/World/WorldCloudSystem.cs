@@ -4,19 +4,20 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Spawns and recycles moving clouds in the World sky area.
-/// Uses all 8 cloud sprites randomly with varied speed, scale, and position.
+/// Uses all 8 cloud sprites randomly with varied speed, scale, height, and direction.
+/// Clouds move left→right or right→left across the sky.
 /// </summary>
 public class WorldCloudSystem : MonoBehaviour
 {
     [Header("Settings")]
     public RectTransform skyArea;
     public float worldWidth = 2000f;
-    public int maxClouds = 5;
-    public float minSpeed = 15f;
-    public float maxSpeed = 40f;
+    public int maxClouds = 10;
+    public float minSpeed = 12f;
+    public float maxSpeed = 35f;
     public float minScale = 0.6f;
-    public float maxScale = 1.2f;
-    public float spawnInterval = 3f;
+    public float maxScale = 1.3f;
+    public float spawnInterval = 2f;
 
     private Sprite[] cloudSprites;
     private List<WorldCloud> activeClouds = new List<WorldCloud>();
@@ -31,12 +32,13 @@ public class WorldCloudSystem : MonoBehaviour
             cloudSprites[i - 1] = Resources.Load<Sprite>($"WorldArt/cloud{i}");
         }
 
-        // Spawn initial clouds spread across the world
-        int initial = Mathf.Min(maxClouds, 4);
+        // Spawn initial clouds spread across the sky
+        int initial = Mathf.Min(maxClouds, 8);
         for (int i = 0; i < initial; i++)
         {
             float x = Random.Range(100f, worldWidth - 100f);
-            SpawnCloud(x);
+            bool goRight = Random.value > 0.5f;
+            SpawnCloud(x, goRight);
         }
     }
 
@@ -52,23 +54,29 @@ public class WorldCloudSystem : MonoBehaviour
             }
         }
 
-        // Spawn new clouds from the right
+        // Spawn new clouds from either edge
         if (activeClouds.Count < maxClouds)
         {
             spawnTimer += Time.deltaTime;
             if (spawnTimer >= spawnInterval)
             {
                 spawnTimer = 0f;
-                // Spawn just off the right edge
-                float spawnX = worldWidth + Random.Range(50f, 200f);
-                SpawnCloud(spawnX);
+
+                bool goRight = Random.value > 0.5f;
+                float spawnX;
+                if (goRight)
+                    spawnX = -Random.Range(50f, 250f);          // off left edge
+                else
+                    spawnX = worldWidth + Random.Range(50f, 250f); // off right edge
+
+                SpawnCloud(spawnX, goRight);
                 // Randomize next interval
-                spawnInterval = Random.Range(2f, 5f);
+                spawnInterval = Random.Range(1.5f, 4f);
             }
         }
     }
 
-    private void SpawnCloud(float x)
+    private void SpawnCloud(float x, bool movingRight)
     {
         if (skyArea == null || cloudSprites == null) return;
 
@@ -93,11 +101,12 @@ public class WorldCloudSystem : MonoBehaviour
         rt.pivot = new Vector2(0.5f, 0.5f);
 
         float scale = Random.Range(minScale, maxScale);
-        float w = sprite.rect.width * scale * 0.5f; // scaled pixel size (approx)
+        float w = sprite.rect.width * scale * 0.5f;
         float h = sprite.rect.height * scale * 0.5f;
         rt.sizeDelta = new Vector2(Mathf.Max(w, 120f), Mathf.Max(h, 60f));
 
-        float y = Random.Range(skyHeight * 0.3f, skyHeight * 0.85f);
+        // Spread clouds across the full sky height (keeping away from bottom near grass)
+        float y = Random.Range(skyHeight * 0.15f, skyHeight * 0.90f);
         rt.anchoredPosition = new Vector2(x, y);
         rt.localScale = Vector3.one * scale;
 
@@ -105,11 +114,13 @@ public class WorldCloudSystem : MonoBehaviour
         img.sprite = sprite;
         img.preserveAspect = true;
         img.raycastTarget = true;
-        img.color = Color.white; // tinted by environment
+        img.color = Color.white;
 
         var cloud = go.AddComponent<WorldCloud>();
-        cloud.speed = Random.Range(minSpeed, maxSpeed);
+        float speed = Random.Range(minSpeed, maxSpeed);
+        cloud.speed = movingRight ? speed : -speed;
         cloud.leftBound = -300f;
+        cloud.rightBound = worldWidth + 300f;
 
         activeClouds.Add(cloud);
     }

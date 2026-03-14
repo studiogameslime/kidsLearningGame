@@ -3,13 +3,15 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// A single moving cloud in the World scene. Moves right-to-left.
+/// A single moving cloud in the World scene. Moves left or right based on speed sign.
+/// Positive speed = moving right, negative speed = moving left.
 /// Tappable with a cute bounce reaction.
 /// </summary>
 public class WorldCloud : MonoBehaviour
 {
-    public float speed;
-    public float leftBound;  // x position at which we're off-screen left
+    public float speed;       // positive = right, negative = left
+    public float leftBound;   // x position at which we're off-screen left
+    public float rightBound;  // x position at which we're off-screen right
 
     private RectTransform rt;
     private bool isBouncing;
@@ -22,13 +24,14 @@ public class WorldCloud : MonoBehaviour
     private void Update()
     {
         if (rt == null) return;
-        rt.anchoredPosition += new Vector2(-speed * Time.deltaTime, 0f);
+        rt.anchoredPosition += new Vector2(speed * Time.deltaTime, 0f);
     }
 
     public bool IsOffScreen()
     {
         if (rt == null) return true;
-        return rt.anchoredPosition.x < leftBound;
+        float x = rt.anchoredPosition.x;
+        return x < leftBound || x > rightBound;
     }
 
     public void OnTap()
