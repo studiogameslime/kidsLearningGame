@@ -5,11 +5,11 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// Color Mixing mission-mode game.
-/// A target color is shown at top. Two empty mix slots sit in the center.
-/// Four draggable colors (Red, Blue, Yellow, White) at the bottom.
-/// Drag one color to each slot. Once both are filled, they merge with
-/// a smooth mixing animation. If the result matches the target → success.
+/// Color Mixing game — tap-to-fill container system (1920×1080 landscape).
+///
+/// Flow: Tap a color on the palette → paint flies into next small container →
+/// when both filled → containers tilt and pour into large mixing container →
+/// liquid swirls and settles to result color.
 ///
 /// Combos: Red+Yellow=Orange, Blue+Yellow=Green, Red+Blue=Purple,
 ///         Red+White=Pink, Blue+White=LightBlue
@@ -19,26 +19,35 @@ public class ColorMixingController : MonoBehaviour
     [Header("UI References")]
     public RectTransform playArea;
     public Image targetColorCircle;
-    public Image slotLeftImage;       // left empty circle
-    public Image slotRightImage;      // right empty circle
-    public Image resultCircle;        // result circle between/below slots
+    public Image targetGlowImage;
+    public Image targetOuterGlowImage;
+
+    [Header("Containers")]
+    public Image containerLeftBody;    // small left container glass
+    public Image containerLeftFill;    // colored fill inside left
+    public Image containerRightBody;
+    public Image containerRightFill;
+    public Image mixContainerBody;     // large mixing container glass
+    public Image mixContainerFill;     // colored fill inside large
+    public Image mixContainerGlow;     // glow ring behind large container
+
+    [Header("Palette")]
     public RectTransform colorPalette;
 
     [Header("Sprites")]
     public Sprite circleSprite;
+    public Sprite roundedRectSprite;
 
     // ── color definitions ────────────────────────────────────────────
-    private static readonly Color ColorRed      = new Color(0.90f, 0.15f, 0.15f);
-    private static readonly Color ColorBlue     = new Color(0.20f, 0.40f, 0.90f);
-    private static readonly Color ColorYellow   = new Color(1.00f, 0.90f, 0.10f);
-    private static readonly Color ColorWhite    = new Color(0.97f, 0.97f, 0.97f);
-    private static readonly Color ColorOrange   = new Color(1.00f, 0.60f, 0.00f);
-    private static readonly Color ColorGreen    = new Color(0.20f, 0.80f, 0.20f);
-    private static readonly Color ColorPurple   = new Color(0.60f, 0.20f, 0.80f);
-    private static readonly Color ColorPink     = new Color(1.00f, 0.60f, 0.70f);
-    private static readonly Color ColorLightBlue = new Color(0.53f, 0.81f, 0.98f);
-
-    private static readonly Color SlotEmpty = new Color(0.88f, 0.88f, 0.88f, 0.5f);
+    private static readonly Color ColorRed       = new Color(0.92f, 0.18f, 0.18f);
+    private static readonly Color ColorBlue      = new Color(0.22f, 0.42f, 0.92f);
+    private static readonly Color ColorYellow    = new Color(1.00f, 0.88f, 0.12f);
+    private static readonly Color ColorWhite     = new Color(0.97f, 0.97f, 0.97f);
+    private static readonly Color ColorOrange    = new Color(1.00f, 0.58f, 0.00f);
+    private static readonly Color ColorGreen     = new Color(0.22f, 0.78f, 0.22f);
+    private static readonly Color ColorPurple    = new Color(0.58f, 0.22f, 0.78f);
+    private static readonly Color ColorPink      = new Color(1.00f, 0.58f, 0.68f);
+    private static readonly Color ColorLightBlue = new Color(0.50f, 0.80f, 0.98f);
 
     private struct PrimaryDef
     {
@@ -74,7 +83,6 @@ public class ColorMixingController : MonoBehaviour
         new TargetDef("Light Blue", ColorLightBlue, "blue", "white"),
     };
 
-    // ── mixing rules ─────────────────────────────────────────────────
     private static readonly Dictionary<string, Color> MixMap = new Dictionary<string, Color>
     {
         { "red+yellow",  ColorOrange },    { "yellow+red",  ColorOrange },
@@ -84,16 +92,22 @@ public class ColorMixingController : MonoBehaviour
         { "blue+white",  ColorLightBlue }, { "white+blue",  ColorLightBlue },
     };
 
-    // ── runtime state ────────────────────────────────────────────────
+    // ── layout ──────────────────────────────────────────────────────
+    private const float BtnSize = 105f;
+    private const float BtnSpacing = 50f;
+
+    // ── runtime ─────────────────────────────────────────────────────
     private Canvas canvas;
     private TargetDef currentTarget;
-    private string slotLeftColorId;
-    private string slotRightColorId;
+    private string containerLeftColorId;
+    private string containerRightColorId;
     private bool isAnimating;
-    private List<DraggableColor> paletteButtons = new List<DraggableColor>();
+    private List<Button> paletteButtons = new List<Button>();
+    private List<Image> paletteBtnImages = new List<Image>();
     private string lastTargetName = "";
+    private Coroutine targetPulseRoutine;
 
-    // ── lifecycle ────────────────────────────────────────────────────
+    // ── lifecycle ───────────────────────────────────────────────────
     private void Start()
     {
         canvas = GetComponentInParent<Canvas>();
@@ -101,14 +115,12 @@ public class ColorMixingController : MonoBehaviour
         StartNewRound();
     }
 
-    // ── palette creation ─────────────────────────────────────────────
+    // ── palette (tappable buttons) ──────────────────────────────────
     private void CreatePaletteButtons()
     {
-        float btnSize = 160f;
-        float spacing = 30f;
         int count = Primaries.Length;
-        float totalW = count * btnSize + (count - 1) * spacing;
-        float startX = -totalW / 2f + btnSize / 2f;
+        float totalW = count * BtnSize + (count - 1) * BtnSpacing;
+        float startX = -totalW / 2f + BtnSize / 2f;
 
         for (int i = 0; i < count; i++)
         {
@@ -118,45 +130,63 @@ public class ColorMixingController : MonoBehaviour
             go.transform.SetParent(colorPalette, false);
 
             var rt = go.AddComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(btnSize, btnSize);
-            rt.anchoredPosition = new Vector2(startX + i * (btnSize + spacing), 0);
+            rt.sizeDelta = new Vector2(BtnSize, BtnSize);
+            rt.anchoredPosition = new Vector2(startX + i * (BtnSize + BtnSpacing), 0);
 
+            // Shadow
+            var shadowGO = new GameObject("Shadow");
+            shadowGO.transform.SetParent(go.transform, false);
+            var shadowRT = shadowGO.AddComponent<RectTransform>();
+            shadowRT.anchorMin = new Vector2(0.08f, -0.06f);
+            shadowRT.anchorMax = new Vector2(0.92f, 0.14f);
+            shadowRT.offsetMin = Vector2.zero;
+            shadowRT.offsetMax = Vector2.zero;
+            var shadowImg = shadowGO.AddComponent<Image>();
+            if (circleSprite != null) shadowImg.sprite = circleSprite;
+            shadowImg.color = new Color(0f, 0f, 0f, 0.12f);
+            shadowImg.raycastTarget = false;
+
+            // Main color blob
             var img = go.AddComponent<Image>();
             if (circleSprite != null) img.sprite = circleSprite;
             img.color = def.color;
             img.raycastTarget = true;
 
-            // White needs a subtle border so it's visible
             if (def.id == "white")
             {
                 var outline = go.AddComponent<Outline>();
-                outline.effectColor = new Color(0.8f, 0.8f, 0.8f);
-                outline.effectDistance = new Vector2(3, -3);
+                outline.effectColor = new Color(0.76f, 0.72f, 0.68f);
+                outline.effectDistance = new Vector2(2, -2);
             }
 
-            // Shine highlight
+            // Glossy shine
             var shineGO = new GameObject("Shine");
             shineGO.transform.SetParent(go.transform, false);
             var shineRT = shineGO.AddComponent<RectTransform>();
-            shineRT.anchorMin = new Vector2(0.15f, 0.55f);
-            shineRT.anchorMax = new Vector2(0.45f, 0.85f);
+            shineRT.anchorMin = new Vector2(0.18f, 0.58f);
+            shineRT.anchorMax = new Vector2(0.48f, 0.88f);
             shineRT.offsetMin = Vector2.zero;
             shineRT.offsetMax = Vector2.zero;
             var shineImg = shineGO.AddComponent<Image>();
             if (circleSprite != null) shineImg.sprite = circleSprite;
-            shineImg.color = new Color(1f, 1f, 1f, 0.35f);
+            shineImg.color = new Color(1f, 1f, 1f, 0.38f);
             shineImg.raycastTarget = false;
 
-            go.AddComponent<CanvasGroup>();
-            var dc = go.AddComponent<DraggableColor>();
-            dc.Init(def.id, def.color, canvas, OnColorDropped);
-            dc.SaveHomePosition();
+            // Button
+            var btn = go.AddComponent<Button>();
+            btn.targetGraphic = img;
+            btn.transition = Selectable.Transition.None;
 
-            paletteButtons.Add(dc);
+            string colorId = def.id;
+            Color colorVal = def.color;
+            btn.onClick.AddListener(() => OnColorTapped(colorId, colorVal, rt));
+
+            paletteButtons.Add(btn);
+            paletteBtnImages.Add(img);
         }
     }
 
-    // ── round management ─────────────────────────────────────────────
+    // ── round management ────────────────────────────────────────────
     private void StartNewRound()
     {
         TargetDef next;
@@ -170,288 +200,635 @@ public class ColorMixingController : MonoBehaviour
         currentTarget = next;
         lastTargetName = next.name;
 
-        // Reset slots
-        slotLeftColorId = null;
-        slotRightColorId = null;
-        if (slotLeftImage != null)
-        {
-            slotLeftImage.color = SlotEmpty;
-            if (slotLeftImage.transform.childCount > 0)
-                slotLeftImage.transform.GetChild(0).gameObject.SetActive(true);
-        }
-        if (slotRightImage != null)
-        {
-            slotRightImage.color = SlotEmpty;
-            if (slotRightImage.transform.childCount > 0)
-                slotRightImage.transform.GetChild(0).gameObject.SetActive(true);
-        }
-        if (resultCircle != null)
-        {
-            resultCircle.color = new Color(1, 1, 1, 0);
-            resultCircle.transform.localScale = Vector3.zero;
-        }
+        containerLeftColorId = null;
+        containerRightColorId = null;
 
-        // Show target
+        // Reset small containers
+        ResetContainerFill(containerLeftFill);
+        ResetContainerFill(containerRightFill);
+        ResetContainerTransform(containerLeftBody);
+        ResetContainerTransform(containerRightBody);
+
+        // Reset large mixing container
+        ResetContainerFill(mixContainerFill);
+        ResetContainerTransform(mixContainerBody);
+        if (mixContainerGlow != null)
+            mixContainerGlow.color = new Color(1, 1, 1, 0);
+
+        // Target with entrance
         if (targetColorCircle != null)
         {
             targetColorCircle.color = currentTarget.color;
-            targetColorCircle.transform.localScale = Vector3.one;
+            StartCoroutine(TargetEntranceAnim());
         }
 
+        if (targetPulseRoutine != null) StopCoroutine(targetPulseRoutine);
+        targetPulseRoutine = StartCoroutine(TargetPulseLoop());
+
+        SetPaletteInteractable(true);
         isAnimating = false;
     }
 
-    // ── drop handler ─────────────────────────────────────────────────
-    private void OnColorDropped(DraggableColor dc)
+    private void ResetContainerFill(Image fill)
     {
-        if (isAnimating)
-        {
-            dc.ReturnHome(this);
-            return;
-        }
+        if (fill == null) return;
+        fill.color = new Color(1, 1, 1, 0);
+        var rt = fill.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.08f, 0.08f);
+        rt.anchorMax = new Vector2(0.92f, 0.08f); // 0 height = empty
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
 
-        // Check which slot it's nearest to
-        var dcPos = dc.GetComponent<RectTransform>().position;
-        float distLeft = Vector2.Distance(dcPos, slotLeftImage.GetComponent<RectTransform>().position);
-        float distRight = Vector2.Distance(dcPos, slotRightImage.GetComponent<RectTransform>().position);
-
-        float threshold = slotLeftImage.GetComponent<RectTransform>().rect.width * 1.2f;
-
-        bool droppedOnLeft = distLeft < threshold && slotLeftColorId == null;
-        bool droppedOnRight = distRight < threshold && slotRightColorId == null;
-
-        // Pick the closer empty slot
-        if (droppedOnLeft && droppedOnRight)
+        // Clean up any leftover FillRight layers from previous round
+        var body = fill.transform.parent;
+        if (body != null)
         {
-            if (distLeft <= distRight) droppedOnRight = false;
-            else droppedOnLeft = false;
-        }
-
-        if (droppedOnLeft)
-        {
-            StartCoroutine(FillSlot(dc, slotLeftImage, true));
-        }
-        else if (droppedOnRight)
-        {
-            StartCoroutine(FillSlot(dc, slotRightImage, false));
-        }
-        else
-        {
-            dc.ReturnHome(this);
+            var old = body.Find("FillRight");
+            if (old != null) Destroy(old.gameObject);
         }
     }
 
-    private IEnumerator FillSlot(DraggableColor dc, Image slotImg, bool isLeft)
+    private void ResetContainerTransform(Image body)
     {
+        if (body == null) return;
+        body.transform.parent.localEulerAngles = Vector3.zero;
+        body.transform.parent.localScale = Vector3.one;
+    }
+
+    private void SetPaletteInteractable(bool state)
+    {
+        foreach (var btn in paletteButtons)
+            if (btn != null) btn.interactable = state;
+    }
+
+    // ── color tap handler ───────────────────────────────────────────
+    private void OnColorTapped(string colorId, Color color, RectTransform btnRT)
+    {
+        if (isAnimating) return;
+
+        // Determine which container to fill
+        bool fillLeft = containerLeftColorId == null;
+        bool fillRight = !fillLeft && containerRightColorId == null;
+
+        if (!fillLeft && !fillRight) return; // both full
+
         isAnimating = true;
+        SetPaletteInteractable(false);
 
-        // Animate color shrinking into slot
-        var rt = dc.GetComponent<RectTransform>();
-        Vector2 slotPos = slotImg.GetComponent<RectTransform>().position;
-        Vector2 startPos = rt.position;
-        Vector3 startScale = rt.localScale;
-        float dur = 0.2f;
-        float t = 0f;
+        Image targetFill = fillLeft ? containerLeftFill : containerRightFill;
+        Image targetBody = fillLeft ? containerLeftBody : containerRightBody;
 
+        if (fillLeft)
+            containerLeftColorId = colorId;
+        else
+            containerRightColorId = colorId;
+
+        // Bounce the tapped button
+        StartCoroutine(TapBounce(btnRT));
+
+        StartCoroutine(FillContainerSequence(colorId, color, btnRT, targetFill, targetBody));
+    }
+
+    private IEnumerator TapBounce(RectTransform rt)
+    {
+        Vector3 orig = rt.localScale;
+        float dur = 0.15f;
+        float t = 0;
         while (t < dur)
         {
             t += Time.deltaTime;
             float p = t / dur;
-            rt.position = Vector2.Lerp(startPos, slotPos, p);
-            rt.localScale = startScale * (1f - p * 0.6f);
+            float s = 1f + 0.15f * Mathf.Sin(p * Mathf.PI);
+            rt.localScale = orig * s;
             yield return null;
         }
+        rt.localScale = orig;
+    }
 
-        // Return draggable to home
-        rt.localScale = startScale;
-        dc.ReturnHome(this);
+    private IEnumerator FillContainerSequence(string colorId, Color color,
+        RectTransform fromRT, Image fill, Image body)
+    {
+        // Play color name
+        SoundLibrary.PlayColorName(GetColorSoundName(colorId));
 
-        // Fill the slot
-        Color fillColor = dc.color;
-        if (isLeft)
-            slotLeftColorId = dc.colorId;
-        else
-            slotRightColorId = dc.colorId;
+        // Animate a paint blob flying from button to container
+        Vector2 fromPos = GetWorldAnchoredPos(fromRT);
+        Vector2 toPos = GetWorldAnchoredPos(body.GetComponent<RectTransform>());
 
-        // Play the dragged color name
-        SoundLibrary.PlayColorName(GetColorSoundName(dc.colorId));
+        yield return AnimatePaintBlob(fromPos, toPos, color);
 
-        // Set exact color with full opacity
-        slotImg.color = new Color(fillColor.r, fillColor.g, fillColor.b, 1f);
+        // Fill container from bottom with liquid animation
+        yield return AnimateContainerFill(fill, color, 0.35f);
 
-        // Hide the border ring behind the slot
-        if (slotImg.transform.childCount > 0)
-            slotImg.transform.GetChild(0).gameObject.SetActive(false);
+        // Splash on fill
+        SpawnSplash(toPos, color, 6);
 
-        // Splash
-        SpawnSplash(slotImg.GetComponent<RectTransform>().anchoredPosition, fillColor);
+        // Bounce the container
+        yield return ElasticBounce(body.transform.parent, 1.08f, 0.2f);
 
-        // Bounce slot
-        yield return BounceTransform(slotImg.transform, 1.15f);
-
-        // If both slots filled, trigger mix
-        if (slotLeftColorId != null && slotRightColorId != null)
+        // Check if both containers are now filled
+        if (containerLeftColorId != null && containerRightColorId != null)
         {
             yield return new WaitForSeconds(0.3f);
-            yield return MixAnimation();
+            yield return PourAndMixAnimation();
         }
         else
         {
+            SetPaletteInteractable(true);
             isAnimating = false;
         }
     }
 
-    // ── mixing animation ─────────────────────────────────────────────
-    private IEnumerator MixAnimation()
+    /// <summary>
+    /// Animate a paint blob arcing from palette button to container.
+    /// </summary>
+    private IEnumerator AnimatePaintBlob(Vector2 from, Vector2 to, Color color)
     {
-        // Look up result color
-        string key = slotLeftColorId + "+" + slotRightColorId;
+        var go = new GameObject("PaintBlob");
+        go.transform.SetParent(playArea, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(40, 40);
+        var img = go.AddComponent<Image>();
+        if (circleSprite != null) img.sprite = circleSprite;
+        img.color = color;
+        img.raycastTarget = false;
+
+        // Shine on blob
+        var shineGO = new GameObject("Shine");
+        shineGO.transform.SetParent(go.transform, false);
+        var shineRT = shineGO.AddComponent<RectTransform>();
+        shineRT.anchorMin = new Vector2(0.2f, 0.6f);
+        shineRT.anchorMax = new Vector2(0.5f, 0.9f);
+        shineRT.offsetMin = Vector2.zero;
+        shineRT.offsetMax = Vector2.zero;
+        var shineImg = shineGO.AddComponent<Image>();
+        if (circleSprite != null) shineImg.sprite = circleSprite;
+        shineImg.color = new Color(1f, 1f, 1f, 0.35f);
+        shineImg.raycastTarget = false;
+
+        float dur = 0.35f;
+        float t = 0;
+        while (t < dur)
+        {
+            t += Time.deltaTime;
+            float p = t / dur;
+            float ease = p * p * (3f - 2f * p);
+            Vector2 pos = Vector2.Lerp(from, to, ease);
+            // Arc upward
+            pos.y += Mathf.Sin(p * Mathf.PI) * 80f;
+            rt.anchoredPosition = pos;
+            float scale = 1f + 0.3f * Mathf.Sin(p * Mathf.PI); // grow at peak
+            rt.localScale = Vector3.one * scale;
+            yield return null;
+        }
+
+        // Small splash on arrival
+        SpawnSplash(to, color, 5);
+        Destroy(go);
+    }
+
+    /// <summary>
+    /// Fill a container from bottom to full over duration.
+    /// </summary>
+    private IEnumerator AnimateContainerFill(Image fill, Color color, float dur)
+    {
+        var rt = fill.GetComponent<RectTransform>();
+        fill.color = color;
+        float t = 0;
+        while (t < dur)
+        {
+            t += Time.deltaTime;
+            float p = t / dur;
+            float ease = Mathf.Sin(p * Mathf.PI * 0.5f); // ease out
+            // Grow fill from bottom: anchorMax.y goes from 0 to 0.85
+            rt.anchorMin = new Vector2(0.08f, 0.08f);
+            rt.anchorMax = new Vector2(0.92f, 0.08f + 0.78f * ease);
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            yield return null;
+        }
+    }
+
+    // ── pour & mix animation ────────────────────────────────────────
+    private IEnumerator PourAndMixAnimation()
+    {
+        // Compute result color
+        string key = containerLeftColorId + "+" + containerRightColorId;
         Color resultColor;
         if (!MixMap.TryGetValue(key, out resultColor))
-            resultColor = Color.Lerp(GetPrimaryColor(slotLeftColorId), GetPrimaryColor(slotRightColorId), 0.5f);
+            resultColor = Color.Lerp(
+                GetPrimaryColor(containerLeftColorId),
+                GetPrimaryColor(containerRightColorId), 0.5f);
 
-        // Move both slot circles toward the result circle position
-        var leftRT = slotLeftImage.GetComponent<RectTransform>();
-        var rightRT = slotRightImage.GetComponent<RectTransform>();
-        var resultRT = resultCircle.GetComponent<RectTransform>();
+        Color leftColor = GetPrimaryColor(containerLeftColorId);
+        Color rightColor = GetPrimaryColor(containerRightColorId);
 
-        Vector2 leftStart = leftRT.anchoredPosition;
-        Vector2 rightStart = rightRT.anchoredPosition;
-        Vector2 center = resultRT.anchoredPosition;
+        var leftParent = containerLeftBody.transform.parent;
+        var rightParent = containerRightBody.transform.parent;
+        var mixRT = mixContainerBody.GetComponent<RectTransform>();
+        Vector2 mixPos = GetWorldAnchoredPos(mixRT);
 
-        // Show result circle (invisible, will grow)
-        resultCircle.color = new Color(resultColor.r, resultColor.g, resultColor.b, 0f);
-        resultCircle.transform.localScale = Vector3.zero;
+        var leftFillRT = containerLeftFill.GetComponent<RectTransform>();
+        var rightFillRT = containerRightFill.GetComponent<RectTransform>();
+        var mixFillRT = mixContainerFill.GetComponent<RectTransform>();
 
-        // Animate slots moving toward center
-        float moveDur = 0.5f;
-        float t = 0f;
-        while (t < moveDur)
+        // ── Phase 1: Tilt containers toward center ──
+        float tiltDur = 0.4f;
+        float t = 0;
+        while (t < tiltDur)
         {
             t += Time.deltaTime;
-            float p = Mathf.SmoothStep(0, 1, t / moveDur);
-            leftRT.anchoredPosition = Vector2.Lerp(leftStart, center, p);
-            rightRT.anchoredPosition = Vector2.Lerp(rightStart, center, p);
+            float p = Mathf.SmoothStep(0, 1, t / tiltDur);
+            leftParent.localEulerAngles = new Vector3(0, 0, -25f * p);
+            rightParent.localEulerAngles = new Vector3(0, 0, 25f * p);
+            yield return null;
+        }
 
-            // Shrink slots as they approach
-            float shrink = 1f - p * 0.4f;
-            leftRT.localScale = Vector3.one * shrink;
-            rightRT.localScale = Vector3.one * shrink;
+        // ── Phase 2: Pour streams + fill big jar with TWO visible colors ──
+        // Create a second fill image for the right color (layered on top)
+        var rightFillLayer = new GameObject("FillRight");
+        rightFillLayer.transform.SetParent(mixContainerBody.transform, false);
+        var rfRT = rightFillLayer.AddComponent<RectTransform>();
+        rfRT.anchorMin = new Vector2(0.50f, 0.06f);
+        rfRT.anchorMax = new Vector2(0.94f, 0.06f); // starts empty
+        rfRT.offsetMin = Vector2.zero;
+        rfRT.offsetMax = Vector2.zero;
+        var rfImg = rightFillLayer.AddComponent<Image>();
+        if (roundedRectSprite != null) rfImg.sprite = roundedRectSprite;
+        rfImg.type = Image.Type.Sliced;
+        rfImg.color = rightColor;
+        rfImg.raycastTarget = false;
+
+        // Start pour streams
+        StartCoroutine(PourStream(leftParent, mixPos, leftColor, 0.7f));
+        StartCoroutine(PourStream(rightParent, mixPos, rightColor, 0.7f));
+
+        // Pour phase: drain small, fill big with split colors
+        float pourDur = 0.7f;
+        mixContainerFill.color = leftColor; // main fill = left color
+
+        t = 0;
+        while (t < pourDur)
+        {
+            t += Time.deltaTime;
+            float p = t / pourDur;
+            float ease = Mathf.SmoothStep(0, 1, p);
+
+            // Drain small containers
+            float drainH = 0.08f + 0.78f * (1f - ease);
+            leftFillRT.anchorMax = new Vector2(0.92f, drainH);
+            leftFillRT.offsetMax = Vector2.zero;
+            rightFillRT.anchorMax = new Vector2(0.92f, drainH);
+            rightFillRT.offsetMax = Vector2.zero;
+
+            // Fill big jar — left color fills left half, right color fills right half
+            float fillH = 0.06f + 0.72f * ease;
+            mixFillRT.anchorMin = new Vector2(0.06f, 0.06f);
+            mixFillRT.anchorMax = new Vector2(0.50f, fillH);
+            mixFillRT.offsetMin = Vector2.zero;
+            mixFillRT.offsetMax = Vector2.zero;
+
+            rfRT.anchorMin = new Vector2(0.50f, 0.06f);
+            rfRT.anchorMax = new Vector2(0.94f, fillH);
+            rfRT.offsetMin = Vector2.zero;
+            rfRT.offsetMax = Vector2.zero;
 
             yield return null;
         }
 
-        // Hide slots, show result
-        slotLeftImage.color = new Color(0, 0, 0, 0);
-        slotRightImage.color = new Color(0, 0, 0, 0);
-
-        // Result circle grows with a bounce
-        resultCircle.color = resultColor;
-        float growDur = 0.35f;
-        t = 0f;
-        while (t < growDur)
+        // ── Phase 3: Un-tilt containers ──
+        float untiltDur = 0.3f;
+        t = 0;
+        while (t < untiltDur)
         {
             t += Time.deltaTime;
-            float p = t / growDur;
-            float s = Mathf.Sin(p * Mathf.PI * 0.5f); // ease out
-            float bounce = s + 0.15f * Mathf.Sin(p * Mathf.PI * 2f) * (1f - p);
-            resultCircle.transform.localScale = Vector3.one * bounce;
+            float p = t / untiltDur;
+            leftParent.localEulerAngles = new Vector3(0, 0, -25f * (1f - p));
+            rightParent.localEulerAngles = new Vector3(0, 0, 25f * (1f - p));
             yield return null;
         }
-        resultCircle.transform.localScale = Vector3.one;
+        leftParent.localEulerAngles = Vector3.zero;
+        rightParent.localEulerAngles = Vector3.zero;
 
-        // Sparkles from center
-        SpawnSplash(center, resultColor);
+        yield return new WaitForSeconds(0.15f);
 
-        // Play the mixed color name
-        string mixKey = slotLeftColorId + "+" + slotRightColorId;
-        string resultName = GetMixedColorName(mixKey);
+        // ── Phase 4: Visible swirl mixing inside the jar ──
+        // Swirl particles on top while the fill colors gradually blend
+        yield return SwirlMixAnimation(mixPos, mixFillRT, rfRT, rfImg,
+            leftColor, rightColor, resultColor);
+
+        // ── Phase 5: Settle to final color ──
+        // Remove the right-side layer, expand main fill to full width with result color
+        Destroy(rightFillLayer);
+        mixContainerFill.color = resultColor;
+        mixFillRT.anchorMin = new Vector2(0.06f, 0.06f);
+        mixFillRT.anchorMax = new Vector2(0.94f, 0.78f);
+        mixFillRT.offsetMin = Vector2.zero;
+        mixFillRT.offsetMax = Vector2.zero;
+
+        // Ripple + glow
+        SpawnRipple(mixPos, resultColor);
+        SpawnSplash(mixPos, resultColor, 8);
+
+        // Gentle bounce
+        yield return ElasticBounce(mixContainerBody.transform.parent, 1.06f, 0.2f);
+
+        // Play color name
+        string resultName = GetMixedColorName(key);
         if (!string.IsNullOrEmpty(resultName))
             SoundLibrary.PlayColorName(resultName);
 
-        yield return new WaitForSeconds(0.3f);
+        yield return new WaitForSeconds(0.35f);
 
-        // Check result
-        bool correct = (slotLeftColorId == currentTarget.primaryA && slotRightColorId == currentTarget.primaryB)
-                     || (slotLeftColorId == currentTarget.primaryB && slotRightColorId == currentTarget.primaryA);
+        // Check correctness
+        bool correct = (containerLeftColorId == currentTarget.primaryA && containerRightColorId == currentTarget.primaryB)
+                     || (containerLeftColorId == currentTarget.primaryB && containerRightColorId == currentTarget.primaryA);
 
         if (correct)
-            yield return SuccessSequence();
+            yield return SuccessSequence(resultColor);
         else
             yield return WrongSequence();
     }
 
-    // ── success ──────────────────────────────────────────────────────
-    private IEnumerator SuccessSequence()
+    /// <summary>
+    /// Visible swirl mixing: colored streaks orbit inside the jar while
+    /// the two fill halves gradually blend into the result color.
+    /// </summary>
+    private IEnumerator SwirlMixAnimation(Vector2 center,
+        RectTransform leftFillRT, RectTransform rightFillRT, Image rightFillImg,
+        Color colorA, Color colorB, Color resultColor)
     {
-        ConfettiController.Instance.Play();
-        // Pulse result
-        yield return BounceTransform(resultCircle.transform, 1.3f);
+        // Spawn swirl streak particles
+        int swirlCount = 16;
+        var swirlGOs = new List<GameObject>();
+        var swirlColors = new List<Color>();
+        for (int i = 0; i < swirlCount; i++)
+        {
+            var go = new GameObject("Swirl");
+            go.transform.SetParent(playArea, false);
+            var rt = go.AddComponent<RectTransform>();
+            // Mix of sizes — some large streaks, some small dots
+            float sz = i < 6 ? Random.Range(14f, 24f) : Random.Range(6f, 14f);
+            rt.sizeDelta = new Vector2(sz, sz * Random.Range(0.6f, 1.0f));
+            var img = go.AddComponent<Image>();
+            if (circleSprite != null) img.sprite = circleSprite;
+            Color c = i % 2 == 0 ? colorA : colorB;
+            // Add slight variation
+            c = Color.Lerp(c, Color.white, Random.Range(0f, 0.15f));
+            img.color = c;
+            img.raycastTarget = false;
+            swirlGOs.Add(go);
+            swirlColors.Add(c);
+        }
 
-        // Sparkle burst
-        SpawnSuccessSparkles(resultCircle.GetComponent<RectTransform>().anchoredPosition);
+        float swirlDur = 1.2f;
+        float t = 0;
+        float maxRadius = 50f;
 
-        // Bounce target
-        yield return BounceTransform(targetColorCircle.transform, 1.3f);
+        while (t < swirlDur)
+        {
+            t += Time.deltaTime;
+            float p = t / swirlDur;
 
-        yield return new WaitForSeconds(0.6f);
+            // Swirl speed: fast at start, slowing down
+            float speedMult = 1f + 2f * (1f - p);
+            // Radius: starts wide, contracts
+            float radius = maxRadius * (1f - p * 0.85f);
 
-        // Reset slot positions before next round
-        ResetSlotPositions();
-        StartNewRound();
+            for (int i = 0; i < swirlGOs.Count; i++)
+            {
+                if (swirlGOs[i] == null) continue;
+                var rt = swirlGOs[i].GetComponent<RectTransform>();
+                var img = swirlGOs[i].GetComponent<Image>();
+
+                // Each particle has different phase offset for organic feel
+                float phaseOffset = i * (360f / swirlCount) + (i % 3) * 40f;
+                float angle = (phaseOffset + p * 540f * speedMult) * Mathf.Deg2Rad;
+
+                // Wobble radius per particle
+                float r = radius * (0.7f + 0.3f * Mathf.Sin(i * 1.7f + p * 8f));
+                Vector2 pos = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * r;
+                rt.anchoredPosition = pos;
+
+                // Rotate streaks along their motion direction
+                float rotAngle = angle * Mathf.Rad2Deg + 90f;
+                rt.localEulerAngles = new Vector3(0, 0, rotAngle);
+
+                // Blend toward result color over time
+                Color blended = Color.Lerp(swirlColors[i], resultColor, p * p);
+                float alpha;
+                if (p < 0.7f)
+                    alpha = 0.85f;
+                else
+                    alpha = 0.85f * (1f - (p - 0.7f) / 0.3f);
+                img.color = new Color(blended.r, blended.g, blended.b, alpha);
+            }
+
+            // Simultaneously blend the fill colors toward result
+            // Left fill expands toward center, right fill shrinks
+            float blendP = Mathf.SmoothStep(0, 1, p);
+            Color leftBlend = Color.Lerp(colorA, resultColor, blendP);
+            Color rightBlend = Color.Lerp(colorB, resultColor, blendP);
+            mixContainerFill.color = leftBlend;
+            rightFillImg.color = rightBlend;
+
+            // Gradually merge the two halves: left expands right, right shrinks left
+            float splitX = Mathf.Lerp(0.50f, 0.94f, blendP);
+            leftFillRT.anchorMax = new Vector2(splitX, leftFillRT.anchorMax.y);
+            leftFillRT.offsetMax = Vector2.zero;
+            rightFillRT.anchorMin = new Vector2(splitX, rightFillRT.anchorMin.y);
+            rightFillRT.offsetMin = Vector2.zero;
+
+            yield return null;
+        }
+
+        // Clean up swirl particles
+        foreach (var go in swirlGOs)
+            if (go != null) Destroy(go);
     }
 
-    // ── wrong answer ─────────────────────────────────────────────────
-    private IEnumerator WrongSequence()
+    /// <summary>
+    /// Spawn a stream of colored droplets from container to mix target.
+    /// </summary>
+    private IEnumerator PourStream(Transform fromContainer, Vector2 toPos, Color color, float dur)
     {
-        yield return ShakeTransform(resultCircle.transform);
+        float t = 0;
+        float spawnInterval = 0.035f;
+        float nextSpawn = 0;
 
-        yield return new WaitForSeconds(0.3f);
-
-        // Shrink result away
-        float dur = 0.25f;
-        float t = 0f;
         while (t < dur)
         {
             t += Time.deltaTime;
-            resultCircle.transform.localScale = Vector3.one * (1f - t / dur);
+            nextSpawn -= Time.deltaTime;
+
+            if (nextSpawn <= 0)
+            {
+                nextSpawn = spawnInterval;
+                Vector2 fromPos = GetWorldAnchoredPos(fromContainer.GetComponent<RectTransform>());
+                fromPos.y -= 20f; // from bottom of container
+
+                float dropSize = Random.Range(8f, 16f);
+                Color dropColor = Color.Lerp(color, Color.white, Random.Range(0f, 0.15f));
+
+                var go = new GameObject("Drop");
+                go.transform.SetParent(playArea, false);
+                var rt = go.AddComponent<RectTransform>();
+                rt.anchoredPosition = fromPos;
+                rt.sizeDelta = new Vector2(dropSize, dropSize);
+                var img = go.AddComponent<Image>();
+                if (circleSprite != null) img.sprite = circleSprite;
+                img.color = dropColor;
+                img.raycastTarget = false;
+
+                StartCoroutine(AnimateDrop(rt, img, fromPos, toPos, Random.Range(0.2f, 0.35f)));
+            }
             yield return null;
         }
-        resultCircle.transform.localScale = Vector3.zero;
-        resultCircle.color = new Color(1, 1, 1, 0);
-
-        // Reset slots
-        ResetSlotPositions();
-        slotLeftColorId = null;
-        slotRightColorId = null;
-        slotLeftImage.color = SlotEmpty;
-        slotRightImage.color = SlotEmpty;
-        if (slotLeftImage.transform.childCount > 0)
-            slotLeftImage.transform.GetChild(0).gameObject.SetActive(true);
-        if (slotRightImage.transform.childCount > 0)
-            slotRightImage.transform.GetChild(0).gameObject.SetActive(true);
-
-        isAnimating = false;
     }
 
-    private void ResetSlotPositions()
+    private IEnumerator AnimateDrop(RectTransform rt, Image img, Vector2 from, Vector2 to, float dur)
     {
-        // Restore slot positions and scale (they moved during mix)
-        var leftRT = slotLeftImage.GetComponent<RectTransform>();
-        var rightRT = slotRightImage.GetComponent<RectTransform>();
-
-        // Positions are set by setup — store and restore via anchors
-        // Since anchors are preserved, just reset offset and scale
-        leftRT.localScale = Vector3.one;
-        rightRT.localScale = Vector3.one;
-
-        // Re-anchor to original positions
-        float slotSpacing = 160f;
-        leftRT.anchoredPosition = new Vector2(-slotSpacing, 0);
-        rightRT.anchoredPosition = new Vector2(slotSpacing, 0);
+        float t = 0;
+        Vector2 offset = new Vector2(Random.Range(-15f, 15f), Random.Range(-5f, 5f));
+        while (t < dur)
+        {
+            t += Time.deltaTime;
+            float p = t / dur;
+            rt.anchoredPosition = Vector2.Lerp(from, to + offset, p * p); // accelerate
+            float fade = p < 0.8f ? 1f : (1f - (p - 0.8f) / 0.2f);
+            img.color = new Color(img.color.r, img.color.g, img.color.b, fade);
+            yield return null;
+        }
+        Destroy(rt.gameObject);
     }
 
-    // ── helpers ──────────────────────────────────────────────────────
+    // ── success ─────────────────────────────────────────────────────
+    private IEnumerator SuccessSequence(Color resultColor)
+    {
+        if (targetPulseRoutine != null) StopCoroutine(targetPulseRoutine);
+
+        ConfettiController.Instance.Play();
+
+        // Glow around mixing container
+        if (mixContainerGlow != null)
+        {
+            float t = 0;
+            while (t < 0.3f)
+            {
+                t += Time.deltaTime;
+                float a = Mathf.Lerp(0f, 0.35f, t / 0.3f);
+                mixContainerGlow.color = new Color(resultColor.r, resultColor.g, resultColor.b, a);
+                yield return null;
+            }
+        }
+
+        // Bounce mixing container
+        yield return ElasticBounce(mixContainerBody.transform.parent, 1.12f, 0.3f);
+
+        // Sparkles
+        Vector2 mixPos = GetWorldAnchoredPos(mixContainerBody.GetComponent<RectTransform>());
+        SpawnSuccessSparkles(mixPos);
+
+        // Bounce target
+        yield return ElasticBounce(targetColorCircle.transform.parent.parent, 1.1f, 0.25f);
+
+        yield return new WaitForSeconds(0.6f);
+
+        // Fade glow
+        if (mixContainerGlow != null)
+        {
+            float t2 = 0;
+            Color glowC = mixContainerGlow.color;
+            while (t2 < 0.3f)
+            {
+                t2 += Time.deltaTime;
+                mixContainerGlow.color = new Color(glowC.r, glowC.g, glowC.b, glowC.a * (1f - t2 / 0.3f));
+                yield return null;
+            }
+        }
+
+        StartNewRound();
+    }
+
+    // ── wrong answer ────────────────────────────────────────────────
+    private IEnumerator WrongSequence()
+    {
+        // Gentle wobble on mixing container
+        yield return WobbleTransform(mixContainerBody.transform.parent);
+
+        // Hold result visible
+        yield return new WaitForSeconds(0.8f);
+
+        // Fade fill out
+        float dur = 0.4f;
+        float t = 0;
+        Color startColor = mixContainerFill.color;
+        while (t < dur)
+        {
+            t += Time.deltaTime;
+            float p = t / dur;
+            mixContainerFill.color = new Color(startColor.r, startColor.g, startColor.b, 1f - p);
+            yield return null;
+        }
+
+        StartNewRound();
+    }
+
+    // ── target animations ───────────────────────────────────────────
+    private IEnumerator TargetEntranceAnim()
+    {
+        var tr = targetColorCircle.transform;
+        tr.localScale = Vector3.zero;
+        float dur = 0.4f;
+        float t = 0;
+        while (t < dur)
+        {
+            t += Time.deltaTime;
+            float p = t / dur;
+            float elastic = 1f + Mathf.Pow(2f, -10f * p) *
+                Mathf.Sin((p - 0.075f) * (2f * Mathf.PI) / 0.3f) * -1f;
+            tr.localScale = Vector3.one * elastic;
+            yield return null;
+        }
+        tr.localScale = Vector3.one;
+    }
+
+    private IEnumerator TargetPulseLoop()
+    {
+        var tr = targetColorCircle.transform;
+        float phase = 0;
+        while (true)
+        {
+            phase += Time.deltaTime;
+            float breath = 1f + 0.05f * Mathf.Sin(phase * 1.8f);
+            tr.localScale = Vector3.one * breath;
+
+            if (targetGlowImage != null)
+            {
+                float a = 0.18f + 0.08f * Mathf.Sin(phase * 1.8f + Mathf.PI);
+                targetGlowImage.color = new Color(1f, 1f, 1f, a);
+            }
+            if (targetOuterGlowImage != null)
+            {
+                float s = 1f + 0.04f * Mathf.Sin(phase * 1.2f + 0.5f);
+                targetOuterGlowImage.transform.localScale = Vector3.one * s;
+            }
+            yield return null;
+        }
+    }
+
+    // ── animation helpers ───────────────────────────────────────────
+    private Vector2 GetWorldAnchoredPos(RectTransform rt)
+    {
+        // Convert world position to playArea anchored position
+        Vector2 worldPos = rt.position;
+        Vector2 localPoint;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            playArea, RectTransformUtility.WorldToScreenPoint(null, worldPos),
+            null, out localPoint);
+        return localPoint;
+    }
+
     private Color GetPrimaryColor(string id)
     {
         foreach (var def in Primaries)
@@ -459,67 +836,57 @@ public class ColorMixingController : MonoBehaviour
         return Color.white;
     }
 
-    private IEnumerator TransitionColor(Image img, Color from, Color to, float dur)
+    private IEnumerator ElasticBounce(Transform tr, float maxScale, float dur)
     {
-        float t = 0f;
-        while (t < dur)
-        {
-            t += Time.deltaTime;
-            img.color = Color.Lerp(from, to, t / dur);
-            yield return null;
-        }
-        img.color = to;
-    }
-
-    private IEnumerator BounceTransform(Transform tr, float maxScale)
-    {
-        float dur = 0.15f;
-        float t = 0f;
         Vector3 orig = tr.localScale;
-        Vector3 big = orig.normalized * maxScale;
-        if (orig.magnitude < 0.01f) big = Vector3.one * maxScale;
-
+        float t = 0;
         while (t < dur)
         {
             t += Time.deltaTime;
-            tr.localScale = Vector3.Lerp(orig, big, t / dur);
-            yield return null;
-        }
-        t = 0f;
-        while (t < dur)
-        {
-            t += Time.deltaTime;
-            tr.localScale = Vector3.Lerp(big, orig, t / dur);
+            float p = t / dur;
+            float s;
+            if (p < 0.4f)
+            {
+                float rp = p / 0.4f;
+                s = 1f + (maxScale - 1f) * Mathf.Sin(rp * Mathf.PI * 0.5f);
+            }
+            else
+            {
+                float sp = (p - 0.4f) / 0.6f;
+                s = 1f + (maxScale - 1f) * Mathf.Exp(-sp * 4f) * Mathf.Cos(sp * Mathf.PI * 2f);
+            }
+            tr.localScale = Vector3.one * s;
             yield return null;
         }
         tr.localScale = orig;
     }
 
-    private IEnumerator ShakeTransform(Transform tr)
+    private IEnumerator WobbleTransform(Transform tr)
     {
         Vector3 origin = tr.localPosition;
-        float dur = 0.35f;
-        float elapsed = 0f;
-        while (elapsed < dur)
+        float dur = 0.4f;
+        float t = 0;
+        while (t < dur)
         {
-            elapsed += Time.deltaTime;
-            float x = Mathf.Sin(elapsed * 50f) * 14f * (1f - elapsed / dur);
-            tr.localPosition = origin + new Vector3(x, 0f, 0f);
+            t += Time.deltaTime;
+            float decay = 1f - t / dur;
+            float x = Mathf.Sin(t * 35f) * 8f * decay;
+            float y = Mathf.Cos(t * 28f) * 2f * decay;
+            tr.localPosition = origin + new Vector3(x, y, 0f);
             yield return null;
         }
         tr.localPosition = origin;
     }
 
-    // ── UI particles ─────────────────────────────────────────────────
-    private void SpawnSplash(Vector2 pos, Color color)
+    // ── particles ───────────────────────────────────────────────────
+    private void SpawnSplash(Vector2 pos, Color color, int count)
     {
-        int count = Random.Range(6, 10);
         for (int i = 0; i < count; i++)
         {
             float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
-            float speed = Random.Range(200f, 450f);
-            float size = Random.Range(10f, 22f);
-            float lifetime = Random.Range(0.3f, 0.55f);
+            float speed = Random.Range(150f, 380f);
+            float size = Random.Range(6f, 18f);
+            float life = Random.Range(0.3f, 0.55f);
             Color c = Color.Lerp(color, Color.white, Random.Range(0f, 0.3f));
 
             var go = new GameObject("Splash");
@@ -532,20 +899,51 @@ public class ColorMixingController : MonoBehaviour
             img.color = c;
             img.raycastTarget = false;
 
-            StartCoroutine(AnimateParticle(rt, img, angle, speed, lifetime, 600f));
+            StartCoroutine(AnimateParticle(rt, img, angle, speed, life, 400f));
         }
+    }
+
+    private void SpawnRipple(Vector2 pos, Color color)
+    {
+        StartCoroutine(AnimateRipple(pos, color, 0.45f));
+        StartCoroutine(AnimateRipple(pos, color, 0.55f));
+    }
+
+    private IEnumerator AnimateRipple(Vector2 pos, Color color, float dur)
+    {
+        var go = new GameObject("Ripple");
+        go.transform.SetParent(playArea, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = new Vector2(20, 20);
+        var img = go.AddComponent<Image>();
+        if (circleSprite != null) img.sprite = circleSprite;
+        img.color = new Color(color.r, color.g, color.b, 0.35f);
+        img.raycastTarget = false;
+
+        float t = 0;
+        while (t < dur)
+        {
+            t += Time.deltaTime;
+            float p = t / dur;
+            float size = Mathf.Lerp(20f, 220f, p);
+            rt.sizeDelta = new Vector2(size, size);
+            img.color = new Color(color.r, color.g, color.b, 0.35f * (1f - p));
+            yield return null;
+        }
+        Destroy(go);
     }
 
     private void SpawnSuccessSparkles(Vector2 pos)
     {
-        for (int i = 0; i < 14; i++)
+        for (int i = 0; i < 16; i++)
         {
             float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
-            float speed = Random.Range(300f, 600f);
-            float size = Random.Range(8f, 18f);
-            float lifetime = Random.Range(0.4f, 0.7f);
+            float speed = Random.Range(250f, 520f);
+            float size = Random.Range(6f, 16f);
+            float life = Random.Range(0.4f, 0.7f);
             Color c = Color.Lerp(currentTarget.color, Color.white, Random.Range(0.3f, 0.7f));
-            if (Random.value < 0.3f) c = Color.yellow;
+            if (Random.value < 0.25f) c = new Color(1f, 0.95f, 0.4f);
 
             var go = new GameObject("Sparkle");
             go.transform.SetParent(playArea, false);
@@ -557,41 +955,33 @@ public class ColorMixingController : MonoBehaviour
             img.color = c;
             img.raycastTarget = false;
 
-            StartCoroutine(AnimateParticle(rt, img, angle, speed, lifetime, 200f));
+            StartCoroutine(AnimateParticle(rt, img, angle, speed, life, 160f));
         }
     }
 
     private IEnumerator AnimateParticle(RectTransform rt, Image img,
-        float angle, float speed, float lifetime, float gravity)
+        float angle, float speed, float life, float gravity)
     {
         Vector2 pos = rt.anchoredPosition;
-        Vector2 velocity = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * speed;
-        Color startColor = img.color;
-        float t = 0f;
-
-        while (t < lifetime)
+        Vector2 vel = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * speed;
+        Color sc = img.color;
+        float t = 0;
+        while (t < life)
         {
             t += Time.deltaTime;
-            velocity.y -= gravity * Time.deltaTime;
-            pos += velocity * Time.deltaTime;
+            vel.y -= gravity * Time.deltaTime;
+            pos += vel * Time.deltaTime;
             rt.anchoredPosition = pos;
-            float fade = 1f - (t / lifetime);
-            rt.localScale = Vector3.one * fade;
-            img.color = new Color(startColor.r, startColor.g, startColor.b, fade);
+            float fade = 1f - t / life;
+            rt.localScale = Vector3.one * (0.3f + 0.7f * fade);
+            img.color = new Color(sc.r, sc.g, sc.b, fade);
             yield return null;
         }
         Destroy(rt.gameObject);
     }
 
-    // ── navigation ───────────────────────────────────────────────────
+    // ── navigation ──────────────────────────────────────────────────
     public void OnHomePressed() => NavigationManager.GoToMainMenu();
-
-    public void OnRestartPressed()
-    {
-        StopAllCoroutines();
-        ResetSlotPositions();
-        StartNewRound();
-    }
 
     private static string GetColorSoundName(string colorId)
     {
@@ -607,7 +997,6 @@ public class ColorMixingController : MonoBehaviour
 
     private static string GetMixedColorName(string mixKey)
     {
-        // Normalize key order
         switch (mixKey)
         {
             case "red+yellow":  case "yellow+red":  return "Orange";

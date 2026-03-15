@@ -4,7 +4,8 @@ using UnityEngine.UI;
 
 /// <summary>
 /// A draggable color circle for the Color Mixing game.
-/// Drag it into the mixing bowl to add the color.
+/// Features glossy press/drag feedback and smooth return animation
+/// with overshoot bounce. Supports idle breathing from controller.
 /// </summary>
 public class DraggableColor : MonoBehaviour,
     IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerDownHandler, IPointerUpHandler
@@ -12,7 +13,8 @@ public class DraggableColor : MonoBehaviour,
     [HideInInspector] public string colorId;
     [HideInInspector] public Color color;
 
-    private Image image;
+    public bool IsDragging => isDragging;
+
     private Canvas canvas;
     private RectTransform rectTransform;
     private Vector2 homePosition;
@@ -20,6 +22,7 @@ public class DraggableColor : MonoBehaviour,
     private System.Action<DraggableColor> onDropped;
     private CanvasGroup canvasGroup;
     private bool isDragging;
+    private float idleScaleMultiplier = 1f;
 
     public void Init(string id, Color c, Canvas parentCanvas, System.Action<DraggableColor> dropCallback)
     {
@@ -31,7 +34,7 @@ public class DraggableColor : MonoBehaviour,
         rectTransform = GetComponent<RectTransform>();
         homeScale = rectTransform.localScale;
 
-        image = GetComponent<Image>();
+        var image = GetComponent<Image>();
         if (image == null)
             image = gameObject.AddComponent<Image>();
         image.color = c;
@@ -47,24 +50,33 @@ public class DraggableColor : MonoBehaviour,
         homePosition = rectTransform.anchoredPosition;
     }
 
+    /// <summary>
+    /// Called by controller's breath loop to set a gentle idle scale.
+    /// </summary>
+    public void SetIdleScale(float multiplier)
+    {
+        if (isDragging) return;
+        idleScaleMultiplier = multiplier;
+        rectTransform.localScale = homeScale * multiplier;
+    }
+
     public void OnPointerDown(PointerEventData eventData)
     {
-        // Slight scale up on touch
-        rectTransform.localScale = homeScale * 1.15f;
+        rectTransform.localScale = homeScale * 1.12f;
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
         if (!isDragging)
-            rectTransform.localScale = homeScale;
+            rectTransform.localScale = homeScale * idleScaleMultiplier;
     }
 
     public void OnBeginDrag(PointerEventData eventData)
     {
         isDragging = true;
         canvasGroup.blocksRaycasts = false;
-        rectTransform.localScale = homeScale * 1.2f;
-        // Bring to front
+        canvasGroup.alpha = 0.9f;
+        rectTransform.localScale = homeScale * 1.18f;
         transform.SetAsLastSibling();
     }
 
@@ -78,15 +90,11 @@ public class DraggableColor : MonoBehaviour,
     {
         isDragging = false;
         canvasGroup.blocksRaycasts = true;
+        canvasGroup.alpha = 1f;
         rectTransform.localScale = homeScale;
-
-        // Notify controller
         onDropped?.Invoke(this);
     }
 
-    /// <summary>
-    /// Animate back to home position.
-    /// </summary>
     public void ReturnHome(MonoBehaviour runner)
     {
         runner.StartCoroutine(AnimateHome());
@@ -95,17 +103,17 @@ public class DraggableColor : MonoBehaviour,
     private System.Collections.IEnumerator AnimateHome()
     {
         Vector2 start = rectTransform.anchoredPosition;
-        float dur = 0.25f;
+        float dur = 0.3f;
         float t = 0f;
         while (t < dur)
         {
             t += Time.deltaTime;
-            rectTransform.anchoredPosition = Vector2.Lerp(start, homePosition, t / dur);
+            float p = t / dur;
+            // Ease out with slight overshoot
+            float ease = 1f + Mathf.Pow(2f, -8f * p) * Mathf.Sin(p * Mathf.PI * 1.5f) * -0.15f;
+            rectTransform.anchoredPosition = Vector2.LerpUnclamped(start, homePosition, ease);
             yield return null;
         }
         rectTransform.anchoredPosition = homePosition;
     }
-
-    // Legacy support — unused but kept for compatibility
-    public void SetSelected(bool selected) { }
 }

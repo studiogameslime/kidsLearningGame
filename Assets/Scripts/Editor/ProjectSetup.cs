@@ -28,9 +28,9 @@ public class ProjectSetup : EditorWindow
     private const int GridPaddingH = 48;
     private const int GridPaddingTop = 24;
     private const int GridPaddingBottom = 24;
-    private const int GridSpacing = 32;
-    private const int CardWidth = 476;
-    private const int CardHeight = 548;
+    private const int GridSpacing = 28;
+    private const int CardWidth = 580;
+    private const int CardHeight = 520;
 
     // Header
     private const int HeaderHeight = 150;
@@ -163,8 +163,14 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Counting Game…", 0.96f);
             CountingGameSetup.RunSetupSilent();
 
-            EditorUtility.DisplayProgressBar("Setting up project…", "Building Color Voice Game…", 0.97f);
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Color Voice Game…", 0.965f);
             ColorVoiceGameSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Tower Builder…", 0.968f);
+            TowerBuilderSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Ball Maze…", 0.969f);
+            BallMazeSetup.RunSetupSilent();
 
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Animal Data…", 0.965f);
             WorldSceneSetup.BuildAnimalData();
@@ -629,9 +635,37 @@ public class ProjectSetup : EditorWindow
         colorVoice.thumbnail = LoadSprite($"{previewPath}/ColorsRecognize.png");
         EditorUtility.SetDirty(colorVoice);
 
+        // ── Tower Builder ──
+        var tower = CreateSO<GameItemData>($"{DataPath}/TowerBuilder.asset");
+        tower.id = "towerbuilder";
+        tower.title = "Tower Builder";
+        tower.cardColor = HexColor("#42A5F5");
+        tower.targetSceneName = "TowerBuilder";
+        tower.thumbnail = LoadSprite($"{previewPath}/Lego.png");
+        tower.hasSubItems = true;
+        tower.selectionScreenTitle = "\u05D1\u05E0\u05D4 \u05D0\u05EA \u05D4\u05DE\u05D2\u05D3\u05DC"; // בנה את המגדל
+        tower.subItems = new List<SubItemData>
+        {
+            new SubItemData { id = "tower_easy",      title = "\u05E7\u05DC",          cardColor = HexColor("#66BB6A"), categoryKey = "0", targetSceneName = "TowerBuilder" },
+            new SubItemData { id = "tower_medium",    title = "\u05D1\u05D9\u05E0\u05D5\u05E0\u05D9", cardColor = HexColor("#FFA726"), categoryKey = "1", targetSceneName = "TowerBuilder" },
+            new SubItemData { id = "tower_hard",      title = "\u05E7\u05E9\u05D4",    cardColor = HexColor("#EF5350"), categoryKey = "2", targetSceneName = "TowerBuilder" },
+            new SubItemData { id = "tower_veryhard",  title = "\u05DE\u05D0\u05EA\u05D2\u05E8", cardColor = HexColor("#AB47BC"), categoryKey = "3", targetSceneName = "TowerBuilder" },
+        };
+        EditorUtility.SetDirty(tower);
+
+        // ── Ball Maze ──
+        var ballMaze = CreateSO<GameItemData>($"{DataPath}/BallMaze.asset");
+        ballMaze.id = "ballmaze";
+        ballMaze.title = "Ball Maze";
+        ballMaze.cardColor = HexColor("#4FC3F7");
+        ballMaze.targetSceneName = "BallMaze";
+        ballMaze.hasSubItems = false;
+        ballMaze.thumbnail = LoadSprite($"{previewPath}/Maze.png");
+        EditorUtility.SetDirty(ballMaze);
+
         // ── Game Database ──
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, maze, colorVoice };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, maze, colorVoice, tower, ballMaze };
         EditorUtility.SetDirty(db);
 
         return db;
@@ -1170,7 +1204,7 @@ public class ProjectSetup : EditorWindow
         grid.startAxis = GridLayoutGroup.Axis.Horizontal;
         grid.childAlignment = TextAnchor.UpperCenter;
         grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = 2;
+        grid.constraintCount = 3;
 
         // Content Size Fitter (to grow the content as cards are added)
         var fitter = contentGO.AddComponent<ContentSizeFitter>();
@@ -1219,6 +1253,8 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/FindTheAnimal.unity",
             $"{ScenesPath}/CountingGame.unity",
             $"{ScenesPath}/ColorVoice.unity",
+            $"{ScenesPath}/TowerBuilder.unity",
+            $"{ScenesPath}/BallMaze.unity",
             $"{ScenesPath}/DiscoveryReveal.unity",
             $"{ScenesPath}/DrawingGallery.unity",
             $"{ScenesPath}/WorldScene.unity",
