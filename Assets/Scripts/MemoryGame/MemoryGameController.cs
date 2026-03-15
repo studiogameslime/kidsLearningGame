@@ -5,104 +5,112 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// Drives the memory game: spawns cards, handles matching logic, and tracks score.
-/// Attach to the Canvas root of the MemoryGame scene.
+/// Drives the memory game: spawns cards in a dynamic grid, handles matching logic.
+/// Landscape layout with difficulty-based grid configurations.
+///
+/// Difficulty: 0=Easy (4×2), 1=Medium (4×3), 2=Hard (4×4)
+/// Cards maintain 3:4 portrait aspect ratio.
 /// </summary>
 public class MemoryGameController : MonoBehaviour
 {
     [Header("Data")]
-    [Tooltip("All available memory categories. The controller picks the one matching GameContext.")]
     public List<MemoryCategoryData> categories;
 
     [Header("UI References")]
-    public Transform cardContainer;      // parent for spawned cards
-    public MemoryCard cardPrefab;        // the card prefab
-    public TextMeshProUGUI matchCountText;  // shows matched pairs count
-    public TextMeshProUGUI moveCountText;   // shows number of moves
+    public RectTransform boardArea;       // the board panel containing cards
+    public Transform cardContainer;       // parent for spawned cards (inside board)
+    public MemoryCard cardPrefab;
 
-    [Header("Grid Settings")]
-    public int columns = 4;
-    [Tooltip("Small random rotation per card in degrees (0 = no rotation).")]
-    public float cardRotationRange = 4f;
-
-    [Header("Timing")]
-    [Tooltip("Seconds to wait before flipping unmatched cards back.")]
+    [Header("Settings")]
+    public int difficulty;                // 0=Easy, 1=Medium, 2=Hard
+    [Tooltip("Small random rotation per card in degrees.")]
+    public float cardRotationRange = 3f;
     public float mismatchDelay = 0.8f;
+
+    // Card aspect ratio (width:height = 3:4)
+    private const float CardAspect = 0.75f; // 3/4
 
     // Runtime state
     private MemoryCategoryData activeCategory;
     private List<MemoryCard> allCards = new List<MemoryCard>();
     private MemoryCard firstFlipped;
     private MemoryCard secondFlipped;
-    private bool isProcessing;  // true while waiting for mismatch delay
+    private bool isProcessing;
     private int matchedPairs;
     private int totalPairs;
-    private int moveCount;
 
     private void Start()
     {
-        // Determine which category to use from the navigation context
         activeCategory = FindCategory();
-
         if (activeCategory == null)
         {
             Debug.LogError("MemoryGameController: No matching category found!");
             return;
         }
 
-        totalPairs = activeCategory.pairCount;
         SetupGame();
     }
 
     private MemoryCategoryData FindCategory()
     {
-        // Try to match the categoryKey from GameContext
         string key = GameContext.CurrentSelection != null
             ? GameContext.CurrentSelection.categoryKey
-            : "animals"; // default fallback
+            : "animals";
 
         foreach (var cat in categories)
-        {
             if (cat.categoryKey == key)
                 return cat;
-        }
 
-        // Fallback: return first category if no match
         return categories.Count > 0 ? categories[0] : null;
     }
 
+    // ── GRID CONFIGURATION ──
+
+    private void GetGridConfig(out int cols, out int rows, out int pairs)
+    {
+        // More columns for harder levels to use landscape width properly
+        switch (difficulty)
+        {
+            case 0:  cols = 4; rows = 2; pairs = 4;  break; // Easy: 8 cards
+            case 1:  cols = 6; rows = 2; pairs = 6;  break; // Medium: 12 cards, wide spread
+            case 2:  cols = 6; rows = 3; pairs = 9;  break; // Hard: 18 cards, wide 3-row grid
+            default: cols = 6; rows = 2; pairs = 6;  break;
+        }
+    }
+
+    // ── GAME SETUP ──
+
     private void SetupGame()
     {
-        // Reset state
         matchedPairs = 0;
-        moveCount = 0;
         firstFlipped = null;
         secondFlipped = null;
         isProcessing = false;
-        UpdateUI();
 
         // Clear existing cards
         foreach (Transform child in cardContainer)
             Destroy(child.gameObject);
         allCards.Clear();
 
-        // Pick random card faces
-        List<Sprite> availableFaces = new List<Sprite>(activeCategory.cardFaces);
-        int pairsToUse = Mathf.Min(totalPairs, availableFaces.Count);
+        int cols, rows, pairs;
+        GetGridConfig(out cols, out rows, out pairs);
+        totalPairs = Mathf.Min(pairs, activeCategory.cardFaces.Count);
 
-        // Shuffle available faces and pick the first N
-        ShuffleList(availableFaces);
-        List<Sprite> selectedFaces = availableFaces.GetRange(0, pairsToUse);
+        // Configure grid layout
+        ConfigureGrid(cols, rows);
 
-        // Create pair entries (each face appears twice)
+        // Pick random faces
+        List<Sprite> available = new List<Sprite>(activeCategory.cardFaces);
+        ShuffleList(available);
+        List<Sprite> selected = available.GetRange(0, totalPairs);
+
+        // Create pair entries
         List<CardEntry> entries = new List<CardEntry>();
-        for (int i = 0; i < pairsToUse; i++)
+        for (int i = 0; i < totalPairs; i++)
         {
-            entries.Add(new CardEntry { pairId = i, face = selectedFaces[i] });
-            entries.Add(new CardEntry { pairId = i, face = selectedFaces[i] });
+            entries.Add(new CardEntry { pairId = i, face = selected[i] });
+            entries.Add(new CardEntry { pairId = i, face = selected[i] });
         }
-
-        // Shuffle the entries for random placement
         ShuffleList(entries);
 
         // Spawn cards
@@ -115,30 +123,70 @@ public class MemoryGameController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Dynamically calculate card size to fit the board with 3:4 aspect ratio.
+    /// Cards fill available width first, then check height constraint.
+    /// </summary>
+    private void ConfigureGrid(int cols, int rows)
+    {
+        var grid = cardContainer.GetComponent<GridLayoutGroup>();
+        if (grid == null || boardArea == null) return;
+
+        // Force layout rebuild to get accurate rect
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(boardArea);
+
+        float boardW = boardArea.rect.width;
+        float boardH = boardArea.rect.height;
+
+        // Scale spacing with column count for balanced breathing room
+        float spacing = cols <= 4 ? 20f : (cols <= 6 ? 18f : 14f);
+        float padH = 20f;
+        float padV = 16f;
+
+        float availW = boardW - padH * 2f - (cols - 1) * spacing;
+        float availH = boardH - padV * 2f - (rows - 1) * spacing;
+
+        // Calculate cell size maintaining 3:4 ratio — width first
+        float cellW = availW / cols;
+        float cellH = cellW / CardAspect;
+
+        // Check if height fits; if not, constrain by height
+        if (cellH * rows > availH)
+        {
+            cellH = availH / rows;
+            cellW = cellH * CardAspect;
+        }
+
+        grid.cellSize = new Vector2(cellW, cellH);
+        grid.spacing = new Vector2(spacing, spacing);
+        grid.padding = new RectOffset(
+            Mathf.RoundToInt(padH), Mathf.RoundToInt(padH),
+            Mathf.RoundToInt(padV), Mathf.RoundToInt(padV));
+        grid.startCorner = GridLayoutGroup.Corner.UpperLeft;
+        grid.startAxis = GridLayoutGroup.Axis.Horizontal;
+        grid.childAlignment = TextAnchor.MiddleCenter;
+        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        grid.constraintCount = cols;
+    }
+
+    // ── CARD INTERACTION ──
+
     private void OnCardClicked(MemoryCard card)
     {
-        // Ignore taps while processing a mismatch or if card is already face-up
         if (isProcessing || card.IsFaceUp || card.IsMatched) return;
 
         if (firstFlipped == null)
         {
-            // First card of the pair
             firstFlipped = card;
             card.FlipToFront();
             PlayCardAnimalName(card);
         }
         else if (secondFlipped == null && card != firstFlipped)
         {
-            // Second card of the pair
             secondFlipped = card;
             PlayCardAnimalName(card);
-            card.FlipToFront(() =>
-            {
-                // Check for match after flip animation completes
-                StartCoroutine(CheckMatch());
-            });
-            moveCount++;
-            UpdateUI();
+            card.FlipToFront(() => StartCoroutine(CheckMatch()));
         }
     }
 
@@ -148,16 +196,12 @@ public class MemoryGameController : MonoBehaviour
 
         if (firstFlipped.PairId == secondFlipped.PairId)
         {
-            // Match found!
             yield return new WaitForSeconds(0.2f);
-
             firstFlipped.IsMatched = true;
             secondFlipped.IsMatched = true;
             firstFlipped.PlayMatchAndHide();
             secondFlipped.PlayMatchAndHide();
-
             matchedPairs++;
-            UpdateUI();
 
             if (matchedPairs >= totalPairs)
             {
@@ -167,13 +211,9 @@ public class MemoryGameController : MonoBehaviour
         }
         else
         {
-            // No match — wait, then flip both back
             yield return new WaitForSeconds(mismatchDelay);
-
             firstFlipped.FlipToBack();
             secondFlipped.FlipToBack();
-
-            // Small delay for flip animation to finish
             yield return new WaitForSeconds(0.3f);
         }
 
@@ -184,39 +224,19 @@ public class MemoryGameController : MonoBehaviour
 
     private void OnGameComplete()
     {
-        Debug.Log($"Game complete! Moves: {moveCount}");
         ConfettiController.Instance.Play();
-    }
-
-    private void UpdateUI()
-    {
-        if (matchCountText != null)
-            matchCountText.text = $"{matchedPairs}/{totalPairs}";
-        if (moveCountText != null)
-            moveCountText.text = $"{moveCount}";
-    }
-
-    /// <summary>Called by the Home/Exit button.</summary>
-    public void OnExitPressed()
-    {
-        NavigationManager.GoToMainMenu();
-    }
-
-    /// <summary>Called by the Restart button.</summary>
-    public void OnRestartPressed()
-    {
-        SetupGame();
     }
 
     private void PlayCardAnimalName(MemoryCard card)
     {
         if (card == null || string.IsNullOrEmpty(card.FaceSpriteName)) return;
-        // Sprite names are like "Bear", "Cat Main", etc.
         string name = card.FaceSpriteName;
         if (name.Contains(" "))
             name = name.Substring(0, name.IndexOf(' '));
         SoundLibrary.PlayAnimalName(name);
     }
+
+    public void OnExitPressed() => NavigationManager.GoToMainMenu();
 
     // ── Utility ──
 
@@ -231,9 +251,7 @@ public class MemoryGameController : MonoBehaviour
         for (int i = list.Count - 1; i > 0; i--)
         {
             int j = Random.Range(0, i + 1);
-            T temp = list[i];
-            list[i] = list[j];
-            list[j] = temp;
+            T temp = list[i]; list[i] = list[j]; list[j] = temp;
         }
     }
 }
