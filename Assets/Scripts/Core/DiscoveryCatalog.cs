@@ -29,7 +29,7 @@ public static class DiscoveryCatalog
     private static readonly string[] GameOrder =
     {
         "shadows", "puzzle", "colormixing", "fillthedots",
-        "ballmaze", "coloring", "colorvoice", "towerbuilder", "towerstack"
+        "ballmaze", "coloring", "colorvoice", "towerbuilder", "towerstack", "sharedsticker"
     };
 
     public static bool HasMore(JourneyProgress jp)

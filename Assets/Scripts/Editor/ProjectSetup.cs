@@ -172,6 +172,9 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Tower Stack…", 0.971f);
             TowerStackSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Shared Sticker…", 0.973f);
+            SharedStickerSetup.RunSetupSilent();
+
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Animal Data…", 0.965f);
             WorldSceneSetup.BuildAnimalData();
 
@@ -649,9 +652,19 @@ public class ProjectSetup : EditorWindow
         towerStack.thumbnail = LoadSprite($"{previewPath}/BlocksTower.png");
         EditorUtility.SetDirty(towerStack);
 
+        // ── Shared Sticker (Spot It) ──
+        var sharedSticker = CreateSO<GameItemData>($"{DataPath}/SharedSticker.asset");
+        sharedSticker.id = "sharedsticker";
+        sharedSticker.title = "Shared Sticker";
+        sharedSticker.cardColor = HexColor("#8D6E63");
+        sharedSticker.targetSceneName = "SharedSticker";
+        sharedSticker.hasSubItems = false;
+        sharedSticker.thumbnail = LoadSprite($"{previewPath}/FindTheSimilar.png");
+        EditorUtility.SetDirty(sharedSticker);
+
         // ── Game Database ──
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, colorVoice, tower, towerStack };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, colorVoice, tower, towerStack, sharedSticker };
         EditorUtility.SetDirty(db);
 
         return db;
@@ -1241,6 +1254,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/TowerBuilder.unity",
             $"{ScenesPath}/BallMaze.unity",
             $"{ScenesPath}/TowerStack.unity",
+            $"{ScenesPath}/SharedSticker.unity",
             $"{ScenesPath}/DiscoveryReveal.unity",
             $"{ScenesPath}/DrawingGallery.unity",
             $"{ScenesPath}/WorldScene.unity",

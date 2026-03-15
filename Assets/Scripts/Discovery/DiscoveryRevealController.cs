@@ -379,6 +379,7 @@ public class DiscoveryRevealController : MonoBehaviour
             case "colorvoice":   return "\u05D0\u05DE\u05E8\u05D5 \u05D0\u05EA \u05D4\u05E6\u05D1\u05E2"; // אמרו את הצבע
             case "findtheobject":return "\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05D7\u05D9\u05D4"; // מצא את החיה
             case "findthecount": return "\u05E1\u05E4\u05D9\u05E8\u05D4";     // ספירה
+            case "sharedsticker":return "\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05DE\u05E9\u05D5\u05EA\u05E3"; // מצא את המשותף
             default:             return id;
         }
     }
