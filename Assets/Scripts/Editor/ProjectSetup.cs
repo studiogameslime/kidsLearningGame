@@ -154,9 +154,6 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Shadow Match…", 0.92f);
             ShadowMatchSetup.RunSetupSilent();
 
-            EditorUtility.DisplayProgressBar("Setting up project…", "Building Maze Game…", 0.93f);
-            MazeGameSetup.RunSetupSilent();
-
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Find The Animal…", 0.95f);
             FindTheAnimalSetup.RunSetupSilent();
 
@@ -171,6 +168,9 @@ public class ProjectSetup : EditorWindow
 
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Ball Maze…", 0.969f);
             BallMazeSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Tower Stack…", 0.971f);
+            TowerStackSetup.RunSetupSilent();
 
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Animal Data…", 0.965f);
             WorldSceneSetup.BuildAnimalData();
@@ -600,30 +600,16 @@ public class ProjectSetup : EditorWindow
         }
         EditorUtility.SetDirty(colorMix);
 
-        // ── Maze ──
-        var maze = CreateSO<GameItemData>($"{DataPath}/MazeGame.asset");
-        maze.id = "maze";
-        maze.title = "Maze";
-        maze.cardColor = HexColor("#FFD54F");
-        maze.targetSceneName = "MazeGame";
-        maze.hasSubItems = false;
-        maze.thumbnail = LoadSprite($"{previewPath}/Maze.png");
-        maze.nameClip = LoadAudioClip("Assets/Sounds/Games Names/Maze.mp3");
-        maze.subItems = new List<SubItemData>();
-        for (int i = 0; i < animals.Length; i++)
-        {
-            string name = animals[i];
-            Sprite thumbSprite = LoadSprite($"Assets/Art/Animals/{name}/Art/{name}Sprite.png");
-            if (thumbSprite == null) continue;
-            maze.subItems.Add(new SubItemData
-            {
-                id = $"maze_{name.ToLower()}", title = name,
-                cardColor = AnimalColors[i % AnimalColors.Length],
-                categoryKey = name.ToLower(), targetSceneName = "MazeGame",
-                contentAsset = thumbSprite, thumbnail = thumbSprite
-            });
-        }
-        EditorUtility.SetDirty(maze);
+        // ── Ball Maze ──
+        var ballMaze = CreateSO<GameItemData>($"{DataPath}/BallMaze.asset");
+        ballMaze.id = "ballmaze";
+        ballMaze.title = "Ball Maze";
+        ballMaze.cardColor = HexColor("#4FC3F7");
+        ballMaze.targetSceneName = "BallMaze";
+        ballMaze.hasSubItems = false;
+        ballMaze.thumbnail = LoadSprite($"{previewPath}/Maze.png");
+        ballMaze.nameClip = LoadAudioClip("Assets/Sounds/Games Names/Maze.mp3");
+        EditorUtility.SetDirty(ballMaze);
 
         // ── Color Voice (Say the Color) ──
         var colorVoice = CreateSO<GameItemData>($"{DataPath}/ColorVoice.asset");
@@ -653,19 +639,19 @@ public class ProjectSetup : EditorWindow
         };
         EditorUtility.SetDirty(tower);
 
-        // ── Ball Maze ──
-        var ballMaze = CreateSO<GameItemData>($"{DataPath}/BallMaze.asset");
-        ballMaze.id = "ballmaze";
-        ballMaze.title = "Ball Maze";
-        ballMaze.cardColor = HexColor("#4FC3F7");
-        ballMaze.targetSceneName = "BallMaze";
-        ballMaze.hasSubItems = false;
-        ballMaze.thumbnail = LoadSprite($"{previewPath}/Maze.png");
-        EditorUtility.SetDirty(ballMaze);
+        // ── Tower Stack ──
+        var towerStack = CreateSO<GameItemData>($"{DataPath}/TowerStack.asset");
+        towerStack.id = "towerstack";
+        towerStack.title = "Tower Stack";
+        towerStack.cardColor = HexColor("#FF7043");
+        towerStack.targetSceneName = "TowerStack";
+        towerStack.hasSubItems = false;
+        towerStack.thumbnail = LoadSprite($"{previewPath}/BlocksTower.png");
+        EditorUtility.SetDirty(towerStack);
 
         // ── Game Database ──
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, maze, colorVoice, tower, ballMaze };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, colorVoice, tower, towerStack };
         EditorUtility.SetDirty(db);
 
         return db;
@@ -688,7 +674,7 @@ public class ProjectSetup : EditorWindow
         CreateSelectionMenuScene(cardPrefab, roundedRect, circleSprite);
 
         // Placeholder game scenes
-        string[] gameScenes = { "MemoryGame", "PuzzleGame", "ColoringGame", "ConnectTheDots", "ColorMixing", "ShadowMatch", "MazeGame", "FindTheAnimal", "CountingGame" };
+        string[] gameScenes = { "MemoryGame", "PuzzleGame", "ColoringGame", "ConnectTheDots", "ColorMixing", "ShadowMatch", "FindTheAnimal", "CountingGame" };
         foreach (var sceneName in gameScenes)
         {
             float progress = 0.4f + 0.5f * (System.Array.IndexOf(gameScenes, sceneName) / (float)gameScenes.Length);
@@ -1249,12 +1235,12 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/ConnectTheDots.unity",
             $"{ScenesPath}/ColorMixing.unity",
             $"{ScenesPath}/ShadowMatch.unity",
-            $"{ScenesPath}/MazeGame.unity",
             $"{ScenesPath}/FindTheAnimal.unity",
             $"{ScenesPath}/CountingGame.unity",
             $"{ScenesPath}/ColorVoice.unity",
             $"{ScenesPath}/TowerBuilder.unity",
             $"{ScenesPath}/BallMaze.unity",
+            $"{ScenesPath}/TowerStack.unity",
             $"{ScenesPath}/DiscoveryReveal.unity",
             $"{ScenesPath}/DrawingGallery.unity",
             $"{ScenesPath}/WorldScene.unity",

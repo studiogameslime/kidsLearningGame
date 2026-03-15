@@ -61,6 +61,14 @@ public class WorldInputHandler : MonoBehaviour
         {
             var go = result.gameObject;
 
+            // Check for gift box (highest priority interactive)
+            var gift = go.GetComponent<GiftBoxController>();
+            if (gift != null)
+            {
+                gift.OnTap();
+                return;
+            }
+
             // Check for animal
             var animal = go.GetComponent<WorldAnimal>();
             if (animal != null)

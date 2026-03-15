@@ -196,10 +196,15 @@ public class JourneyManager : MonoBehaviour
                 case "animal":
                     if (!jp.unlockedAnimalIds.Contains(ActiveDiscovery.id))
                         jp.unlockedAnimalIds.Add(ActiveDiscovery.id);
+                    // Save as pending reward for gift box in World
+                    jp.pendingWorldReward = new DiscoveryEntry
+                        { type = ActiveDiscovery.type, id = ActiveDiscovery.id };
                     break;
                 case "color":
                     if (!jp.unlockedColorIds.Contains(ActiveDiscovery.id))
                         jp.unlockedColorIds.Add(ActiveDiscovery.id);
+                    jp.pendingWorldReward = new DiscoveryEntry
+                        { type = ActiveDiscovery.type, id = ActiveDiscovery.id };
                     break;
                 case "game":
                     if (!jp.unlockedGameIds.Contains(ActiveDiscovery.id))

@@ -158,8 +158,6 @@ public class WorldToyBox : MonoBehaviour
         StopCoroutine(nameof(IdleWiggle));
         rt.localRotation = Quaternion.identity;
 
-        SoundLibrary.PlayRandomFeedback();
-
         // 1. Bounce up
         float elapsed = 0f;
         Vector2 startPos = rt.anchoredPosition;

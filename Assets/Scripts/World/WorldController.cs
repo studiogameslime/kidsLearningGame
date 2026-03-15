@@ -26,6 +26,9 @@ public class WorldController : MonoBehaviour
     public WorldEnvironment environment;
     public WorldCloudSystem cloudSystem;
 
+    [Header("Rewards")]
+    public RewardRevealController rewardReveal;
+
     [Header("Settings")]
     public float animalSpacing = 320f;
     public float worldPadding = 250f;
@@ -57,10 +60,19 @@ public class WorldController : MonoBehaviour
         UpdateProfileAvatar();
         BuildWorld();
         StartCoroutine(PlayWorldIntro());
+
+        // Check for pending gift box reward
+        if (rewardReveal != null)
+            rewardReveal.CheckForPendingReward();
     }
 
     private IEnumerator PlayWorldIntro()
     {
+        // Only play world intro sound once per profile (first visit)
+        var profile = ProfileManager.ActiveProfile;
+        if (profile != null && profile.journey.hasPlayedWorldIntroSound)
+            yield break;
+
         // "This is your world"
         var introClip = SoundLibrary.WorldIntro();
         if (introClip != null)
@@ -77,6 +89,13 @@ public class WorldController : MonoBehaviour
         var followUp = SoundLibrary.WorldAnimalsAndColors();
         if (followUp != null)
             BackgroundMusicManager.PlayOneShot(followUp);
+
+        // Mark as played and save
+        if (profile != null)
+        {
+            profile.journey.hasPlayedWorldIntroSound = true;
+            ProfileManager.Instance.Save();
+        }
     }
 
     private void BuildAnimalSpriteLookup()

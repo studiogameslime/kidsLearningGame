@@ -797,7 +797,6 @@ public class FindTheAnimalController : MonoBehaviour
         yield return new WaitForSeconds(1.5f);
 
         ConfettiController.Instance.Play();
-        SoundLibrary.PlayRandomFeedback();
         yield return new WaitForSeconds(1.2f);
 
         foreach (var animal in spawnedAnimals)

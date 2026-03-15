@@ -18,7 +18,7 @@ public class DiscoveryRevealController : MonoBehaviour
     [Header("Settings")]
     public int textureWidth = 960;
     public int textureHeight = 540;
-    public int brushRadius = 80;
+    public int brushRadius = 160;
     public float revealThreshold = 0.7f;
 
     private Texture2D scratchTex;
@@ -201,6 +201,9 @@ public class DiscoveryRevealController : MonoBehaviour
         bool changed = false;
         int r = brushRadius;
         int rSq = r * r;
+        // Soft edge: full clear inside 80% radius, fade to zero at edge
+        int softStart = (int)(r * 0.8f);
+        int softStartSq = softStart * softStart;
 
         int minX = Mathf.Max(0, cx - r);
         int maxX = Mathf.Min(textureWidth - 1, cx + r);
@@ -213,13 +216,31 @@ public class DiscoveryRevealController : MonoBehaviour
             {
                 int dx = x - cx;
                 int dy = y - cy;
-                if (dx * dx + dy * dy <= rSq)
+                int distSq = dx * dx + dy * dy;
+                if (distSq <= rSq)
                 {
                     int idx = y * textureWidth + x;
                     if (pixels[idx].a > 0)
                     {
-                        pixels[idx].a = 0;
-                        clearedPixels++;
+                        if (distSq <= softStartSq)
+                        {
+                            // Full clear in center
+                            clearedPixels++;
+                            pixels[idx].a = 0;
+                        }
+                        else
+                        {
+                            // Soft fade at edge
+                            float dist = Mathf.Sqrt(distSq);
+                            float fade = 1f - (dist - softStart) / (r - softStart);
+                            byte newAlpha = (byte)(pixels[idx].a * (1f - fade));
+                            if (newAlpha < 8) // threshold to count as cleared
+                            {
+                                newAlpha = 0;
+                                clearedPixels++;
+                            }
+                            pixels[idx].a = newAlpha;
+                        }
                         changed = true;
                     }
                 }
@@ -257,8 +278,18 @@ public class DiscoveryRevealController : MonoBehaviour
 
         overlayImage.gameObject.SetActive(false);
 
-        // Show Hebrew name
+        // Play the discovered item's sound
         var discovery = JourneyManager.Instance?.ActiveDiscovery;
+        if (discovery != null)
+        {
+            switch (discovery.type)
+            {
+                case "animal": SoundLibrary.PlayAnimalName(discovery.id); break;
+                case "color":  SoundLibrary.PlayColorName(discovery.id); break;
+            }
+        }
+
+        // Show Hebrew name
         if (nameText != null && discovery != null)
         {
             nameText.text = HebrewFixer.Fix(GetHebrewName(discovery));
@@ -342,7 +373,9 @@ public class DiscoveryRevealController : MonoBehaviour
             case "fillthedots":  return "\u05D7\u05D1\u05E8 \u05E0\u05E7\u05D5\u05D3\u05D5\u05EA"; // חבר נקודות
             case "shadows":      return "\u05D4\u05EA\u05D0\u05DE\u05EA \u05E6\u05DC\u05DC\u05D9\u05DD"; // התאמת צללים
             case "colormixing":  return "\u05E2\u05E8\u05D1\u05D5\u05D1 \u05E6\u05D1\u05E2\u05D9\u05DD"; // ערבוב צבעים
-            case "maze":         return "\u05DE\u05D1\u05D5\u05DA";           // מבוך
+            case "ballmaze":     return "\u05DE\u05D1\u05D5\u05DA \u05D4\u05DB\u05D3\u05D5\u05E8"; // מבוך הכדור
+            case "towerbuilder": return "\u05D1\u05E0\u05D4 \u05DE\u05D2\u05D3\u05DC";       // בנה מגדל
+            case "towerstack":   return "\u05D1\u05E0\u05D4 \u05D0\u05EA \u05D4\u05DE\u05D2\u05D3\u05DC"; // בנה את המגדל
             case "colorvoice":   return "\u05D0\u05DE\u05E8\u05D5 \u05D0\u05EA \u05D4\u05E6\u05D1\u05E2"; // אמרו את הצבע
             case "findtheobject":return "\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05D7\u05D9\u05D4"; // מצא את החיה
             case "findthecount": return "\u05E1\u05E4\u05D9\u05E8\u05D4";     // ספירה

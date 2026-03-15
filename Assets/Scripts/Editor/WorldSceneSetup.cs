@@ -758,6 +758,15 @@ public class WorldSceneSetup : EditorWindow
         controller.environment = envComponent;
         controller.cloudSystem = cloudSystemComp;
 
+        // ── Reward Reveal ──
+        var rewardReveal = canvasGO.AddComponent<RewardRevealController>();
+        rewardReveal.grassArea = grassAreaRT;
+        rewardReveal.skyArea = skyAreaRT;
+        rewardReveal.giftSprite = LoadSprite("Assets/Art/Gift.png");
+        rewardReveal.circleSprite = circleSprite;
+        rewardReveal.gameDatabase = controller.gameDatabase;
+        controller.rewardReveal = rewardReveal;
+
         // ── Input Handler ──
         var inputHandler = canvasGO.AddComponent<WorldInputHandler>();
         inputHandler.worldContent = worldContentRT;

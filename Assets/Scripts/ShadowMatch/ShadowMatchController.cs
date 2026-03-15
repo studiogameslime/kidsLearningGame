@@ -227,7 +227,10 @@ public class ShadowMatchController : MonoBehaviour
                 if (img != null) img.color = new Color(1, 1, 1, 0);
 
                 animal.PlayMatchCelebration();
-                SoundLibrary.PlayRandomFeedback();
+                // Play the matched animal's name sound
+                string name = animal.animalId;
+                if (!string.IsNullOrEmpty(name))
+                    SoundLibrary.PlayAnimalName(char.ToUpper(name[0]) + name.Substring(1));
 
                 matchedCount++;
                 if (matchedCount >= animalCount)
@@ -255,7 +258,6 @@ public class ShadowMatchController : MonoBehaviour
     {
         yield return new WaitForSeconds(0.5f);
         ConfettiController.Instance.Play();
-        SoundLibrary.PlayRandomFeedback();
         yield return new WaitForSeconds(2f);
         LoadRound();
     }
