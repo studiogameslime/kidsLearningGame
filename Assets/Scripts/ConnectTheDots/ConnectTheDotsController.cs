@@ -16,8 +16,9 @@ using TMPro;
 /// - Night sky with twinkling decorative stars
 /// - Puzzle dots look like bright glowing stars
 /// - Constellation-style warm white/yellow lines
-/// - Simple shapes (star, heart, house, etc.) with Hebrew names
-/// - Completion: outline → Hebrew shape name → celebration
+/// - Auto-generated animal silhouette shapes from sprites (DotShapeData)
+/// - Falls back to hardcoded simple shapes if no generated data found
+/// - Completion: animal reveal + Hebrew name → celebration
 /// </summary>
 public class ConnectTheDotsController : MonoBehaviour
 {
@@ -44,6 +45,9 @@ public class ConnectTheDotsController : MonoBehaviour
     [Header("Guide Line")]
     public float guideLineAlpha = 0.10f;
 
+    [Header("Difficulty (0=Easy, 1=Medium, 2=Hard)")]
+    public int difficulty = 0;
+
     private Canvas canvas;
     private List<DotPoint> dots = new List<DotPoint>();
     private List<GameObject> drawnLines = new List<GameObject>();
@@ -56,6 +60,12 @@ public class ConnectTheDotsController : MonoBehaviour
     private bool isDrawing;
     private bool roundComplete;
     private int roundNumber;
+    private float currentDotSize;
+
+    // Sprite-generated shapes loaded at runtime, filtered by difficulty
+    private DotShapeData[] allGeneratedShapes;
+    private List<DotShapeData> eligibleShapes = new List<DotShapeData>();
+    private int lastGenShapeIndex = -1;
 
     // Live drawing line
     private GameObject liveLineGO;
@@ -201,6 +211,10 @@ public class ConnectTheDotsController : MonoBehaviour
         canvas = GetComponentInParent<Canvas>();
         roundNumber = 0;
 
+        // Load all generated shapes, then filter by difficulty+complexity
+        allGeneratedShapes = Resources.LoadAll<DotShapeData>("DotShapes");
+        BuildEligibleShapes();
+
         if (shapeNameText != null)
         {
             shapeNameText.color = new Color(1, 1, 1, 0);
@@ -250,14 +264,75 @@ public class ConnectTheDotsController : MonoBehaviour
         return Shapes[index];
     }
 
+    /// <summary>
+    /// Build the list of shapes eligible for the current difficulty.
+    /// Easy = Low complexity only. Medium = Low+Medium. Hard = all.
+    /// </summary>
+    private void BuildEligibleShapes()
+    {
+        eligibleShapes.Clear();
+        lastGenShapeIndex = -1;
+
+        if (allGeneratedShapes == null || allGeneratedShapes.Length == 0)
+            return;
+
+        foreach (var shape in allGeneratedShapes)
+        {
+            if (shape != null && shape.IsAllowedForDifficulty(difficulty))
+            {
+                var pts = shape.GetPoints(difficulty);
+                if (pts != null && pts.Length >= 3)
+                    eligibleShapes.Add(shape);
+            }
+        }
+
+        if (eligibleShapes.Count > 0)
+            Debug.Log($"ConnectTheDots: {eligibleShapes.Count} shapes eligible for difficulty {difficulty} " +
+                      $"(of {allGeneratedShapes.Length} total)");
+    }
+
+    /// <summary>Pick an eligible shape, avoiding the last one played.</summary>
+    private DotShapeData PickGeneratedShape()
+    {
+        int count = eligibleShapes.Count;
+        int index;
+        if (count == 1)
+            index = 0;
+        else
+        {
+            do { index = Random.Range(0, count); }
+            while (index == lastGenShapeIndex);
+        }
+        lastGenShapeIndex = index;
+        return eligibleShapes[index];
+    }
+
     private void LoadNewRound()
     {
         ClearRound();
 
-        currentShape = PickRandomShape();
-        currentLineColor = currentShape.color;
+        // Prefer generated shapes if available; fall back to hardcoded
+        Vector2[] layout;
+        if (eligibleShapes.Count > 0)
+        {
+            var genShape = PickGeneratedShape();
+            layout = genShape.GetPoints(difficulty);
+            if (layout == null || layout.Length < 3)
+                layout = genShape.easyPoints;
 
-        Vector2[] layout = currentShape.points;
+            currentShape = new ShapeDef(
+                genShape.hebrewName,
+                genShape.animalId,
+                layout,
+                genShape.lineColor);
+        }
+        else
+        {
+            currentShape = PickRandomShape();
+            layout = currentShape.points;
+        }
+
+        currentLineColor = currentShape.color;
         totalDots = layout.Length;
         currentDotIndex = 0;
         isDrawing = false;
@@ -281,15 +356,22 @@ public class ConnectTheDotsController : MonoBehaviour
         float areaW = playArea.rect.width;
         float areaH = playArea.rect.height;
 
+        // Use the smaller dimension for both axes to preserve aspect ratio
+        // (prevents circles becoming ellipses in landscape)
+        float uniformSize = Mathf.Min(areaW, areaH);
+
+        // Scale dot size based on point count — fewer points = bigger dots
+        currentDotSize = CalculateDotSize(totalDots);
+
         // Create dots
         for (int i = 0; i < totalDots; i++)
         {
             var dotGO = Instantiate(dotPrefab, playArea);
             var rt = dotGO.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(dotSize, dotSize);
+            rt.sizeDelta = new Vector2(currentDotSize, currentDotSize);
 
-            float x = (layout[i].x - 0.5f) * areaW;
-            float y = (layout[i].y - 0.5f) * areaH;
+            float x = (layout[i].x - 0.5f) * uniformSize;
+            float y = (layout[i].y - 0.5f) * uniformSize;
             rt.anchoredPosition = new Vector2(x, y);
 
             var dot = dotGO.GetComponent<DotPoint>();
@@ -370,7 +452,7 @@ public class ConnectTheDotsController : MonoBehaviour
                 circleSprite = dp.dotImage.sprite;
         }
 
-        int count = Random.Range(40, 60);
+        int count = Random.Range(80, 120);
         for (int i = 0; i < count; i++)
         {
             float cx = Random.Range(0.02f, 0.98f);
@@ -481,7 +563,9 @@ public class ConnectTheDotsController : MonoBehaviour
 
         if (!pointerDown) return;
 
-        float detectRadius = dotSize * hitRadius;
+        // Scale hit radius tighter when dots are dense to avoid skipping
+        float scaledHitRadius = hitRadius * Mathf.Lerp(1f, 0.6f, Mathf.InverseLerp(8f, 30f, totalDots));
+        float detectRadius = currentDotSize * scaledHitRadius;
 
         // Not yet drawing — must press on the current dot to start
         if (!isDrawing)
@@ -688,6 +772,10 @@ public class ConnectTheDotsController : MonoBehaviour
     {
         ConfettiController.Instance.Play();
 
+        // Play animal name audio if applicable
+        if (!string.IsNullOrEmpty(currentShape.animalId))
+            SoundLibrary.PlayAnimalName(currentShape.animalId);
+
         yield return new WaitForSeconds(0.4f);
 
         // Fade out guide lines
@@ -709,6 +797,55 @@ public class ConnectTheDotsController : MonoBehaviour
                 }
             }
             yield return null;
+        }
+
+        // Reveal animal sprite if this is an animal shape
+        bool hasReveal = false;
+        if (!string.IsNullOrEmpty(currentShape.animalId) && revealImage != null)
+        {
+            var animData = AnimalAnimData.Load(currentShape.animalId);
+            Sprite revealSprite = null;
+
+            if (animData != null && animData.idleFrames != null && animData.idleFrames.Length > 0)
+                revealSprite = animData.idleFrames[0];
+            if (revealSprite == null)
+                revealSprite = Resources.Load<Sprite>($"AnimalSprites/{currentShape.animalId}");
+
+            if (revealSprite != null)
+            {
+                hasReveal = true;
+                revealImage.sprite = revealSprite;
+                revealImage.preserveAspect = true;
+                revealImage.gameObject.SetActive(true);
+
+                float dur = 0.5f;
+                float t = 0f;
+                while (t < dur)
+                {
+                    t += Time.deltaTime;
+                    float p = Mathf.Clamp01(t / dur);
+                    revealImage.color = new Color(1, 1, 1, p);
+                    float scale = 0.5f + 0.5f * p + 0.15f * Mathf.Sin(p * Mathf.PI);
+                    revealImage.transform.localScale = Vector3.one * scale;
+                    yield return null;
+                }
+                revealImage.transform.localScale = Vector3.one;
+
+                // Play success animation
+                var anim = revealImage.GetComponent<UISpriteAnimator>();
+                if (anim == null) anim = revealImage.gameObject.AddComponent<UISpriteAnimator>();
+                if (animData != null)
+                {
+                    anim.targetImage = revealImage;
+                    anim.idleFrames = animData.idleFrames;
+                    anim.successFrames = animData.successFrames;
+                    anim.framesPerSecond = animData.successFps > 0 ? animData.successFps : 30f;
+                    if (animData.successFrames != null && animData.successFrames.Length > 0)
+                        anim.PlaySuccess();
+                    else
+                        anim.PlayIdle();
+                }
+            }
         }
 
         // Show shape name text (Hebrew)
@@ -767,7 +904,17 @@ public class ConnectTheDotsController : MonoBehaviour
                 Color c = shapeNameText.color;
                 shapeNameText.color = new Color(c.r, c.g, c.b, alpha);
             }
+            if (hasReveal && revealImage != null)
+                revealImage.color = new Color(1, 1, 1, alpha);
             yield return null;
+        }
+
+        // Clean up reveal
+        if (revealImage != null)
+        {
+            var anim = revealImage.GetComponent<UISpriteAnimator>();
+            if (anim != null) Destroy(anim);
+            revealImage.gameObject.SetActive(false);
         }
 
         yield return new WaitForSeconds(0.5f);
@@ -776,6 +923,19 @@ public class ConnectTheDotsController : MonoBehaviour
 
     public void OnHomePressed() => NavigationManager.GoToMainMenu();
     public void OnRestartPressed() => LoadNewRound();
+
+    /// <summary>
+    /// Scale visual dot size based on point count.
+    /// Few points → large dots (dotSize). Many points → smaller dots.
+    /// Touch detection still uses the full dotSize via hitRadius.
+    /// </summary>
+    private float CalculateDotSize(int pointCount)
+    {
+        // 8 points or fewer → full size (80)
+        // 30 points → 55% of base size (44)
+        float t = Mathf.InverseLerp(8f, 30f, pointCount);
+        return Mathf.Lerp(dotSize, dotSize * 0.55f, t);
+    }
 
     private static Color HC(string hex)
     {

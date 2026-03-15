@@ -104,22 +104,30 @@ public class ConnectTheDotsSetup : EditorWindow
         skyGO.GetComponent<Image>().raycastTarget = false;
         var skyImg = skyGO.GetComponent<Image>();
 
-        // Horizon glow (bottom 35% — slightly lighter, gives depth)
-        var horizonGO = StretchImg(canvasGO.transform, "HorizonGlow", HorizonGlowColor);
-        horizonGO.GetComponent<Image>().raycastTarget = false;
-        var horizonRT = horizonGO.GetComponent<RectTransform>();
-        horizonRT.anchorMin = Vector2.zero;
-        horizonRT.anchorMax = new Vector2(1, 0.35f);
-        horizonRT.offsetMin = Vector2.zero;
-        horizonRT.offsetMax = Vector2.zero;
-        var horizonImg = horizonGO.GetComponent<Image>();
-        horizonImg.color = new Color(HorizonGlowColor.r, HorizonGlowColor.g, HorizonGlowColor.b, 0.5f);
-
         // Star layer (behind everything interactive — decorative twinkling stars)
         var starLayerGO = new GameObject("StarLayer");
         starLayerGO.transform.SetParent(canvasGO.transform, false);
         var starLayerRT = starLayerGO.AddComponent<RectTransform>();
         Full(starLayerRT);
+
+        // Moon (top-right, decorative)
+        var moonSprite = LoadSprite("Assets/Art/World/moonFull.png");
+        if (moonSprite != null)
+        {
+            var moonGO = new GameObject("Moon");
+            moonGO.transform.SetParent(canvasGO.transform, false);
+            var moonRT = moonGO.AddComponent<RectTransform>();
+            moonRT.anchorMin = new Vector2(1, 1);
+            moonRT.anchorMax = new Vector2(1, 1);
+            moonRT.pivot = new Vector2(1, 1);
+            moonRT.sizeDelta = new Vector2(130, 130);
+            moonRT.anchoredPosition = new Vector2(-45, -100);
+            var moonImg = moonGO.AddComponent<Image>();
+            moonImg.sprite = moonSprite;
+            moonImg.preserveAspect = true;
+            moonImg.raycastTarget = false;
+            moonImg.color = Color.white;
+        }
 
         // Safe area
         var safeArea = new GameObject("SafeArea");
@@ -220,7 +228,7 @@ public class ConnectTheDotsSetup : EditorWindow
         controller.shapeNameText = shapeNameTMP;
         controller.revealImage = revealImg;
         controller.skyImage = skyImg;
-        controller.horizonGlow = horizonImg;
+
         controller.starLayer = starLayerRT;
         controller.dotPrefab = dotPrefab;
         controller.dotSize = DotSize;
@@ -251,8 +259,8 @@ public class ConnectTheDotsSetup : EditorWindow
         var glowRT = glowGO.AddComponent<RectTransform>();
         glowRT.anchorMin = Vector2.zero;
         glowRT.anchorMax = Vector2.one;
-        glowRT.offsetMin = new Vector2(-24, -24);
-        glowRT.offsetMax = new Vector2(24, 24);
+        glowRT.offsetMin = new Vector2(-12, -12);
+        glowRT.offsetMax = new Vector2(12, 12);
         var glowImg = glowGO.AddComponent<Image>();
         if (circleSprite != null) glowImg.sprite = circleSprite;
         glowImg.color = new Color(1f, 0.92f, 0.5f, 0f);
@@ -264,8 +272,8 @@ public class ConnectTheDotsSetup : EditorWindow
         var ringRT = ringGO.AddComponent<RectTransform>();
         ringRT.anchorMin = Vector2.zero;
         ringRT.anchorMax = Vector2.one;
-        ringRT.offsetMin = new Vector2(-16, -16);
-        ringRT.offsetMax = new Vector2(16, 16);
+        ringRT.offsetMin = new Vector2(-8, -8);
+        ringRT.offsetMax = new Vector2(8, 8);
         var ringImg = ringGO.AddComponent<Image>();
         if (circleSprite != null) ringImg.sprite = circleSprite;
         ringImg.color = new Color(1f, 0.95f, 0.7f, 0.4f);

@@ -29,8 +29,8 @@ public class DotPoint : MonoBehaviour
 
     // Star-like colors for night sky theme
     private static readonly Color FutureDotColor = new Color(0.8f, 0.85f, 0.95f, 0.35f);
-    private static readonly Color NextColor = new Color(1f, 0.97f, 0.85f, 1f);        // bright warm white
-    private static readonly Color NextGlowColor = new Color(1f, 0.92f, 0.5f, 0.45f);  // golden glow
+    private static readonly Color NextColor = new Color(0.4f, 0.95f, 0.45f, 1f);       // bright green
+    private static readonly Color NextGlowColor = new Color(0.3f, 0.9f, 0.4f, 0.45f); // green glow
     private static readonly Color ActiveColor = new Color(1f, 0.95f, 0.7f, 1f);       // warm golden
     private static readonly Color ActiveGlowColor = new Color(1f, 0.90f, 0.4f, 0.5f);
     private static readonly Color RingColor = new Color(1f, 0.95f, 0.7f, 0.5f);
@@ -195,7 +195,7 @@ public class DotPoint : MonoBehaviour
                 float scale = 1f + 0.08f * Mathf.Sin(p * Mathf.PI);
                 if (ringImage != null)
                 {
-                    ringImage.color = new Color(1f, 0.95f, 0.6f, a);
+                    ringImage.color = new Color(0.3f, 0.9f, 0.4f, a);
                     ringImage.transform.localScale = Vector3.one * scale;
                 }
                 yield return null;
