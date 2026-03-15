@@ -175,6 +175,9 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Shared Sticker…", 0.973f);
             SharedStickerSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Flappy Bird…", 0.975f);
+            FlappyBirdSetup.RunSetupSilent();
+
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Animal Data…", 0.965f);
             WorldSceneSetup.BuildAnimalData();
 
@@ -662,9 +665,19 @@ public class ProjectSetup : EditorWindow
         sharedSticker.thumbnail = LoadSprite($"{previewPath}/FindTheSimilar.png");
         EditorUtility.SetDirty(sharedSticker);
 
+        // ── Flappy Bird ──
+        var flappyBird = CreateSO<GameItemData>($"{DataPath}/FlappyBird.asset");
+        flappyBird.id = "flappybird";
+        flappyBird.title = "Flappy Bird";
+        flappyBird.cardColor = HexColor("#81D4FA");
+        flappyBird.targetSceneName = "FlappyBird";
+        flappyBird.thumbnail = LoadSprite($"{previewPath}/FlyingBird.png");
+        flappyBird.hasSubItems = false;
+        EditorUtility.SetDirty(flappyBird);
+
         // ── Game Database ──
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, colorVoice, tower, towerStack, sharedSticker };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, colorVoice, tower, towerStack, sharedSticker, flappyBird };
         EditorUtility.SetDirty(db);
 
         return db;
@@ -1255,6 +1268,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/BallMaze.unity",
             $"{ScenesPath}/TowerStack.unity",
             $"{ScenesPath}/SharedSticker.unity",
+            $"{ScenesPath}/FlappyBird.unity",
             $"{ScenesPath}/DiscoveryReveal.unity",
             $"{ScenesPath}/DrawingGallery.unity",
             $"{ScenesPath}/WorldScene.unity",
