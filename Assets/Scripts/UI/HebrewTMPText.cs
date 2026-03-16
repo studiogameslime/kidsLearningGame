@@ -50,26 +50,13 @@ public class HebrewTMPText : MonoBehaviour
         // Enforce correct RTL settings for mobile builds
         _tmp.isRightToLeftText = false;
 
-        // Prevent TMP auto-size from causing spacing issues on mobile
-        // (auto-size can trigger different glyph layouts between editor and device)
-        if (_tmp.enableAutoSizing && _tmp.fontSize > 0)
-        {
-            // Lock to current font size if auto-size was on
-            float current = _tmp.fontSize;
-            _tmp.enableAutoSizing = false;
-            _tmp.fontSize = current;
-        }
-
-        // Reset any extra character/word spacing that may cause letter separation
-        _tmp.characterSpacing = 0f;
-        _tmp.wordSpacing = 0f;
-
         // Fix current text if it hasn't been fixed yet
         if (!string.IsNullOrEmpty(_tmp.text) && _tmp.text != _lastFixedText)
         {
             _lastRawText = _tmp.text;
             _lastFixedText = HebrewFixer.Fix(_tmp.text);
-            _tmp.text = _lastFixedText;
+            if (_lastFixedText != _tmp.text)
+                _tmp.text = _lastFixedText;
         }
     }
 
