@@ -37,66 +37,71 @@ public class HebrewFontSetup : EditorWindow
         "\u00A0\u00AB\u00BB\u00BF\u2013\u2014\u2018\u2019\u201C\u201D\u2026" +
         "?!.,;:'\"()-+";
 
+    /// <summary>All characters needed — Hebrew + Latin + digits + punctuation + symbols.</summary>
+    private static readonly string AllChars = HebrewChars + LatinChars;
+
     public static void RunSetupSilent()
     {
         EnsureFolder("Assets/Fonts");
         EnsureFolder("Assets/Fonts/TMP");
 
-        // Load all font files
-        var hebrewBold = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Rubik-Bold.ttf");
-        var hebrewRegular = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Rubik-Regular.ttf");
-        var latinBold = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Rubik-Latin-Bold.ttf");
-        var latinRegular = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Rubik-Latin-Regular.ttf");
+        // Prefer Heebo (Google's dedicated Hebrew font — excellent TMP compatibility)
+        // Falls back to Rubik if Heebo not found
+        var boldFont = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Heebo-Bold.ttf");
+        var regularFont = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Heebo-Regular.ttf");
 
-        if (hebrewBold == null || hebrewRegular == null)
+        string fontFamily = "Heebo";
+        if (boldFont == null || regularFont == null)
         {
-            Debug.LogError("Rubik Hebrew font files not found at Assets/Fonts/. Cannot generate TMP fonts.");
+            Debug.Log("Heebo fonts not found, falling back to Rubik...");
+            boldFont = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Rubik-Bold.ttf");
+            regularFont = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Rubik-Regular.ttf");
+            fontFamily = "Rubik";
+        }
+
+        if (boldFont == null || regularFont == null)
+        {
+            Debug.LogError("No Hebrew font files found at Assets/Fonts/. Need Heebo-Bold.ttf + Heebo-Regular.ttf (or Rubik).");
             return;
         }
 
         try
         {
-            // Generate Hebrew fonts (primary)
-            EditorUtility.DisplayProgressBar("Hebrew Font Setup", "Generating Hebrew Bold SDF...", 0.1f);
-            var hebrewBoldTMP = GenerateFontAsset(hebrewBold, "Assets/Fonts/TMP/Rubik-Hebrew-Bold SDF.asset", HebrewChars);
+            // Heebo includes Hebrew + Latin + digits in one font — no fallback needed
+            EditorUtility.DisplayProgressBar("Hebrew Font Setup", $"Generating {fontFamily} Bold SDF...", 0.2f);
+            var boldTMP = GenerateFontAsset(boldFont, "Assets/Fonts/TMP/Rubik-Hebrew-Bold SDF.asset", AllChars);
 
-            EditorUtility.DisplayProgressBar("Hebrew Font Setup", "Generating Hebrew Regular SDF...", 0.3f);
-            var hebrewRegularTMP = GenerateFontAsset(hebrewRegular, "Assets/Fonts/TMP/Rubik-Hebrew-Regular SDF.asset", HebrewChars);
+            EditorUtility.DisplayProgressBar("Hebrew Font Setup", $"Generating {fontFamily} Regular SDF...", 0.5f);
+            var regularTMP = GenerateFontAsset(regularFont, "Assets/Fonts/TMP/Rubik-Hebrew-Regular SDF.asset", AllChars);
 
-            // Generate Latin fonts (fallback)
-            TMP_FontAsset latinBoldTMP = null;
-            TMP_FontAsset latinRegularTMP = null;
+            // Keep old Latin SDF as fallback for any missing glyphs
+            var latinBold = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Rubik-Latin-Bold.ttf");
+            var latinRegular = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Rubik-Latin-Regular.ttf");
 
             if (latinBold != null)
             {
-                EditorUtility.DisplayProgressBar("Hebrew Font Setup", "Generating Latin Bold SDF...", 0.5f);
-                latinBoldTMP = GenerateFontAsset(latinBold, "Assets/Fonts/TMP/Rubik-Latin-Bold SDF.asset", LatinChars);
+                EditorUtility.DisplayProgressBar("Hebrew Font Setup", "Generating Latin fallback Bold...", 0.7f);
+                var latinBoldTMP = GenerateFontAsset(latinBold, "Assets/Fonts/TMP/Rubik-Latin-Bold SDF.asset", LatinChars);
+                if (boldTMP != null && latinBoldTMP != null)
+                    AddFallbackFont(boldTMP, latinBoldTMP);
             }
-
             if (latinRegular != null)
             {
-                EditorUtility.DisplayProgressBar("Hebrew Font Setup", "Generating Latin Regular SDF...", 0.6f);
-                latinRegularTMP = GenerateFontAsset(latinRegular, "Assets/Fonts/TMP/Rubik-Latin-Regular SDF.asset", LatinChars);
+                EditorUtility.DisplayProgressBar("Hebrew Font Setup", "Generating Latin fallback Regular...", 0.8f);
+                var latinRegularTMP = GenerateFontAsset(latinRegular, "Assets/Fonts/TMP/Rubik-Latin-Regular SDF.asset", LatinChars);
+                if (regularTMP != null && latinRegularTMP != null)
+                    AddFallbackFont(regularTMP, latinRegularTMP);
             }
 
-            // Add Latin as fallback on Hebrew fonts
-            EditorUtility.DisplayProgressBar("Hebrew Font Setup", "Setting up fallback fonts...", 0.8f);
-
-            if (hebrewBoldTMP != null && latinBoldTMP != null)
-                AddFallbackFont(hebrewBoldTMP, latinBoldTMP);
-
-            if (hebrewRegularTMP != null && latinRegularTMP != null)
-                AddFallbackFont(hebrewRegularTMP, latinRegularTMP);
-
-            // Set Hebrew Bold as default TMP font
+            // Set Bold as default TMP font
             EditorUtility.DisplayProgressBar("Hebrew Font Setup", "Setting default font...", 0.9f);
-            if (hebrewBoldTMP != null)
-                SetDefaultTMPFont(hebrewBoldTMP);
+            if (boldTMP != null)
+                SetDefaultTMPFont(boldTMP);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log("Hebrew font setup complete. Rubik-Hebrew-Bold set as default TMP font with Latin fallback.");
+            Debug.Log($"Hebrew font setup complete. {fontFamily} set as default TMP font (Hebrew+Latin in single atlas, 2048x2048, sampling 64).");
         }
         finally
         {
