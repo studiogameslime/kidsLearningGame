@@ -512,9 +512,13 @@ public class ProjectSetup : EditorWindow
             // Load the actual puzzle image so the selection card shows the real picture
             string puzzlePath = $"Assets/Art/Animals/{animalName}/Art/Puzzle/{animalName} Main.png";
             var puzzleSprite = LoadSprite(puzzlePath);
-            // Fallback to the regular sprite if no puzzle image
-            if (puzzleSprite == null)
+            if (puzzleSprite != null)
+                Debug.Log($"[ProjectSetup] Loaded puzzle sprite for {animalName}: {puzzleSprite.name}");
+            else
+            {
+                Debug.LogWarning($"[ProjectSetup] No puzzle sprite at {puzzlePath}, using idle sprite");
                 puzzleSprite = LoadSprite($"Assets/Art/Animals/{animalName}/Art/{animalName}Sprite.png");
+            }
 
             puzzle.subItems.Add(new SubItemData
             {
@@ -542,13 +546,16 @@ public class ProjectSetup : EditorWindow
         coloring.subItems = new List<SubItemData>();
         for (int i = 0; i < animals.Length; i++)
         {
+            string cName = animals[i];
+            var coloringThumb = LoadSprite($"Assets/Art/Animals/{cName}/Art/{cName}Sprite.png");
             coloring.subItems.Add(new SubItemData
             {
-                id = $"coloring_{animals[i].ToLower()}",
-                title = animals[i],
+                id = $"coloring_{cName.ToLower()}",
+                title = cName,
                 cardColor = AnimalColors[i % AnimalColors.Length],
-                categoryKey = animals[i].ToLower(),
-                targetSceneName = "ColoringGame"
+                categoryKey = cName.ToLower(),
+                targetSceneName = "ColoringGame",
+                thumbnail = coloringThumb
             });
         }
         EditorUtility.SetDirty(coloring);

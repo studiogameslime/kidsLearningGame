@@ -61,7 +61,9 @@ public class SelectionMenuController : MonoBehaviour
                     break;
 
                 default:
-                    card.Setup(item.title, item.thumbnail, item.cardColor,
+                    // Prefer contentAsset (e.g. puzzle image) over thumbnail (idle sprite)
+                    Sprite cardSprite = item.contentAsset != null ? item.contentAsset : item.thumbnail;
+                    card.Setup(item.title, cardSprite, item.cardColor,
                         () => NavigationManager.GoToGame(capturedGame, capturedItem));
                     break;
             }
