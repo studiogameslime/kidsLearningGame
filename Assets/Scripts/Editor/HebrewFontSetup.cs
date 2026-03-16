@@ -115,11 +115,11 @@ public class HebrewFontSetup : EditorWindow
         {
             fontAsset = TMP_FontAsset.CreateFontAsset(
                 sourceFont,
-                36,   // sampling size (smaller for subset fonts)
-                5,    // padding
+                64,   // sampling size — higher = better glyph metrics & kerning
+                9,    // padding — larger padding prevents SDF bleed between glyphs
                 UnityEngine.TextCore.LowLevel.GlyphRenderMode.SDFAA,
-                1024, // atlas width
-                1024  // atlas height
+                2048, // atlas width — more space = cleaner glyphs, less compression
+                2048  // atlas height
             );
         }
         catch (System.Exception e)
