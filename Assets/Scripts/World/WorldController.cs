@@ -100,23 +100,33 @@ public class WorldController : MonoBehaviour
         }
     }
 
-    /// <summary>Maps a profile avatar color hex to the closest discovery color ID.</summary>
+    /// <summary>
+    /// Maps the profile avatar color hex (from onboarding) to a discovery color ID.
+    /// Exact mapping for the 12 onboarding palette colors.
+    /// </summary>
     private static string MapProfileColorToId(string colorHex)
     {
         if (string.IsNullOrEmpty(colorHex)) return "Blue";
 
-        // Map common profile onboarding colors to discovery color IDs
         string hex = colorHex.ToUpperInvariant();
-        if (hex.Contains("F44") || hex.Contains("E53") || hex.Contains("EF5")) return "Red";
-        if (hex.Contains("E91") || hex.Contains("FF9") || hex.Contains("FF5")) return "Orange";
-        if (hex.Contains("FFC") || hex.Contains("FFE") || hex.Contains("F9A")) return "Yellow";
-        if (hex.Contains("4CA") || hex.Contains("66B") || hex.Contains("81C")) return "Green";
-        if (hex.Contains("42A") || hex.Contains("197") || hex.Contains("039")) return "Blue";
-        if (hex.Contains("7C4") || hex.Contains("AB4") || hex.Contains("9C2")) return "Purple";
-        if (hex.Contains("F06") || hex.Contains("EC4") || hex.Contains("E91")) return "Pink";
-        if (hex.Contains("90C") || hex.Contains("64B") || hex.Contains("BBD")) return "Blue"; // light blue defaults
+        switch (hex)
+        {
+            case "#EF9A9A": return "Red";
+            case "#F48FB1": return "Pink";
+            case "#CE93D8": return "Purple";
+            case "#B39DDB": return "Purple";
+            case "#90CAF9": return "Blue";
+            case "#80DEEA": return "Cyan";
+            case "#80CBC4": return "Green";
+            case "#A5D6A7": return "Green";
+            case "#FFF59D": return "Yellow";
+            case "#FFCC80": return "Orange";
+            case "#FFAB91": return "Orange";
+            case "#BCAAA4": return "Brown";
+        }
 
-        return "Blue"; // safe fallback
+        Debug.LogWarning($"[StarterFlow] Unknown avatar color hex: {colorHex}, defaulting to Blue");
+        return "Blue";
     }
 
     private void BuildAnimalSpriteLookup()
@@ -159,25 +169,27 @@ public class WorldController : MonoBehaviour
         var jp = profile.journey;
 
         // Seed starters if world is visited before first journey
-        if (jp.unlockedAnimalIds.Count == 0)
+        if (jp.unlockedAnimalIds.Count == 0 && jp.unlockedGameIds.Count == 0)
         {
             string favAnimal = profile.favoriteAnimalId;
             if (string.IsNullOrEmpty(favAnimal)) favAnimal = "Cat";
 
-            // Unlock the favorite animal and starter games (needed for world to render)
-            if (!jp.unlockedAnimalIds.Contains(favAnimal))
-                jp.unlockedAnimalIds.Add(favAnimal);
+            // Unlock starter games (needed for world menu to work)
             foreach (var id in DiscoveryCatalog.StarterGameIds)
                 if (!jp.unlockedGameIds.Contains(id)) jp.unlockedGameIds.Add(id);
 
-            // Only give ONE balloon matching the child's selected color
+            // Determine balloon color from onboarding selection
             string profileColorId = MapProfileColorToId(profile.avatarColorHex);
-            if (!jp.unlockedColorIds.Contains(profileColorId))
-                jp.unlockedColorIds.Add(profileColorId);
 
-            // Queue first-time gifts: dog + balloon (via gift box reveal)
-            jp.pendingWorldRewards.Add(new DiscoveryEntry { type = "animal", id = favAnimal });
-            jp.pendingWorldRewards.Add(new DiscoveryEntry { type = "color", id = profileColorId });
+            // DO NOT add animal/balloon to unlocked lists yet!
+            // They will be unlocked when the child opens the gift boxes.
+            // Queue first-time gifts only if not already queued
+            if (jp.pendingWorldRewards.Count == 0)
+            {
+                jp.pendingWorldRewards.Add(new DiscoveryEntry { type = "animal", id = favAnimal });
+                jp.pendingWorldRewards.Add(new DiscoveryEntry { type = "color", id = profileColorId });
+                Debug.Log($"[StarterFlow] New profile detected. Queued gifts: animal={favAnimal}, balloon={profileColorId} (from color hex {profile.avatarColorHex})");
+            }
 
             jp.gamesUntilNextDiscovery = 1;
             ProfileManager.Instance.Save();

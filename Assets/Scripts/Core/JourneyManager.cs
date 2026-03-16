@@ -84,15 +84,20 @@ public class JourneyManager : MonoBehaviour
             foreach (var id in DiscoveryCatalog.StarterGameIds)
                 if (!jp.unlockedGameIds.Contains(id)) jp.unlockedGameIds.Add(id);
 
-            // Only unlock the favorite animal (not all 3 starters)
-            string favAnimal = profile.favoriteAnimalId;
-            if (string.IsNullOrEmpty(favAnimal)) favAnimal = "Cat";
-            if (!jp.unlockedAnimalIds.Contains(favAnimal))
-                jp.unlockedAnimalIds.Add(favAnimal);
+            // Only unlock animal/colors if no pending starter gifts
+            // (gifts will unlock them when opened)
+            if (jp.pendingWorldRewards.Count == 0)
+            {
+                string favAnimal = profile.favoriteAnimalId;
+                if (string.IsNullOrEmpty(favAnimal)) favAnimal = "Cat";
+                if (!jp.unlockedAnimalIds.Contains(favAnimal))
+                    jp.unlockedAnimalIds.Add(favAnimal);
 
-            foreach (var id in DiscoveryCatalog.StarterColors)
-                if (!jp.unlockedColorIds.Contains(id)) jp.unlockedColorIds.Add(id);
-            jp.gamesUntilNextDiscovery = 1; // First discovery after game 1
+                foreach (var id in DiscoveryCatalog.StarterColors)
+                    if (!jp.unlockedColorIds.Contains(id)) jp.unlockedColorIds.Add(id);
+            }
+
+            jp.gamesUntilNextDiscovery = 1;
             ProfileManager.Instance.Save();
         }
 

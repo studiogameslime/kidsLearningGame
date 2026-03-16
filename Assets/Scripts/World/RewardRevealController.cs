@@ -152,13 +152,31 @@ public class RewardRevealController : MonoBehaviour
 
         Vector2 giftPos = gift.GetComponent<RectTransform>().anchoredPosition;
 
+        // Unlock the item now that the gift is being opened
+        var profile = ProfileManager.ActiveProfile;
+        if (profile != null)
+        {
+            var jp = profile.journey;
+            if (gift.reward.type == "animal")
+            {
+                if (!jp.unlockedAnimalIds.Contains(gift.reward.id))
+                    jp.unlockedAnimalIds.Add(gift.reward.id);
+                Debug.Log($"[StarterFlow] Animal gift opened -> {gift.reward.id} revealed and unlocked");
+            }
+            else if (gift.reward.type == "color")
+            {
+                if (!jp.unlockedColorIds.Contains(gift.reward.id))
+                    jp.unlockedColorIds.Add(gift.reward.id);
+                Debug.Log($"[StarterFlow] Balloon gift opened -> {gift.reward.id} balloon revealed and unlocked");
+            }
+        }
+
         if (gift.reward.type == "animal")
             StartCoroutine(RevealAnimal(gift.reward.id, giftPos));
         else if (gift.reward.type == "color")
             StartCoroutine(RevealBalloon(gift.reward.id, giftPos));
 
         // Remove this reward from the pending list
-        var profile = ProfileManager.ActiveProfile;
         if (profile != null)
         {
             profile.journey.pendingWorldRewards.Remove(gift.reward);
