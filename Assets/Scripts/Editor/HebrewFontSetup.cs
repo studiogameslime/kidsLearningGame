@@ -10,6 +10,12 @@ using System.Collections.Generic;
 /// </summary>
 public class HebrewFontSetup : EditorWindow
 {
+    [MenuItem("Tools/Kids Learning Game/Setup Hebrew Font")]
+    private static void MenuSetup()
+    {
+        RunSetupSilent();
+    }
+
     private const string HebrewChars =
         // Hebrew consonants (U+05D0–U+05EA)
         "\u05D0\u05D1\u05D2\u05D3\u05D4\u05D5\u05D6\u05D7\u05D8\u05D9\u05DA\u05DB\u05DC\u05DD\u05DE\u05DF" +
