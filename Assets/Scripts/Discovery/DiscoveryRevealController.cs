@@ -381,6 +381,7 @@ public class DiscoveryRevealController : MonoBehaviour
             case "findthecount": return "\u05E1\u05E4\u05D9\u05E8\u05D4";     // ספירה
             case "sharedsticker":return "\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05DE\u05E9\u05D5\u05EA\u05E3"; // מצא את המשותף
             case "flappybird":   return "\u05DE\u05E2\u05D5\u05E3 \u05D4\u05E6\u05D9\u05E4\u05D5\u05E8"; // מעוף הציפור
+            case "simonsays":    return "\u05D6\u05DB\u05E8\u05D5 \u05D0\u05EA \u05D4\u05E6\u05D1\u05E2\u05D9\u05DD"; // זכרו את הצבעים
             default:             return id;
         }
     }

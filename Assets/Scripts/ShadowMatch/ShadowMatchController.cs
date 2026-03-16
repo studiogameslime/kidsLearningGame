@@ -165,6 +165,9 @@ public class ShadowMatchController : MonoBehaviour
             go.AddComponent<CanvasGroup>();
             var drag = go.AddComponent<DraggableAnimal>();
             drag.Init(item.id, canvas, this);
+            // Store capitalized categoryKey for sound playback
+            if (!string.IsNullOrEmpty(item.categoryKey))
+                drag.soundName = char.ToUpper(item.categoryKey[0]) + item.categoryKey.Substring(1);
             animals.Add(drag);
         }
 
@@ -228,9 +231,8 @@ public class ShadowMatchController : MonoBehaviour
 
                 animal.PlayMatchCelebration();
                 // Play the matched animal's name sound
-                string name = animal.animalId;
-                if (!string.IsNullOrEmpty(name))
-                    SoundLibrary.PlayAnimalName(char.ToUpper(name[0]) + name.Substring(1));
+                if (!string.IsNullOrEmpty(animal.soundName))
+                    SoundLibrary.PlayAnimalName(animal.soundName);
 
                 matchedCount++;
                 if (matchedCount >= animalCount)

@@ -226,6 +226,8 @@ public class FlappyBirdSetup : EditorWindow
         ctrl.birdAnimator = animator;
         ctrl.playArea = playRT;
         ctrl.groundFraction = 0.20f; // ground front layer goes up to 0.20
+        ctrl.gapSize = 520f;       // generous gap for large bird
+        ctrl.pipeWidth = 160f;     // wider pipes to match bird scale
         ctrl.pipeSprite = pipeSpr;
         ctrl.obstacleContainer = obstRT;
 

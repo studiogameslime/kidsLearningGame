@@ -13,6 +13,7 @@ using UnityEngine.UI;
 public class DraggableAnimal : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerDownHandler
 {
     [HideInInspector] public string animalId;
+    [HideInInspector] public string soundName;
     public bool isPlaced => isLocked;
 
     private RectTransform rectTransform;

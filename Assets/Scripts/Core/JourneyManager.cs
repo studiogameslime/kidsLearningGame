@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -166,6 +167,34 @@ public class JourneyManager : MonoBehaviour
             if (ActiveDiscovery == null)
                 ActiveDiscovery = DiscoveryCatalog.GetNext(jp);
 
+            // Extra safety: skip if this exact item is already in the queue
+            if (ActiveDiscovery != null)
+            {
+                bool alreadyQueued = false;
+                foreach (var entry in jp.discoveryQueue)
+                {
+                    if (entry.type == ActiveDiscovery.type && entry.id == ActiveDiscovery.id)
+                    {
+                        alreadyQueued = true;
+                        break;
+                    }
+                }
+                if (alreadyQueued)
+                {
+                    // Try the next catalog item instead
+                    ActiveDiscovery = DiscoveryCatalog.GetNext(jp);
+                }
+            }
+
+            // If no valid discovery after duplicate check, skip and continue playing
+            if (ActiveDiscovery == null)
+            {
+                jp.gamesUntilNextDiscovery = DiscoveryScheduler.CalcNextInterval(jp);
+                ProfileManager.Instance.Save();
+                PickNextGame();
+                return;
+            }
+
             jp.discoveryQueue.Add(ActiveDiscovery);
             jp.gamesUntilNextDiscovery = DiscoveryScheduler.CalcNextInterval(jp);
             ProfileManager.Instance.Save();
@@ -196,20 +225,25 @@ public class JourneyManager : MonoBehaviour
                 case "animal":
                     if (!jp.unlockedAnimalIds.Contains(ActiveDiscovery.id))
                         jp.unlockedAnimalIds.Add(ActiveDiscovery.id);
-                    // Save as pending reward for gift box in World
-                    jp.pendingWorldReward = new DiscoveryEntry
-                        { type = ActiveDiscovery.type, id = ActiveDiscovery.id };
+                    // Queue as pending reward for gift box in World
+                    jp.pendingWorldRewards.Add(new DiscoveryEntry
+                        { type = ActiveDiscovery.type, id = ActiveDiscovery.id });
                     break;
                 case "color":
                     if (!jp.unlockedColorIds.Contains(ActiveDiscovery.id))
                         jp.unlockedColorIds.Add(ActiveDiscovery.id);
-                    jp.pendingWorldReward = new DiscoveryEntry
-                        { type = ActiveDiscovery.type, id = ActiveDiscovery.id };
+                    jp.pendingWorldRewards.Add(new DiscoveryEntry
+                        { type = ActiveDiscovery.type, id = ActiveDiscovery.id });
                     break;
                 case "game":
                     if (!jp.unlockedGameIds.Contains(ActiveDiscovery.id))
                         jp.unlockedGameIds.Add(ActiveDiscovery.id);
-                    break;
+                    // Play game name and transition to it
+                    ProfileManager.Instance.Save();
+                    string newGameId = ActiveDiscovery.id;
+                    ActiveDiscovery = null;
+                    StartCoroutine(PlayGameNameAndLoad(newGameId));
+                    return;  // Don't fall through to PickNextGame
             }
             ProfileManager.Instance.Save();
         }
@@ -236,6 +270,36 @@ public class JourneyManager : MonoBehaviour
         ActiveDiscovery = null;
         ProfileManager.Instance?.Save();
         BubbleTransition.LoadScene(HomeScene);
+    }
+
+    private IEnumerator PlayGameNameAndLoad(string gameId)
+    {
+        // Find the GameItemData to get the nameClip
+        var db = GetGameDb();
+        AudioClip nameClip = null;
+        if (db != null)
+        {
+            foreach (var g in db.games)
+            {
+                if (g.id == gameId && g.nameClip != null)
+                {
+                    nameClip = g.nameClip;
+                    break;
+                }
+            }
+        }
+
+        if (nameClip != null)
+        {
+            BackgroundMusicManager.PlayOneShot(nameClip);
+            yield return new WaitForSeconds(nameClip.length + 0.5f);
+        }
+        else
+        {
+            yield return new WaitForSeconds(1f);
+        }
+
+        LoadGame(gameId, null);
     }
 
     private void PickNextGame()

@@ -24,22 +24,31 @@ public class RewardRevealController : MonoBehaviour
     private Dictionary<string, Sprite> _animalSprites;
 
     /// <summary>
-    /// Called by WorldController after BuildWorld. Checks for pending reward
-    /// and spawns a gift box if one exists.
+    /// Called by WorldController after BuildWorld. Checks for pending rewards
+    /// and spawns a gift box for the first one if any exist.
     /// </summary>
     public void CheckForPendingReward()
     {
         var profile = ProfileManager.ActiveProfile;
         if (profile == null) return;
 
-        var pending = profile.journey.pendingWorldReward;
-        if (pending == null) return;
+        var pending = profile.journey.pendingWorldRewards;
+        if (pending == null || pending.Count == 0) return;
 
-        // Only show gift for animal/color rewards (games don't appear in world)
-        if (pending.type != "animal" && pending.type != "color") return;
+        // Find the first animal/color reward (games don't appear in world)
+        DiscoveryEntry first = null;
+        foreach (var entry in pending)
+        {
+            if (entry.type == "animal" || entry.type == "color")
+            {
+                first = entry;
+                break;
+            }
+        }
+        if (first == null) return;
 
         BuildAnimalSpriteLookup();
-        StartCoroutine(SpawnGiftDelayed(pending));
+        StartCoroutine(SpawnGiftDelayed(first));
     }
 
     private IEnumerator SpawnGiftDelayed(DiscoveryEntry reward)
@@ -148,13 +157,36 @@ public class RewardRevealController : MonoBehaviour
         else if (gift.reward.type == "color")
             StartCoroutine(RevealBalloon(gift.reward.id, giftPos));
 
-        // Clear the pending reward
+        // Remove this reward from the pending list
         var profile = ProfileManager.ActiveProfile;
         if (profile != null)
         {
-            profile.journey.pendingWorldReward = null;
+            profile.journey.pendingWorldRewards.Remove(gift.reward);
             ProfileManager.Instance.Save();
+
+            // If more rewards remain, spawn the next gift after a delay
+            if (profile.journey.pendingWorldRewards.Count > 0)
+            {
+                DiscoveryEntry next = null;
+                foreach (var entry in profile.journey.pendingWorldRewards)
+                {
+                    if (entry.type == "animal" || entry.type == "color")
+                    {
+                        next = entry;
+                        break;
+                    }
+                }
+                if (next != null)
+                    StartCoroutine(SpawnNextGiftDelayed(next));
+            }
         }
+    }
+
+    private IEnumerator SpawnNextGiftDelayed(DiscoveryEntry reward)
+    {
+        // Wait for the current reveal animation to finish before showing next gift
+        yield return new WaitForSeconds(3f);
+        SpawnGiftBox(reward);
     }
 
     // ── Animal Reward ──────────────────────────────────────────
@@ -176,6 +208,23 @@ public class RewardRevealController : MonoBehaviour
         rt.sizeDelta = new Vector2(280f, 280f);
         rt.anchoredPosition = new Vector2(fromPos.x, fromPos.y + 40f);
         rt.localScale = Vector3.zero;
+
+        // Shadow under the animal
+        var shadowGO = new GameObject("Shadow");
+        shadowGO.transform.SetParent(grassArea, false);
+        var shadowRT = shadowGO.AddComponent<RectTransform>();
+        shadowRT.anchorMin = Vector2.zero;
+        shadowRT.anchorMax = Vector2.zero;
+        shadowRT.pivot = new Vector2(0.5f, 0.5f);
+        shadowRT.sizeDelta = new Vector2(180f, 40f);
+        shadowRT.anchoredPosition = new Vector2(fromPos.x, fromPos.y + 10f);
+        shadowRT.localScale = Vector3.zero;
+        var shadowImg = shadowGO.AddComponent<Image>();
+        if (circleSprite != null) shadowImg.sprite = circleSprite;
+        shadowImg.color = new Color(0f, 0f, 0f, 0.18f);
+        shadowImg.raycastTarget = false;
+        // Make sure shadow renders behind animal
+        shadowGO.transform.SetSiblingIndex(go.transform.GetSiblingIndex());
 
         var img = go.AddComponent<Image>();
         img.preserveAspect = true;
@@ -217,9 +266,11 @@ public class RewardRevealController : MonoBehaviour
                 ? Mathf.Lerp(0f, 1.25f, p / 0.7f)
                 : Mathf.Lerp(1.25f, 1f, (p - 0.7f) / 0.3f);
             rt.localScale = Vector3.one * s;
+            shadowRT.localScale = new Vector3(s * 0.9f, s * 0.4f, 1f);
             yield return null;
         }
         rt.localScale = Vector3.one;
+        shadowRT.localScale = new Vector3(0.9f, 0.4f, 1f);
 
         // Play success animation
         var spriteAnim = go.GetComponent<UISpriteAnimator>();
@@ -241,6 +292,10 @@ public class RewardRevealController : MonoBehaviour
         float targetX = grassWidth * Random.Range(0.2f, 0.8f);
         float targetY = grassHeight * Random.Range(0.18f, 0.32f);
         yield return MoveToPosition(rt, new Vector2(targetX, targetY), 0.6f);
+
+        // Move shadow to match
+        shadowRT.anchoredPosition = new Vector2(targetX, targetY - 10f);
+        shadowRT.localScale = new Vector3(0.9f, 0.4f, 1f);
 
         // Add WorldAnimal component for future interaction
         var animal = go.AddComponent<WorldAnimal>();

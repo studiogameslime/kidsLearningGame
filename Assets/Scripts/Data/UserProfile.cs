@@ -57,8 +57,8 @@ public class JourneyProgress
     public List<DiscoveryEntry> discoveryQueue = new List<DiscoveryEntry>();
     public List<GameJourneyStat> gameStats = new List<GameJourneyStat>();
 
-    // Pending reward to show as gift box in WorldScene (null = none)
-    public DiscoveryEntry pendingWorldReward;
+    // Pending rewards to show as gift boxes in WorldScene (empty = none)
+    public List<DiscoveryEntry> pendingWorldRewards = new List<DiscoveryEntry>();
 
     // True after the world intro sound has played once
     public bool hasPlayedWorldIntroSound;

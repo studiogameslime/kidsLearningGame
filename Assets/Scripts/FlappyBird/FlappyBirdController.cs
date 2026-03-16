@@ -32,8 +32,8 @@ public class FlappyBirdController : MonoBehaviour
     public float flapStrength = 420f;      // pixels/sec upward on tap
     public float pipeSpeed = 250f;         // pixels/sec leftward
     public float spawnInterval = 2.2f;     // seconds between pipe pairs
-    public float gapSize = 320f;           // vertical gap between pipes
-    public float pipeWidth = 100f;
+    public float gapSize = 520f;           // vertical gap between pipes (generous for 480px bird)
+    public float pipeWidth = 160f;
     public float pipeMinY = 0.2f;          // gap center min (fraction of play area)
     public float pipeMaxY = 0.75f;         // gap center max
 
@@ -115,10 +115,11 @@ public class FlappyBirdController : MonoBehaviour
         var pos = birdRT.anchoredPosition;
         pos.y += velocity * Time.deltaTime;
 
-        // Ceiling clamp
-        if (pos.y > playAreaHeight - 40f)
+        // Ceiling clamp (half bird height from top)
+        float ceilY = playAreaHeight - birdRT.sizeDelta.y * 0.3f;
+        if (pos.y > ceilY)
         {
-            pos.y = playAreaHeight - 40f;
+            pos.y = ceilY;
             velocity = 0;
         }
 

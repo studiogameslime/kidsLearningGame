@@ -231,6 +231,9 @@ public class MemoryGameController : MonoBehaviour
     {
         if (card == null || string.IsNullOrEmpty(card.FaceSpriteName)) return;
         string name = card.FaceSpriteName;
+        // Sprite names are like "CatMemorySprite" — strip suffix to get "Cat"
+        if (name.EndsWith("MemorySprite"))
+            name = name.Substring(0, name.Length - "MemorySprite".Length);
         if (name.Contains(" "))
             name = name.Substring(0, name.IndexOf(' '));
         SoundLibrary.PlayAnimalName(name);

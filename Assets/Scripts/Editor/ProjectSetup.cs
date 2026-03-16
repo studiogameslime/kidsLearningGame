@@ -178,6 +178,9 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Flappy Bird…", 0.975f);
             FlappyBirdSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Simon Says…", 0.977f);
+            SimonSaysSetup.RunSetupSilent();
+
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Animal Data…", 0.965f);
             WorldSceneSetup.BuildAnimalData();
 
@@ -675,9 +678,19 @@ public class ProjectSetup : EditorWindow
         flappyBird.hasSubItems = false;
         EditorUtility.SetDirty(flappyBird);
 
+        // ── Simon Says ──
+        var simonSays = CreateSO<GameItemData>($"{DataPath}/SimonSays.asset");
+        simonSays.id = "simonsays";
+        simonSays.title = "Simon Says";
+        simonSays.cardColor = HexColor("#AB47BC");
+        simonSays.targetSceneName = "SimonSays";
+        simonSays.thumbnail = LoadSprite($"{previewPath}/SimonSays.png");
+        simonSays.hasSubItems = false;
+        EditorUtility.SetDirty(simonSays);
+
         // ── Game Database ──
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, colorVoice, tower, towerStack, sharedSticker, flappyBird };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, colorVoice, tower, towerStack, sharedSticker, flappyBird, simonSays };
         EditorUtility.SetDirty(db);
 
         return db;
@@ -1269,6 +1282,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/TowerStack.unity",
             $"{ScenesPath}/SharedSticker.unity",
             $"{ScenesPath}/FlappyBird.unity",
+            $"{ScenesPath}/SimonSays.unity",
             $"{ScenesPath}/DiscoveryReveal.unity",
             $"{ScenesPath}/DrawingGallery.unity",
             $"{ScenesPath}/WorldScene.unity",

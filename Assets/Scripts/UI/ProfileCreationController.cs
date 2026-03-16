@@ -183,6 +183,25 @@ public class ProfileCreationController : MonoBehaviour
         // Start at greeting
         GoToStep(0);
         UpdateRecordUI();
+
+        // Check if resuming after camera (app may have reloaded on mobile)
+        int resumeStep = PlayerPrefs.GetInt("OnboardingResumeStep", -1);
+        if (resumeStep >= 0)
+        {
+            recordedName = PlayerPrefs.GetString("OnboardingResumeName", "");
+            selectedAge = PlayerPrefs.GetInt("OnboardingResumeAge", 3);
+            selectedAnimalId = PlayerPrefs.GetString("OnboardingResumeAnimal", "Cat");
+            selectedColorHex = PlayerPrefs.GetString("OnboardingResumeColor", "#90CAF9");
+            if (nameInput != null && !string.IsNullOrEmpty(recordedName))
+                nameInput.text = recordedName;
+            PlayerPrefs.DeleteKey("OnboardingResumeStep");
+            PlayerPrefs.DeleteKey("OnboardingResumeName");
+            PlayerPrefs.DeleteKey("OnboardingResumeAge");
+            PlayerPrefs.DeleteKey("OnboardingResumeAnimal");
+            PlayerPrefs.DeleteKey("OnboardingResumeColor");
+            PlayerPrefs.Save();
+            GoToStep(resumeStep);
+        }
     }
 
     private void GoToStep(int step)
@@ -219,9 +238,9 @@ public class ProfileCreationController : MonoBehaviour
             }
         }
 
-        // Update back button visibility
+        // Update back button visibility (step 0 = cancel to profile selection, steps 1-5 = go back)
         if (backButton != null)
-            backButton.gameObject.SetActive(step > 0 && step < 6);
+            backButton.gameObject.SetActive(step < 6);
     }
 
     private void OnBackPressed()
@@ -451,6 +470,14 @@ public class ProfileCreationController : MonoBehaviour
     private void OnPickPhotoPressed()
     {
 #if UNITY_ANDROID || UNITY_IOS
+        // Save state before camera (app may pause/reload on mobile)
+        PlayerPrefs.SetInt("OnboardingResumeStep", currentStep);
+        PlayerPrefs.SetString("OnboardingResumeName", recordedName ?? "");
+        PlayerPrefs.SetInt("OnboardingResumeAge", selectedAge);
+        PlayerPrefs.SetString("OnboardingResumeAnimal", selectedAnimalId ?? "Cat");
+        PlayerPrefs.SetString("OnboardingResumeColor", selectedColorHex ?? "#90CAF9");
+        PlayerPrefs.Save();
+
         NativeCamera.TakePicture((path) =>
         {
             if (string.IsNullOrEmpty(path)) return;
