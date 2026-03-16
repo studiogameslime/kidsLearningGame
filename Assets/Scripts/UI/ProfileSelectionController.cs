@@ -114,4 +114,43 @@ public class ProfileSelectionController : MonoBehaviour
     {
         NavigationManager.GoToProfileCreation();
     }
+
+    /// <summary>
+    /// Delete a profile and refresh the list.
+    /// Called from profile card's delete button.
+    /// </summary>
+    public void DeleteProfile(string profileId)
+    {
+        if (string.IsNullOrEmpty(profileId)) return;
+
+        // Don't allow deleting the last profile
+        if (ProfileManager.Instance.Profiles.Count <= 1)
+        {
+            Debug.LogWarning("Cannot delete the last profile.");
+            return;
+        }
+
+        ProfileManager.Instance.DeleteProfile(profileId);
+        PopulateProfiles();
+    }
+
+    /// <summary>
+    /// Rename a profile. Shows an input dialog inline.
+    /// </summary>
+    public void RenameProfile(string profileId, string newName)
+    {
+        if (string.IsNullOrEmpty(profileId) || string.IsNullOrWhiteSpace(newName)) return;
+
+        var profiles = ProfileManager.Instance.Profiles;
+        foreach (var p in profiles)
+        {
+            if (p.id == profileId)
+            {
+                p.displayName = newName.Trim();
+                ProfileManager.Instance.Save();
+                PopulateProfiles();
+                return;
+            }
+        }
+    }
 }

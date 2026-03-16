@@ -64,9 +64,13 @@ public static class NavigationManager
         BubbleTransition.LoadScene(ProfileCreationScene);
     }
 
-    /// <summary>Go back to the World scene (main hub). If a journey is active, ends it first.</summary>
+    /// <summary>Go back to the World scene (main hub). If a journey is active, ends it first.
+    /// Blocked while celebration is playing to prevent premature exit.</summary>
     public static void GoToMainMenu()
     {
+        // Block exit during celebration
+        if (GameCompletionBridge.IsCelebrating) return;
+
         if (JourneyManager.IsJourneyActive)
         {
             JourneyManager.Instance?.EndJourney();

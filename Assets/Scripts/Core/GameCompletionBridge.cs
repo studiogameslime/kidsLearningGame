@@ -2,15 +2,23 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Bridges the confetti event to JourneyManager and StatsManager. One-shot per scene.
-/// Always registers analytics. Only chains journey when journey is active.
+/// Bridges game completion to analytics and journey systems.
+///
+/// Flow:
+/// 1. Game calls ConfettiController.Play()
+/// 2. Confetti starts → OnConfettiPlayed() fires immediately → registers analytics
+/// 3. Confetti animation finishes → OnCelebrationFinished() fires → triggers scene transition
+///
+/// This ensures celebrations complete fully before any scene change.
 /// DontDestroyOnLoad singleton.
 /// </summary>
 public class GameCompletionBridge : MonoBehaviour
 {
     public static GameCompletionBridge Instance { get; private set; }
 
-    private bool _hasFiredThisScene;
+    private bool _analyticsRegistered;
+    private bool _celebrationComplete;
+    private bool _navigationLocked;
 
     /// <summary>
     /// Active stats collector for the current game session.
@@ -18,6 +26,9 @@ public class GameCompletionBridge : MonoBehaviour
     /// session is registered automatically on confetti.
     /// </summary>
     public GameStatsCollector ActiveCollector { get; set; }
+
+    /// <summary>True while celebration is playing — used to block exit buttons.</summary>
+    public static bool IsCelebrating => Instance != null && Instance._navigationLocked;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void AutoCreate()
@@ -48,24 +59,32 @@ public class GameCompletionBridge : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        _hasFiredThisScene = false;
+        _analyticsRegistered = false;
+        _celebrationComplete = false;
+        _navigationLocked = false;
         ActiveCollector = null;
     }
 
+    /// <summary>
+    /// Called by ConfettiController.Play() at the START of the celebration.
+    /// Registers analytics immediately (so data is captured) but does NOT trigger navigation.
+    /// </summary>
     public void OnConfettiPlayed()
     {
-        if (_hasFiredThisScene) return;
+        if (_analyticsRegistered) return;
 
-        // Only fire from actual game scenes, not DiscoveryReveal/Home/World
+        // Only fire from actual game scenes
         string sceneName = SceneManager.GetActiveScene().name;
-        if (sceneName == "DiscoveryReveal" || sceneName == "HomeScene" || sceneName == "WorldScene" || sceneName == "DrawingGallery")
+        if (sceneName == "DiscoveryReveal" || sceneName == "HomeScene" ||
+            sceneName == "WorldScene" || sceneName == "DrawingGallery")
             return;
 
-        _hasFiredThisScene = true;
+        _analyticsRegistered = true;
+        _navigationLocked = true;
 
         string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : null;
 
-        // Register analytics (always, regardless of journey)
+        // Register analytics immediately
         if (ActiveCollector != null)
         {
             ActiveCollector.Finalize(completed: true);
@@ -73,9 +92,6 @@ public class GameCompletionBridge : MonoBehaviour
         }
         else if (!string.IsNullOrEmpty(gameId))
         {
-            // Minimal session when no collector was provided.
-            // Use conservative values (1 correct, 1 total) since we have no detailed metrics.
-            // The scoring strategy will still evaluate duration/difficulty properly.
             var minimal = new GameSessionData
             {
                 gameId = gameId,
@@ -88,18 +104,32 @@ public class GameCompletionBridge : MonoBehaviour
                 mistakes = 0,
                 hintsUsed = 0
             };
-            Debug.Log($"[Analytics] Fallback minimal session for {gameId} — no GameStatsCollector was set");
+            Debug.Log($"[Analytics] Fallback minimal session for {gameId}");
             StatsManager.Instance?.RegisterGameSession(minimal);
         }
+    }
 
-        // Journey chaining
+    /// <summary>
+    /// Called by ConfettiController AFTER the celebration animation fully completes.
+    /// This is where scene transitions are safe to trigger.
+    /// </summary>
+    public void OnCelebrationFinished()
+    {
+        if (_celebrationComplete) return;
+        _celebrationComplete = true;
+        _navigationLocked = false;
+
+        // Journey chaining (only when journey is active)
         if (!JourneyManager.IsJourneyActive) return;
+
+        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : null;
         StartCoroutine(DelayedComplete(gameId));
     }
 
     private System.Collections.IEnumerator DelayedComplete(string gameId)
     {
-        yield return new WaitForSeconds(2f);
+        // Short pause after celebration before transition
+        yield return new WaitForSeconds(0.5f);
         JourneyManager.Instance?.OnCurrentGameFinished(gameId);
     }
 }

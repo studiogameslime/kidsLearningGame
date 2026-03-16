@@ -99,17 +99,22 @@ public class ConfettiController : MonoBehaviour
         }
     }
 
+    /// <summary>True while confetti animation is running.</summary>
+    public bool IsPlaying => isPlaying;
+
     public void Play()
     {
         if (isPlaying) return;
+        // Register analytics immediately at celebration start
         GameCompletionBridge.Instance?.OnConfettiPlayed();
         SoundLibrary.PlayRandomFeedback();
-        StartCoroutine(PlayConfetti(ParticleCount));
+        StartCoroutine(PlayConfettiThenNotify(ParticleCount));
     }
 
     public void PlayBig()
     {
         if (isPlaying) return;
+        GameCompletionBridge.Instance?.OnConfettiPlayed();
         // Expand pool if needed for double confetti
         while (pool.Count < ParticleCount * 2)
         {
@@ -123,7 +128,7 @@ public class ConfettiController : MonoBehaviour
             go.SetActive(false);
             pool.Add(rt);
         }
-        StartCoroutine(PlayConfetti(ParticleCount * 2));
+        StartCoroutine(PlayConfettiThenNotify(ParticleCount * 2));
     }
 
     public void Stop()
@@ -132,6 +137,13 @@ public class ConfettiController : MonoBehaviour
         isPlaying = false;
         foreach (var rt in pool)
             if (rt != null) rt.gameObject.SetActive(false);
+    }
+
+    private IEnumerator PlayConfettiThenNotify(int count)
+    {
+        yield return StartCoroutine(PlayConfetti(count));
+        // Only notify the bridge AFTER the full celebration completes
+        GameCompletionBridge.Instance?.OnCelebrationFinished();
     }
 
     private IEnumerator PlayConfetti(int count)
