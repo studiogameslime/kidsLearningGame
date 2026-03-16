@@ -199,6 +199,9 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building World Scene…", 0.99f);
             WorldSceneSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Creating Analytics configs…", 0.995f);
+            AnalyticsSetup.RunSetupSilent();
+
             // Open ProfileSelection scene (entry point)
             EditorSceneManager.OpenScene($"{ScenesPath}/ProfileSelection.unity");
         }

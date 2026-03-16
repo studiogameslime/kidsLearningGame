@@ -2,14 +2,22 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Bridges the confetti event to JourneyManager. One-shot per scene.
-/// Only fires during active journey. DontDestroyOnLoad singleton.
+/// Bridges the confetti event to JourneyManager and StatsManager. One-shot per scene.
+/// Always registers analytics. Only chains journey when journey is active.
+/// DontDestroyOnLoad singleton.
 /// </summary>
 public class GameCompletionBridge : MonoBehaviour
 {
     public static GameCompletionBridge Instance { get; private set; }
 
     private bool _hasFiredThisScene;
+
+    /// <summary>
+    /// Active stats collector for the current game session.
+    /// Games can set this to provide detailed metrics. If null, a minimal
+    /// session is registered automatically on confetti.
+    /// </summary>
+    public GameStatsCollector ActiveCollector { get; set; }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void AutoCreate()
@@ -41,12 +49,12 @@ public class GameCompletionBridge : MonoBehaviour
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         _hasFiredThisScene = false;
+        ActiveCollector = null;
     }
 
     public void OnConfettiPlayed()
     {
         if (_hasFiredThisScene) return;
-        if (!JourneyManager.IsJourneyActive) return;
 
         // Only fire from actual game scenes, not DiscoveryReveal/Home/World
         string sceneName = SceneManager.GetActiveScene().name;
@@ -56,6 +64,31 @@ public class GameCompletionBridge : MonoBehaviour
         _hasFiredThisScene = true;
 
         string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : null;
+
+        // Register analytics (always, regardless of journey)
+        if (ActiveCollector != null)
+        {
+            ActiveCollector.Finalize(completed: true);
+            ActiveCollector = null;
+        }
+        else if (!string.IsNullOrEmpty(gameId))
+        {
+            // Minimal session when no collector was provided
+            var minimal = new GameSessionData
+            {
+                gameId = gameId,
+                completed = true,
+                difficultyLevel = StatsManager.Instance != null
+                    ? StatsManager.Instance.GetGameDifficulty(gameId) : 1,
+                startTime = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                correctActions = 1,
+                totalActions = 1
+            };
+            StatsManager.Instance?.RegisterGameSession(minimal);
+        }
+
+        // Journey chaining
+        if (!JourneyManager.IsJourneyActive) return;
         StartCoroutine(DelayedComplete(gameId));
     }
 

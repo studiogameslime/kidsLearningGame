@@ -20,6 +20,7 @@ public class UserProfile
     public long lastPlayedAt;
     public GameProgress progress = new GameProgress();
     public JourneyProgress journey = new JourneyProgress();
+    public ChildAnalyticsProfile analytics = new ChildAnalyticsProfile();
     public List<SavedDrawing> savedDrawings = new List<SavedDrawing>();
 
     public UserProfile()
