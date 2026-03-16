@@ -45,15 +45,15 @@ public class HebrewFontSetup : EditorWindow
         EnsureFolder("Assets/Fonts");
         EnsureFolder("Assets/Fonts/TMP");
 
-        // Prefer Heebo (Google's dedicated Hebrew font — excellent TMP compatibility)
-        // Falls back to Rubik if Heebo not found
-        var boldFont = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Heebo-Bold.ttf");
-        var regularFont = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Heebo-Regular.ttf");
+        // Prefer Noto Sans Hebrew (Google's purpose-built Hebrew font — reliable TMP metrics)
+        // Falls back to Rubik if not found
+        var boldFont = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/NotoSansHebrew-Bold.ttf");
+        var regularFont = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/NotoSansHebrew-Regular.ttf");
 
-        string fontFamily = "Heebo";
+        string fontFamily = "NotoSansHebrew";
         if (boldFont == null || regularFont == null)
         {
-            Debug.Log("Heebo fonts not found, falling back to Rubik...");
+            Debug.Log("Noto Sans Hebrew not found, trying Rubik...");
             boldFont = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Rubik-Bold.ttf");
             regularFont = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Rubik-Regular.ttf");
             fontFamily = "Rubik";
@@ -61,7 +61,7 @@ public class HebrewFontSetup : EditorWindow
 
         if (boldFont == null || regularFont == null)
         {
-            Debug.LogError("No Hebrew font files found at Assets/Fonts/. Need Heebo-Bold.ttf + Heebo-Regular.ttf (or Rubik).");
+            Debug.LogError("No Hebrew font files found at Assets/Fonts/. Need NotoSansHebrew-Bold.ttf + NotoSansHebrew-Regular.ttf (or Rubik).");
             return;
         }
 
@@ -101,7 +101,7 @@ public class HebrewFontSetup : EditorWindow
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log($"Hebrew font setup complete. {fontFamily} set as default TMP font (Hebrew+Latin in single atlas, 2048x2048, sampling 64).");
+            Debug.Log($"Hebrew font setup complete. {fontFamily} set as default TMP font (2048x2048, sampling 64). Latin fallback from Rubik.");
         }
         finally
         {
