@@ -43,6 +43,7 @@ public class BallMazeController : MonoBehaviour
     private bool isDragging;
     private bool isComplete;
     private Vector2 fingerTarget; // current finger position in board-local coords
+    private GameStatsCollector _stats;
 
     // Physics constants
     private const float FOLLOW_SPEED = 18f;     // how quickly ball follows finger
@@ -72,6 +73,11 @@ public class BallMazeController : MonoBehaviour
     private void Start()
     {
         canvas = GetComponentInParent<Canvas>();
+
+        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "ballmaze";
+        _stats = new GameStatsCollector(gameId);
+        if (GameCompletionBridge.Instance != null)
+            GameCompletionBridge.Instance.ActiveCollector = _stats;
 
         spriteLookup = new Dictionary<string, Sprite>();
         for (int i = 0; i < spriteKeys.Count && i < spriteValues.Count; i++)
@@ -585,6 +591,8 @@ public class BallMazeController : MonoBehaviour
     // ── completion ───────────────────────────────────────────────
     private IEnumerator CompletionSequence()
     {
+        _stats?.RecordCorrect();
+        _stats?.SetCustom("levelCompleted", currentLevelIndex);
         // Phase 1: Pull ball into hole
         Vector2 ballStart = ballRT.anchoredPosition;
         Vector2 holePos = holeRT.anchoredPosition;

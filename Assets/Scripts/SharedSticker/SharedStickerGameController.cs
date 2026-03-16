@@ -32,6 +32,7 @@ public class SharedStickerGameController : MonoBehaviour
     private List<GameObject> spawnedStickers = new List<GameObject>();
     private bool acceptingInput = true;
     private int roundScore;
+    private GameStatsCollector _stats;
 
     // Track which sticker GameObjects are the shared ones (one per card)
     private readonly List<Image> sharedStickerImages = new List<Image>();
@@ -40,6 +41,12 @@ public class SharedStickerGameController : MonoBehaviour
     {
         currentRound = 0;
         roundScore = 0;
+
+        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "sharedsticker";
+        _stats = new GameStatsCollector(gameId);
+        if (GameCompletionBridge.Instance != null)
+            GameCompletionBridge.Instance.ActiveCollector = _stats;
+
         GenerateRound();
     }
 
@@ -202,9 +209,15 @@ public class SharedStickerGameController : MonoBehaviour
         if (!acceptingInput) return;
 
         if (stickerIndex == sharedStickerIndex)
+        {
+            _stats?.RecordCorrect();
             StartCoroutine(CorrectSequence(tappedGO));
+        }
         else
+        {
+            _stats?.RecordMistake();
             StartCoroutine(WrongSequence(tappedGO));
+        }
     }
 
     private IEnumerator CorrectSequence(GameObject tappedGO)

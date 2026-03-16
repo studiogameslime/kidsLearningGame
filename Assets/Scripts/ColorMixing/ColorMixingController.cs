@@ -106,11 +106,18 @@ public class ColorMixingController : MonoBehaviour
     private List<Image> paletteBtnImages = new List<Image>();
     private string lastTargetName = "";
     private Coroutine targetPulseRoutine;
+    private GameStatsCollector _stats;
 
     // ── lifecycle ───────────────────────────────────────────────────
     private void Start()
     {
         canvas = GetComponentInParent<Canvas>();
+
+        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "colormixing";
+        _stats = new GameStatsCollector(gameId);
+        if (GameCompletionBridge.Instance != null)
+            GameCompletionBridge.Instance.ActiveCollector = _stats;
+
         CreatePaletteButtons();
         StartNewRound();
     }
@@ -545,9 +552,15 @@ public class ColorMixingController : MonoBehaviour
                      || (containerLeftColorId == currentTarget.primaryB && containerRightColorId == currentTarget.primaryA);
 
         if (correct)
+        {
+            _stats?.RecordCorrect();
             yield return SuccessSequence(resultColor);
+        }
         else
+        {
+            _stats?.RecordMistake();
             yield return WrongSequence();
+        }
     }
 
     /// <summary>

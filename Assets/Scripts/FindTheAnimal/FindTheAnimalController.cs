@@ -74,6 +74,7 @@ public class FindTheAnimalController : MonoBehaviour
     private float lastInteractionTime;
     private int _difficultyLevel = 1;
     private string[] _allowedAnimals;
+    private GameStatsCollector _stats;
 
     private List<GameObject> spawnedAnimals = new List<GameObject>();
     private List<int> targetIndices = new List<int>();
@@ -142,6 +143,12 @@ public class FindTheAnimalController : MonoBehaviour
         targetsFound = 0;
         lastInteractionTime = Time.time;
         foundIndices.Clear();
+
+        // Start analytics for this round
+        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "findtheobject";
+        _stats = new GameStatsCollector(gameId);
+        if (GameCompletionBridge.Instance != null)
+            GameCompletionBridge.Instance.ActiveCollector = _stats;
         targetIndices.Clear();
 
         var game = GameContext.CurrentGame;
@@ -708,6 +715,7 @@ public class FindTheAnimalController : MonoBehaviour
 
         if (animalId == targetAnimal.id)
         {
+            _stats?.RecordCorrect();
             targetsFound++;
             foundIndices.Add(index);
             UpdateRemainingText();
@@ -719,12 +727,14 @@ public class FindTheAnimalController : MonoBehaviour
 
             if (targetsFound >= targetCount)
             {
+                _stats?.SetCustom("targetsFound", targetCount);
                 isRoundActive = false;
                 StartCoroutine(AdvanceRound());
             }
         }
         else
         {
+            _stats?.RecordMistake();
             StartCoroutine(WrongTapAnimation(go));
         }
     }

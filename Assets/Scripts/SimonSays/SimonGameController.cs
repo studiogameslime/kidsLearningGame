@@ -62,6 +62,7 @@ public class SimonGameController : MonoBehaviour
     private int bestRound;
     private int _startSequenceLength = 2;
     private float _speedMultiplier = 1f;
+    private GameStatsCollector _stats;
 
     private void Start()
     {
@@ -100,6 +101,11 @@ public class SimonGameController : MonoBehaviour
     {
         sequence.Clear();
         currentRound = 0;
+
+        // Start analytics
+        _stats = new GameStatsCollector("simonsays");
+        if (GameCompletionBridge.Instance != null)
+            GameCompletionBridge.Instance.ActiveCollector = _stats;
 
         // Apply difficulty
         int diffLevel = GameDifficultyConfig.GetLevel("simonsays");
@@ -220,11 +226,14 @@ public class SimonGameController : MonoBehaviour
         if (idx == sequence[inputIndex])
         {
             // Correct
+            _stats?.RecordCorrect();
             StartCoroutine(CorrectInput(idx));
         }
         else
         {
             // Wrong
+            _stats?.RecordMistake();
+            _stats?.SetCustom("roundReached", currentRound);
             StartCoroutine(WrongInput());
         }
     }

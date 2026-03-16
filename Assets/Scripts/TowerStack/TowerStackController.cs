@@ -79,6 +79,7 @@ public class TowerStackController : MonoBehaviour
 
     private float cameraOffset;
     private float targetCameraOffset;
+    private GameStatsCollector _stats;
 
     private GameObject gameOverPanel;
     private List<GameObject> spawnedObjects = new List<GameObject>();
@@ -224,6 +225,10 @@ public class TowerStackController : MonoBehaviour
         consecutivePerfects = 0;
         colorIdx = 0;
         isGameOver = false;
+
+        _stats = new GameStatsCollector("towerstack");
+        if (GameCompletionBridge.Instance != null)
+            GameCompletionBridge.Instance.ActiveCollector = _stats;
         isDropping = false;
         isMoving = false;
         cameraOffset = 0f;
@@ -424,6 +429,7 @@ public class TowerStackController : MonoBehaviour
         PlaceBlockVisual(overlapLeft, overlapRight, towerTopY, droppedSpriteKey);
         towerTopY += BLOCK_H;
         score++;
+        _stats?.RecordCorrect();
         if (score > bestScore) bestScore = score;
 
         StackPiece placed = stack[stack.Count - 1];
@@ -687,6 +693,8 @@ public class TowerStackController : MonoBehaviour
     {
         isGameOver = true;
         isMoving = false;
+        _stats?.SetCustom("finalScore", score);
+        _stats?.RecordMistake();
         StartCoroutine(GameOverSequence());
     }
 

@@ -42,6 +42,7 @@ public class TowerBuilderController : MonoBehaviour
     // Build-order and guidance
     private int wrongAttemptCount;
     private Coroutine highlightCoroutine;
+    private GameStatsCollector _stats;
 
     // Tower layout calculation cache
     private float studW;
@@ -83,6 +84,11 @@ public class TowerBuilderController : MonoBehaviour
             if (int.TryParse(GameContext.CurrentSelection.categoryKey, out d))
                 difficulty = d;
         }
+
+        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "towerbuilder";
+        _stats = new GameStatsCollector(gameId);
+        if (GameCompletionBridge.Instance != null)
+            GameCompletionBridge.Instance.ActiveCollector = _stats;
 
         StartCoroutine(StartAfterLayout());
     }
@@ -524,6 +530,7 @@ public class TowerBuilderController : MonoBehaviour
 
             // Snap: copy the exact transform from the slot
             brick.SnapToSlot(slot.slotRT, this);
+            _stats?.RecordCorrect();
             placedCount++;
 
             if (placedCount >= currentLevel.bricks.Length)
@@ -532,6 +539,7 @@ public class TowerBuilderController : MonoBehaviour
         else
         {
             // Wrong placement
+            _stats?.RecordMistake();
             wrongAttemptCount++;
             brick.ReturnToStart(this);
 

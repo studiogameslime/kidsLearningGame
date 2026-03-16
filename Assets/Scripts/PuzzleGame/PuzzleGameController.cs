@@ -30,6 +30,7 @@ public class PuzzleGameController : MonoBehaviour
     private int gridSize = 3;
     private int totalPieces => gridSize * gridSize;
     private int lastAnimalIndex = -1;
+    private GameStatsCollector _stats;
 
     private void Start()
     {
@@ -40,6 +41,11 @@ public class PuzzleGameController : MonoBehaviour
         int diffLevel = GameDifficultyConfig.GetLevel(gameId);
         gridSize = GameDifficultyConfig.PuzzleGridSize(diffLevel);
         Debug.Log($"[Difficulty] Game=puzzle Level={diffLevel} Grid={gridSize}x{gridSize} Pieces={totalPieces}");
+
+        // Start analytics
+        _stats = new GameStatsCollector(gameId);
+        if (GameCompletionBridge.Instance != null)
+            GameCompletionBridge.Instance.ActiveCollector = _stats;
 
         LoadRandomPuzzle();
     }
@@ -350,9 +356,12 @@ public class PuzzleGameController : MonoBehaviour
 
     public void OnPiecePlaced()
     {
+        _stats?.RecordCorrect();
+        _stats?.SetCustom("piecesPlaced", placedCount + 1);
         placedCount++;
         if (placedCount >= totalPieces)
         {
+            _stats?.SetCustom("totalPieces", totalPieces);
             referenceImage.color = new Color(1f, 1f, 1f, 0f);
             ConfettiController.Instance.Play();
             StartCoroutine(LoadNextPuzzleAfterDelay(1.5f));

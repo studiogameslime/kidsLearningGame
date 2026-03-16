@@ -52,6 +52,7 @@ public class FlappyBirdController : MonoBehaviour
     private readonly List<PipePair> pipePool = new List<PipePair>();
     private float[] parallaxOffsets;
     private float smoothTilt;          // current visual tilt angle (smoothed)
+    private GameStatsCollector _stats;
 
     private struct PipePair
     {
@@ -102,6 +103,9 @@ public class FlappyBirdController : MonoBehaviour
             {
                 isPlaying = true;
                 velocity = flapStrength;
+                _stats = new GameStatsCollector("flappybird");
+                if (GameCompletionBridge.Instance != null)
+                    GameCompletionBridge.Instance.ActiveCollector = _stats;
             }
             return;
         }
@@ -271,6 +275,7 @@ public class FlappyBirdController : MonoBehaviour
                 pair.scored = true;
                 pipes[i] = pair;
                 score++;
+                _stats?.RecordCorrect();
             }
 
             // Collision check (AABB) — tight to visible pipe
@@ -340,6 +345,8 @@ public class FlappyBirdController : MonoBehaviour
         if (isDead) return;
         isDead = true;
         isPlaying = false;
+        _stats?.SetCustom("finalScore", score);
+        _stats?.RecordMistake(); // death = mistake
 
         // Save score
         if (score > bestScore)

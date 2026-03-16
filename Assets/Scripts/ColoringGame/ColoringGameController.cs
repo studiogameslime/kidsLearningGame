@@ -67,9 +67,14 @@ public class ColoringGameController : MonoBehaviour
     private List<Image> brushIndicators = new List<Image>();
     private List<Image> brushTipImages = new List<Image>();
     private List<Image> stickerIndicators = new List<Image>();
+    private GameStatsCollector _stats;
 
     private void Start()
     {
+        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "coloring";
+        _stats = new GameStatsCollector(gameId);
+        if (GameCompletionBridge.Instance != null)
+            GameCompletionBridge.Instance.ActiveCollector = _stats;
         // Init drawing canvas
         drawingCanvas.Init();
         drawingCanvas.SetColor(PaletteColors[selectedColorIndex]);
@@ -466,6 +471,7 @@ public class ColoringGameController : MonoBehaviour
     /// <summary>Called by Done button during journey mode.</summary>
     public void OnDonePressed()
     {
+        _stats?.RecordCorrect();
         ConfettiController.Instance.Play();
     }
 

@@ -61,6 +61,7 @@ public class ConnectTheDotsController : MonoBehaviour
     private bool roundComplete;
     private int roundNumber;
     private float currentDotSize;
+    private GameStatsCollector _stats;
 
     // Sprite-generated shapes loaded at runtime, filtered by difficulty
     private DotShapeData[] allGeneratedShapes;
@@ -316,6 +317,12 @@ public class ConnectTheDotsController : MonoBehaviour
     private void LoadNewRound()
     {
         ClearRound();
+
+        // Start analytics for this round
+        string gId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "fillthedots";
+        _stats = new GameStatsCollector(gId);
+        if (GameCompletionBridge.Instance != null)
+            GameCompletionBridge.Instance.ActiveCollector = _stats;
 
         // Prefer generated shapes if available; fall back to hardcoded
         Vector2[] layout;
@@ -662,6 +669,7 @@ public class ConnectTheDotsController : MonoBehaviour
             DrawLine(dots[currentDotIndex - 1], dot);
 
         currentDotIndex++;
+        _stats?.RecordCorrect();
 
         if (currentDotIndex < totalDots)
         {
@@ -776,6 +784,7 @@ public class ConnectTheDotsController : MonoBehaviour
 
     private IEnumerator OnAllDotsConnected()
     {
+        _stats?.SetCustom("totalDots", totalDots);
         ConfettiController.Instance.Play();
 
         // Play animal name audio if applicable

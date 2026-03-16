@@ -32,12 +32,12 @@ public class ShadowMatchController : MonoBehaviour
     private List<ShadowSlot> shadows = new List<ShadowSlot>();
     private int matchedCount;
     private Material silhouetteMaterial;
+    private GameStatsCollector _stats;
 
     private void Start()
     {
         canvas = GetComponentInParent<Canvas>();
 
-        // Create silhouette material — uses alpha from sprite, replaces RGB with solid color
         var silShader = Shader.Find("UI/Silhouette");
         if (silShader != null)
         {
@@ -51,6 +51,11 @@ public class ShadowMatchController : MonoBehaviour
     private void LoadRound()
     {
         ClearRound();
+
+        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "shadows";
+        _stats = new GameStatsCollector(gameId);
+        if (GameCompletionBridge.Instance != null)
+            GameCompletionBridge.Instance.ActiveCollector = _stats;
 
         var game = GameContext.CurrentGame;
         if (game == null || game.subItems == null || game.subItems.Count < animalCount)
@@ -234,6 +239,7 @@ public class ShadowMatchController : MonoBehaviour
                 if (!string.IsNullOrEmpty(animal.soundName))
                     SoundLibrary.PlayAnimalName(animal.soundName);
 
+                _stats?.RecordCorrect();
                 matchedCount++;
                 if (matchedCount >= animalCount)
                     StartCoroutine(RoundComplete());

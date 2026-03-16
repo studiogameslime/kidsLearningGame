@@ -39,6 +39,7 @@ public class ColorVoiceController : MonoBehaviour
     private bool isRoundActive;
     private Coroutine listenTimeoutCoroutine;
     private Coroutine micPulseCoroutine;
+    private GameStatsCollector _stats;
 
     // Shuffled color order for variety
     private ColorPrompt[] shuffledColors;
@@ -47,6 +48,11 @@ public class ColorVoiceController : MonoBehaviour
     {
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
+
+        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "colorvoice";
+        _stats = new GameStatsCollector(gameId);
+        if (GameCompletionBridge.Instance != null)
+            GameCompletionBridge.Instance.ActiveCollector = _stats;
 
         // Create platform-appropriate recognizer
 #if UNITY_EDITOR
@@ -314,6 +320,7 @@ public class ColorVoiceController : MonoBehaviour
 
     private IEnumerator OnCorrectAnswer()
     {
+        _stats?.RecordCorrect();
         // Happy feedback
         if (feedbackText != null)
         {
@@ -349,6 +356,7 @@ public class ColorVoiceController : MonoBehaviour
 
     private IEnumerator OnWrongColor(ColorPrompt spokenColor)
     {
+        _stats?.RecordMistake();
         retryCount++;
 
         if (feedbackText != null)
