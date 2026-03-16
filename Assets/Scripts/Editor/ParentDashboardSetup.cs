@@ -238,7 +238,7 @@ public class ParentDashboardSetup : EditorWindow
         backTMP.fontSize = 16;
         backTMP.color = Color.white;
         backTMP.alignment = TextAlignmentOptions.Center;
-        backTMP.isRightToLeftText = false;
+        backTMP.isRightToLeftText = true;
         backTMP.enableWordWrapping = false;
         backTMP.raycastTarget = false;
 
@@ -265,7 +265,7 @@ public class ParentDashboardSetup : EditorWindow
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;
         titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.isRightToLeftText = false;
+        titleTMP.isRightToLeftText = true;
         titleTMP.raycastTarget = false;
         titleTMP.enableWordWrapping = false;
         titleTMP.overflowMode = TextOverflowModes.Overflow;
@@ -342,7 +342,7 @@ public class ParentDashboardSetup : EditorWindow
         trophyLabelTMP.fontSize = 14;
         trophyLabelTMP.color = Color.white;
         trophyLabelTMP.alignment = TextAlignmentOptions.Center;
-        trophyLabelTMP.isRightToLeftText = false;
+        trophyLabelTMP.isRightToLeftText = true;
         trophyLabelTMP.enableWordWrapping = false;
         trophyLabelTMP.raycastTarget = false;
 
@@ -436,7 +436,7 @@ public class ParentDashboardSetup : EditorWindow
         tmp.fontSize = 16;
         tmp.color = new Color(1, 1, 1, 0.75f);
         tmp.alignment = TextAlignmentOptions.Center;
-        tmp.isRightToLeftText = false;
+        tmp.isRightToLeftText = true;
         tmp.raycastTarget = false;
         tmp.enableWordWrapping = false;
         tmp.overflowMode = TextOverflowModes.Overflow;
@@ -474,7 +474,7 @@ public class ParentDashboardSetup : EditorWindow
         tmp.fontSize = fontSize;
         tmp.color = color;
         tmp.alignment = TextAlignmentOptions.Center;
-        tmp.isRightToLeftText = false;
+        tmp.isRightToLeftText = true;
         tmp.raycastTarget = false;
         return go;
     }

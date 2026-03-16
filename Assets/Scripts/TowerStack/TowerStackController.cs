@@ -753,7 +753,7 @@ public class TowerStackController : MonoBehaviour
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = new Color(0.3f, 0.3f, 0.3f);
         titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.isRightToLeftText = false;
+        titleTMP.isRightToLeftText = true;
         titleTMP.raycastTarget = false;
 
         var scoreGO = new GameObject("Score");
@@ -812,7 +812,7 @@ public class TowerStackController : MonoBehaviour
         tmp.fontStyle = FontStyles.Bold;
         tmp.color = Color.white;
         tmp.alignment = TextAlignmentOptions.Center;
-        tmp.isRightToLeftText = false;
+        tmp.isRightToLeftText = true;
         tmp.raycastTarget = false;
     }
 

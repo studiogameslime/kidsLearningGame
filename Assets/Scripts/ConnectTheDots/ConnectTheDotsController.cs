@@ -867,7 +867,7 @@ public class ConnectTheDotsController : MonoBehaviour
         if (shapeNameText != null)
         {
             shapeNameText.text = HebrewFixer.Fix(currentShape.name);
-            shapeNameText.isRightToLeftText = false;
+            shapeNameText.isRightToLeftText = true;
             shapeNameText.color = new Color(
                 currentShape.color.r, currentShape.color.g, currentShape.color.b, 0f);
             shapeNameText.gameObject.SetActive(true);

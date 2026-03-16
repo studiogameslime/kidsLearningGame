@@ -423,7 +423,7 @@ public class ProfileCreationController : MonoBehaviour
         {
             string displayName = !string.IsNullOrWhiteSpace(recordedName) ? recordedName : "";
             colorPreviewName.text = IsHebrew(displayName) ? HebrewFixer.Fix(displayName) : displayName;
-            colorPreviewName.isRightToLeftText = false;
+            colorPreviewName.isRightToLeftText = true;
         }
 
         // Update initial
@@ -583,7 +583,7 @@ public class ProfileCreationController : MonoBehaviour
         if (doneNameText != null)
         {
             doneNameText.text = IsHebrew(recordedName) ? HebrewFixer.Fix(recordedName) : recordedName;
-            doneNameText.isRightToLeftText = false;
+            doneNameText.isRightToLeftText = true;
         }
 
         if (pickedPhoto != null)

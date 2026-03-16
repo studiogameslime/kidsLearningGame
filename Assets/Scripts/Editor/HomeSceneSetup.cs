@@ -263,7 +263,7 @@ public class HomeSceneSetup : EditorWindow
         worldLabelTMP.fontStyle = FontStyles.Bold;
         worldLabelTMP.color = Color.white;
         worldLabelTMP.alignment = TextAlignmentOptions.Center;
-        worldLabelTMP.isRightToLeftText = false;
+        worldLabelTMP.isRightToLeftText = true;
         worldLabelTMP.raycastTarget = false;
 
         // ── All Games (bottom, small text) ──
@@ -281,7 +281,7 @@ public class HomeSceneSetup : EditorWindow
         allGamesTMP.fontSize = 24;
         allGamesTMP.color = AllGamesColor;
         allGamesTMP.alignment = TextAlignmentOptions.Center;
-        allGamesTMP.isRightToLeftText = false;
+        allGamesTMP.isRightToLeftText = true;
         var allGamesButton = allGamesBtn.AddComponent<Button>();
         allGamesButton.targetGraphic = allGamesTMP;
 
@@ -300,7 +300,7 @@ public class HomeSceneSetup : EditorWindow
         parentBtnTMP.fontSize = 18;
         parentBtnTMP.color = new Color(0.6f, 0.6f, 0.6f, 0.5f);
         parentBtnTMP.alignment = TextAlignmentOptions.Left;
-        parentBtnTMP.isRightToLeftText = false;
+        parentBtnTMP.isRightToLeftText = true;
         var parentAreaButton = parentBtn.AddComponent<Button>();
         parentAreaButton.targetGraphic = parentBtnTMP;
 

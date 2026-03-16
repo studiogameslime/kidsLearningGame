@@ -62,7 +62,7 @@ public class ProfileCardView : MonoBehaviour
             nameText.text = ProfileCreationController.IsHebrew(profile.displayName)
                 ? HebrewFixer.Fix(profile.displayName)
                 : profile.displayName;
-            nameText.isRightToLeftText = false;
+            nameText.isRightToLeftText = true;
         }
 
         // Tap handler

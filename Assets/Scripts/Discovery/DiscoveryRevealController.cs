@@ -293,7 +293,7 @@ public class DiscoveryRevealController : MonoBehaviour
         if (nameText != null && discovery != null)
         {
             nameText.text = HebrewFixer.Fix(GetHebrewName(discovery));
-            nameText.isRightToLeftText = false;
+            nameText.isRightToLeftText = true;
             nameText.gameObject.SetActive(true);
         }
 

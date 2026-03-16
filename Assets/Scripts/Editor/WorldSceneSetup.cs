@@ -325,7 +325,7 @@ public class WorldSceneSetup : EditorWindow
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
         titleTMP.text = HebrewFixer.Fix("\u05D4\u05E2\u05D5\u05DC\u05DD \u05E9\u05DC\u05D9");
-        titleTMP.isRightToLeftText = false;
+        titleTMP.isRightToLeftText = true;
         titleTMP.fontSize = 36;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;
@@ -600,7 +600,7 @@ public class WorldSceneSetup : EditorWindow
         galleryTitleRT.offsetMax = new Vector2(-80, 0);
         var galleryTitleTMP = galleryTitleGO.AddComponent<TMPro.TextMeshProUGUI>();
         galleryTitleTMP.text = HebrewFixer.Fix("\u05D4\u05E6\u05D9\u05D5\u05E8\u05D9\u05DD \u05E9\u05DC\u05D9");
-        galleryTitleTMP.isRightToLeftText = false;
+        galleryTitleTMP.isRightToLeftText = true;
         galleryTitleTMP.fontSize = 36;
         galleryTitleTMP.fontStyle = TMPro.FontStyles.Bold;
         galleryTitleTMP.color = HexColor("#5B4636");
@@ -660,7 +660,7 @@ public class WorldSceneSetup : EditorWindow
         StretchFull(newDrawTextRT);
         var newDrawTMP = newDrawTextGO.AddComponent<TMPro.TextMeshProUGUI>();
         newDrawTMP.text = HebrewFixer.Fix("\u05E6\u05D9\u05D5\u05E8 \u05D7\u05D3\u05E9") + "  +";
-        newDrawTMP.isRightToLeftText = false;
+        newDrawTMP.isRightToLeftText = true;
         newDrawTMP.fontSize = 30;
         newDrawTMP.fontStyle = TMPro.FontStyles.Bold;
         newDrawTMP.color = Color.white;
@@ -709,7 +709,7 @@ public class WorldSceneSetup : EditorWindow
         StretchFull(emptyRT);
         var emptyTMP = emptyGO.AddComponent<TMPro.TextMeshProUGUI>();
         emptyTMP.text = HebrewFixer.Fix("\u05E2\u05D3\u05D9\u05D9\u05DF \u05D0\u05D9\u05DF \u05E6\u05D9\u05D5\u05E8\u05D9\u05DD");
-        emptyTMP.isRightToLeftText = false;
+        emptyTMP.isRightToLeftText = true;
         emptyTMP.fontSize = 32;
         emptyTMP.color = HexColor("#A0A0A0");
         emptyTMP.alignment = TMPro.TextAlignmentOptions.Center;
@@ -755,7 +755,7 @@ public class WorldSceneSetup : EditorWindow
         parentBtnRT.sizeDelta = new Vector2(200, 40);
         var parentBtnTMP = parentBtn.AddComponent<TextMeshProUGUI>();
         parentBtnTMP.text = HebrewFixer.Fix("\u05D0\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD");
-        parentBtnTMP.isRightToLeftText = false;
+        parentBtnTMP.isRightToLeftText = true;
         parentBtnTMP.fontSize = 18;
         parentBtnTMP.color = new Color(0.6f, 0.6f, 0.6f, 0.5f);
         parentBtnTMP.alignment = TextAlignmentOptions.Left;

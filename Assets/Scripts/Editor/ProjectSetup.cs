@@ -1060,7 +1060,7 @@ public class ProjectSetup : EditorWindow
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = HexColor("#4A4A4A");
         titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.isRightToLeftText = false;
+        titleTMP.isRightToLeftText = true;
         titleTMP.enableWordWrapping = false;
         titleTMP.overflowMode = TextOverflowModes.Ellipsis;
         titleTMP.raycastTarget = false;
@@ -1117,7 +1117,7 @@ public class ProjectSetup : EditorWindow
         titleRT.offsetMax = new Vector2(-120, -10);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
         titleTMP.text = HebrewFixer.Fix(title);
-        titleTMP.isRightToLeftText = false;
+        titleTMP.isRightToLeftText = true;
         titleTMP.fontSize = 48;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = HexColor("#4A4A4A");
