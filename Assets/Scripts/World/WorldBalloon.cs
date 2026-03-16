@@ -65,6 +65,15 @@ public class WorldBalloon : MonoBehaviour
     {
         if (isPopped) return;
         isPopped = true;
+
+        // Track bubble pop in analytics
+        var profile = ProfileManager.ActiveProfile;
+        if (profile != null)
+        {
+            profile.analytics.totalBubblesPopped++;
+            ProfileManager.Instance?.Save();
+        }
+
         SpawnPopParticles();
         StartCoroutine(PopAndRespawn());
     }

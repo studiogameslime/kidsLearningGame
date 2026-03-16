@@ -508,13 +508,23 @@ public class ProjectSetup : EditorWindow
         });
         for (int i = 0; i < animals.Length; i++)
         {
+            string animalName = animals[i];
+            // Load the actual puzzle image so the selection card shows the real picture
+            string puzzlePath = $"Assets/Art/Animals/{animalName}/Art/Puzzle/{animalName} Main.png";
+            var puzzleSprite = LoadSprite(puzzlePath);
+            // Fallback to the regular sprite if no puzzle image
+            if (puzzleSprite == null)
+                puzzleSprite = LoadSprite($"Assets/Art/Animals/{animalName}/Art/{animalName}Sprite.png");
+
             puzzle.subItems.Add(new SubItemData
             {
-                id = $"puzzle_{animals[i].ToLower()}",
-                title = animals[i],
+                id = $"puzzle_{animalName.ToLower()}",
+                title = animalName,
                 cardColor = AnimalColors[i % AnimalColors.Length],
-                categoryKey = animals[i].ToLower(),
-                targetSceneName = "PuzzleGame"
+                categoryKey = animalName.ToLower(),
+                targetSceneName = "PuzzleGame",
+                thumbnail = puzzleSprite,
+                contentAsset = puzzleSprite
             });
         }
         EditorUtility.SetDirty(puzzle);

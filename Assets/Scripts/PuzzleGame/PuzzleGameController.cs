@@ -233,19 +233,32 @@ public class PuzzleGameController : MonoBehaviour
         if (piecesH <= 0) piecesH = 1600f;
 
         // Scale pieces to fit comfortably on left side
-        // Target: pieces fill ~70% of left area width in a 3-column layout
-        float scatterPieceW = (piecesW * 0.70f) / 3f;
+        // Dynamic columns based on piece count: 2 for 4pc, 3 for 9pc, 4 for 16pc
+        int scatterCols = gridSize;
+        int scatterRows = gridSize;
+        float scatterPieceW = (piecesW * 0.75f) / scatterCols;
         float pieceScale = scatterPieceW / pieceW;
         float scatterPieceH = pieceH * pieceScale;
 
-        // Arrange in a 3x3 scattered grid with jitter
-        // Extra top margin to prevent overlap with header
-        float marginX = piecesW * 0.10f;
-        float marginY = piecesH * 0.08f;
+        // For 16 pieces, reduce scale further if pieces are still too large
+        if (totalPieces > 9)
+        {
+            float maxH = (piecesH * 0.85f) / scatterRows;
+            if (scatterPieceH > maxH)
+            {
+                pieceScale = maxH / pieceH;
+                scatterPieceW = pieceW * pieceScale;
+                scatterPieceH = pieceH * pieceScale;
+            }
+        }
+
+        // Arrange in scattered grid with jitter
+        float marginX = piecesW * 0.08f;
+        float marginY = piecesH * 0.06f;
         float usableW = piecesW - marginX * 2f;
         float usableH = piecesH - marginY * 2f;
-        float cellW = usableW / 3f;
-        float cellH = usableH / 3f;
+        float cellW = usableW / scatterCols;
+        float cellH = usableH / scatterRows;
 
         for (int i = 0; i < totalPieces; i++)
         {
@@ -282,8 +295,8 @@ public class PuzzleGameController : MonoBehaviour
             piece.Init(idx, correctPositions[idx], canvas, this, boardArea);
 
             // Scatter position: grid cell + jitter (in piecesArea local space, then convert)
-            int scatterCol = i % 3;
-            int scatterRow = i / 3;
+            int scatterCol = i % scatterCols;
+            int scatterRow = i / scatterCols;
             float baseX = -piecesW / 2f + marginX + cellW * scatterCol + cellW / 2f;
             float baseY = piecesH / 2f - marginY - cellH * scatterRow - cellH / 2f;
             float jitterX = Random.Range(-cellW * 0.15f, cellW * 0.15f);

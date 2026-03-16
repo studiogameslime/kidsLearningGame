@@ -100,6 +100,25 @@ public class WorldController : MonoBehaviour
         }
     }
 
+    /// <summary>Maps a profile avatar color hex to the closest discovery color ID.</summary>
+    private static string MapProfileColorToId(string colorHex)
+    {
+        if (string.IsNullOrEmpty(colorHex)) return "Blue";
+
+        // Map common profile onboarding colors to discovery color IDs
+        string hex = colorHex.ToUpperInvariant();
+        if (hex.Contains("F44") || hex.Contains("E53") || hex.Contains("EF5")) return "Red";
+        if (hex.Contains("E91") || hex.Contains("FF9") || hex.Contains("FF5")) return "Orange";
+        if (hex.Contains("FFC") || hex.Contains("FFE") || hex.Contains("F9A")) return "Yellow";
+        if (hex.Contains("4CA") || hex.Contains("66B") || hex.Contains("81C")) return "Green";
+        if (hex.Contains("42A") || hex.Contains("197") || hex.Contains("039")) return "Blue";
+        if (hex.Contains("7C4") || hex.Contains("AB4") || hex.Contains("9C2")) return "Purple";
+        if (hex.Contains("F06") || hex.Contains("EC4") || hex.Contains("E91")) return "Pink";
+        if (hex.Contains("90C") || hex.Contains("64B") || hex.Contains("BBD")) return "Blue"; // light blue defaults
+
+        return "Blue"; // safe fallback
+    }
+
     private void BuildAnimalSpriteLookup()
     {
         _animalSprites = new Dictionary<string, Sprite>();
@@ -144,13 +163,22 @@ public class WorldController : MonoBehaviour
         {
             string favAnimal = profile.favoriteAnimalId;
             if (string.IsNullOrEmpty(favAnimal)) favAnimal = "Cat";
+
+            // Unlock the favorite animal and starter games (needed for world to render)
             if (!jp.unlockedAnimalIds.Contains(favAnimal))
                 jp.unlockedAnimalIds.Add(favAnimal);
-
-            foreach (var id in DiscoveryCatalog.StarterColors)
-                if (!jp.unlockedColorIds.Contains(id)) jp.unlockedColorIds.Add(id);
             foreach (var id in DiscoveryCatalog.StarterGameIds)
                 if (!jp.unlockedGameIds.Contains(id)) jp.unlockedGameIds.Add(id);
+
+            // Only give ONE balloon matching the child's selected color
+            string profileColorId = MapProfileColorToId(profile.avatarColorHex);
+            if (!jp.unlockedColorIds.Contains(profileColorId))
+                jp.unlockedColorIds.Add(profileColorId);
+
+            // Queue first-time gifts: dog + balloon (via gift box reveal)
+            jp.pendingWorldRewards.Add(new DiscoveryEntry { type = "animal", id = favAnimal });
+            jp.pendingWorldRewards.Add(new DiscoveryEntry { type = "color", id = profileColorId });
+
             jp.gamesUntilNextDiscovery = 1;
             ProfileManager.Instance.Save();
         }

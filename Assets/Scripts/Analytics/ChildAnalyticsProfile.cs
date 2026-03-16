@@ -16,6 +16,7 @@ public class ChildAnalyticsProfile
 
     public int totalSessions;
     public float totalPlayTime;
+    public int totalBubblesPopped;
 
     /// <summary>Game IDs sorted by play frequency (most played first).</summary>
     public List<string> favoriteGames = new List<string>();

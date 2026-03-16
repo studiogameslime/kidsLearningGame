@@ -112,6 +112,7 @@ public class ParentDashboardData
     public string totalPlayTimeDisplay;
     public int gamesPlayedCount;
     public string favoriteGameName;
+    public int totalBubblesPopped;
 
     // This week
     public int thisWeekSessions;
@@ -237,6 +238,7 @@ public static class ParentDashboardViewModel
         data.favoriteGameName = analytics.favoriteGames.Count > 0
             ? GetGameName(analytics.favoriteGames[0])
             : "---";
+        data.totalBubblesPopped = analytics.totalBubblesPopped;
 
         // This week
         data.thisWeekSessions = InsightsEngine.GetThisWeekSessions(analytics);
