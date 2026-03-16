@@ -18,6 +18,7 @@ public class HomeController : MonoBehaviour
     public Button worldButton;
     public Button profileButton;
     public Button allGamesButton;
+    public Button parentAreaButton;
     public Image profileAvatar;
     public TextMeshProUGUI profileInitial;
     public Image[] arrowImages;
@@ -28,6 +29,7 @@ public class HomeController : MonoBehaviour
         if (worldButton != null) worldButton.onClick.AddListener(OnWorldPressed);
         if (profileButton != null) profileButton.onClick.AddListener(OnProfilePressed);
         if (allGamesButton != null) allGamesButton.onClick.AddListener(OnAllGamesPressed);
+        if (parentAreaButton != null) parentAreaButton.onClick.AddListener(OnParentAreaPressed);
 
         // Wire game database to JourneyManager
         if (gameDatabase != null && JourneyManager.Instance != null)
@@ -145,5 +147,10 @@ public class HomeController : MonoBehaviour
     public void OnAllGamesPressed()
     {
         NavigationManager.GoToMainMenu();
+    }
+
+    public void OnParentAreaPressed()
+    {
+        NavigationManager.GoToParentDashboard();
     }
 }

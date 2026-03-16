@@ -285,6 +285,25 @@ public class HomeSceneSetup : EditorWindow
         var allGamesButton = allGamesBtn.AddComponent<Button>();
         allGamesButton.targetGraphic = allGamesTMP;
 
+        // ── Parent Area (bottom-left, small subtle text) ──
+        var parentBtn = new GameObject("ParentAreaButton");
+        parentBtn.transform.SetParent(safeArea.transform, false);
+        var parentBtnRT = parentBtn.AddComponent<RectTransform>();
+        parentBtnRT.anchorMin = new Vector2(0, 0);
+        parentBtnRT.anchorMax = new Vector2(0, 0);
+        parentBtnRT.pivot = new Vector2(0, 0);
+        parentBtnRT.anchoredPosition = new Vector2(20, 40);
+        parentBtnRT.sizeDelta = new Vector2(200, 40);
+
+        var parentBtnTMP = parentBtn.AddComponent<TextMeshProUGUI>();
+        parentBtnTMP.text = HebrewFixer.Fix("\u05D0\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD"); // אזור הורים
+        parentBtnTMP.fontSize = 18;
+        parentBtnTMP.color = new Color(0.6f, 0.6f, 0.6f, 0.5f);
+        parentBtnTMP.alignment = TextAlignmentOptions.Left;
+        parentBtnTMP.isRightToLeftText = false;
+        var parentAreaButton = parentBtn.AddComponent<Button>();
+        parentAreaButton.targetGraphic = parentBtnTMP;
+
         // ── Controller ──
         var controller = canvasGO.AddComponent<HomeController>();
         controller.gameDatabase = AssetDatabase.LoadAssetAtPath<GameDatabase>("Assets/Data/Games/GameDatabase.asset");
@@ -293,6 +312,7 @@ public class HomeSceneSetup : EditorWindow
         controller.worldButton = worldBtnButton;
         controller.profileButton = profileBtnButton;
         controller.allGamesButton = allGamesButton;
+        controller.parentAreaButton = parentAreaButton;
         controller.profileAvatar = profileBtnImg;
         controller.profileInitial = initialTMP;
         controller.arrowImages = new Image[] {

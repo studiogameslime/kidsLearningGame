@@ -202,6 +202,9 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Creating Analytics configs…", 0.995f);
             AnalyticsSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Parent Dashboard…", 0.997f);
+            ParentDashboardSetup.RunSetupSilent();
+
             // Open ProfileSelection scene (entry point)
             EditorSceneManager.OpenScene($"{ScenesPath}/ProfileSelection.unity");
         }
@@ -1289,6 +1292,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/DiscoveryReveal.unity",
             $"{ScenesPath}/DrawingGallery.unity",
             $"{ScenesPath}/WorldScene.unity",
+            $"{ScenesPath}/ParentDashboard.unity",
         };
 
         var buildScenes = scenePaths.Select(p => new EditorBuildSettingsScene(p, true)).ToArray();

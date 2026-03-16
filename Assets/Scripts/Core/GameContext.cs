@@ -90,6 +90,12 @@ public static class NavigationManager
         BubbleTransition.LoadScene(MainMenuScene);
     }
 
+    /// <summary>Go to the parent dashboard (analytics).</summary>
+    public static void GoToParentDashboard()
+    {
+        BubbleTransition.LoadScene("ParentDashboard");
+    }
+
     /// <summary>Go to the drawing gallery.</summary>
     public static void GoToDrawingGallery()
     {
