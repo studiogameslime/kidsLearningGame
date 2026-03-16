@@ -1,20 +1,32 @@
 using System.Text;
 
 /// <summary>
-/// Fixes Hebrew RTL text for TextMeshPro on Android.
-/// TMP's isRightToLeftText is buggy on Android — letters get scrambled.
+/// Fixes Hebrew RTL text for TextMeshPro on all platforms (especially Android/iOS).
+/// TMP's isRightToLeftText is buggy on mobile — letters get scrambled or spaced.
 /// Instead, we manually reverse the string and leave isRightToLeftText = false.
+///
+/// IMPORTANT: Always set tmp.isRightToLeftText = false when using this fixer.
+/// The fixer handles RTL by reversing the character order so TMP renders
+/// it correctly in its default LTR mode.
 /// </summary>
 public static class HebrewFixer
 {
+    // Zero-width marker used to detect already-fixed strings
+    private const char FixedMarker = '\u200B'; // zero-width space
+
     /// <summary>
     /// Reverses a Hebrew string so TMP renders it in correct RTL order.
     /// Handles mixed Hebrew/Latin by reversing only the overall character order
     /// while keeping digit sequences and Latin words in correct LTR order.
+    /// Safe to call multiple times — already-fixed strings are returned as-is.
     /// </summary>
     public static string Fix(string input)
     {
         if (string.IsNullOrEmpty(input)) return input;
+
+        // Idempotency: if already fixed, return as-is
+        if (input.Length > 0 && input[input.Length - 1] == FixedMarker)
+            return input;
 
         // Skip if no Hebrew characters present
         bool hasHebrew = false;
@@ -54,6 +66,8 @@ public static class HebrewFixer
             }
         }
 
+        // Append invisible marker so repeated Fix() calls are idempotent
+        sb.Append(FixedMarker);
         return sb.ToString();
     }
 
