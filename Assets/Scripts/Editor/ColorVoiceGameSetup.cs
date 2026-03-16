@@ -118,6 +118,11 @@ public class ColorVoiceGameSetup : EditorWindow
             new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1),
             new Vector2(16, -20), new Vector2(90, 90));
 
+        var trophyIcon = LoadSprite("Assets/Art/Icons/trophy.png");
+        var trophyGO = CreateIconButton(topBar.transform, "TrophyButton", trophyIcon,
+            new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1),
+            new Vector2(-16, -20), new Vector2(70, 70));
+
         // ── BOTTOM BAR ──
         var bottomBar = CreateStretchImage(safeArea.transform, "BottomBar", new Color(1, 1, 1, 0));
         var bottomBarRT = bottomBar.GetComponent<RectTransform>();
@@ -270,6 +275,12 @@ public class ColorVoiceGameSetup : EditorWindow
             homeGO.GetComponent<Button>().onClick, controller.OnHomePressed);
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
             restartGO.GetComponent<Button>().onClick, controller.OnRestartPressed);
+
+        var leaderboard = canvasGO.AddComponent<InGameLeaderboard>();
+        leaderboard.roundedRect = roundedRect;
+        leaderboard.trophySprite = trophyIcon;
+        leaderboard.trophyButton = trophyGO.GetComponent<Button>();
+        leaderboard.gameId = "colorvoice";
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/ColorVoice.unity");
     }

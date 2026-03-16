@@ -239,6 +239,11 @@ public class ColoringGameSetup : EditorWindow
         var homeGO = IconBtn(bar.transform, "HomeButton", homeIcon,
             new Vector2(0, 1), new Vector2(0, 1), new Vector2(16, -20), new Vector2(90, 90));
 
+        // Trophy button (next to home)
+        var trophyIcon = LoadSprite("Assets/Art/Icons/trophy.png");
+        var trophyGO = IconBtn(bar.transform, "TrophyButton", trophyIcon,
+            new Vector2(0, 1), new Vector2(0, 1), new Vector2(112, -30), new Vector2(70, 70));
+
         // Save button (top-right) — green tinted
         var saveIcon = LoadSprite("Assets/Art/Icons/save.png");
         var saveGO = new GameObject("SaveButton");
@@ -514,6 +519,12 @@ public class ColoringGameSetup : EditorWindow
 
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
             homeGO.GetComponent<Button>().onClick, ctrl.OnHomePressed);
+
+        var leaderboard = canvasGO.AddComponent<InGameLeaderboard>();
+        leaderboard.roundedRect = LoadSprite("Assets/UI/Sprites/RoundedRect.png");
+        leaderboard.trophySprite = trophyIcon;
+        leaderboard.trophyButton = trophyGO.GetComponent<Button>();
+        leaderboard.gameId = "coloring";
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/ColoringGame.unity");
     }

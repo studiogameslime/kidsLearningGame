@@ -111,6 +111,11 @@ public class TowerStackSetup : EditorWindow
             new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1),
             new Vector2(16, -20), new Vector2(90, 90));
 
+        var trophyIcon = LoadSprite("Assets/Art/Icons/trophy.png");
+        var trophyGO = CreateIconButton(topBar.transform, "TrophyButton", trophyIcon,
+            new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1),
+            new Vector2(-16, -20), new Vector2(70, 70));
+
         // ═══ PLAY AREA ═══
         var playArea = new GameObject("PlayArea");
         playArea.transform.SetParent(safeArea.transform, false);
@@ -130,6 +135,12 @@ public class TowerStackSetup : EditorWindow
         // Wire home button
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
             homeGO.GetComponent<Button>().onClick, controller.OnHomePressed);
+
+        var leaderboard = canvasGO.AddComponent<InGameLeaderboard>();
+        leaderboard.roundedRect = roundedRect;
+        leaderboard.trophySprite = trophyIcon;
+        leaderboard.trophyButton = trophyGO.GetComponent<Button>();
+        leaderboard.gameId = "towerstack";
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/TowerStack.unity");
     }

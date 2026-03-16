@@ -142,6 +142,11 @@ public class TowerBuilderSetup : EditorWindow
             new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1),
             new Vector2(16, -20), new Vector2(90, 90));
 
+        var trophyIcon = LoadSprite("Assets/Art/Icons/trophy.png");
+        var trophyGO = CreateIconButton(topBar.transform, "TrophyButton", trophyIcon,
+            new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1),
+            new Vector2(-16, -20), new Vector2(70, 70));
+
         // ═══════════════════════════════════
         //  PLAY AREA
         // ═══════════════════════════════════
@@ -168,6 +173,12 @@ public class TowerBuilderSetup : EditorWindow
         // Wire home button
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
             homeGO.GetComponent<Button>().onClick, controller.OnHomePressed);
+
+        var leaderboard = canvasGO.AddComponent<InGameLeaderboard>();
+        leaderboard.roundedRect = roundedRect;
+        leaderboard.trophySprite = trophyIcon;
+        leaderboard.trophyButton = trophyGO.GetComponent<Button>();
+        leaderboard.gameId = "towerbuilder";
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/TowerBuilder.unity");
     }
