@@ -6,27 +6,21 @@ using System.Text;
 /// Instead, we manually reverse the string and leave isRightToLeftText = false.
 ///
 /// IMPORTANT: Always set tmp.isRightToLeftText = false when using this fixer.
-/// The fixer handles RTL by reversing the character order so TMP renders
-/// it correctly in its default LTR mode.
+/// Call Fix() exactly ONCE per string — do NOT double-fix.
 /// </summary>
 public static class HebrewFixer
 {
-    // Zero-width marker used to detect already-fixed strings
-    private const char FixedMarker = '\u200B'; // zero-width space
-
     /// <summary>
     /// Reverses a Hebrew string so TMP renders it in correct RTL order.
     /// Handles mixed Hebrew/Latin by reversing only the overall character order
     /// while keeping digit sequences and Latin words in correct LTR order.
-    /// Safe to call multiple times — already-fixed strings are returned as-is.
+    ///
+    /// WARNING: Call this exactly once per string. Calling it twice will
+    /// double-reverse and produce broken output.
     /// </summary>
     public static string Fix(string input)
     {
         if (string.IsNullOrEmpty(input)) return input;
-
-        // Idempotency: if already fixed, return as-is
-        if (input.Length > 0 && input[input.Length - 1] == FixedMarker)
-            return input;
 
         // Skip if no Hebrew characters present
         bool hasHebrew = false;
@@ -36,14 +30,11 @@ public static class HebrewFixer
         }
         if (!hasHebrew) return input;
 
-        // Simple approach: reverse the entire string.
-        // This works for pure Hebrew and Hebrew+spaces.
-        // For mixed Hebrew/numbers, we reverse the whole thing
-        // then re-reverse any embedded LTR runs (digits, Latin).
+        // Reverse the entire string, then re-reverse embedded LTR runs.
         var chars = input.ToCharArray();
         System.Array.Reverse(chars);
 
-        // Re-reverse LTR runs (digits, basic Latin letters, punctuation like !)
+        // Re-reverse LTR runs (digits, basic Latin letters, punctuation)
         var sb = new StringBuilder(chars.Length);
         int i = 0;
         while (i < chars.Length)
@@ -66,8 +57,6 @@ public static class HebrewFixer
             }
         }
 
-        // Append invisible marker so repeated Fix() calls are idempotent
-        sb.Append(FixedMarker);
         return sb.ToString();
     }
 
