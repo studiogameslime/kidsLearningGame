@@ -78,10 +78,19 @@ public class StatsManager : MonoBehaviour
         analytics.UpdateFavorites();
 
         // 6. Adjust difficulty
-        DifficultyManager.Evaluate(gameProfile);
+        bool diffChanged = DifficultyManager.Evaluate(gameProfile);
 
         // 7. Save
         ProfileManager.Instance?.Save();
+
+        // Debug summary
+        Debug.Log($"[Analytics] {session.gameId} | " +
+            $"Score: {gameProfile.performanceScore:F0}/100 | " +
+            $"Accuracy: {gameProfile.averageAccuracy:P0} | " +
+            $"Difficulty: {gameProfile.currentDifficulty}/10{(diffChanged ? " (CHANGED)" : "")} | " +
+            $"Sessions: {gameProfile.sessionsPlayed} | " +
+            $"Global: {analytics.globalScore:F0}/100 | " +
+            $"Trend: {(gameProfile.improvementTrend >= 0 ? "+" : "")}{gameProfile.improvementTrend:F1}");
     }
 
     /// <summary>Returns the current difficulty for a game. Initializes if first time.</summary>
