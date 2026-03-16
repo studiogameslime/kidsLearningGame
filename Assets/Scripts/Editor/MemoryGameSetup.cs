@@ -28,7 +28,7 @@ public class MemoryGameSetup : EditorWindow
     private static readonly Color CardFrameColor = HexColor("#FFF8F0");     // warm cream white
     private static readonly Color CardShadowColor = new Color(0.25f, 0.15f, 0.08f, 0.4f);
 
-    private const int TopBarHeight = 80;
+    private const int TopBarHeight = 130;
     private const int CardFramePadding = 10;
 
     public static void RunSetupSilent()
@@ -265,7 +265,7 @@ public class MemoryGameSetup : EditorWindow
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
         var homeGO = IconBtn(topBar.transform, "HomeButton", homeIcon,
             new Vector2(0, 1), new Vector2(0, 1),
-            new Vector2(16, -8), new Vector2(64, 64));
+            new Vector2(16, -20), new Vector2(90, 90));
 
         // ── GAME BOARD (wood plank surface) ──
         var boardGO = new GameObject("BoardPanel");
@@ -337,7 +337,6 @@ public class MemoryGameSetup : EditorWindow
         controller.boardArea = boardRT;
         controller.cardContainer = gridContentRT;
         controller.cardPrefab = cardPrefab;
-        controller.difficulty = 0;
         controller.cardRotationRange = 3f;
         controller.mismatchDelay = 0.8f;
 

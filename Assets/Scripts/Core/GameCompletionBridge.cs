@@ -73,7 +73,9 @@ public class GameCompletionBridge : MonoBehaviour
         }
         else if (!string.IsNullOrEmpty(gameId))
         {
-            // Minimal session when no collector was provided
+            // Minimal session when no collector was provided.
+            // Use conservative values (1 correct, 1 total) since we have no detailed metrics.
+            // The scoring strategy will still evaluate duration/difficulty properly.
             var minimal = new GameSessionData
             {
                 gameId = gameId,
@@ -82,8 +84,11 @@ public class GameCompletionBridge : MonoBehaviour
                     ? StatsManager.Instance.GetGameDifficulty(gameId) : 1,
                 startTime = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 correctActions = 1,
-                totalActions = 1
+                totalActions = 1,
+                mistakes = 0,
+                hintsUsed = 0
             };
+            Debug.Log($"[Analytics] Fallback minimal session for {gameId} — no GameStatsCollector was set");
             StatsManager.Instance?.RegisterGameSession(minimal);
         }
 

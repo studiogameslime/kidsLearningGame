@@ -15,7 +15,7 @@ public class FindTheAnimalSetup : EditorWindow
 {
     private static readonly Vector2 Ref = new Vector2(1920, 1080);
 
-    private const int TopBarHeight = 80;
+    private const int TopBarHeight = 130;
     private const float GroundTop = 0.45f;
     private const float GroundFrontTop = 0.20f;
 
@@ -197,7 +197,7 @@ public class FindTheAnimalSetup : EditorWindow
 
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
         var homeGO = IconBtn(topBar.transform, "HomeButton", homeIcon,
-            new Vector2(0, 1), new Vector2(0, 1), new Vector2(16, -8), new Vector2(64, 64));
+            new Vector2(0, 1), new Vector2(0, 1), new Vector2(16, -20), new Vector2(90, 90));
 
         // ═══════════════════════════════════════
         //  WORLD AREA — below top bar

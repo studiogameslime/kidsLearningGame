@@ -19,7 +19,7 @@ public class ConnectTheDotsSetup : EditorWindow
     private static readonly Color NightSkyBottom = HexColor("#1A2D5A");
     private static readonly Color HorizonGlowColor = HexColor("#2A4080");
 
-    private const int TopBarHeight = 80;
+    private const int TopBarHeight = 130;
     private const float DotSize = 80f;
 
     public static void RunSetupSilent()
@@ -167,7 +167,7 @@ public class ConnectTheDotsSetup : EditorWindow
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
         var homeGO = IconBtn(topBar.transform, "HomeButton", homeIcon,
             new Vector2(0, 1), new Vector2(0, 1),
-            new Vector2(16, -8), new Vector2(64, 64));
+            new Vector2(16, -20), new Vector2(90, 90));
 
         // ── PLAY AREA ──
         var playArea = new GameObject("PlayArea");

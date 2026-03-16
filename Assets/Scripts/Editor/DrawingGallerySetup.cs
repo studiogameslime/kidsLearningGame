@@ -13,7 +13,7 @@ public class DrawingGallerySetup : EditorWindow
     private static readonly Vector2 Ref = new Vector2(1080, 1920);
     private static readonly Color BgColor = HexColor("#FFF8E8");
     private static readonly Color TopBarColor = HexColor("#F48FB1"); // pink, matches coloring game
-    private const int TopBarHeight = 110;
+    private const int TopBarHeight = 130;
 
     public static void RunSetupSilent()
     {
@@ -105,7 +105,7 @@ public class DrawingGallerySetup : EditorWindow
         var homeIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/home.png");
         var homeGO = CreateIconButton(topBar.transform, "HomeButton", homeIcon,
             new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1),
-            new Vector2(16, -10), new Vector2(90, 90));
+            new Vector2(16, -20), new Vector2(90, 90));
 
         // ── Scroll area ──
         var scrollArea = new GameObject("ScrollArea");

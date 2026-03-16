@@ -15,7 +15,7 @@ public class WorldSceneSetup : EditorWindow
 {
     private static readonly Vector2 Ref = new Vector2(1920, 1080);
     private static readonly Color TopBarColor = HexColor("#5BA84C");
-    private const int TopBarHeight = 80;
+    private const int TopBarHeight = 130;
 
     // Day mode default colors (environment handles transitions)
     private static readonly Color DaySky = HexColor("#8FD4F5");
@@ -336,13 +336,13 @@ public class WorldSceneSetup : EditorWindow
         var homeIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/home.png");
         var homeGO = CreateIconButton(topBar.transform, "HomeButton", homeIcon,
             new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1),
-            new Vector2(16, -8), new Vector2(64, 64));
+            new Vector2(16, -20), new Vector2(90, 90));
 
         // Games collection button (top-right, before profile avatar)
         var gamesIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/menuGrid.png");
         var gamesGO = CreateIconButton(topBar.transform, "GamesButton", gamesIcon,
             new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f),
-            new Vector2(-80, 0), new Vector2(56, 56));
+            new Vector2(-100, 0), new Vector2(90, 90));
 
         // Profile avatar
         var profileBtn = new GameObject("ProfileButton");
@@ -352,7 +352,7 @@ public class WorldSceneSetup : EditorWindow
         profileBtnRT.anchorMax = new Vector2(1, 0.5f);
         profileBtnRT.pivot = new Vector2(1, 0.5f);
         profileBtnRT.anchoredPosition = new Vector2(-16, 0);
-        profileBtnRT.sizeDelta = new Vector2(56, 56);
+        profileBtnRT.sizeDelta = new Vector2(90, 90);
         var profileBtnImg = profileBtn.AddComponent<Image>();
         if (circleSprite != null) profileBtnImg.sprite = circleSprite;
         profileBtnImg.color = HexColor("#90CAF9");
@@ -744,6 +744,25 @@ public class WorldSceneSetup : EditorWindow
         var cloudSystemComp = canvasGO.AddComponent<WorldCloudSystem>();
         cloudSystemComp.skyArea = skyAreaRT;
 
+        // ── Parent Area Button (bottom-left, subtle) ──
+        var parentBtn = new GameObject("ParentAreaButton");
+        parentBtn.transform.SetParent(safeArea.transform, false);
+        var parentBtnRT = parentBtn.AddComponent<RectTransform>();
+        parentBtnRT.anchorMin = new Vector2(0, 0);
+        parentBtnRT.anchorMax = new Vector2(0, 0);
+        parentBtnRT.pivot = new Vector2(0, 0);
+        parentBtnRT.anchoredPosition = new Vector2(20, 20);
+        parentBtnRT.sizeDelta = new Vector2(200, 40);
+        var parentBtnTMP = parentBtn.AddComponent<TextMeshProUGUI>();
+        parentBtnTMP.text = HebrewFixer.Fix("\u05D0\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD");
+        parentBtnTMP.isRightToLeftText = false;
+        parentBtnTMP.fontSize = 18;
+        parentBtnTMP.color = new Color(0.6f, 0.6f, 0.6f, 0.5f);
+        parentBtnTMP.alignment = TextAlignmentOptions.Left;
+        parentBtnTMP.raycastTarget = true;
+        var parentAreaButton = parentBtn.AddComponent<Button>();
+        parentAreaButton.targetGraphic = parentBtnTMP;
+
         // ── World Controller ──
         var controller = canvasGO.AddComponent<WorldController>();
         controller.gameDatabase = AssetDatabase.LoadAssetAtPath<GameDatabase>("Assets/Data/Games/GameDatabase.asset");
@@ -753,6 +772,7 @@ public class WorldSceneSetup : EditorWindow
         controller.grassArea = grassAreaRT;
         controller.homeButton = homeGO.GetComponent<Button>();
         controller.gamesButton = gamesGO.GetComponent<Button>();
+        controller.parentAreaButton = parentAreaButton;
         controller.profileAvatar = profileBtnImg;
         controller.profileInitial = profileInitialTMP;
         controller.environment = envComponent;

@@ -393,7 +393,7 @@ public class ProfileSceneSetup : EditorWindow
         // Back button (top-left, home icon)
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
         var backBtnGO = CreateIconButton(safeArea.transform, "BackButton", homeIcon,
-            new Vector2(16, -12), new Vector2(0, 1), new Vector2(0, 1), new Vector2(70, 70));
+            new Vector2(16, -20), new Vector2(0, 1), new Vector2(0, 1), new Vector2(90, 90));
 
         // ── Content area (landscape — wider, shorter) ──
         var contentArea = new GameObject("ContentArea");

@@ -9,7 +9,7 @@ public class CategoryProfile
 {
     public SkillCategory category;
 
-    /// <summary>Weighted average score across contributing games (0–100).</summary>
+    /// <summary>Weighted average score across contributing games (0-100).</summary>
     public float categoryScore;
 
     /// <summary>Positive = improving, negative = declining.</summary>
@@ -18,6 +18,9 @@ public class CategoryProfile
     /// <summary>Number of games that contribute to this category.</summary>
     public int contributingGames;
 
-    /// <summary>Confidence level (0–1) based on session count. More data = higher confidence.</summary>
+    /// <summary>Confidence level (0-1) based on session count. More data = higher confidence.</summary>
     public float confidence;
+
+    /// <summary>Total weighted sessions across all contributing games.</summary>
+    public int totalWeightedSessions;
 }

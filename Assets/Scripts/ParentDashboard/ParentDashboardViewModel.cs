@@ -29,10 +29,14 @@ public class GameDashboardData
 
     public float score;
     public float trend;
+    public string trendLabel;
 
     public int sessionsPlayed;
     public float totalPlayTime;
+    public string totalPlayTimeDisplay;
+    public string averageSessionDisplay;
     public long lastPlayed;
+    public string lastPlayedDisplay;
 
     public float accuracy;
     public float mistakeRate;
@@ -43,7 +47,19 @@ public class GameDashboardData
 
     public int currentDifficulty;
     public int highestDifficulty;
+    public bool manualDifficultyOverride;
+    public string difficultyModeLabel;
+    public string difficultyBalanceLabel;
+
+    // Difficulty impact display
+    public int recommendedDifficulty;
+    public string activeDifficultyImpact;      // Hebrew: what active difficulty does
+    public string recommendedDifficultyImpact;  // Hebrew: what recommended difficulty does
+
     public int maxStreak;
+
+    public string hintUsageLabel;
+    public string persistenceLabel;
 
     public string insightText;
     public List<SessionSummary> recentSessions = new List<SessionSummary>();
@@ -59,11 +75,14 @@ public class CategoryDashboardData
 
     public float score;
     public float trend;
+    public string trendLabel;
     public float confidence;
+    public string confidenceLabel;
 
     public int contributingGamesCount;
     public string topGameName;
     public string insightText;
+    public string summaryText;
 
     public List<CategoryGameContribution> contributions = new List<CategoryGameContribution>();
 }
@@ -82,18 +101,39 @@ public class ParentDashboardData
     public string profileName;
     public string ageDisplay;
 
+    // Overall
     public float overallScore;
     public string overallScoreLabel;
     public float overallTrend;
+    public string overallTrendLabel;
 
+    // Totals
     public int totalSessions;
     public string totalPlayTimeDisplay;
     public int gamesPlayedCount;
     public string favoriteGameName;
 
+    // This week
+    public int thisWeekSessions;
+    public string thisWeekPlayTimeDisplay;
+
+    // Engagement
+    public float engagementScore;
+    public string engagementLabel;
+
+    // Exploration + play style
+    public string explorationLabel;
+    public string playStyleLabel;
+
+    // Strengths / weaknesses
     public List<CategoryDashboardData> strongestCategories = new List<CategoryDashboardData>();
     public List<CategoryDashboardData> weakestCategories = new List<CategoryDashboardData>();
 
+    // Insights + badges
+    public List<ParentInsight> insights = new List<ParentInsight>();
+    public List<ParentBadge> badges = new List<ParentBadge>();
+
+    // Lists
     public List<GameDashboardData> games = new List<GameDashboardData>();
     public List<CategoryDashboardData> categories = new List<CategoryDashboardData>();
 }
@@ -120,6 +160,8 @@ public static class ParentDashboardViewModel
         { "sharedsticker", "\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05D6\u05D4\u05D4" },
         { "flappybird",    "\u05DE\u05E2\u05D5\u05E3 \u05D4\u05E6\u05D9\u05E4\u05D5\u05E8" },
         { "simonsays",     "\u05D6\u05DB\u05E8\u05D5 \u05D0\u05EA \u05D4\u05E6\u05D1\u05E2\u05D9\u05DD" },
+        { "bubblepop",     "\u05E4\u05E7\u05E2 \u05D1\u05D5\u05E2\u05D5\u05EA" },
+        { "maze",          "\u05DE\u05D1\u05D5\u05DA" },
     };
 
     // ── Hebrew category names + colors ──
@@ -170,7 +212,20 @@ public static class ParentDashboardViewModel
         // Overall
         data.overallScore = analytics.globalScore;
         data.overallScoreLabel = GetScoreLabel(analytics.globalScore);
-        data.overallTrend = 0f;
+
+        // Overall trend
+        float trendSum = 0f;
+        int trendCount = 0;
+        foreach (var cat in analytics.categories)
+        {
+            if (cat.contributingGames > 0)
+            {
+                trendSum += cat.trend;
+                trendCount++;
+            }
+        }
+        data.overallTrend = trendCount > 0 ? trendSum / trendCount : 0f;
+        data.overallTrendLabel = InsightsEngine.TrendLabel(data.overallTrend);
 
         // Totals
         data.totalSessions = analytics.totalSessions;
@@ -183,18 +238,17 @@ public static class ParentDashboardViewModel
             ? GetGameName(analytics.favoriteGames[0])
             : "---";
 
-        // Compute overall trend from category trends
-        float trendSum = 0f;
-        int trendCount = 0;
-        foreach (var cat in analytics.categories)
-        {
-            if (cat.contributingGames > 0)
-            {
-                trendSum += cat.trend;
-                trendCount++;
-            }
-        }
-        if (trendCount > 0) data.overallTrend = trendSum / trendCount;
+        // This week
+        data.thisWeekSessions = InsightsEngine.GetThisWeekSessions(analytics);
+        data.thisWeekPlayTimeDisplay = FormatPlayTime(InsightsEngine.GetThisWeekPlayTime(analytics));
+
+        // Engagement
+        data.engagementScore = InsightsEngine.ComputeEngagement(analytics);
+        data.engagementLabel = InsightsEngine.EngagementLabel(data.engagementScore);
+
+        // Exploration + play style
+        data.explorationLabel = InsightsEngine.ExplorationLabel(analytics);
+        data.playStyleLabel = InsightsEngine.PlayStyleLabel(analytics);
 
         // Games
         var mapping = Resources.Load<GameCategoryMapping>("Analytics/GameCategoryMapping");
@@ -212,7 +266,7 @@ public static class ParentDashboardViewModel
             data.categories.Add(BuildCategoryData(cp, analytics, mapping));
         }
 
-        // Strongest / Weakest (from categories with data)
+        // Strongest / Weakest
         var withData = new List<CategoryDashboardData>();
         foreach (var c in data.categories)
             if (c.contributingGamesCount > 0) withData.Add(c);
@@ -229,6 +283,10 @@ public static class ParentDashboardViewModel
                 data.weakestCategories.Add(withData[i]);
         }
 
+        // Insights + badges
+        data.insights = InsightsEngine.GenerateInsights(analytics, data.games, data.categories);
+        data.badges = InsightsEngine.GenerateBadges(analytics);
+
         return data;
     }
 
@@ -240,28 +298,45 @@ public static class ParentDashboardViewModel
             gameName = GetGameName(gp.gameId),
             score = gp.performanceScore,
             trend = gp.improvementTrend,
+            trendLabel = InsightsEngine.TrendLabel(gp.improvementTrend),
             sessionsPlayed = gp.sessionsPlayed,
-            totalPlayTime = 0f,
-            lastPlayed = 0,
+            totalPlayTime = gp.totalPlayTimeSeconds,
+            totalPlayTimeDisplay = FormatPlayTime(gp.totalPlayTimeSeconds),
+            lastPlayed = gp.lastPlayedUtc,
+            lastPlayedDisplay = FormatDate(gp.lastPlayedUtc),
             accuracy = gp.averageAccuracy,
             mistakeRate = gp.mistakeRate,
             speedScore = gp.speedScore,
             independenceScore = gp.independenceScore,
             currentDifficulty = gp.currentDifficulty,
-            highestDifficulty = gp.currentDifficulty,
+            highestDifficulty = gp.highestDifficultyReached,
+            maxStreak = gp.longestSuccessStreak,
+            manualDifficultyOverride = gp.manualDifficultyOverride,
+            hintUsageLabel = InsightsEngine.HintDependenceLabel(gp),
+            persistenceLabel = InsightsEngine.PersistenceLabel(gp),
+            difficultyBalanceLabel = InsightsEngine.DifficultyBalanceLabel(gp),
         };
 
-        // Aggregate from recent sessions
+        // Average session
+        gd.averageSessionDisplay = gp.sessionsPlayed > 0
+            ? FormatPlayTime(gp.totalPlayTimeSeconds / gp.sessionsPlayed)
+            : "---";
+
+        // Difficulty mode label
+        gd.difficultyModeLabel = gp.manualDifficultyOverride
+            ? "\u05D9\u05D3\u05E0\u05D9" // ידני
+            : "\u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9"; // אוטומטי
+
+        // Difficulty impact labels
+        gd.activeDifficultyImpact = GameDifficultyConfig.GetDifficultyImpactLabel(gp.gameId, gp.currentDifficulty);
+        gd.recommendedDifficulty = gp.currentDifficulty; // stored before override
+        gd.recommendedDifficultyImpact = GameDifficultyConfig.GetDifficultyImpactLabel(gp.gameId, gd.recommendedDifficulty);
+
+        // Aggregate from recent sessions for completion rate and legacy fields
         int completed = 0;
-        int maxStreak = 0;
         foreach (var s in gp.recentSessions)
         {
-            gd.totalPlayTime += s.durationSeconds;
-            if (s.startTime > gd.lastPlayed) gd.lastPlayed = s.startTime;
             if (s.completed) completed++;
-            if (s.difficultyLevel > gd.highestDifficulty)
-                gd.highestDifficulty = s.difficultyLevel;
-            if (s.maxStreak > maxStreak) maxStreak = s.maxStreak;
 
             gd.recentSessions.Add(new SessionSummary
             {
@@ -274,12 +349,10 @@ public static class ParentDashboardViewModel
             });
         }
 
-        gd.maxStreak = maxStreak;
         gd.completionRate = gp.recentSessions.Count > 0
             ? (float)completed / gp.recentSessions.Count : 0f;
 
-        // Consistency from performance profile calculation
-        gd.consistencyScore = gp.performanceScore; // simplified
+        gd.consistencyScore = gp.performanceScore;
 
         // Categories this game contributes to
         if (mapping != null)
@@ -306,7 +379,9 @@ public static class ParentDashboardViewModel
             color = GetCategoryColor(cp.category),
             score = cp.categoryScore,
             trend = cp.trend,
+            trendLabel = InsightsEngine.TrendLabel(cp.trend),
             confidence = cp.confidence,
+            confidenceLabel = InsightsEngine.ConfidenceLabel(cp.confidence),
             contributingGamesCount = cp.contributingGames,
         };
 
@@ -340,6 +415,7 @@ public static class ParentDashboardViewModel
         }
 
         cd.insightText = GenerateCategoryInsight(cd);
+        cd.summaryText = GenerateCategorySummary(cd);
         return cd;
     }
 
@@ -371,6 +447,19 @@ public static class ParentDashboardViewModel
         if (cd.trend > 3f)
             return "\u05DE\u05E9\u05EA\u05E4\u05E8 \u05D1\u05D4\u05EA\u05DE\u05D3\u05D4"; // משתפר בהתמדה
         return "\u05E6\u05E8\u05D9\u05DA \u05E2\u05D5\u05D3 \u05EA\u05E8\u05D2\u05D5\u05DC"; // צריך עוד תרגול
+    }
+
+    private static string GenerateCategorySummary(CategoryDashboardData cd)
+    {
+        if (cd.contributingGamesCount == 0)
+            return "\u05E2\u05D3\u05D9\u05D9\u05DF \u05D0\u05D9\u05DF \u05DE\u05E1\u05E4\u05D9\u05E7 \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05DC\u05D4\u05E6\u05D2\u05D4"; // עדיין אין מספיק נתונים להצגה
+        if (cd.confidence < 0.3f)
+            return "\u05E6\u05E8\u05D9\u05DA \u05E2\u05D5\u05D3 \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05DC\u05D4\u05E2\u05E8\u05DB\u05D4 \u05DE\u05D3\u05D5\u05D9\u05E7\u05EA"; // צריך עוד נתונים להערכה מדויקת
+        if (cd.score > 80f)
+            return $"\u05DE\u05E8\u05D0\u05D4 \u05E9\u05DC\u05D9\u05D8\u05D4 \u05D8\u05D5\u05D1\u05D4 \u05D1{cd.categoryName}"; // מראה שליטה טובה ב...
+        if (cd.score > 60f)
+            return $"\u05DE\u05EA\u05E7\u05D3\u05DD \u05D9\u05E4\u05D4 \u05D1{cd.categoryName}"; // מתקדם יפה ב...
+        return $"\u05E2\u05D3\u05D9\u05D9\u05DF \u05DE\u05EA\u05E8\u05D2\u05DC \u05D1{cd.categoryName}"; // עדיין מתרגל ב...
     }
 
     // ── Helpers ──

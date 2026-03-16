@@ -19,19 +19,28 @@ public class GamePerformanceProfile
     public float averageDuration;
     public float mistakeRate;
 
-    // Composite scores (0–100)
+    // Composite scores (0-100)
     public float independenceScore;
     public float speedScore;
     public float performanceScore;
 
     // Difficulty
     public int currentDifficulty = 1;
+    public bool manualDifficultyOverride;
+    public int highestDifficultyReached = 1;
 
     // Trend: positive = improving, negative = declining
     public float improvementTrend;
 
     // Cooldown: sessions since last difficulty change
     public int sessionsSinceDifficultyChange;
+
+    // Extended stats (persisted, updated on each session)
+    public float totalPlayTimeSeconds;
+    public long lastPlayedUtc;
+    public float bestSessionAccuracy;
+    public float fastestCompletionSeconds;
+    public int longestSuccessStreak;
 
     public List<GameSessionData> recentSessions = new List<GameSessionData>();
 
@@ -42,6 +51,29 @@ public class GamePerformanceProfile
             recentSessions.RemoveAt(0);
         sessionsPlayed++;
         sessionsSinceDifficultyChange++;
+
+        // Update extended stats
+        totalPlayTimeSeconds += session.durationSeconds;
+        lastPlayedUtc = session.startTime;
+
+        if (session.difficultyLevel > highestDifficultyReached)
+            highestDifficultyReached = session.difficultyLevel;
+
+        if (session.maxStreak > longestSuccessStreak)
+            longestSuccessStreak = session.maxStreak;
+
+        float sessionAccuracy = session.totalActions > 0
+            ? (float)session.correctActions / session.totalActions
+            : 0f;
+        if (sessionAccuracy > bestSessionAccuracy)
+            bestSessionAccuracy = sessionAccuracy;
+
+        if (session.completed && session.durationSeconds > 0f)
+        {
+            if (fastestCompletionSeconds <= 0f || session.durationSeconds < fastestCompletionSeconds)
+                fastestCompletionSeconds = session.durationSeconds;
+        }
+
         Recalculate();
     }
 
@@ -53,7 +85,9 @@ public class GamePerformanceProfile
         float totalDur = 0f;
         float totalMistakes = 0f;
         float totalHints = 0f;
+        float totalSessionScore = 0f;
         int completedCount = 0;
+        int scoredCount = 0;
 
         foreach (var s in recentSessions)
         {
@@ -63,6 +97,11 @@ public class GamePerformanceProfile
             totalMistakes += s.mistakes;
             totalHints += s.hintsUsed;
             if (s.completed) completedCount++;
+            if (s.sessionScore > 0f)
+            {
+                totalSessionScore += s.sessionScore;
+                scoredCount++;
+            }
         }
 
         int n = recentSessions.Count;
@@ -70,39 +109,54 @@ public class GamePerformanceProfile
         averageDuration = totalDur / n;
         mistakeRate = totalMistakes / n;
 
-        // Independence: inverse of hint usage (0 hints = 100, many hints = low)
+        // Independence: inverse of hint usage
         float avgHints = totalHints / n;
-        independenceScore = Mathf.Clamp01(1f - avgHints * 0.25f) * 100f;
+        independenceScore = Mathf.Clamp01(1f - avgHints * 0.15f) * 100f;
 
-        // Speed: based on action intervals (lower = faster = higher score)
-        float avgInterval = 0f;
-        int intervalCount = 0;
+        // Speed: use strategy-based speed scores from recent sessions
+        var strategy = ScoringStrategyRegistry.Get(gameId);
+        float totalSpeed = 0f;
+        int speedCount = 0;
         foreach (var s in recentSessions)
         {
-            if (s.averageActionInterval > 0f)
+            if (s.durationSeconds > 0f)
             {
-                avgInterval += s.averageActionInterval;
-                intervalCount++;
+                var expect = strategy.GetExpectation(s.difficultyLevel);
+                float expectedMid = (expect.expectedDurationMin + expect.expectedDurationMax) / 2f;
+                if (expectedMid > 0f)
+                {
+                    float ratio = s.durationSeconds / expectedMid;
+                    float spd;
+                    if (ratio <= 0.5f) spd = 100f;
+                    else if (ratio <= 1f) spd = Mathf.Lerp(100f, 75f, (ratio - 0.5f) / 0.5f);
+                    else if (ratio <= 2f) spd = Mathf.Lerp(75f, 25f, (ratio - 1f) / 1f);
+                    else spd = Mathf.Lerp(25f, 0f, Mathf.Clamp01((ratio - 2f) / 1f));
+                    totalSpeed += spd;
+                    speedCount++;
+                }
             }
         }
-        if (intervalCount > 0)
+        speedScore = speedCount > 0 ? totalSpeed / speedCount : 50f;
+
+        // Performance score: use strategy-calculated session scores if available
+        if (scoredCount > 0)
         {
-            avgInterval /= intervalCount;
-            // Map 0–10s interval to 100–0 score
-            speedScore = Mathf.Clamp01(1f - avgInterval / 10f) * 100f;
+            // Primary: average of strategy-scored sessions
+            performanceScore = totalSessionScore / scoredCount;
         }
-
-        // Performance score: weighted composite
-        float successRate = n > 0 ? (float)completedCount / n : 0f;
-        float consistencyScore = CalcConsistency();
-
-        performanceScore = Mathf.Clamp(
-            successRate * 100f * 0.30f +
-            averageAccuracy * 100f * 0.25f +
-            speedScore * 0.15f +
-            independenceScore * 0.20f +
-            consistencyScore * 0.10f,
-            0f, 100f);
+        else
+        {
+            // Fallback for legacy sessions without strategy scores
+            float successRate = n > 0 ? (float)completedCount / n : 0f;
+            float consistencyScore = CalcConsistency();
+            performanceScore = Mathf.Clamp(
+                successRate * 100f * 0.30f +
+                averageAccuracy * 100f * 0.25f +
+                speedScore * 0.15f +
+                independenceScore * 0.20f +
+                consistencyScore * 0.10f,
+                0f, 100f);
+        }
 
         // Improvement trend: compare last 3 vs previous 3
         improvementTrend = CalcTrend();
@@ -144,17 +198,20 @@ public class GamePerformanceProfile
         for (int i = n - window; i < n; i++)
         {
             var s = recentSessions[i];
-            recentAvg += s.totalActions > 0 ? (float)s.correctActions / s.totalActions : 0f;
+            // Use session score if available, fall back to accuracy
+            recentAvg += s.sessionScore > 0f ? s.sessionScore
+                : (s.totalActions > 0 ? (float)s.correctActions / s.totalActions * 100f : 0f);
         }
         recentAvg /= window;
 
         for (int i = n - window * 2; i < n - window; i++)
         {
             var s = recentSessions[i];
-            olderAvg += s.totalActions > 0 ? (float)s.correctActions / s.totalActions : 0f;
+            olderAvg += s.sessionScore > 0f ? s.sessionScore
+                : (s.totalActions > 0 ? (float)s.correctActions / s.totalActions * 100f : 0f);
         }
         olderAvg /= window;
 
-        return (recentAvg - olderAvg) * 100f; // positive = improving
+        return recentAvg - olderAvg; // positive = improving
     }
 }

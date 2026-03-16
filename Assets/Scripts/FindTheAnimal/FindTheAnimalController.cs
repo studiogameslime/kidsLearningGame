@@ -72,6 +72,8 @@ public class FindTheAnimalController : MonoBehaviour
     private bool isRoundActive;
     private int roundNumber;
     private float lastInteractionTime;
+    private int _difficultyLevel = 1;
+    private string[] _allowedAnimals;
 
     private List<GameObject> spawnedAnimals = new List<GameObject>();
     private List<int> targetIndices = new List<int>();
@@ -123,6 +125,13 @@ public class FindTheAnimalController : MonoBehaviour
     private void Start()
     {
         roundNumber = 0;
+
+        // Apply difficulty — filter animal pool by tier
+        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "findtheanimal";
+        _difficultyLevel = GameDifficultyConfig.GetLevel(gameId);
+        _allowedAnimals = GameDifficultyConfig.GetAnimalPool(_difficultyLevel);
+        Debug.Log($"[Difficulty] Game=findtheanimal Level={_difficultyLevel} Tier={GameDifficultyConfig.FindAnimalTier(_difficultyLevel)} Pool={string.Join(",", _allowedAnimals)}");
+
         LoadRound();
     }
 
@@ -145,14 +154,37 @@ public class FindTheAnimalController : MonoBehaviour
         targetCount = Random.Range(3, 6);
         int distractorCount = TotalAnimals - targetCount;
 
-        var pool = new List<SubItemData>(game.subItems);
+        // Filter pool by difficulty-allowed animals
+        var pool = new List<SubItemData>();
+        var allPool = new List<SubItemData>();
+        foreach (var item in game.subItems)
+        {
+            allPool.Add(item);
+            if (_allowedAnimals != null && _allowedAnimals.Length > 0)
+            {
+                foreach (var allowed in _allowedAnimals)
+                {
+                    if (item.categoryKey != null &&
+                        item.categoryKey.Equals(allowed, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        pool.Add(item);
+                        break;
+                    }
+                }
+            }
+        }
+        // Fallback: if no allowed animals matched, use all
+        if (pool.Count < 2) pool = allPool;
         Shuffle(pool);
         targetAnimal = pool[0];
 
+        // Distractors: prefer same-tier animals, but use all animals if pool is too small
+        var distractorSource = pool.Count >= 4 ? pool : allPool;
         var distractorTypes = new List<SubItemData>();
-        for (int i = 1; i < pool.Count; i++)
-            if (pool[i].id != targetAnimal.id)
-                distractorTypes.Add(pool[i]);
+        foreach (var item in distractorSource)
+            if (item.id != targetAnimal.id)
+                distractorTypes.Add(item);
+        Shuffle(distractorTypes);
 
         var toPlace = new List<(SubItemData data, bool isTarget)>();
         for (int i = 0; i < targetCount; i++)

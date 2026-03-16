@@ -60,7 +60,7 @@ public class ColorMixingSetup : EditorWindow
     private static readonly Color WcPurple = new Color(0.68f, 0.48f, 0.82f, 0.05f);
     private static readonly Color WcOrange = new Color(1.00f, 0.65f, 0.20f, 0.05f);
 
-    private const int HeaderHeight = 80;
+    private const int HeaderHeight = 130;
 
     public static void RunSetupSilent()
     {
@@ -162,7 +162,7 @@ public class ColorMixingSetup : EditorWindow
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
         var homeGO = CreateIconButton(topBar.transform, "HomeButton", homeIcon,
             new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1),
-            new Vector2(16, -8), new Vector2(64, 64));
+            new Vector2(16, -20), new Vector2(90, 90));
 
         // ═══════════════════════════════════
         //  PLAY AREA

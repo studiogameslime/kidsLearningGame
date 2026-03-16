@@ -116,7 +116,7 @@ public class ColorVoiceGameSetup : EditorWindow
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
         var homeGO = CreateIconButton(topBar.transform, "HomeButton", homeIcon,
             new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1),
-            new Vector2(16, -15), new Vector2(90, 90));
+            new Vector2(16, -20), new Vector2(90, 90));
 
         // ── BOTTOM BAR ──
         var bottomBar = CreateStretchImage(safeArea.transform, "BottomBar", new Color(1, 1, 1, 0));

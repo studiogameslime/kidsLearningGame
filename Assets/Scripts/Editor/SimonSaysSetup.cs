@@ -13,7 +13,7 @@ using TMPro;
 public class SimonSaysSetup : EditorWindow
 {
     private static readonly Vector2 Ref = new Vector2(1920, 1080);
-    private const int TopBarHeight = 80;
+    private const int TopBarHeight = 130;
 
     // Warm wood table palette (matching SharedSticker)
     private static readonly Color WoodDark      = HexColor("#8B6914");
@@ -134,7 +134,7 @@ public class SimonSaysSetup : EditorWindow
         tmp.raycastTarget = false;
 
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
-        var homeGO = Btn(bar.transform, "HomeButton", homeIcon, 16, -8, 64);
+        var homeGO = Btn(bar.transform, "HomeButton", homeIcon, 16, -20, 90);
 
         // ═══════════════════════════════════════
         //  PLAY AREA

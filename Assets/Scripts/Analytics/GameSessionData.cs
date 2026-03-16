@@ -30,6 +30,12 @@ public class GameSessionData
     public float longestPause;
 
     /// <summary>
+    /// Score calculated by the game's scoring strategy at registration time.
+    /// 0-100 scale. Set by StatsManager, not by the game.
+    /// </summary>
+    public float sessionScore;
+
+    /// <summary>
     /// Game-specific metrics not covered by standard fields.
     /// Examples: "cardsOpened", "pairsMatched", "maxSequence", "piecesPlaced".
     /// </summary>

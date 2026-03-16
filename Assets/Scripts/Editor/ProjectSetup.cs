@@ -33,7 +33,7 @@ public class ProjectSetup : EditorWindow
     private const int CardHeight = 520;
 
     // Header
-    private const int HeaderHeight = 150;
+    private const int HeaderHeight = 130;
 
     // Colors (warm, kid-friendly pastels)
     private static readonly Color BgColor = HexColor("#F5F0EB");

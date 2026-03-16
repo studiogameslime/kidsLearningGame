@@ -33,7 +33,7 @@ public class ColoringGameSetup : EditorWindow
     private static readonly Color ToolRowBg     = HexColor("#F5EDE4");
 
     // Layout
-    private const int TopBarHeight    = 80;
+    private const int TopBarHeight    = 130;
     private const int CanvasPad       = 12;
     private const int RefImageSize    = 320;
     private const int ColorCircleSize = 54;
@@ -237,7 +237,7 @@ public class ColoringGameSetup : EditorWindow
         // Home button (top-left)
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
         var homeGO = IconBtn(bar.transform, "HomeButton", homeIcon,
-            new Vector2(0, 1), new Vector2(0, 1), new Vector2(16, -8), new Vector2(64, 64));
+            new Vector2(0, 1), new Vector2(0, 1), new Vector2(16, -20), new Vector2(90, 90));
 
         // Save button (top-right) — green tinted
         var saveIcon = LoadSprite("Assets/Art/Icons/save.png");

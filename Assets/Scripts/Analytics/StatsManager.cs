@@ -55,42 +55,59 @@ public class StatsManager : MonoBehaviour
 
         var analytics = profile.analytics;
 
-        // 1. Update game performance profile
+        // 1. Score the session using the game's scoring strategy
+        var strategy = ScoringStrategyRegistry.Get(session.gameId);
+        var breakdown = strategy.CalculateSessionScore(session);
+        session.sessionScore = breakdown.finalScore;
+
+        // 2. Update game performance profile
         var gameProfile = analytics.GetOrCreateGame(session.gameId);
 
-        // Initialize difficulty on first play
-        if (gameProfile.sessionsPlayed == 0)
+        // Initialize difficulty on first play (skip if parent manually set difficulty)
+        if (gameProfile.sessionsPlayed == 0 && !gameProfile.manualDifficultyOverride)
             gameProfile.currentDifficulty = DifficultyManager.GetInitialDifficulty(session.gameId, profile.age * 12);
 
         gameProfile.AddSession(session);
 
-        // 2. Update totals
+        // 3. Update totals
         analytics.totalSessions++;
         analytics.totalPlayTime += session.durationSeconds;
 
-        // 3. Update category profiles
+        // 4. Update category profiles
         UpdateCategories(analytics);
 
-        // 4. Update global score
+        // 5. Update global score
         UpdateGlobalScore(analytics);
 
-        // 5. Update favorites
+        // 6. Update favorites
         analytics.UpdateFavorites();
 
-        // 6. Adjust difficulty
+        // 7. Adjust difficulty
         bool diffChanged = DifficultyManager.Evaluate(gameProfile);
 
-        // 7. Save
+        // 8. Save
         ProfileManager.Instance?.Save();
 
-        // Debug summary
-        Debug.Log($"[Analytics] {session.gameId} | " +
-            $"Score: {gameProfile.performanceScore:F0}/100 | " +
-            $"Accuracy: {gameProfile.averageAccuracy:P0} | " +
-            $"Difficulty: {gameProfile.currentDifficulty}/10{(diffChanged ? " (CHANGED)" : "")} | " +
-            $"Sessions: {gameProfile.sessionsPlayed} | " +
-            $"Global: {analytics.globalScore:F0}/100 | " +
-            $"Trend: {(gameProfile.improvementTrend >= 0 ? "+" : "")}{gameProfile.improvementTrend:F1}");
+        // Detailed score breakdown log
+        var expect = strategy.GetExpectation(session.difficultyLevel);
+        Debug.Log($"[Analytics][ScoreBreakdown]\n" +
+            $"  Game={session.gameId}\n" +
+            $"  Difficulty={session.difficultyLevel}\n" +
+            $"  Duration={session.durationSeconds:F1}s  (expected {expect.expectedDurationMin:F0}-{expect.expectedDurationMax:F0}s)\n" +
+            $"  Actions={session.totalActions}  Correct={session.correctActions}  Mistakes={session.mistakes}  Hints={session.hintsUsed}\n" +
+            $"  ──────────────────────────\n" +
+            $"  SuccessScore   = {breakdown.successScore:F0}  (w={breakdown.successWeight:P0})\n" +
+            $"  AccuracyScore  = {breakdown.accuracyScore:F0}  (w={breakdown.accuracyWeight:P0})\n" +
+            $"  SpeedScore     = {breakdown.speedScore:F0}  (w={breakdown.speedWeight:P0})\n" +
+            $"  Independence   = {breakdown.independenceScore:F0}  (w={breakdown.independenceWeight:P0})\n" +
+            $"  DifficultyBonus= {breakdown.difficultyBonus:F0}  (w={breakdown.difficultyWeight:P0})\n" +
+            $"  ──────────────────────────\n" +
+            $"  SessionScore   = {breakdown.finalScore:F0}\n" +
+            $"  ProfileScore   = {gameProfile.performanceScore:F0}/100\n" +
+            $"  Difficulty     = {gameProfile.currentDifficulty}/10{(diffChanged ? " (CHANGED)" : "")}\n" +
+            $"  Sessions       = {gameProfile.sessionsPlayed}\n" +
+            $"  Global         = {analytics.globalScore:F0}/100\n" +
+            $"  Trend          = {(gameProfile.improvementTrend >= 0 ? "+" : "")}{gameProfile.improvementTrend:F1}");
     }
 
     /// <summary>Returns the current difficulty for a game. Initializes if first time.</summary>
@@ -100,7 +117,7 @@ public class StatsManager : MonoBehaviour
         if (profile == null) return 1;
 
         var gameProfile = profile.analytics.GetOrCreateGame(gameId);
-        if (gameProfile.sessionsPlayed == 0)
+        if (gameProfile.sessionsPlayed == 0 && !gameProfile.manualDifficultyOverride)
         {
             gameProfile.currentDifficulty = DifficultyManager.GetInitialDifficulty(gameId, profile.age * 12);
         }
@@ -178,6 +195,7 @@ public class StatsManager : MonoBehaviour
             }
 
             catProfile.contributingGames = contributing;
+            catProfile.totalWeightedSessions = totalSessions;
 
             if (totalWeight > 0f)
             {

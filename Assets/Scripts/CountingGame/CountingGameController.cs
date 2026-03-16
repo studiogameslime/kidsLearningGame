@@ -21,7 +21,6 @@ public class CountingGameController : MonoBehaviour
     public TextMeshProUGUI countNumberText;
 
     [Header("Settings")]
-    public int difficulty; // 0=Easy, 1=Medium, 2=Hard
     public float animalSize = 240f;
     public float buttonSize = 160f;
 
@@ -35,6 +34,10 @@ public class CountingGameController : MonoBehaviour
     private string currentAnimalId;
     private bool isRoundActive;
     private Coroutine idleAnimCoroutine;
+    private GameStatsCollector _stats;
+    private int _difficultyLevel = 1;
+    private int _minCount;
+    private int _maxCount;
 
     // Button colors
     private static readonly Color ButtonColor = new Color(0.98f, 0.98f, 1f, 1f);
@@ -77,8 +80,17 @@ public class CountingGameController : MonoBehaviour
         ClearRound();
         isRoundActive = true;
 
-        int maxCount = GetMaxCount();
-        correctAnswer = Random.Range(1, maxCount + 1);
+        // Start analytics collector for this round
+        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "counting";
+        _stats = new GameStatsCollector(gameId);
+        if (GameCompletionBridge.Instance != null)
+            GameCompletionBridge.Instance.ActiveCollector = _stats;
+
+        // Apply difficulty
+        _difficultyLevel = GameDifficultyConfig.GetLevel(gameId);
+        GameDifficultyConfig.CountingRange(_difficultyLevel, out _minCount, out _maxCount);
+        correctAnswer = Random.Range(_minCount, _maxCount + 1);
+        Debug.Log($"[Difficulty] Game=counting Level={_difficultyLevel} Animals={correctAnswer} Range={_minCount}-{_maxCount}");
 
         // Pick random animal
         var animalInfo = PickRandomAnimal();
@@ -190,13 +202,7 @@ public class CountingGameController : MonoBehaviour
 
     private int GetMaxCount()
     {
-        switch (difficulty)
-        {
-            case 0: return 3;  // Easy
-            case 1: return 5;  // Medium
-            case 2: return 8;  // Hard
-            default: return 5;
-        }
+        return _maxCount;
     }
 
     // ── LAYOUT PATTERNS ──
@@ -323,7 +329,7 @@ public class CountingGameController : MonoBehaviour
     {
         List<int> options = GenerateAnswerOptions();
 
-        float spacing = difficulty == 0 ? 60f : 40f;
+        float spacing = _difficultyLevel <= 4 ? 60f : 40f;
         float totalW = options.Count * buttonSize + (options.Count - 1) * spacing;
         float startX = -totalW / 2f + buttonSize / 2f;
 
@@ -430,11 +436,15 @@ public class CountingGameController : MonoBehaviour
         if (number == correctAnswer)
         {
             isRoundActive = false;
+            _stats?.RecordCorrect();
+            _stats?.SetCustom("correctAnswer", correctAnswer);
+            _stats?.SetCustom("animalCount", correctAnswer);
             btnGO.GetComponent<Image>().color = CorrectColor;
             StartCoroutine(OnCorrect());
         }
         else
         {
+            _stats?.RecordMistake();
             StartCoroutine(WrongFeedback(btnGO));
         }
     }

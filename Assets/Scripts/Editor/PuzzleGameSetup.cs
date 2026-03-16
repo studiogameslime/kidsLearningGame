@@ -29,7 +29,7 @@ public class PuzzleGameSetup : EditorWindow
     private static readonly Color GroundColor    = HexColor("#E0C9A0");  // soft sand floor
     private static readonly Color TopBarColor    = HexColor("#C4A882");  // warm brown header
 
-    private const int TopBarHeight = 80;
+    private const int TopBarHeight = 130;
 
     // Animal colors for cards
     private static readonly Color[] AnimalColors = {
@@ -243,7 +243,7 @@ public class PuzzleGameSetup : EditorWindow
 
         // Home button — matches Shadow Match exactly
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
-        var homeGO = Btn(bar.transform, "HomeButton", homeIcon, 16, -8, 64);
+        var homeGO = Btn(bar.transform, "HomeButton", homeIcon, 16, -20, 90);
 
         // ═══════════════════════════════════
         //  GAMEPLAY ZONES (portrait — left/right split)

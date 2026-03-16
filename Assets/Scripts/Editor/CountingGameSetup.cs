@@ -21,7 +21,7 @@ public class CountingGameSetup : EditorWindow
     private static readonly Color GrassDarkColor = HexColor("#5DAA35");
     private static readonly Color HeaderColor = new Color(0.1f, 0.4f, 0.2f, 0.65f);
 
-    private const int TopBarHeight = 80;
+    private const int TopBarHeight = 130;
 
     private static readonly Color[] AnimalColors = {
         HexColor("#EF9A9A"), HexColor("#F48FB1"), HexColor("#CE93D8"),
@@ -266,7 +266,7 @@ public class CountingGameSetup : EditorWindow
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
         var homeGO = IconBtn(topBar.transform, "HomeButton", homeIcon,
             new Vector2(0, 1), new Vector2(0, 1),
-            new Vector2(16, -8), new Vector2(64, 64));
+            new Vector2(16, -20), new Vector2(90, 90));
 
         // ── COUNTING NUMBER (large, top center, hidden until counting animation) ──
         var countNumGO = new GameObject("CountNumberText");
@@ -313,7 +313,6 @@ public class CountingGameSetup : EditorWindow
         controller.questionText = questionTMP;
         controller.questionAnimalIcon = iconImg;
         controller.countNumberText = countNumTMP;
-        controller.difficulty = 0;
         controller.animalSize = 240f;
         controller.buttonSize = 160f;
         controller.circleSprite = circleSprite;

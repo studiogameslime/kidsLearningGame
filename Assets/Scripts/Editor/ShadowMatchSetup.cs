@@ -29,7 +29,7 @@ public class ShadowMatchSetup : EditorWindow
     private static readonly Color GroundColor   = HexColor("#C8E6B0"); // soft pastel green, different from world
     private static readonly Color TopBarColor   = HexColor("#8BAAC8");
 
-    private const int TopBarHeight = 80;
+    private const int TopBarHeight = 130;
 
     private static readonly Color[] AnimalColors = {
         HexColor("#EF9A9A"), HexColor("#F48FB1"), HexColor("#CE93D8"),
@@ -195,7 +195,7 @@ public class ShadowMatchSetup : EditorWindow
 
         // Home button
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
-        var homeGO = Btn(bar.transform, "HomeButton", homeIcon, 16, -8, 64);
+        var homeGO = Btn(bar.transform, "HomeButton", homeIcon, 16, -20, 90);
 
         // ═══════════════════════════════════
         //  GAMEPLAY ZONES (portrait — two horizontal rows)

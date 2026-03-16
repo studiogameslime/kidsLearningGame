@@ -32,7 +32,7 @@ public class TowerBuilderSetup : EditorWindow
     // Header
     private static readonly Color HeaderColor = new Color(0.30f, 0.65f, 0.85f, 0.80f);
 
-    private const int HeaderHeight = 80;
+    private const int HeaderHeight = 130;
 
     [MenuItem("Tools/Kids Learning Game/Setup Tower Builder")]
     public static void ShowWindow()
@@ -140,7 +140,7 @@ public class TowerBuilderSetup : EditorWindow
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
         var homeGO = CreateIconButton(topBar.transform, "HomeButton", homeIcon,
             new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1),
-            new Vector2(16, -8), new Vector2(64, 64));
+            new Vector2(16, -20), new Vector2(90, 90));
 
         // ═══════════════════════════════════
         //  PLAY AREA

@@ -60,6 +60,8 @@ public class SimonGameController : MonoBehaviour
     private bool isAcceptingInput;
     private bool isAnimating;
     private int bestRound;
+    private int _startSequenceLength = 2;
+    private float _speedMultiplier = 1f;
 
     private void Start()
     {
@@ -98,6 +100,13 @@ public class SimonGameController : MonoBehaviour
     {
         sequence.Clear();
         currentRound = 0;
+
+        // Apply difficulty
+        int diffLevel = GameDifficultyConfig.GetLevel("simonsays");
+        _startSequenceLength = GameDifficultyConfig.SimonStartSequence(diffLevel);
+        _speedMultiplier = GameDifficultyConfig.SimonSpeedMultiplier(diffLevel);
+        Debug.Log($"[Difficulty] Game=simon Level={diffLevel} Sequence={_startSequenceLength} Speed={_speedMultiplier:F2}x");
+
         StartNextRound();
     }
 
@@ -107,9 +116,10 @@ public class SimonGameController : MonoBehaviour
         inputIndex = 0;
         isAcceptingInput = false;
 
-        // Add one new random color
-        // Starting length: 2 for round 1, then +1 each round
-        while (sequence.Count < currentRound + 1)
+        // Add random colors until sequence reaches target length
+        // Starting length from difficulty, then +1 each round
+        int targetLen = _startSequenceLength + (currentRound - 1);
+        while (sequence.Count < targetLen)
             sequence.Add(Random.Range(0, 4));
 
         UpdateRoundText();
@@ -134,8 +144,8 @@ public class SimonGameController : MonoBehaviour
         for (int i = 0; i < sequence.Count; i++)
         {
             int colorIdx = sequence[i];
-            yield return StartCoroutine(FlashButton(colorIdx, sequenceStepDuration));
-            yield return new WaitForSeconds(sequencePauseDuration);
+            yield return StartCoroutine(FlashButton(colorIdx, sequenceStepDuration / _speedMultiplier));
+            yield return new WaitForSeconds(sequencePauseDuration / _speedMultiplier);
         }
 
         isPlayingSequence = false;

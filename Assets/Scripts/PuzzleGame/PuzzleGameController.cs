@@ -27,13 +27,20 @@ public class PuzzleGameController : MonoBehaviour
     private List<PuzzlePiece> pieces = new List<PuzzlePiece>();
     private List<GameObject> slotObjects = new List<GameObject>();
     private int placedCount = 0;
-    private const int GridSize = 3; // 3x3 = 9 pieces
-    private int totalPieces => GridSize * GridSize;
+    private int gridSize = 3;
+    private int totalPieces => gridSize * gridSize;
     private int lastAnimalIndex = -1;
 
     private void Start()
     {
         canvas = GetComponentInParent<Canvas>();
+
+        // Apply difficulty
+        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "puzzle";
+        int diffLevel = GameDifficultyConfig.GetLevel(gameId);
+        gridSize = GameDifficultyConfig.PuzzleGridSize(diffLevel);
+        Debug.Log($"[Difficulty] Game=puzzle Level={diffLevel} Grid={gridSize}x{gridSize} Pieces={totalPieces}");
+
         LoadRandomPuzzle();
     }
 
@@ -161,8 +168,8 @@ public class PuzzleGameController : MonoBehaviour
         referenceImage.color = new Color(1f, 1f, 1f, referenceAlpha);
 
         // Piece dimensions on screen (matching reference grid)
-        float pieceW = refW / GridSize;
-        float pieceH = refH / GridSize;
+        float pieceW = refW / gridSize;
+        float pieceH = refH / gridSize;
 
         // The reference image center in board area local space
         Vector2 refCenter = Vector2.zero;
@@ -171,9 +178,9 @@ public class PuzzleGameController : MonoBehaviour
 
         // Correct positions for each piece (relative to boardArea)
         List<Vector2> correctPositions = new List<Vector2>();
-        for (int row = 0; row < GridSize; row++)
+        for (int row = 0; row < gridSize; row++)
         {
-            for (int col = 0; col < GridSize; col++)
+            for (int col = 0; col < gridSize; col++)
             {
                 float cx = refLeft + col * pieceW + pieceW / 2f;
                 float cy = refTop - row * pieceH - pieceH / 2f;
@@ -182,13 +189,13 @@ public class PuzzleGameController : MonoBehaviour
         }
 
         // Slice source texture into 3x3 pieces
-        int sliceW = srcW / GridSize;
-        int sliceH = srcH / GridSize;
+        int sliceW = srcW / gridSize;
+        int sliceH = srcH / gridSize;
         List<Texture2D> pieceTextures = new List<Texture2D>();
 
-        for (int row = 0; row < GridSize; row++)
+        for (int row = 0; row < gridSize; row++)
         {
-            for (int col = 0; col < GridSize; col++)
+            for (int col = 0; col < gridSize; col++)
             {
                 int pixX = col * sliceW;
                 int pixY = srcH - (row + 1) * sliceH; // flip Y
@@ -317,9 +324,9 @@ public class PuzzleGameController : MonoBehaviour
         float refLeft = refCenter.x - refW / 2f;
         float refTop = refCenter.y + refH / 2f;
 
-        for (int row = 0; row < GridSize; row++)
+        for (int row = 0; row < gridSize; row++)
         {
-            for (int col = 0; col < GridSize; col++)
+            for (int col = 0; col < gridSize; col++)
             {
                 var slotGO = new GameObject($"Slot_{row}_{col}");
                 slotGO.transform.SetParent(boardArea, false);

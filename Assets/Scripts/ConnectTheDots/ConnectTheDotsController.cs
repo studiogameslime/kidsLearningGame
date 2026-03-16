@@ -211,6 +211,12 @@ public class ConnectTheDotsController : MonoBehaviour
         canvas = GetComponentInParent<Canvas>();
         roundNumber = 0;
 
+        // Apply difficulty: map 1-10 → 0-2 tier for shape filtering
+        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "connectthedots";
+        int diffLevel = GameDifficultyConfig.GetLevel(gameId);
+        difficulty = GameDifficultyConfig.ConnectDotsTier(diffLevel);
+        Debug.Log($"[Difficulty] Game=connectthedots Level={diffLevel} Tier={difficulty}");
+
         // Load all generated shapes, then filter by difficulty+complexity
         allGeneratedShapes = Resources.LoadAll<DotShapeData>("DotShapes");
         BuildEligibleShapes();

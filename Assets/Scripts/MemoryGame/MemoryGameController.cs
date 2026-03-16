@@ -22,7 +22,6 @@ public class MemoryGameController : MonoBehaviour
     public MemoryCard cardPrefab;
 
     [Header("Settings")]
-    public int difficulty;                // 0=Easy, 1=Medium, 2=Hard
     [Tooltip("Small random rotation per card in degrees.")]
     public float cardRotationRange = 3f;
     public float mismatchDelay = 0.8f;
@@ -38,6 +37,8 @@ public class MemoryGameController : MonoBehaviour
     private bool isProcessing;
     private int matchedPairs;
     private int totalPairs;
+    private GameStatsCollector _stats;
+    private int _difficultyLevel = 1;
 
     private void Start()
     {
@@ -68,14 +69,7 @@ public class MemoryGameController : MonoBehaviour
 
     private void GetGridConfig(out int cols, out int rows, out int pairs)
     {
-        // More columns for harder levels to use landscape width properly
-        switch (difficulty)
-        {
-            case 0:  cols = 4; rows = 2; pairs = 4;  break; // Easy: 8 cards
-            case 1:  cols = 6; rows = 2; pairs = 6;  break; // Medium: 12 cards, wide spread
-            case 2:  cols = 6; rows = 3; pairs = 9;  break; // Hard: 18 cards, wide 3-row grid
-            default: cols = 6; rows = 2; pairs = 6;  break;
-        }
+        GameDifficultyConfig.MemoryGridConfig(_difficultyLevel, out cols, out rows, out pairs);
     }
 
     // ── GAME SETUP ──
@@ -87,6 +81,15 @@ public class MemoryGameController : MonoBehaviour
         secondFlipped = null;
         isProcessing = false;
 
+        // Apply difficulty
+        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "memory";
+        _difficultyLevel = GameDifficultyConfig.GetLevel(gameId);
+
+        // Start analytics collector
+        _stats = new GameStatsCollector(gameId);
+        if (GameCompletionBridge.Instance != null)
+            GameCompletionBridge.Instance.ActiveCollector = _stats;
+
         // Clear existing cards
         foreach (Transform child in cardContainer)
             Destroy(child.gameObject);
@@ -95,6 +98,7 @@ public class MemoryGameController : MonoBehaviour
         int cols, rows, pairs;
         GetGridConfig(out cols, out rows, out pairs);
         totalPairs = Mathf.Min(pairs, activeCategory.cardFaces.Count);
+        Debug.Log($"[Difficulty] Game=memory Level={_difficultyLevel} Cards={totalPairs * 2} Pairs={totalPairs} Grid={cols}x{rows}");
 
         // Configure grid layout
         ConfigureGrid(cols, rows);
@@ -196,21 +200,25 @@ public class MemoryGameController : MonoBehaviour
 
         if (firstFlipped.PairId == secondFlipped.PairId)
         {
+            _stats?.RecordCorrect();
             yield return new WaitForSeconds(0.2f);
             firstFlipped.IsMatched = true;
             secondFlipped.IsMatched = true;
             firstFlipped.PlayMatchAndHide();
             secondFlipped.PlayMatchAndHide();
             matchedPairs++;
+            _stats?.SetCustom("pairsMatched", matchedPairs);
 
             if (matchedPairs >= totalPairs)
             {
+                _stats?.SetCustom("totalPairs", totalPairs);
                 yield return new WaitForSeconds(0.5f);
                 OnGameComplete();
             }
         }
         else
         {
+            _stats?.RecordMistake();
             yield return new WaitForSeconds(mismatchDelay);
             firstFlipped.FlipToBack();
             secondFlipped.FlipToBack();

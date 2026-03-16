@@ -27,6 +27,10 @@ public static class DifficultyManager
     {
         if (profile == null) return false;
 
+        // Skip auto-adjustment when parent has manually set difficulty
+        if (profile.manualDifficultyOverride)
+            return false;
+
         // Respect cooldown
         if (profile.sessionsSinceDifficultyChange < CooldownSessions)
             return false;
