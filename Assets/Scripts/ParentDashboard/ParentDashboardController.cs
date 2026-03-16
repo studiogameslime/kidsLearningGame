@@ -29,6 +29,10 @@ public class ParentDashboardController : MonoBehaviour
     public Image[] tabIndicators;
     public RectTransform[] tabContents; // scroll content areas
 
+    [Header("Leaderboard")]
+    public Button trophyButton;
+    public Sprite trophySprite;
+
     [Header("Assets")]
     public Sprite roundedRect;
     public Sprite circleSprite;
@@ -49,9 +53,12 @@ public class ParentDashboardController : MonoBehaviour
     private static readonly Color PracticeBg = HexColor("#FFF3E0");
     private static readonly Color InsightBg = HexColor("#E3F2FD");
     private static readonly Color BadgeBg = HexColor("#FFF8E1");
+    private static readonly Color GoldAccent = HexColor("#F1C40F");
+    private static readonly Color HighlightBg = HexColor("#E3F2FD");
 
     private ParentDashboardData _data;
     private int _correctAnswer;
+    private GameObject _leaderboardModal;
 
     private void Start()
     {
@@ -68,6 +75,8 @@ public class ParentDashboardController : MonoBehaviour
 
         if (backButton != null)
             backButton.onClick.AddListener(OnBackPressed);
+        if (trophyButton != null)
+            trophyButton.onClick.AddListener(ShowLeaderboard);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -1317,6 +1326,283 @@ public class ParentDashboardController : MonoBehaviour
         var go = new GameObject("Spacer");
         go.transform.SetParent(parent, false);
         go.AddComponent<LayoutElement>().preferredHeight = height;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  LEADERBOARD MODAL
+    // ═══════════════════════════════════════════════════════════════
+
+    private void ShowLeaderboard()
+    {
+        if (_leaderboardModal != null) return;
+
+        var canvas = GetComponentInParent<Canvas>();
+        if (canvas == null) return;
+
+        // Build leaderboard data
+        var leaderboardData = LeaderboardBuilder.Build();
+
+        // ── Modal overlay ──
+        _leaderboardModal = new GameObject("LeaderboardModal");
+        _leaderboardModal.transform.SetParent(canvas.transform, false);
+        var modalRT = _leaderboardModal.AddComponent<RectTransform>();
+        modalRT.anchorMin = Vector2.zero;
+        modalRT.anchorMax = Vector2.one;
+        modalRT.offsetMin = Vector2.zero;
+        modalRT.offsetMax = Vector2.zero;
+
+        // Dim background
+        var dimImg = _leaderboardModal.AddComponent<Image>();
+        dimImg.color = new Color(0, 0, 0, 0.5f);
+        dimImg.raycastTarget = true;
+
+        // ── Content panel (with safe margins) ──
+        var panelGO = new GameObject("Panel");
+        panelGO.transform.SetParent(_leaderboardModal.transform, false);
+        var panelRT = panelGO.AddComponent<RectTransform>();
+        panelRT.anchorMin = Vector2.zero;
+        panelRT.anchorMax = Vector2.one;
+        panelRT.offsetMin = new Vector2(20, 40);
+        panelRT.offsetMax = new Vector2(-20, -40);
+        var panelImg = panelGO.AddComponent<Image>();
+        if (roundedRect != null) panelImg.sprite = roundedRect;
+        panelImg.type = Image.Type.Sliced;
+        panelImg.color = BgColor;
+
+        // ── Header bar ──
+        var headerGO = new GameObject("Header");
+        headerGO.transform.SetParent(panelGO.transform, false);
+        var headerRT2 = headerGO.AddComponent<RectTransform>();
+        headerRT2.anchorMin = new Vector2(0, 1);
+        headerRT2.anchorMax = new Vector2(1, 1);
+        headerRT2.pivot = new Vector2(0.5f, 1);
+        headerRT2.sizeDelta = new Vector2(0, 70);
+        var headerBg = headerGO.AddComponent<Image>();
+        if (roundedRect != null) headerBg.sprite = roundedRect;
+        headerBg.type = Image.Type.Sliced;
+        headerBg.color = HexColor("#2C3E50");
+
+        var headerLayout = headerGO.AddComponent<HorizontalLayoutGroup>();
+        headerLayout.padding = new RectOffset(16, 16, 8, 8);
+        headerLayout.spacing = 12;
+        headerLayout.childAlignment = TextAnchor.MiddleCenter;
+        headerLayout.childForceExpandWidth = false;
+        headerLayout.childForceExpandHeight = true;
+        headerLayout.childControlWidth = true;
+        headerLayout.childControlHeight = false;
+
+        // Close button (left in hierarchy = left visually)
+        var closeBtn = MakeSmallButton(headerGO.transform, "\u2715", 22); // ✕
+        closeBtn.GetComponent<Image>().color = new Color(1, 1, 1, 0.2f);
+        closeBtn.onClick.AddListener(CloseLeaderboard);
+
+        // Title
+        var titleTMP = AddChildTMP(headerGO.transform,
+            H("\u05D8\u05D1\u05DC\u05EA \u05D0\u05DC\u05D9\u05E4\u05D5\u05D9\u05D5\u05EA"), // טבלת אליפויות
+            22, Color.white, TextAlignmentOptions.Center);
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+        // Trophy icon
+        if (trophySprite != null)
+        {
+            var trophyGO = new GameObject("Trophy");
+            trophyGO.transform.SetParent(headerGO.transform, false);
+            var trLE = trophyGO.AddComponent<LayoutElement>();
+            trLE.preferredWidth = 36;
+            trLE.preferredHeight = 36;
+            var trImg = trophyGO.AddComponent<Image>();
+            trImg.sprite = trophySprite;
+            trImg.preserveAspect = true;
+            trImg.raycastTarget = false;
+        }
+
+        // ── ScrollView for content ──
+        var svGO = new GameObject("ScrollView");
+        svGO.transform.SetParent(panelGO.transform, false);
+        var svRT = svGO.AddComponent<RectTransform>();
+        svRT.anchorMin = Vector2.zero;
+        svRT.anchorMax = Vector2.one;
+        svRT.offsetMin = Vector2.zero;
+        svRT.offsetMax = new Vector2(0, -70); // below header
+        var svImg2 = svGO.AddComponent<Image>();
+        svImg2.color = BgColor;
+        svGO.AddComponent<Mask>().showMaskGraphic = true;
+
+        var sv = svGO.AddComponent<ScrollRect>();
+        sv.horizontal = false;
+        sv.vertical = true;
+        sv.movementType = ScrollRect.MovementType.Elastic;
+
+        var contentGO = new GameObject("Content");
+        contentGO.transform.SetParent(svGO.transform, false);
+        var contentRT = contentGO.AddComponent<RectTransform>();
+        contentRT.anchorMin = new Vector2(0, 1);
+        contentRT.anchorMax = new Vector2(1, 1);
+        contentRT.pivot = new Vector2(0.5f, 1);
+        contentRT.offsetMin = Vector2.zero;
+        contentRT.offsetMax = Vector2.zero;
+
+        var contentLayout = contentGO.AddComponent<VerticalLayoutGroup>();
+        contentLayout.spacing = 20;
+        contentLayout.padding = new RectOffset(16, 16, 16, 30);
+        contentLayout.childForceExpandWidth = true;
+        contentLayout.childForceExpandHeight = false;
+        contentLayout.childControlWidth = true;
+        contentLayout.childControlHeight = true;
+        contentGO.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        sv.content = contentRT;
+
+        // ── Build game sections ──
+        foreach (var gameBoard in leaderboardData)
+        {
+            BuildLeaderboardGameSection(contentGO.transform, gameBoard);
+        }
+
+        MakeSpacer(contentGO.transform, 20f);
+    }
+
+    private void CloseLeaderboard()
+    {
+        if (_leaderboardModal != null)
+        {
+            Destroy(_leaderboardModal);
+            _leaderboardModal = null;
+        }
+    }
+
+    private void BuildLeaderboardGameSection(Transform parent, GameLeaderboardData gameBoard)
+    {
+        var card = MakeCard(parent);
+        var cardLayout = card.GetComponent<VerticalLayoutGroup>();
+        cardLayout.spacing = 6;
+        cardLayout.padding = new RectOffset(16, 16, 14, 14);
+
+        // Game title
+        var titleTMP = AddChildTMP(card, H(gameBoard.gameName), 20, TextDark, TextAlignmentOptions.Right);
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+
+        MakeDivider(card);
+
+        // Column headers
+        var headerRow = MakeHRow(card, 24, TextAnchor.MiddleRight);
+        headerRow.GetComponent<HorizontalLayoutGroup>().spacing = 6;
+        AddLbHeaderCell(headerRow.transform, "#", 30);
+        AddLbHeaderCell(headerRow.transform, "\u05E9\u05DD", 0, true); // שם
+        AddLbHeaderCell(headerRow.transform, "\u05E6\u05D9\u05D5\u05DF", 50); // ציון
+        AddLbHeaderCell(headerRow.transform, "\u05E8\u05DE\u05D4", 40); // רמה
+        AddLbHeaderCell(headerRow.transform, "\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD", 60); // משחקים
+
+        // Entries
+        foreach (var entry in gameBoard.entries)
+        {
+            BuildLeaderboardRow(card, entry);
+        }
+
+        FitCard(card);
+    }
+
+    private void AddLbHeaderCell(Transform parent, string text, float width, bool flex = false)
+    {
+        var tmp = AddChildTMP(parent, H(text), 11, TextLight, TextAlignmentOptions.Center);
+        tmp.fontStyle = FontStyles.Bold;
+        var le = tmp.gameObject.AddComponent<LayoutElement>();
+        if (flex) le.flexibleWidth = 1;
+        else le.preferredWidth = width;
+    }
+
+    private void BuildLeaderboardRow(Transform parent, GameLeaderboardEntryData entry)
+    {
+        // Row container
+        var rowGO = new GameObject("LbRow");
+        rowGO.transform.SetParent(parent, false);
+        var rowImg = rowGO.AddComponent<Image>();
+        if (roundedRect != null) rowImg.sprite = roundedRect;
+        rowImg.type = Image.Type.Sliced;
+        rowImg.color = entry.isCurrentProfile ? HighlightBg : new Color(1, 1, 1, 0f);
+        rowImg.raycastTarget = false;
+        rowGO.AddComponent<LayoutElement>().preferredHeight = entry.hasPlayedGame ? 44 : 36;
+
+        var rowLayout = rowGO.AddComponent<HorizontalLayoutGroup>();
+        rowLayout.spacing = 6;
+        rowLayout.padding = new RectOffset(8, 8, 4, 4);
+        rowLayout.childAlignment = TextAnchor.MiddleRight;
+        rowLayout.childForceExpandWidth = false;
+        rowLayout.childForceExpandHeight = true;
+        rowLayout.childControlWidth = true;
+        rowLayout.childControlHeight = false;
+
+        Color textColor = entry.hasPlayedGame ? TextDark : TextLight;
+        int fontSize = entry.hasPlayedGame ? 15 : 13;
+
+        // Rank
+        string rankStr = entry.rank > 0 ? $"{entry.rank}" : "-";
+        var rankTMP = AddChildTMP(rowGO.transform, rankStr, fontSize, textColor, TextAlignmentOptions.Center);
+        rankTMP.fontStyle = entry.rank <= 3 && entry.hasPlayedGame ? FontStyles.Bold : FontStyles.Normal;
+        if (entry.rank == 1 && entry.hasPlayedGame) rankTMP.color = GoldAccent;
+        rankTMP.gameObject.AddComponent<LayoutElement>().preferredWidth = 30;
+
+        // Name column
+        var nameCol = MakeVCol(rowGO.transform);
+        nameCol.AddComponent<LayoutElement>().flexibleWidth = 1;
+        var nameTMP = AddChildTMP(nameCol.transform, H(entry.profileName), fontSize, textColor, TextAlignmentOptions.Right);
+        nameTMP.fontStyle = FontStyles.Bold;
+        nameTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 20;
+
+        if (entry.isCurrentProfile)
+        {
+            var badgeTMP = AddChildTMP(nameCol.transform,
+                H("\u05D4\u05E4\u05E8\u05D5\u05E4\u05D9\u05DC \u05D4\u05E0\u05D5\u05DB\u05D7\u05D9"), // הפרופיל הנוכחי
+                10, Primary, TextAlignmentOptions.Right);
+            badgeTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 14;
+        }
+        else if (!entry.hasPlayedGame)
+        {
+            var statusTMP = AddChildTMP(nameCol.transform,
+                H("\u05E2\u05D3\u05D9\u05D9\u05DF \u05DC\u05D0 \u05E9\u05D9\u05D7\u05E7"), // עדיין לא שיחק
+                10, TextLight, TextAlignmentOptions.Right);
+            statusTMP.fontStyle = FontStyles.Italic;
+            statusTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 14;
+        }
+
+        if (entry.hasPlayedGame)
+        {
+            // Score
+            var scoreTMP = AddChildTMP(rowGO.transform, $"{entry.score:F0}",
+                fontSize, ParentDashboardViewModel.ScoreColor(entry.score), TextAlignmentOptions.Center);
+            scoreTMP.fontStyle = FontStyles.Bold;
+            scoreTMP.gameObject.AddComponent<LayoutElement>().preferredWidth = 50;
+
+            // Difficulty
+            var diffTMP = AddChildTMP(rowGO.transform, $"{entry.currentDifficulty}",
+                fontSize, TextMedium, TextAlignmentOptions.Center);
+            diffTMP.gameObject.AddComponent<LayoutElement>().preferredWidth = 40;
+
+            // Sessions
+            var sessTMP = AddChildTMP(rowGO.transform, $"{entry.sessionsPlayed}",
+                fontSize, TextMedium, TextAlignmentOptions.Center);
+            sessTMP.gameObject.AddComponent<LayoutElement>().preferredWidth = 60;
+        }
+        else
+        {
+            // Empty cells for alignment
+            var emptyLE1 = new GameObject("E1");
+            emptyLE1.transform.SetParent(rowGO.transform, false);
+            emptyLE1.AddComponent<RectTransform>();
+            emptyLE1.AddComponent<LayoutElement>().preferredWidth = 50;
+
+            var emptyLE2 = new GameObject("E2");
+            emptyLE2.transform.SetParent(rowGO.transform, false);
+            emptyLE2.AddComponent<RectTransform>();
+            emptyLE2.AddComponent<LayoutElement>().preferredWidth = 40;
+
+            var emptyLE3 = new GameObject("E3");
+            emptyLE3.transform.SetParent(rowGO.transform, false);
+            emptyLE3.AddComponent<RectTransform>();
+            emptyLE3.AddComponent<LayoutElement>().preferredWidth = 60;
+        }
     }
 
     // ── Navigation ──

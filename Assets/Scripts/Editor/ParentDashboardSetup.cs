@@ -42,6 +42,7 @@ public class ParentDashboardSetup : EditorWindow
 
         var roundedRect = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/RoundedRect.png");
         var circleSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/Circle.png");
+        var trophySprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/trophy.png");
 
         // ── Camera ──
         var camGO = new GameObject("Main Camera");
@@ -291,11 +292,59 @@ public class ParentDashboardSetup : EditorWindow
         MakeHeaderSeparator(subRowGO.transform);
         var sessionsGO = MakeHeaderSubText(subRowGO.transform, "Sessions", "");
 
-        // Spacer on the right to balance back button
-        var rightSpacer = new GameObject("Spacer");
-        rightSpacer.transform.SetParent(headerGO.transform, false);
-        rightSpacer.AddComponent<RectTransform>();
-        rightSpacer.AddComponent<LayoutElement>().preferredWidth = 100;
+        // Trophy button (right side, balances back button)
+        var trophyGO = new GameObject("TrophyButton");
+        trophyGO.transform.SetParent(headerGO.transform, false);
+        var trophyLE = trophyGO.AddComponent<LayoutElement>();
+        trophyLE.preferredWidth = 100;
+        trophyLE.preferredHeight = 40;
+        var trophyBgImg = trophyGO.AddComponent<Image>();
+        if (roundedRect != null) trophyBgImg.sprite = roundedRect;
+        trophyBgImg.type = Image.Type.Sliced;
+        trophyBgImg.color = new Color(1, 1, 1, 0.15f);
+        var trophyBtn = trophyGO.AddComponent<Button>();
+        trophyBtn.targetGraphic = trophyBgImg;
+        var trophyColors = trophyBtn.colors;
+        trophyColors.highlightedColor = new Color(1, 1, 1, 0.25f);
+        trophyColors.pressedColor = new Color(1, 1, 1, 0.35f);
+        trophyBtn.colors = trophyColors;
+
+        // Trophy button inner layout (icon + text)
+        var trophyInnerLayout = trophyGO.AddComponent<HorizontalLayoutGroup>();
+        trophyInnerLayout.spacing = 6;
+        trophyInnerLayout.padding = new RectOffset(10, 10, 6, 6);
+        trophyInnerLayout.childAlignment = TextAnchor.MiddleCenter;
+        trophyInnerLayout.childForceExpandWidth = false;
+        trophyInnerLayout.childForceExpandHeight = false;
+        trophyInnerLayout.childControlWidth = false;
+        trophyInnerLayout.childControlHeight = false;
+
+        // Trophy icon
+        if (trophySprite != null)
+        {
+            var iconGO = new GameObject("Icon");
+            iconGO.transform.SetParent(trophyGO.transform, false);
+            var iconRT = iconGO.AddComponent<RectTransform>();
+            iconRT.sizeDelta = new Vector2(24, 24);
+            var iconImg = iconGO.AddComponent<Image>();
+            iconImg.sprite = trophySprite;
+            iconImg.preserveAspect = true;
+            iconImg.raycastTarget = false;
+        }
+
+        // Trophy label
+        var trophyLabelGO = new GameObject("Label");
+        trophyLabelGO.transform.SetParent(trophyGO.transform, false);
+        var trophyLabelRT = trophyLabelGO.AddComponent<RectTransform>();
+        trophyLabelRT.sizeDelta = new Vector2(50, 28);
+        var trophyLabelTMP = trophyLabelGO.AddComponent<TextMeshProUGUI>();
+        trophyLabelTMP.text = HebrewFixer.Fix("\u05D2\u05D1\u05D9\u05E2"); // גביע
+        trophyLabelTMP.fontSize = 14;
+        trophyLabelTMP.color = Color.white;
+        trophyLabelTMP.alignment = TextAlignmentOptions.Center;
+        trophyLabelTMP.isRightToLeftText = false;
+        trophyLabelTMP.enableWordWrapping = false;
+        trophyLabelTMP.raycastTarget = false;
 
         // ── Tab Content ScrollViews ──
         float contentTop = HeaderHeight;
@@ -359,6 +408,8 @@ public class ParentDashboardSetup : EditorWindow
         ctrl.headerAgeText = ageGO2.GetComponent<TextMeshProUGUI>();
         ctrl.headerSessionsText = sessionsGO.GetComponent<TextMeshProUGUI>();
         ctrl.backButton = backBtn;
+        ctrl.trophyButton = trophyBtn;
+        ctrl.trophySprite = trophySprite;
         ctrl.tabButtons = new Button[0];
         ctrl.tabIndicators = new Image[0];
         ctrl.tabContents = tabContents;
