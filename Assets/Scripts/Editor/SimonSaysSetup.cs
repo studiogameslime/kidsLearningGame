@@ -136,6 +136,10 @@ public class SimonSaysSetup : EditorWindow
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
         var homeGO = Btn(bar.transform, "HomeButton", homeIcon, 16, -20, 90);
 
+        // Trophy button (top-right)
+        var trophyIcon = LoadSprite("Assets/Art/Icons/trophy.png");
+        var trophyGO = BtnRight(bar.transform, "TrophyButton", trophyIcon, -16, -20, 70);
+
         // ═══════════════════════════════════════
         //  PLAY AREA
         // ═══════════════════════════════════════
@@ -320,6 +324,13 @@ public class SimonSaysSetup : EditorWindow
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
             homeGO.GetComponent<Button>().onClick, ctrl.OnHomePressed);
 
+        // Wire trophy / leaderboard
+        var leaderboard = canvasGO.AddComponent<InGameLeaderboard>();
+        leaderboard.roundedRect = LoadSprite("Assets/UI/Sprites/RoundedRect.png");
+        leaderboard.trophySprite = trophyIcon;
+        leaderboard.trophyButton = trophyGO.GetComponent<Button>();
+        leaderboard.gameId = "simonsays";
+
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/SimonSays.unity");
     }
 
@@ -366,6 +377,25 @@ public class SimonSaysSetup : EditorWindow
         var rt = go.AddComponent<RectTransform>();
         rt.anchorMin = rt.anchorMax = new Vector2(0, 1);
         rt.pivot = new Vector2(0, 1);
+        rt.anchoredPosition = new Vector2(x, y);
+        rt.sizeDelta = new Vector2(sz, sz);
+        var img = go.AddComponent<Image>();
+        img.sprite = icon;
+        img.preserveAspect = true;
+        img.color = Color.white;
+        img.raycastTarget = true;
+        var btn = go.AddComponent<Button>();
+        btn.targetGraphic = img;
+        return go;
+    }
+
+    private static GameObject BtnRight(Transform p, string name, Sprite icon, float x, float y, float sz)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(p, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(1, 1);
+        rt.pivot = new Vector2(1, 1);
         rt.anchoredPosition = new Vector2(x, y);
         rt.sizeDelta = new Vector2(sz, sz);
         var img = go.AddComponent<Image>();

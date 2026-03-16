@@ -268,6 +268,12 @@ public class CountingGameSetup : EditorWindow
             new Vector2(0, 1), new Vector2(0, 1),
             new Vector2(16, -20), new Vector2(90, 90));
 
+        // Trophy button (top-right)
+        var trophyIcon = LoadSprite("Assets/Art/Icons/trophy.png");
+        var trophyGO = IconBtn(topBar.transform, "TrophyButton", trophyIcon,
+            new Vector2(1, 1), new Vector2(1, 1),
+            new Vector2(-16, -20), new Vector2(70, 70));
+
         // ── COUNTING NUMBER (large, top center, hidden until counting animation) ──
         var countNumGO = new GameObject("CountNumberText");
         countNumGO.transform.SetParent(safeArea.transform, false);
@@ -320,6 +326,13 @@ public class CountingGameSetup : EditorWindow
         // Wire home button
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
             homeGO.GetComponent<Button>().onClick, controller.OnHomePressed);
+
+        // Wire trophy / leaderboard
+        var leaderboard = canvasGO.AddComponent<InGameLeaderboard>();
+        leaderboard.roundedRect = LoadSprite("Assets/UI/Sprites/RoundedRect.png");
+        leaderboard.trophySprite = trophyIcon;
+        leaderboard.trophyButton = trophyGO.GetComponent<Button>();
+        leaderboard.gameId = "findthecount";
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/CountingGame.unity");
     }

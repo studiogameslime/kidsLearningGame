@@ -267,6 +267,12 @@ public class MemoryGameSetup : EditorWindow
             new Vector2(0, 1), new Vector2(0, 1),
             new Vector2(16, -20), new Vector2(90, 90));
 
+        // Trophy button (top-right)
+        var trophyIcon = LoadSprite("Assets/Art/Icons/trophy.png");
+        var trophyGO = IconBtn(topBar.transform, "TrophyButton", trophyIcon,
+            new Vector2(1, 1), new Vector2(1, 1),
+            new Vector2(-16, -20), new Vector2(70, 70));
+
         // ── GAME BOARD (wood plank surface) ──
         var boardGO = new GameObject("BoardPanel");
         boardGO.transform.SetParent(safeArea.transform, false);
@@ -343,6 +349,13 @@ public class MemoryGameSetup : EditorWindow
         // Wire home button
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
             homeGO.GetComponent<Button>().onClick, controller.OnExitPressed);
+
+        // Wire trophy / leaderboard
+        var leaderboard = canvasGO.AddComponent<InGameLeaderboard>();
+        leaderboard.roundedRect = LoadSprite("Assets/UI/Sprites/RoundedRect.png");
+        leaderboard.trophySprite = trophyIcon;
+        leaderboard.trophyButton = trophyGO.GetComponent<Button>();
+        leaderboard.gameId = "memory";
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/MemoryGame.unity");
     }

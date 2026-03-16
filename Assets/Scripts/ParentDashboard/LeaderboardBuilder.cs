@@ -84,6 +84,20 @@ public static class LeaderboardBuilder
         return result;
     }
 
+    /// <summary>
+    /// Build leaderboard for a single game across all profiles.
+    /// Used by in-game trophy button.
+    /// </summary>
+    public static GameLeaderboardData BuildForGame(string gameId)
+    {
+        var allProfiles = ProfileManager.Instance != null
+            ? ProfileManager.Instance.Profiles
+            : new List<UserProfile>();
+        var activeProfile = ProfileManager.ActiveProfile;
+        string activeId = activeProfile != null ? activeProfile.id : "";
+        return BuildForGame(gameId, allProfiles, activeId);
+    }
+
     private static GameLeaderboardData BuildForGame(
         string gameId, List<UserProfile> allProfiles, string activeId)
     {
