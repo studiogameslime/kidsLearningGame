@@ -161,7 +161,7 @@ public class HebrewFontSetup : EditorWindow
         // Set to Dynamic mode — TMP generates glyphs from source font at RUNTIME
         // This ensures identical rendering on Editor, Android, and iOS
         // (Static mode bakes metrics once, which can differ from runtime rendering)
-        fontAsset.atlasPopulationMode = UnityEngine.TextCore.Text.AtlasPopulationMode.Dynamic;
+        fontAsset.atlasPopulationMode = (TMPro.AtlasPopulationMode)UnityEngine.TextCore.Text.AtlasPopulationMode.Dynamic;
 
         // Pre-populate atlas with common characters for faster first render
         uint[] unicodeArray = GetUnicodeArray(characterSet);
