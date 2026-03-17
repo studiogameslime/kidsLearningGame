@@ -23,6 +23,10 @@ public class UserProfile
     public ChildAnalyticsProfile analytics = new ChildAnalyticsProfile();
     public List<SavedDrawing> savedDrawings = new List<SavedDrawing>();
 
+    // Adaptive visibility system (defaults safe for old JSON)
+    public float estimatedGlobalAge;  // 0 = not yet computed, use chronological age
+    public List<GameAccessOverrideData> gameAccessOverrides = new List<GameAccessOverrideData>();
+
     public UserProfile()
     {
         id = Guid.NewGuid().ToString("N").Substring(0, 8);
@@ -116,6 +120,23 @@ public class GameStat
     public int timesPlayed;
     public int bestScore;
     public long lastPlayedAt;
+}
+
+/// <summary>
+/// Parent override for game visibility in child's menu.
+/// </summary>
+public enum ParentGameAccessMode
+{
+    Default = 0,       // system decides based on age
+    ForcedEnabled = 1, // always show (overrides age filter, not hard locks)
+    ForcedDisabled = 2 // always hide
+}
+
+[Serializable]
+public class GameAccessOverrideData
+{
+    public string gameId;
+    public ParentGameAccessMode accessMode;
 }
 
 /// <summary>

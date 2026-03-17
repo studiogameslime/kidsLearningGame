@@ -63,9 +63,9 @@ public class StatsManager : MonoBehaviour
         // 2. Update game performance profile
         var gameProfile = analytics.GetOrCreateGame(session.gameId);
 
-        // Initialize difficulty on first play (skip if parent manually set difficulty)
+        // Initialize difficulty on first play using age baseline (skip if parent manually set)
         if (gameProfile.sessionsPlayed == 0 && !gameProfile.manualDifficultyOverride)
-            gameProfile.currentDifficulty = DifficultyManager.GetInitialDifficulty(session.gameId, profile.age * 12);
+            gameProfile.currentDifficulty = GameDifficultyConfig.GetBaselineInitialDifficulty(session.gameId, profile);
 
         gameProfile.AddSession(session);
 
@@ -85,7 +85,11 @@ public class StatsManager : MonoBehaviour
         // 7. Adjust difficulty
         bool diffChanged = DifficultyManager.Evaluate(gameProfile);
 
-        // 8. Save
+        // 8. Update estimated ages
+        EstimatedAgeCalculator.UpdatePerGameAge(gameProfile);
+        EstimatedAgeCalculator.UpdateGlobalAge(profile);
+
+        // 9. Save
         ProfileManager.Instance?.Save();
 
         // Detailed score breakdown log
@@ -107,7 +111,10 @@ public class StatsManager : MonoBehaviour
             $"  Difficulty     = {gameProfile.currentDifficulty}/10{(diffChanged ? " (CHANGED)" : "")}\n" +
             $"  Sessions       = {gameProfile.sessionsPlayed}\n" +
             $"  Global         = {analytics.globalScore:F0}/100\n" +
-            $"  Trend          = {(gameProfile.improvementTrend >= 0 ? "+" : "")}{gameProfile.improvementTrend:F1}");
+            $"  Trend          = {(gameProfile.improvementTrend >= 0 ? "+" : "")}{gameProfile.improvementTrend:F1}\n" +
+            $"  EstAge(game)   = {gameProfile.estimatedAgeForThisGame:F1}\n" +
+            $"  EstAge(global) = {profile.estimatedGlobalAge:F1}\n" +
+            $"  EffectiveAge   = {EstimatedAgeCalculator.GetEffectiveContentAge(profile):F1}");
     }
 
     /// <summary>Returns the current difficulty for a game. Initializes if first time.</summary>
@@ -119,7 +126,7 @@ public class StatsManager : MonoBehaviour
         var gameProfile = profile.analytics.GetOrCreateGame(gameId);
         if (gameProfile.sessionsPlayed == 0 && !gameProfile.manualDifficultyOverride)
         {
-            gameProfile.currentDifficulty = DifficultyManager.GetInitialDifficulty(gameId, profile.age * 12);
+            gameProfile.currentDifficulty = GameDifficultyConfig.GetBaselineInitialDifficulty(gameId, profile);
         }
         return gameProfile.currentDifficulty;
     }

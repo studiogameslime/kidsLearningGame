@@ -29,6 +29,9 @@ public class GamePerformanceProfile
     public bool manualDifficultyOverride;
     public int highestDifficultyReached = 1;
 
+    // Estimated developmental age for this game (0 = not yet computed, dashboard only in V1)
+    public float estimatedAgeForThisGame;
+
     // Trend: positive = improving, negative = declining
     public float improvementTrend;
 

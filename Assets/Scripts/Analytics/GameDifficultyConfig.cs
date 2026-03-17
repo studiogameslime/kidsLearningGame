@@ -24,13 +24,14 @@ public static class GameDifficultyConfig
 
     /// <summary>
     /// Returns the grid size for the puzzle game.
-    /// Difficulty 1-3 → 2 (4 pieces), 4-6 → 3 (9 pieces), 7-10 → 4 (16 pieces)
+    /// Difficulty 1-3 → 2 (4 pieces), 4-6 → 3 (9 pieces), 7-9 → 4 (16 pieces), 10 → 5 (25 pieces)
     /// </summary>
     public static int PuzzleGridSize(int difficulty)
     {
         if (difficulty <= 3) return 2;
         if (difficulty <= 6) return 3;
-        return 4;
+        if (difficulty <= 9) return 4;
+        return 5;
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -39,19 +40,21 @@ public static class GameDifficultyConfig
 
     /// <summary>
     /// Returns (columns, rows, pairs) for the memory game grid.
-    /// Difficulty 1-2 → 6 cards (3 pairs)
-    /// Difficulty 3-4 → 8 cards (4 pairs)
-    /// Difficulty 5-6 → 12 cards (6 pairs)
-    /// Difficulty 7-8 → 16 cards (8 pairs)
-    /// Difficulty 9-10 → 20 cards (10 pairs)
+    /// Difficulty 1-2  → 4 cards  (2 pairs)
+    /// Difficulty 3-4  → 8 cards  (4 pairs)
+    /// Difficulty 5-6  → 12 cards (6 pairs)
+    /// Difficulty 7-8  → 16 cards (8 pairs)
+    /// Difficulty 9    → 20 cards (10 pairs)
+    /// Difficulty 10   → 24 cards (12 pairs)
     /// </summary>
     public static void MemoryGridConfig(int difficulty, out int cols, out int rows, out int pairs)
     {
-        if (difficulty <= 2)      { cols = 3; rows = 2; pairs = 3; }   // 6 cards
+        if (difficulty <= 2)      { cols = 2; rows = 2; pairs = 2; }   // 4 cards
         else if (difficulty <= 4) { cols = 4; rows = 2; pairs = 4; }   // 8 cards
         else if (difficulty <= 6) { cols = 4; rows = 3; pairs = 6; }   // 12 cards
         else if (difficulty <= 8) { cols = 4; rows = 4; pairs = 8; }   // 16 cards
-        else                      { cols = 5; rows = 4; pairs = 10; }  // 20 cards
+        else if (difficulty <= 9) { cols = 5; rows = 4; pairs = 10; }  // 20 cards
+        else                      { cols = 6; rows = 4; pairs = 12; }  // 24 cards
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -230,6 +233,60 @@ public static class GameDifficultyConfig
 
         // Fallback
         return $"\u05E8\u05DE\u05D4 {difficulty}"; // רמה X
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  BASELINE VARIANT → INITIAL DIFFICULTY
+    // ═══════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Returns the initial difficulty level for a game based on the age baseline variant value.
+    /// This maps product-defined content sizes (e.g. 4 pieces, 8 cards) back to the difficulty scale.
+    /// Used when initializing difficulty for a new game based on the child's age bucket.
+    /// </summary>
+    public static int BaselineVariantToDifficulty(string gameId, int variantValue)
+    {
+        if (variantValue <= 0) return 1;
+
+        // Puzzle: variant = piece count → grid size → difficulty
+        if (gameId == "puzzle")
+        {
+            if (variantValue <= 4) return 1;        // 2x2 = 4 pieces → difficulty 1-3
+            if (variantValue <= 9) return 4;         // 3x3 = 9 pieces → difficulty 4-6
+            if (variantValue <= 16) return 7;        // 4x4 = 16 pieces → difficulty 7-9
+            return 10;                               // 5x5 = 25 pieces → difficulty 10
+        }
+
+        // Memory: variant = card count → difficulty
+        if (gameId == "memory")
+        {
+            if (variantValue <= 4) return 1;         // 4 cards → difficulty 1-2
+            if (variantValue <= 8) return 3;          // 8 cards → difficulty 3-4
+            if (variantValue <= 12) return 5;         // 12 cards → difficulty 5-6
+            if (variantValue <= 16) return 7;         // 16 cards → difficulty 7-8
+            return 9;                                 // 20-24 cards → difficulty 9-10
+        }
+
+        return 1;
+    }
+
+    /// <summary>
+    /// Returns the initial difficulty for a game using the age baseline system.
+    /// Checks the child's resolved age bucket for a baseline variant value.
+    /// Falls back to DifficultyManager.GetInitialDifficulty if no baseline variant exists.
+    /// </summary>
+    public static int GetBaselineInitialDifficulty(string gameId, UserProfile profile)
+    {
+        if (profile == null) return 1;
+
+        int ageBucket = EstimatedAgeCalculator.GetResolvedAgeBucket(profile);
+        int variant = AgeBaselineConfig.GetBaselineVariant(ageBucket, gameId);
+
+        if (variant > 0)
+            return BaselineVariantToDifficulty(gameId, variant);
+
+        // Fallback for games without baseline variants
+        return DifficultyManager.GetInitialDifficulty(gameId, profile.age * 12);
     }
 
     /// <summary>

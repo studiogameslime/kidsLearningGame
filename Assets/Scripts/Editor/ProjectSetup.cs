@@ -716,6 +716,9 @@ public class ProjectSetup : EditorWindow
         db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, colorVoice, tower, towerStack, sharedSticker, flappyBird, simonSays };
         EditorUtility.SetDirty(db);
 
+        // Validate age baseline configuration
+        ValidateAgeBaseline(db);
+
         return db;
     }
 
@@ -1055,12 +1058,11 @@ public class ProjectSetup : EditorWindow
         titleRT.offsetMin = new Vector2(showBack ? 120 : 40, 10);
         titleRT.offsetMax = new Vector2(-40, -10);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = HebrewFixer.Fix(title);
+        HebrewText.SetText(titleTMP, title);
         titleTMP.fontSize = 52;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = HexColor("#4A4A4A");
         titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.isRightToLeftText = false;
         titleTMP.enableWordWrapping = false;
         titleTMP.overflowMode = TextOverflowModes.Ellipsis;
         titleTMP.raycastTarget = false;
@@ -1116,8 +1118,7 @@ public class ProjectSetup : EditorWindow
         titleRT.offsetMin = new Vector2(120, 10);
         titleRT.offsetMax = new Vector2(-120, -10);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = HebrewFixer.Fix(title);
-        titleTMP.isRightToLeftText = false;
+        HebrewText.SetText(titleTMP, title);
         titleTMP.fontSize = 48;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = HexColor("#4A4A4A");
@@ -1319,6 +1320,36 @@ public class ProjectSetup : EditorWindow
     // ─────────────────────────────────────────────
     //  UTILITY
     // ─────────────────────────────────────────────
+
+    private static void ValidateAgeBaseline(GameDatabase db)
+    {
+        // Validate game IDs in database are unique
+        var ids = new HashSet<string>();
+        foreach (var game in db.games)
+        {
+            if (string.IsNullOrEmpty(game.id))
+                Debug.LogError($"[ProjectSetup] Game has empty ID: {game.name}");
+            else if (!ids.Add(game.id))
+                Debug.LogError($"[ProjectSetup] Duplicate game ID: {game.id}");
+        }
+
+        // Cross-validate: check that all game IDs in AgeBaselineConfig exist in the database
+        var allBuckets = AgeBaselineConfig.GetAllResolvedBuckets();
+        foreach (var kvp in allBuckets)
+        {
+            foreach (var entry in kvp.Value)
+            {
+                if (!ids.Contains(entry.gameId))
+                    Debug.LogError($"[ProjectSetup] AgeBaseline age {kvp.Key}: game ID '{entry.gameId}' not found in GameDatabase");
+            }
+        }
+
+        // Run the full baseline validation
+        AgeBaselineConfig.Validate();
+        AgeBaselineConfig.LogBaseline();
+
+        Debug.Log($"[ProjectSetup] Validated {db.games.Count} games, {ids.Count} unique IDs");
+    }
 
     private static T CreateSO<T>(string path) where T : ScriptableObject
     {

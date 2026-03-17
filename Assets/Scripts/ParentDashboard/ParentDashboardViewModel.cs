@@ -5,7 +5,7 @@ using UnityEngine;
 /// <summary>
 /// Data models and computation for the Parent Dashboard.
 /// Transforms raw ChildAnalyticsProfile into display-ready view models.
-/// All Hebrew strings are raw unicode — apply HebrewFixer.Fix() at UI binding time.
+/// All Hebrew strings are raw unicode — apply HebrewText.SetText() at UI binding time.
 /// </summary>
 
 // ── Data Models ─────────────────────────────────────────────────
@@ -56,6 +56,15 @@ public class GameDashboardData
     public string activeDifficultyImpact;      // Hebrew: what active difficulty does
     public string recommendedDifficultyImpact;  // Hebrew: what recommended difficulty does
 
+    // Visibility (age-bucket baseline system)
+    public bool isInBaselineBucket;           // whether game is in the child's current age bucket
+    public float estimatedAgeForGame;         // per-game estimated age (analytics only)
+    public int baselineVariantValue;          // e.g. puzzle pieces, memory cards for this age bucket
+    public ParentGameAccessMode visibilityMode;
+    public bool systemVisibility;             // what the system decided (ignoring parent override)
+    public VisibilityReasonCode visibilityReason;
+    public string visibilityReasonDisplay;    // Hebrew, resolved in Build()
+
     public int maxStreak;
 
     public string hintUsageLabel;
@@ -100,6 +109,13 @@ public class ParentDashboardData
 {
     public string profileName;
     public string ageDisplay;
+
+    // Estimated age (adaptive system)
+    public int chronologicalAge;
+    public float estimatedGlobalAge;
+    public float effectiveContentAge;
+    public int resolvedAgeBucket;   // integer age bucket used for content visibility
+    public bool hasEstimatedAge;    // true if confidence is sufficient
 
     // Overall
     public float overallScore;
@@ -181,6 +197,23 @@ public static class ParentDashboardViewModel
         { SkillCategory.ReactionSpeed,       ("\u05DE\u05D4\u05D9\u05E8\u05D5\u05EA \u05EA\u05D2\u05D5\u05D1\u05D4", HexColor("#F4511E")) },
     };
 
+    // ── Hebrew visibility reason display ──
+    private static readonly Dictionary<VisibilityReasonCode, string> VisibilityReasonLabels =
+        new Dictionary<VisibilityReasonCode, string>
+    {
+        { VisibilityReasonCode.Visible_Default,            "\u05D2\u05DC\u05D5\u05D9" },                                           // גלוי
+        { VisibilityReasonCode.Visible_WithinAgeRange,     "\u05DE\u05EA\u05D0\u05D9\u05DD \u05DC\u05D2\u05D9\u05DC" },             // מתאים לגיל
+        { VisibilityReasonCode.Visible_ParentForceEnabled, "\u05D2\u05DC\u05D5\u05D9 (\u05D4\u05D5\u05E8\u05D4 \u05D4\u05E4\u05E2\u05D9\u05DC)" },  // גלוי (הורה הפעיל)
+        { VisibilityReasonCode.Hidden_NotInAgeBucket,      "\u05DE\u05D5\u05E1\u05EA\u05E8 - \u05DC\u05D0 \u05D1\u05E8\u05E9\u05D9\u05DE\u05EA \u05D4\u05D2\u05D9\u05DC" }, // מוסתר - לא ברשימת הגיל
+        { VisibilityReasonCode.Hidden_ParentForceDisabled, "\u05DE\u05D5\u05E1\u05EA\u05E8 (\u05D4\u05D5\u05E8\u05D4 \u05DB\u05D9\u05D1\u05D4)" },  // מוסתר (הורה כיבה)
+        { VisibilityReasonCode.Hidden_MissingData,         "\u05DE\u05D5\u05E1\u05EA\u05E8 - \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05D7\u05E1\u05E8\u05D9\u05DD" }, // מוסתר - נתונים חסרים
+    };
+
+    public static string GetVisibilityReasonLabel(VisibilityReasonCode code)
+    {
+        return VisibilityReasonLabels.TryGetValue(code, out string label) ? label : code.ToString();
+    }
+
     public static string GetGameName(string gameId)
     {
         return GameNames.TryGetValue(gameId, out string name) ? name : gameId;
@@ -209,6 +242,13 @@ public static class ParentDashboardViewModel
         // Header
         data.profileName = profile.displayName ?? "---";
         data.ageDisplay = profile.age > 0 ? $"{profile.age}" : "---";
+
+        // Estimated age
+        data.chronologicalAge = profile.age;
+        data.hasEstimatedAge = EstimatedAgeCalculator.HasSufficientConfidence(profile);
+        data.estimatedGlobalAge = profile.estimatedGlobalAge;
+        data.effectiveContentAge = EstimatedAgeCalculator.GetEffectiveContentAge(profile);
+        data.resolvedAgeBucket = EstimatedAgeCalculator.GetResolvedAgeBucket(profile);
 
         // Overall
         data.overallScore = analytics.globalScore;
@@ -254,10 +294,34 @@ public static class ParentDashboardViewModel
 
         // Games
         var mapping = Resources.Load<GameCategoryMapping>("Analytics/GameCategoryMapping");
+        // Try Resources first, then find any loaded instance (same pattern as JourneyManager)
+        var gameDb = Resources.Load<GameDatabase>("GameDatabase");
+        if (gameDb == null)
+        {
+            var dbs = Resources.FindObjectsOfTypeAll<GameDatabase>();
+            if (dbs.Length > 0) gameDb = dbs[0];
+        }
         foreach (var gp in analytics.games)
         {
             if (gp.sessionsPlayed == 0) continue;
-            data.games.Add(BuildGameData(gp, mapping));
+            var gd = BuildGameData(gp, mapping);
+
+            // Populate visibility data
+            int ageBucket = data.resolvedAgeBucket;
+            gd.isInBaselineBucket = AgeBaselineConfig.IsGameInBaseline(ageBucket, gp.gameId);
+            gd.estimatedAgeForGame = gp.estimatedAgeForThisGame;
+            gd.baselineVariantValue = AgeBaselineConfig.GetBaselineVariant(ageBucket, gp.gameId);
+            gd.visibilityMode = GameVisibilityService.GetOverride(profile, gp.gameId);
+
+            GameItemData gameItem = FindGameItem(gameDb, gp.gameId);
+            var evalResult = gameItem != null
+                ? GameVisibilityService.Evaluate(profile, gameItem)
+                : new GameVisibilityResult(false, VisibilityReasonCode.Hidden_MissingData, VisibilitySource.MissingData);
+            gd.systemVisibility = evalResult.isVisible;
+            gd.visibilityReason = evalResult.reasonCode;
+            gd.visibilityReasonDisplay = GetVisibilityReasonLabel(evalResult.reasonCode);
+
+            data.games.Add(gd);
         }
         data.games.Sort((a, b) => b.sessionsPlayed.CompareTo(a.sessionsPlayed));
 
@@ -465,6 +529,14 @@ public static class ParentDashboardViewModel
     }
 
     // ── Helpers ──
+
+    private static GameItemData FindGameItem(GameDatabase db, string gameId)
+    {
+        if (db == null || db.games == null) return null;
+        foreach (var g in db.games)
+            if (g != null && g.id == gameId) return g;
+        return null;
+    }
 
     public static string GetScoreLabel(float score)
     {

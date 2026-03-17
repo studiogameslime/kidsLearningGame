@@ -100,6 +100,7 @@ public class ProfileManager : MonoBehaviour
         _store.activeProfileId = profile?.id;
         if (profile != null)
             profile.lastPlayedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        EstimatedAgeCalculator.ResetCache();
         Save();
     }
 

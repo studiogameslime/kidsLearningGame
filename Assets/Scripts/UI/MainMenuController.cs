@@ -84,7 +84,12 @@ public class MainMenuController : MonoBehaviour
 
     private void PopulateGrid()
     {
-        foreach (var game in database.games)
+        var profile = ProfileManager.ActiveProfile;
+        var visibleGames = profile != null
+            ? GameVisibilityService.GetVisibleGames(profile, database.games)
+            : database.games;
+
+        foreach (var game in visibleGames)
         {
             var card = Instantiate(cardPrefab, cardContainer);
             var capturedGame = game; // capture for closure
