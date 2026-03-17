@@ -228,7 +228,7 @@ public class ColorVoiceController : MonoBehaviour
         if (debugText != null)
         {
             debugText.gameObject.SetActive(true);
-            debugText.isRightToLeftText = false;
+            debugText.isRightToLeftText = true;
             debugText.text = results.Length > 0 ? HebrewFixer.Fix(string.Join(" | ", results)) : "";
         }
 
@@ -271,7 +271,7 @@ public class ColorVoiceController : MonoBehaviour
         if (debugText != null)
         {
             debugText.gameObject.SetActive(true);
-            debugText.isRightToLeftText = false;
+            debugText.isRightToLeftText = true;
             debugText.text = HebrewFixer.Fix(partial);
         }
 
@@ -430,7 +430,7 @@ public class ColorVoiceController : MonoBehaviour
         if (colorLabel != null)
         {
             colorLabel.text = HebrewFixer.Fix(currentColor.hebrewName);
-            colorLabel.isRightToLeftText = false;
+            colorLabel.isRightToLeftText = true;
         }
 
         // Scale-up bounce entrance

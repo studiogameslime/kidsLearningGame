@@ -361,7 +361,7 @@ public class InGameLeaderboard : MonoBehaviour
         tmp.fontSize = fontSize;
         tmp.color = color;
         tmp.alignment = TextAlignmentOptions.Center;
-        tmp.isRightToLeftText = false;
+        tmp.isRightToLeftText = true;
         tmp.enableWordWrapping = false;
         tmp.overflowMode = TextOverflowModes.Ellipsis;
         tmp.raycastTarget = false;

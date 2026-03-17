@@ -230,7 +230,7 @@ public class ColoringGameSetup : EditorWindow
         Full(titleRT); titleRT.offsetMin = new Vector2(100, 0); titleRT.offsetMax = new Vector2(-160, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
         titleTMP.text = HebrewFixer.Fix("\u05E6\u05D1\u05D9\u05E2\u05D4");
-        titleTMP.isRightToLeftText = false; titleTMP.fontSize = 36;
+        titleTMP.isRightToLeftText = true; titleTMP.fontSize = 36;
         titleTMP.fontStyle = FontStyles.Bold; titleTMP.color = Color.white;
         titleTMP.alignment = TextAlignmentOptions.Center; titleTMP.raycastTarget = false;
 
@@ -541,7 +541,7 @@ public class ColoringGameSetup : EditorWindow
         go.AddComponent<LayoutElement>().preferredHeight = SectionTitleFontSize + 10;
         var tmp = go.AddComponent<TextMeshProUGUI>();
         tmp.text = HebrewFixer.Fix(hebrewText);
-        tmp.isRightToLeftText = false;
+        tmp.isRightToLeftText = true;
         tmp.fontSize = SectionTitleFontSize;
         tmp.fontStyle = FontStyles.Bold;
         tmp.color = SectionTitleColor;

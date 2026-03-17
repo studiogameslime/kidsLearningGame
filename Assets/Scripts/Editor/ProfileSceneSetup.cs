@@ -254,7 +254,7 @@ public class ProfileSceneSetup : EditorWindow
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = DarkText;
         titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.isRightToLeftText = false;
+        titleTMP.isRightToLeftText = true;
         titleTMP.raycastTarget = false;
 
         // ── Profile grid area (centered) ──
@@ -334,7 +334,7 @@ public class ProfileSceneSetup : EditorWindow
         addLabelTMP.fontSize = 40;
         addLabelTMP.color = HexColor("#999999");
         addLabelTMP.alignment = TextAlignmentOptions.Center;
-        addLabelTMP.isRightToLeftText = false;
+        addLabelTMP.isRightToLeftText = true;
         addLabelTMP.raycastTarget = false;
 
         // ── Controller ──
@@ -505,7 +505,7 @@ public class ProfileSceneSetup : EditorWindow
         inputTMP.fontSize = 40;
         inputTMP.color = DarkText;
         inputTMP.alignment = TextAlignmentOptions.Center;
-        inputTMP.isRightToLeftText = false;
+        inputTMP.isRightToLeftText = true;
 
         // Placeholder
         var placeholderGO = new GameObject("Placeholder");
@@ -518,7 +518,7 @@ public class ProfileSceneSetup : EditorWindow
         placeholderTMP.fontStyle = FontStyles.Italic;
         placeholderTMP.color = new Color(0.6f, 0.6f, 0.6f, 0.8f);
         placeholderTMP.alignment = TextAlignmentOptions.Center;
-        placeholderTMP.isRightToLeftText = false;
+        placeholderTMP.isRightToLeftText = true;
 
         // TMP_InputField component
         var inputField = inputGO.AddComponent<TMP_InputField>();
@@ -697,7 +697,7 @@ public class ProfileSceneSetup : EditorWindow
             nameLabelTMP.fontStyle = FontStyles.Bold;
             nameLabelTMP.color = DarkText;
             nameLabelTMP.alignment = TextAlignmentOptions.Center;
-            nameLabelTMP.isRightToLeftText = false;
+            nameLabelTMP.isRightToLeftText = true;
             nameLabelTMP.raycastTarget = false;
         }
 
@@ -780,7 +780,7 @@ public class ProfileSceneSetup : EditorWindow
         cpNameTMP.alignment = TextAlignmentOptions.Center;
         cpNameTMP.enableWordWrapping = false;
         cpNameTMP.overflowMode = TextOverflowModes.Ellipsis;
-        cpNameTMP.isRightToLeftText = false;
+        cpNameTMP.isRightToLeftText = true;
         cpNameTMP.raycastTarget = false;
 
         // Take Selfie button (below preview, above color grid)
@@ -886,7 +886,7 @@ public class ProfileSceneSetup : EditorWindow
         doneNameTMP.fontStyle = FontStyles.Bold;
         doneNameTMP.color = DarkText;
         doneNameTMP.alignment = TextAlignmentOptions.Center;
-        doneNameTMP.isRightToLeftText = false;
+        doneNameTMP.isRightToLeftText = true;
         doneNameTMP.raycastTarget = false;
 
         var doneBtn = CreateBigButton(stepDone.transform, "DoneButton",
@@ -1065,7 +1065,7 @@ public class ProfileSceneSetup : EditorWindow
         tmp.fontStyle = FontStyles.Bold;
         tmp.color = color;
         tmp.alignment = TextAlignmentOptions.Center;
-        tmp.isRightToLeftText = false;
+        tmp.isRightToLeftText = true;
         tmp.raycastTarget = false;
         return go;
     }
@@ -1103,7 +1103,7 @@ public class ProfileSceneSetup : EditorWindow
         labelTMP.fontStyle = FontStyles.Bold;
         labelTMP.color = Color.white;
         labelTMP.alignment = TextAlignmentOptions.Center;
-        labelTMP.isRightToLeftText = false;
+        labelTMP.isRightToLeftText = true;
         labelTMP.raycastTarget = false;
 
         return go;
@@ -1200,7 +1200,7 @@ public class ProfileSceneSetup : EditorWindow
         labelTMP.fontStyle = FontStyles.Bold;
         labelTMP.color = Color.white;
         labelTMP.alignment = TextAlignmentOptions.Center;
-        labelTMP.isRightToLeftText = false;
+        labelTMP.isRightToLeftText = true;
         labelTMP.raycastTarget = false;
 
         return go;

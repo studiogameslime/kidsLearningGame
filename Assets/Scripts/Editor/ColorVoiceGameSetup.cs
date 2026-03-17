@@ -105,7 +105,7 @@ public class ColorVoiceGameSetup : EditorWindow
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
         titleTMP.text = HebrewFixer.Fix("\u05D0\u05DE\u05E8\u05D5 \u05D0\u05EA \u05D4\u05E6\u05D1\u05E2"); // אמרו את הצבע
-        titleTMP.isRightToLeftText = false;
+        titleTMP.isRightToLeftText = true;
         titleTMP.fontSize = 48;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;
@@ -166,7 +166,7 @@ public class ColorVoiceGameSetup : EditorWindow
         instrRT.offsetMax = Vector2.zero;
         var instrTMP = instrGO.AddComponent<TextMeshProUGUI>();
         instrTMP.text = HebrewFixer.Fix("?\u05D0\u05D9\u05D6\u05D4 \u05E6\u05D1\u05E2 \u05D6\u05D4"); // ?איזה צבע זה
-        instrTMP.isRightToLeftText = false;
+        instrTMP.isRightToLeftText = true;
         instrTMP.fontSize = 52;
         instrTMP.fontStyle = FontStyles.Bold;
         instrTMP.color = DarkText;
@@ -198,7 +198,7 @@ public class ColorVoiceGameSetup : EditorWindow
         StretchFull(colorLabelRT);
         var colorLabelTMP = colorLabelGO.AddComponent<TextMeshProUGUI>();
         colorLabelTMP.text = HebrewFixer.Fix("\u05D0\u05D3\u05D5\u05DD"); // אדום
-        colorLabelTMP.isRightToLeftText = false;
+        colorLabelTMP.isRightToLeftText = true;
         colorLabelTMP.fontSize = 110;
         colorLabelTMP.fontStyle = FontStyles.Bold;
         colorLabelTMP.color = Color.white;
@@ -230,7 +230,7 @@ public class ColorVoiceGameSetup : EditorWindow
         feedbackRT.offsetMax = Vector2.zero;
         var feedbackTMP = feedbackGO.AddComponent<TextMeshProUGUI>();
         feedbackTMP.text = "";
-        feedbackTMP.isRightToLeftText = false;
+        feedbackTMP.isRightToLeftText = true;
         feedbackTMP.fontSize = 56;
         feedbackTMP.fontStyle = FontStyles.Bold;
         feedbackTMP.color = HexColor("#4CAF50");

@@ -254,7 +254,7 @@ public class MemoryGameSetup : EditorWindow
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
         titleTMP.text = HebrewFixer.Fix("\u05DE\u05E9\u05D7\u05E7 \u05D6\u05D9\u05DB\u05E8\u05D5\u05DF");
-        titleTMP.isRightToLeftText = false;
+        titleTMP.isRightToLeftText = true;
         titleTMP.fontSize = 36;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = new Color(1f, 0.96f, 0.88f, 1f); // warm white

@@ -171,7 +171,7 @@ public class SharedStickerSetup : EditorWindow
         titleRT.offsetMax = new Vector2(-100, 0);
         var tmp = titleGO.AddComponent<TextMeshProUGUI>();
         tmp.text = HebrewFixer.Fix("\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05DE\u05E9\u05D5\u05EA\u05E3");
-        tmp.isRightToLeftText = false;
+        tmp.isRightToLeftText = true;
         tmp.fontSize = 36;
         tmp.fontStyle = FontStyles.Bold;
         tmp.color = Color.white;

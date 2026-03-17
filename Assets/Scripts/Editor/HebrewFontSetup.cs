@@ -158,12 +158,17 @@ public class HebrewFontSetup : EditorWindow
             return null;
         }
 
-        // Add characters from the appropriate set
+        // Set to Dynamic mode — TMP generates glyphs from source font at RUNTIME
+        // This ensures identical rendering on Editor, Android, and iOS
+        // (Static mode bakes metrics once, which can differ from runtime rendering)
+        fontAsset.atlasPopulationMode = UnityEngine.TextCore.Text.AtlasPopulationMode.Dynamic;
+
+        // Pre-populate atlas with common characters for faster first render
         uint[] unicodeArray = GetUnicodeArray(characterSet);
         bool addResult = fontAsset.TryAddCharacters(unicodeArray, out uint[] missing);
 
         int added = unicodeArray.Length - (missing != null ? missing.Length : 0);
-        Debug.Log($"[{sourceFont.name}] Added {added}/{unicodeArray.Length} characters" +
+        Debug.Log($"[{sourceFont.name}] Added {added}/{unicodeArray.Length} characters (Dynamic mode)" +
                   (missing != null && missing.Length > 0 ? $" ({missing.Length} missing)" : ""));
 
         // Save as asset
