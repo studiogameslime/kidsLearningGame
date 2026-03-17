@@ -865,7 +865,7 @@ public class TowerBuilderController : MonoBehaviour
 
         var tmp = go.AddComponent<TMPro.TextMeshProUGUI>();
         tmp.text = text;
-        tmp.isRightToLeftText = true;
+        tmp.isRightToLeftText = false;
         tmp.fontSize = 28;
         tmp.fontStyle = TMPro.FontStyles.Bold;
         tmp.color = new Color(0.95f, 0.95f, 1.0f);
@@ -883,7 +883,7 @@ public class TowerBuilderController : MonoBehaviour
         sRT.anchoredPosition = new Vector2(1.5f, -1.5f);
         var sTMP = shadowGO.AddComponent<TMPro.TextMeshProUGUI>();
         sTMP.text = text;
-        sTMP.isRightToLeftText = true;
+        sTMP.isRightToLeftText = false;
         sTMP.fontSize = 28;
         sTMP.fontStyle = TMPro.FontStyles.Bold;
         sTMP.color = new Color(0.10f, 0.25f, 0.10f, 0.45f);

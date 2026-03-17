@@ -98,7 +98,7 @@ public class DrawingGallerySetup : EditorWindow
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;
         titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.isRightToLeftText = true;
+        titleTMP.isRightToLeftText = false;
         titleTMP.raycastTarget = false;
 
         // Home button
@@ -205,7 +205,7 @@ public class DrawingGallerySetup : EditorWindow
         emptyTMP.fontSize = 36;
         emptyTMP.color = new Color(0.5f, 0.4f, 0.4f);
         emptyTMP.alignment = TextAlignmentOptions.Center;
-        emptyTMP.isRightToLeftText = true;
+        emptyTMP.isRightToLeftText = false;
         emptyTMP.raycastTarget = false;
 
         controller.emptyText = emptyGO;

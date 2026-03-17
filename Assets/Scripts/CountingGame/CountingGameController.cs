@@ -195,7 +195,7 @@ public class CountingGameController : MonoBehaviour
         {
             questionText.text = HebrewFixer.Fix("?\u05DB\u05DE\u05D4 \u05D9\u05E9");
         }
-        questionText.isRightToLeftText = true;
+        questionText.isRightToLeftText = false;
     }
 
     // ── DIFFICULTY ──

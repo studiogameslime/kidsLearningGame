@@ -126,7 +126,7 @@ public class SimonSaysSetup : EditorWindow
         titleRT.offsetMax = new Vector2(-100, 0);
         var tmp = titleGO.AddComponent<TextMeshProUGUI>();
         tmp.text = HebrewFixer.Fix("\u05D6\u05DB\u05E8\u05D5 \u05D0\u05EA \u05D4\u05E6\u05D1\u05E2\u05D9\u05DD");
-        tmp.isRightToLeftText = true;
+        tmp.isRightToLeftText = false;
         tmp.fontSize = 36;
         tmp.fontStyle = FontStyles.Bold;
         tmp.color = Color.white;

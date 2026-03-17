@@ -156,7 +156,7 @@ public class ConnectTheDotsSetup : EditorWindow
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
         titleTMP.text = HebrewFixer.Fix("\u05D7\u05D1\u05E8 \u05D0\u05EA \u05D4\u05E0\u05E7\u05D5\u05D3\u05D5\u05EA");
-        titleTMP.isRightToLeftText = true;
+        titleTMP.isRightToLeftText = false;
         titleTMP.fontSize = 36;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = new Color(1f, 0.95f, 0.8f, 1f); // warm white

@@ -234,7 +234,7 @@ public class PuzzleGameSetup : EditorWindow
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
         titleTMP.text = HebrewFixer.Fix("\u05E4\u05D0\u05D6\u05DC"); // פאזל
-        titleTMP.isRightToLeftText = true;
+        titleTMP.isRightToLeftText = false;
         titleTMP.fontSize = 36;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;

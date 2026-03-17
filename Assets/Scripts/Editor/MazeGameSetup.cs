@@ -106,7 +106,7 @@ public class MazeGameSetup : EditorWindow
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
         titleTMP.text = HebrewFixer.Fix("\u05DE\u05D1\u05D5\u05DA"); // מבוך
-        titleTMP.isRightToLeftText = true;
+        titleTMP.isRightToLeftText = false;
         titleTMP.fontSize = 48;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;
