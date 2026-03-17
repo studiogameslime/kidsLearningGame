@@ -90,7 +90,7 @@ public class ParentDashboardController : MonoBehaviour
         _correctAnswer = a + b;
 
         questionText.text = $"? = {b} + {a}";
-        questionText.isRightToLeftText = true;
+        questionText.isRightToLeftText = false;
 
         var answers = new List<int> { _correctAnswer };
         while (answers.Count < 4)
@@ -153,7 +153,7 @@ public class ParentDashboardController : MonoBehaviour
         if (headerNameText != null)
         {
             headerNameText.text = H(_data.profileName);
-            headerNameText.isRightToLeftText = true;
+            headerNameText.isRightToLeftText = false;
             headerNameText.enableWordWrapping = false;
         }
         if (headerAgeText != null)
@@ -162,14 +162,14 @@ public class ParentDashboardController : MonoBehaviour
                 ? $"\u05D2\u05D9\u05DC {_data.ageDisplay}" // גיל X
                 : "";
             headerAgeText.text = H(ageLabel);
-            headerAgeText.isRightToLeftText = true;
+            headerAgeText.isRightToLeftText = false;
             headerAgeText.enableWordWrapping = false;
         }
         if (headerSessionsText != null)
         {
             string sessLabel = $"{_data.totalSessions} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD"; // X משחקים
             headerSessionsText.text = H(sessLabel);
-            headerSessionsText.isRightToLeftText = true;
+            headerSessionsText.isRightToLeftText = false;
             headerSessionsText.enableWordWrapping = false;
         }
 
@@ -608,7 +608,7 @@ public class ParentDashboardController : MonoBehaviour
             resetLabelTMP.fontSize = 14;
             resetLabelTMP.color = AccentGreen;
             resetLabelTMP.alignment = TextAlignmentOptions.Center;
-            resetLabelTMP.isRightToLeftText = true;
+            resetLabelTMP.isRightToLeftText = false;
             resetLabelTMP.enableWordWrapping = false;
             resetLabelTMP.raycastTarget = false;
         }
@@ -1111,7 +1111,7 @@ public class ParentDashboardController : MonoBehaviour
         tmp.fontSize = fontSize;
         tmp.color = color;
         tmp.alignment = align;
-        tmp.isRightToLeftText = true;
+        tmp.isRightToLeftText = false;
         tmp.raycastTarget = false;
         tmp.overflowMode = TextOverflowModes.Ellipsis;
         return tmp;

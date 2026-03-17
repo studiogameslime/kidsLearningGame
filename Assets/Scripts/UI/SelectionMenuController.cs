@@ -26,7 +26,7 @@ public class SelectionMenuController : MonoBehaviour
         if (titleText != null)
         {
             titleText.text = HebrewFixer.Fix(game.selectionScreenTitle);
-            titleText.isRightToLeftText = true;
+            titleText.isRightToLeftText = false;
         }
 
         PopulateGrid(game);
@@ -90,7 +90,7 @@ public class SelectionMenuController : MonoBehaviour
         if (card.titleText != null)
         {
             card.titleText.gameObject.SetActive(true);
-            card.titleText.isRightToLeftText = true;
+            card.titleText.isRightToLeftText = false;
             card.titleText.color = new Color(0.6f, 0.6f, 0.6f, 1f);
         }
     }
@@ -147,7 +147,7 @@ public class SelectionMenuController : MonoBehaviour
         if (card.titleText != null)
         {
             card.titleText.gameObject.SetActive(true);
-            card.titleText.isRightToLeftText = true;
+            card.titleText.isRightToLeftText = false;
             card.titleText.color = new Color(accentColor.r * 0.7f, accentColor.g * 0.7f, accentColor.b * 0.7f, 1f);
         }
     }

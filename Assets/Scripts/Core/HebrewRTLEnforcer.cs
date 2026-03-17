@@ -3,21 +3,31 @@ using UnityEngine.SceneManagement;
 using TMPro;
 
 /// <summary>
-/// Sets isRightToLeftText = true on every TMP_Text in every scene.
-/// This enables TMP's native RTL rendering for Hebrew — no manual
-/// string reversal needed.
+/// Ensures all TMP_Text objects have the correct RTL setting per platform.
 ///
-/// DontDestroyOnLoad singleton, created before any scene loads.
-/// Runs after scene load + 1 frame (so setup scripts finish first).
+/// Editor: isRightToLeftText = true (TMP handles RTL natively with font access)
+/// Build:  isRightToLeftText = false (HebrewFixer.Fix() reverses strings manually)
+///
+/// This split approach guarantees Hebrew looks correct everywhere:
+/// - Editor: text appears correct because TMP has full font shaping
+/// - Mobile: text appears correct because Fix() pre-reverses the string
 /// </summary>
 public class HebrewRTLEnforcer : MonoBehaviour
 {
     private static HebrewRTLEnforcer _instance;
+    private static bool _useNativeRTL;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void AutoCreate()
     {
         if (_instance != null) return;
+
+#if UNITY_EDITOR && !HEBREW_FORCE_FIX
+        _useNativeRTL = true;
+#else
+        _useNativeRTL = false;
+#endif
+
         var go = new GameObject("HebrewRTLEnforcer");
         DontDestroyOnLoad(go);
         _instance = go.AddComponent<HebrewRTLEnforcer>();
@@ -33,6 +43,8 @@ public class HebrewRTLEnforcer : MonoBehaviour
         _instance = this;
         DontDestroyOnLoad(gameObject);
         SceneManager.sceneLoaded += OnSceneLoaded;
+
+        Debug.Log($"[HebrewRTL] Platform={Application.platform}, NativeRTL={_useNativeRTL}");
     }
 
     private void OnDestroy()
@@ -43,7 +55,6 @@ public class HebrewRTLEnforcer : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // Wait for setup scripts to create all UI objects
         StartCoroutine(EnforceNextFrame());
     }
 
@@ -51,29 +62,27 @@ public class HebrewRTLEnforcer : MonoBehaviour
     {
         yield return null;
         yield return null;
-        EnforceRTL();
+        EnforceAll();
     }
 
-    private static void EnforceRTL()
+    private static void EnforceAll()
     {
-        // Find ALL TMP_Text in the scene (including inactive)
         var allTMP = Resources.FindObjectsOfTypeAll<TMP_Text>();
         int count = 0;
 
         foreach (var tmp in allTMP)
         {
-            // Skip prefabs / assets — only process loaded scene objects
             if (tmp.gameObject.scene.name == null) continue;
             if (!tmp.gameObject.scene.isLoaded) continue;
 
-            if (!tmp.isRightToLeftText)
+            if (tmp.isRightToLeftText != _useNativeRTL)
             {
-                tmp.isRightToLeftText = true;
+                tmp.isRightToLeftText = _useNativeRTL;
                 count++;
             }
         }
 
         if (count > 0)
-            Debug.Log($"[HebrewRTL] Set isRightToLeftText=true on {count} TMP objects in {SceneManager.GetActiveScene().name}");
+            Debug.Log($"[HebrewRTL] Enforced isRightToLeftText={_useNativeRTL} on {count} TMP objects in {SceneManager.GetActiveScene().name}");
     }
 }
