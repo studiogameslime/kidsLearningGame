@@ -324,8 +324,7 @@ public class WorldSceneSetup : EditorWindow
         titleRT.offsetMin = new Vector2(100, 0);
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = HebrewFixer.Fix("\u05D4\u05E2\u05D5\u05DC\u05DD \u05E9\u05DC\u05D9");
-        titleTMP.isRightToLeftText = false;
+        HebrewText.SetText(titleTMP, "\u05D4\u05E2\u05D5\u05DC\u05DD \u05E9\u05DC\u05D9");
         titleTMP.fontSize = 36;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;
@@ -536,6 +535,43 @@ public class WorldSceneSetup : EditorWindow
         easelImg.raycastTarget = true;
         easelImg.color = Color.white;
 
+        // ── Alin Guide — far right, matching Easel gap from ToyBox (50% + 44% = 94%) ──
+        var alinPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/UI/AlinGuide.prefab");
+        if (alinPrefab != null)
+        {
+            // Ground shadow (dark ellipse under Alin's feet)
+            var alinShadowGO = new GameObject("AlinShadow");
+            alinShadowGO.transform.SetParent(grassAreaGO.transform, false);
+            var alinShadowRT = alinShadowGO.AddComponent<RectTransform>();
+            alinShadowRT.anchorMin = new Vector2(0.94f, 0);
+            alinShadowRT.anchorMax = new Vector2(0.94f, 0);
+            alinShadowRT.pivot = new Vector2(0.5f, 0.5f);
+            alinShadowRT.sizeDelta = new Vector2(120, 30);
+            alinShadowRT.anchoredPosition = new Vector2(0, 148);
+            var alinShadowImg = alinShadowGO.AddComponent<Image>();
+            var circleSpr = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/Circle.png");
+            if (circleSpr != null) alinShadowImg.sprite = circleSpr;
+            alinShadowImg.color = new Color(0, 0, 0, 0.18f);
+            alinShadowImg.raycastTarget = false;
+
+            // Alin character
+            var alinGO = (GameObject)PrefabUtility.InstantiatePrefab(alinPrefab, grassAreaGO.transform);
+            var alinRT = alinGO.GetComponent<RectTransform>();
+            alinRT.anchorMin = new Vector2(0.94f, 0);
+            alinRT.anchorMax = new Vector2(0.94f, 0);
+            alinRT.pivot = new Vector2(0.5f, 0);
+            alinRT.sizeDelta = new Vector2(160, 360);
+            alinRT.anchoredPosition = new Vector2(0, 150);
+            // Start visible in world (idle pose)
+            var alinGuide = alinGO.GetComponent<AlinGuide>();
+            if (alinGuide != null)
+                alinGuide.startVisible = true;
+        }
+        else
+        {
+            Debug.LogWarning("AlinGuide prefab not found. Run 'Tools > Kids Learning Game > Setup Alin Guide' first.");
+        }
+
         // ── Gallery Overlay (full-screen, above everything, initially hidden) ──
         var roundedRectSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/RoundedRect.png");
 
@@ -599,8 +635,7 @@ public class WorldSceneSetup : EditorWindow
         galleryTitleRT.offsetMin = new Vector2(30, 0);
         galleryTitleRT.offsetMax = new Vector2(-80, 0);
         var galleryTitleTMP = galleryTitleGO.AddComponent<TMPro.TextMeshProUGUI>();
-        galleryTitleTMP.text = HebrewFixer.Fix("\u05D4\u05E6\u05D9\u05D5\u05E8\u05D9\u05DD \u05E9\u05DC\u05D9");
-        galleryTitleTMP.isRightToLeftText = false;
+        HebrewText.SetText(galleryTitleTMP, "\u05D4\u05E6\u05D9\u05D5\u05E8\u05D9\u05DD \u05E9\u05DC\u05D9");
         galleryTitleTMP.fontSize = 36;
         galleryTitleTMP.fontStyle = TMPro.FontStyles.Bold;
         galleryTitleTMP.color = HexColor("#5B4636");
@@ -659,8 +694,7 @@ public class WorldSceneSetup : EditorWindow
         var newDrawTextRT = newDrawTextGO.AddComponent<RectTransform>();
         StretchFull(newDrawTextRT);
         var newDrawTMP = newDrawTextGO.AddComponent<TMPro.TextMeshProUGUI>();
-        newDrawTMP.text = HebrewFixer.Fix("\u05E6\u05D9\u05D5\u05E8 \u05D7\u05D3\u05E9") + "  +";
-        newDrawTMP.isRightToLeftText = false;
+        HebrewText.SetText(newDrawTMP, "\u05E6\u05D9\u05D5\u05E8 \u05D7\u05D3\u05E9" + "  +");
         newDrawTMP.fontSize = 30;
         newDrawTMP.fontStyle = TMPro.FontStyles.Bold;
         newDrawTMP.color = Color.white;
@@ -708,8 +742,7 @@ public class WorldSceneSetup : EditorWindow
         var emptyRT = emptyGO.AddComponent<RectTransform>();
         StretchFull(emptyRT);
         var emptyTMP = emptyGO.AddComponent<TMPro.TextMeshProUGUI>();
-        emptyTMP.text = HebrewFixer.Fix("\u05E2\u05D3\u05D9\u05D9\u05DF \u05D0\u05D9\u05DF \u05E6\u05D9\u05D5\u05E8\u05D9\u05DD");
-        emptyTMP.isRightToLeftText = false;
+        HebrewText.SetText(emptyTMP, "\u05E2\u05D3\u05D9\u05D9\u05DF \u05D0\u05D9\u05DF \u05E6\u05D9\u05D5\u05E8\u05D9\u05DD");
         emptyTMP.fontSize = 32;
         emptyTMP.color = HexColor("#A0A0A0");
         emptyTMP.alignment = TMPro.TextAlignmentOptions.Center;
@@ -754,8 +787,7 @@ public class WorldSceneSetup : EditorWindow
         parentBtnRT.anchoredPosition = new Vector2(20, 20);
         parentBtnRT.sizeDelta = new Vector2(200, 40);
         var parentBtnTMP = parentBtn.AddComponent<TextMeshProUGUI>();
-        parentBtnTMP.text = HebrewFixer.Fix("\u05D0\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD");
-        parentBtnTMP.isRightToLeftText = false;
+        HebrewText.SetText(parentBtnTMP, "\u05D0\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD");
         parentBtnTMP.fontSize = 18;
         parentBtnTMP.color = new Color(0.6f, 0.6f, 0.6f, 0.5f);
         parentBtnTMP.alignment = TextAlignmentOptions.Left;

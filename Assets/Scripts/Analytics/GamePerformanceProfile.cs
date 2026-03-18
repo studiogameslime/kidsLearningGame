@@ -28,6 +28,7 @@ public class GamePerformanceProfile
     public int currentDifficulty = 1;
     public bool manualDifficultyOverride;
     public int highestDifficultyReached = 1;
+    public int lastAutoDifficulty = 1; // last difficulty set by auto-adjust (preserved when parent overrides)
 
     // Estimated developmental age for this game (0 = not yet computed, dashboard only in V1)
     public float estimatedAgeForThisGame;
@@ -49,6 +50,10 @@ public class GamePerformanceProfile
 
     public void AddSession(GameSessionData session)
     {
+        // Defensive init — Unity JsonUtility may leave lists null after deserialization
+        if (recentSessions == null) recentSessions = new List<GameSessionData>();
+        session.EnsureInitialized();
+
         recentSessions.Add(session);
         if (recentSessions.Count > MaxRecentSessions)
             recentSessions.RemoveAt(0);
@@ -82,7 +87,7 @@ public class GamePerformanceProfile
 
     private void Recalculate()
     {
-        if (recentSessions.Count == 0) return;
+        if (recentSessions == null || recentSessions.Count == 0) return;
 
         float totalAcc = 0f;
         float totalDur = 0f;

@@ -151,8 +151,7 @@ public class ColorMixingSetup : EditorWindow
         titleRT.offsetMin = new Vector2(100, 0);
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = HebrewFixer.Fix("\u05E2\u05E8\u05D1\u05D5\u05D1 \u05E6\u05D1\u05E2\u05D9\u05DD");
-        titleTMP.isRightToLeftText = false;
+        HebrewText.SetText(titleTMP, "\u05E2\u05E8\u05D1\u05D5\u05D1 \u05E6\u05D1\u05E2\u05D9\u05DD");
         titleTMP.fontSize = 42;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;
@@ -190,8 +189,7 @@ public class ColorMixingSetup : EditorWindow
         targetLabelRT.offsetMin = Vector2.zero;
         targetLabelRT.offsetMax = Vector2.zero;
         var labelTMP = targetLabel.AddComponent<TextMeshProUGUI>();
-        labelTMP.text = HebrewFixer.Fix("!\u05E6\u05E8\u05D5 \u05D0\u05EA \u05D4\u05E6\u05D1\u05E2 \u05D4\u05D6\u05D4");
-        labelTMP.isRightToLeftText = false;
+        HebrewText.SetText(labelTMP, "!\u05E6\u05E8\u05D5 \u05D0\u05EA \u05D4\u05E6\u05D1\u05E2 \u05D4\u05D6\u05D4");
         labelTMP.fontSize = 34;
         labelTMP.fontStyle = FontStyles.Bold;
         labelTMP.color = AccentPurple;

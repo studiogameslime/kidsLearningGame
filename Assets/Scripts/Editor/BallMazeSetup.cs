@@ -100,8 +100,7 @@ public class BallMazeSetup : EditorWindow
         titleRT.offsetMin = new Vector2(100, 0);
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = HebrewFixer.Fix("\u05DE\u05D1\u05D5\u05DA \u05D4\u05DB\u05D3\u05D5\u05E8"); // מבוך הכדור
-        titleTMP.isRightToLeftText = false;
+        HebrewText.SetText(titleTMP, "\u05DE\u05D1\u05D5\u05DA \u05D4\u05DB\u05D3\u05D5\u05E8"); // מבוך הכדור
         titleTMP.fontSize = 42;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;

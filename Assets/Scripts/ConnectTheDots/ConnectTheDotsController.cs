@@ -866,8 +866,7 @@ public class ConnectTheDotsController : MonoBehaviour
         // Show shape name text (Hebrew)
         if (shapeNameText != null)
         {
-            shapeNameText.text = HebrewFixer.Fix(currentShape.name);
-            shapeNameText.isRightToLeftText = false;
+            HebrewText.SetText(shapeNameText, currentShape.name);
             shapeNameText.color = new Color(
                 currentShape.color.r, currentShape.color.g, currentShape.color.b, 0f);
             shapeNameText.gameObject.SetActive(true);

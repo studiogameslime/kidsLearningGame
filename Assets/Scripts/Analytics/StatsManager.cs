@@ -49,6 +49,14 @@ public class StatsManager : MonoBehaviour
     public void RegisterGameSession(GameSessionData session)
     {
         if (session == null || string.IsNullOrEmpty(session.gameId)) return;
+        session.EnsureInitialized();
+
+#if UNITY_EDITOR
+        Debug.Log($"[Session] {session.gameId} content={session.contentId ?? "-"} " +
+            $"cat={session.contentCategory ?? "-"} endless={session.isEndlessMode} " +
+            $"actions={session.actions.Count} rounds={session.roundsCompleted} " +
+            $"end={session.endReason ?? "-"} dur={session.durationSeconds:F1}s");
+#endif
 
         var profile = ProfileManager.ActiveProfile;
         if (profile == null) return;
@@ -65,7 +73,10 @@ public class StatsManager : MonoBehaviour
 
         // Initialize difficulty on first play using age baseline (skip if parent manually set)
         if (gameProfile.sessionsPlayed == 0 && !gameProfile.manualDifficultyOverride)
+        {
             gameProfile.currentDifficulty = GameDifficultyConfig.GetBaselineInitialDifficulty(session.gameId, profile);
+            gameProfile.lastAutoDifficulty = gameProfile.currentDifficulty;
+        }
 
         gameProfile.AddSession(session);
 
@@ -127,6 +138,7 @@ public class StatsManager : MonoBehaviour
         if (gameProfile.sessionsPlayed == 0 && !gameProfile.manualDifficultyOverride)
         {
             gameProfile.currentDifficulty = GameDifficultyConfig.GetBaselineInitialDifficulty(gameId, profile);
+            gameProfile.lastAutoDifficulty = gameProfile.currentDifficulty;
         }
         return gameProfile.currentDifficulty;
     }

@@ -157,8 +157,7 @@ public class FlappyBirdSetup : EditorWindow
         titleRT.offsetMin = new Vector2(100, 0);
         titleRT.offsetMax = new Vector2(-100, 0);
         var tmp = titleGO.AddComponent<TextMeshProUGUI>();
-        tmp.text = HebrewFixer.Fix("\u05DE\u05E2\u05D5\u05E3 \u05D4\u05E6\u05D9\u05E4\u05D5\u05E8");
-        tmp.isRightToLeftText = false;
+        HebrewText.SetText(tmp, "\u05DE\u05E2\u05D5\u05E3 \u05D4\u05E6\u05D9\u05E4\u05D5\u05E8");
         tmp.fontSize = 36;
         tmp.fontStyle = FontStyles.Bold;
         tmp.color = Color.white;

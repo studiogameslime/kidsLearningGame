@@ -292,8 +292,7 @@ public class DiscoveryRevealController : MonoBehaviour
         // Show Hebrew name
         if (nameText != null && discovery != null)
         {
-            nameText.text = HebrewFixer.Fix(GetHebrewName(discovery));
-            nameText.isRightToLeftText = false;
+            HebrewText.SetText(nameText, GetHebrewName(discovery));
             nameText.gameObject.SetActive(true);
         }
 

@@ -189,13 +189,12 @@ public class CountingGameController : MonoBehaviour
         {
             // "?כמה {animal} יש" → "How many {animal}s are there?"
             string q = "\u05DB\u05DE\u05D4 " + hebrewAnimal + " \u05D9\u05E9?";
-            questionText.text = HebrewFixer.Fix(q);
+            HebrewText.SetText(questionText, q);
         }
         else
         {
-            questionText.text = HebrewFixer.Fix("?\u05DB\u05DE\u05D4 \u05D9\u05E9");
+            HebrewText.SetText(questionText, "?\u05DB\u05DE\u05D4 \u05D9\u05E9");
         }
-        questionText.isRightToLeftText = false;
     }
 
     // ── DIFFICULTY ──

@@ -258,12 +258,11 @@ public class HomeSceneSetup : EditorWindow
         var worldLabelRT = worldLabel.AddComponent<RectTransform>();
         StretchFull(worldLabelRT);
         var worldLabelTMP = worldLabel.AddComponent<TextMeshProUGUI>();
-        worldLabelTMP.text = HebrewFixer.Fix("\u05D4\u05E2\u05D5\u05DC\u05DD \u05E9\u05DC\u05D9"); // העולם שלי
+        HebrewText.SetText(worldLabelTMP, "\u05D4\u05E2\u05D5\u05DC\u05DD \u05E9\u05DC\u05D9"); // העולם שלי
         worldLabelTMP.fontSize = 28;
         worldLabelTMP.fontStyle = FontStyles.Bold;
         worldLabelTMP.color = Color.white;
         worldLabelTMP.alignment = TextAlignmentOptions.Center;
-        worldLabelTMP.isRightToLeftText = false;
         worldLabelTMP.raycastTarget = false;
 
         // ── All Games (bottom, small text) ──
@@ -277,11 +276,10 @@ public class HomeSceneSetup : EditorWindow
         allGamesBtnRT.sizeDelta = new Vector2(300, 60);
 
         var allGamesTMP = allGamesBtn.AddComponent<TextMeshProUGUI>();
-        allGamesTMP.text = HebrewFixer.Fix("\u05DB\u05DC \u05D4\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD"); // כל המשחקים
+        HebrewText.SetText(allGamesTMP, "\u05DB\u05DC \u05D4\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD"); // כל המשחקים
         allGamesTMP.fontSize = 24;
         allGamesTMP.color = AllGamesColor;
         allGamesTMP.alignment = TextAlignmentOptions.Center;
-        allGamesTMP.isRightToLeftText = false;
         var allGamesButton = allGamesBtn.AddComponent<Button>();
         allGamesButton.targetGraphic = allGamesTMP;
 
@@ -296,11 +294,10 @@ public class HomeSceneSetup : EditorWindow
         parentBtnRT.sizeDelta = new Vector2(200, 40);
 
         var parentBtnTMP = parentBtn.AddComponent<TextMeshProUGUI>();
-        parentBtnTMP.text = HebrewFixer.Fix("\u05D0\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD"); // אזור הורים
+        HebrewText.SetText(parentBtnTMP, "\u05D0\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD"); // אזור הורים
         parentBtnTMP.fontSize = 18;
         parentBtnTMP.color = new Color(0.6f, 0.6f, 0.6f, 0.5f);
         parentBtnTMP.alignment = TextAlignmentOptions.Left;
-        parentBtnTMP.isRightToLeftText = false;
         var parentAreaButton = parentBtn.AddComponent<Button>();
         parentAreaButton.targetGraphic = parentBtnTMP;
 

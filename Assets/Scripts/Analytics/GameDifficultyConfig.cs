@@ -292,6 +292,7 @@ public static class GameDifficultyConfig
     /// <summary>
     /// Returns the recommended (auto) difficulty for a game.
     /// This is what the system would choose without manual override.
+    /// Uses lastAutoDifficulty when parent has manually overridden.
     /// </summary>
     public static int GetRecommendedDifficulty(string gameId)
     {
@@ -300,11 +301,12 @@ public static class GameDifficultyConfig
 
         var gp = profile.analytics.GetOrCreateGame(gameId);
         if (gp.sessionsPlayed == 0)
-            return DifficultyManager.GetInitialDifficulty(gameId, profile.age * 12);
+            return GetBaselineInitialDifficulty(gameId, profile);
 
-        // The recommended difficulty is what DifficultyManager would set
-        // If manual override is active, we need to compute what auto would be
-        // For now, return the current difficulty (it was auto before override)
+        // If manual override active, return the last auto-set value
+        if (gp.manualDifficultyOverride && gp.lastAutoDifficulty > 0)
+            return gp.lastAutoDifficulty;
+
         return gp.currentDifficulty;
     }
 }

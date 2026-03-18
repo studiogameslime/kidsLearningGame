@@ -239,8 +239,7 @@ public class CountingGameSetup : EditorWindow
         questionRT.offsetMin = new Vector2(100, 0);
         questionRT.offsetMax = new Vector2(-100, 0);
         var questionTMP = questionGO.AddComponent<TextMeshProUGUI>();
-        questionTMP.text = HebrewFixer.Fix("?\u05DB\u05DE\u05D4 \u05D9\u05E9");
-        questionTMP.isRightToLeftText = false;
+        HebrewText.SetText(questionTMP, "?\u05DB\u05DE\u05D4 \u05D9\u05E9");
         questionTMP.fontSize = 36;
         questionTMP.fontStyle = FontStyles.Bold;
         questionTMP.color = Color.white;

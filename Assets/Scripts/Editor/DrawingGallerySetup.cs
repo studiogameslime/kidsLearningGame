@@ -93,12 +93,11 @@ public class DrawingGallerySetup : EditorWindow
         titleRT.offsetMin = new Vector2(100, 0);
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = HebrewFixer.Fix("הציורים שלי");
+        HebrewText.SetText(titleTMP, "הציורים שלי");
         titleTMP.fontSize = 42;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;
         titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.isRightToLeftText = false;
         titleTMP.raycastTarget = false;
 
         // Home button
@@ -201,11 +200,10 @@ public class DrawingGallerySetup : EditorWindow
         emptyRT.offsetMin = Vector2.zero;
         emptyRT.offsetMax = Vector2.zero;
         var emptyTMP = emptyGO.AddComponent<TextMeshProUGUI>();
-        emptyTMP.text = HebrewFixer.Fix("עדיין אין ציורים!\nצבעו ושמרו ציור כדי לראות אותו כאן");
+        HebrewText.SetText(emptyTMP, "עדיין אין ציורים!\nצבעו ושמרו ציור כדי לראות אותו כאן");
         emptyTMP.fontSize = 36;
         emptyTMP.color = new Color(0.5f, 0.4f, 0.4f);
         emptyTMP.alignment = TextAlignmentOptions.Center;
-        emptyTMP.isRightToLeftText = false;
         emptyTMP.raycastTarget = false;
 
         controller.emptyText = emptyGO;

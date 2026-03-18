@@ -190,8 +190,8 @@ public class FindTheAnimalSetup : EditorWindow
         var titleRT = titleGO.AddComponent<RectTransform>();
         Full(titleRT); titleRT.offsetMin = new Vector2(100, 0); titleRT.offsetMax = new Vector2(-200, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = HebrewFixer.Fix("\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05D7\u05D9\u05D4");
-        titleTMP.isRightToLeftText = false; titleTMP.fontSize = 36;
+        HebrewText.SetText(titleTMP, "\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05D7\u05D9\u05D4");
+        titleTMP.fontSize = 36;
         titleTMP.fontStyle = FontStyles.Bold; titleTMP.color = Color.white;
         titleTMP.alignment = TextAlignmentOptions.Center; titleTMP.raycastTarget = false;
 

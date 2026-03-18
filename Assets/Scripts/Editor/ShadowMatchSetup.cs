@@ -185,8 +185,7 @@ public class ShadowMatchSetup : EditorWindow
         titleRT.offsetMin = new Vector2(100, 0);
         titleRT.offsetMax = new Vector2(-100, 0);
         var tmp = titleGO.AddComponent<TextMeshProUGUI>();
-        tmp.text = HebrewFixer.Fix("\u05D4\u05EA\u05D0\u05DE\u05EA \u05E6\u05DC\u05DC\u05D9\u05DD");
-        tmp.isRightToLeftText = false;
+        HebrewText.SetText(tmp, "\u05D4\u05EA\u05D0\u05DE\u05EA \u05E6\u05DC\u05DC\u05D9\u05DD");
         tmp.fontSize = 36;
         tmp.fontStyle = FontStyles.Bold;
         tmp.color = Color.white;

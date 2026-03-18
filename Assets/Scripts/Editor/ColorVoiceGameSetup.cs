@@ -104,8 +104,7 @@ public class ColorVoiceGameSetup : EditorWindow
         titleRT.offsetMin = new Vector2(100, 0);
         titleRT.offsetMax = new Vector2(-100, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = HebrewFixer.Fix("\u05D0\u05DE\u05E8\u05D5 \u05D0\u05EA \u05D4\u05E6\u05D1\u05E2"); // אמרו את הצבע
-        titleTMP.isRightToLeftText = false;
+        HebrewText.SetText(titleTMP, "\u05D0\u05DE\u05E8\u05D5 \u05D0\u05EA \u05D4\u05E6\u05D1\u05E2"); // אמרו את הצבע
         titleTMP.fontSize = 48;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;
@@ -165,8 +164,7 @@ public class ColorVoiceGameSetup : EditorWindow
         instrRT.offsetMin = Vector2.zero;
         instrRT.offsetMax = Vector2.zero;
         var instrTMP = instrGO.AddComponent<TextMeshProUGUI>();
-        instrTMP.text = HebrewFixer.Fix("?\u05D0\u05D9\u05D6\u05D4 \u05E6\u05D1\u05E2 \u05D6\u05D4"); // ?איזה צבע זה
-        instrTMP.isRightToLeftText = false;
+        HebrewText.SetText(instrTMP, "?\u05D0\u05D9\u05D6\u05D4 \u05E6\u05D1\u05E2 \u05D6\u05D4"); // ?איזה צבע זה
         instrTMP.fontSize = 52;
         instrTMP.fontStyle = FontStyles.Bold;
         instrTMP.color = DarkText;
@@ -197,8 +195,7 @@ public class ColorVoiceGameSetup : EditorWindow
         var colorLabelRT = colorLabelGO.AddComponent<RectTransform>();
         StretchFull(colorLabelRT);
         var colorLabelTMP = colorLabelGO.AddComponent<TextMeshProUGUI>();
-        colorLabelTMP.text = HebrewFixer.Fix("\u05D0\u05D3\u05D5\u05DD"); // אדום
-        colorLabelTMP.isRightToLeftText = false;
+        HebrewText.SetText(colorLabelTMP, "\u05D0\u05D3\u05D5\u05DD"); // אדום
         colorLabelTMP.fontSize = 110;
         colorLabelTMP.fontStyle = FontStyles.Bold;
         colorLabelTMP.color = Color.white;
@@ -230,7 +227,6 @@ public class ColorVoiceGameSetup : EditorWindow
         feedbackRT.offsetMax = Vector2.zero;
         var feedbackTMP = feedbackGO.AddComponent<TextMeshProUGUI>();
         feedbackTMP.text = "";
-        feedbackTMP.isRightToLeftText = false;
         feedbackTMP.fontSize = 56;
         feedbackTMP.fontStyle = FontStyles.Bold;
         feedbackTMP.color = HexColor("#4CAF50");

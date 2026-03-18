@@ -748,12 +748,11 @@ public class TowerStackController : MonoBehaviour
         titleRT.anchoredPosition = new Vector2(0, 90f);
         titleRT.sizeDelta = new Vector2(400f, 60f);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = HebrewFixer.Fix("\u05E0\u05D2\u05DE\u05E8 \u05D4\u05DE\u05E9\u05D7\u05E7");
+        HebrewText.SetText(titleTMP, "\u05E0\u05D2\u05DE\u05E8 \u05D4\u05DE\u05E9\u05D7\u05E7");
         titleTMP.fontSize = 38;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = new Color(0.3f, 0.3f, 0.3f);
         titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.isRightToLeftText = false;
         titleTMP.raycastTarget = false;
 
         var scoreGO = new GameObject("Score");
@@ -807,12 +806,11 @@ public class TowerStackController : MonoBehaviour
         txtRT.offsetMin = Vector2.zero;
         txtRT.offsetMax = Vector2.zero;
         var tmp = txtGO.AddComponent<TextMeshProUGUI>();
-        tmp.text = HebrewFixer.Fix(hebrewText);
+        HebrewText.SetText(tmp, hebrewText);
         tmp.fontSize = 28;
         tmp.fontStyle = FontStyles.Bold;
         tmp.color = Color.white;
         tmp.alignment = TextAlignmentOptions.Center;
-        tmp.isRightToLeftText = false;
         tmp.raycastTarget = false;
     }
 

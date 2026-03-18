@@ -357,18 +357,17 @@ public class InGameLeaderboard : MonoBehaviour
         go.transform.SetParent(parent, false);
         go.AddComponent<RectTransform>();
         var tmp = go.AddComponent<TextMeshProUGUI>();
-        tmp.text = text;
+        HebrewText.SetText(tmp, text);
         tmp.fontSize = fontSize;
         tmp.color = color;
         tmp.alignment = TextAlignmentOptions.Center;
-        tmp.isRightToLeftText = false;
         tmp.enableWordWrapping = false;
         tmp.overflowMode = TextOverflowModes.Ellipsis;
         tmp.raycastTarget = false;
         return tmp;
     }
 
-    private static string H(string raw) => HebrewFixer.Fix(raw);
+    private static string H(string raw) => raw;
 
     private static Color ScoreColor(float score)
     {

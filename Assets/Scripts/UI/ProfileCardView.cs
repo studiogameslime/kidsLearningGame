@@ -59,10 +59,7 @@ public class ProfileCardView : MonoBehaviour
         // Name (enable RTL for Hebrew)
         if (nameText != null)
         {
-            nameText.text = ProfileCreationController.IsHebrew(profile.displayName)
-                ? HebrewFixer.Fix(profile.displayName)
-                : profile.displayName;
-            nameText.isRightToLeftText = false;
+            HebrewText.SetText(nameText, profile.displayName);
         }
 
         // Tap handler

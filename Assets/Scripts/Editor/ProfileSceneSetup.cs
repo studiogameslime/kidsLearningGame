@@ -249,12 +249,11 @@ public class ProfileSceneSetup : EditorWindow
         titleRT.offsetMin = new Vector2(40, 0);
         titleRT.offsetMax = new Vector2(-40, 0);
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = HebrewFixer.Fix("\u05DE\u05D9 \u05DE\u05E9\u05D7\u05E7?"); // מי משחק? (Who's playing?)
+        HebrewText.SetText(titleTMP, "\u05DE\u05D9 \u05DE\u05E9\u05D7\u05E7?"); // מי משחק? (Who's playing?)
         titleTMP.fontSize = 52;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = DarkText;
         titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.isRightToLeftText = false;
         titleTMP.raycastTarget = false;
 
         // ── Profile grid area (centered) ──
@@ -330,11 +329,10 @@ public class ProfileSceneSetup : EditorWindow
         addLabelRT.anchoredPosition = new Vector2(0, 16);
         addLabelRT.sizeDelta = new Vector2(0, 120);
         var addLabelTMP = addLabelGO.AddComponent<TextMeshProUGUI>();
-        addLabelTMP.text = HebrewFixer.Fix("\u05D4\u05D5\u05E1\u05E4\u05D4"); // הוספה (Add)
+        HebrewText.SetText(addLabelTMP, "\u05D4\u05D5\u05E1\u05E4\u05D4"); // הוספה (Add)
         addLabelTMP.fontSize = 40;
         addLabelTMP.color = HexColor("#999999");
         addLabelTMP.alignment = TextAlignmentOptions.Center;
-        addLabelTMP.isRightToLeftText = false;
         addLabelTMP.raycastTarget = false;
 
         // ── Controller ──
@@ -408,19 +406,19 @@ public class ProfileSceneSetup : EditorWindow
         var stepGreeting = CreateStepPanel(contentArea.transform, "StepGreeting");
         var greetTitle = CreateText(stepGreeting.transform, "GreetTitle",
             "\u05E9\u05DC\u05D5\u05DD!", 60, DarkText, // !שלום (Hello!)
-            new Vector2(0.1f, 0.50f), new Vector2(0.9f, 0.85f), true);
+            new Vector2(0.1f, 0.50f), new Vector2(0.9f, 0.85f));
         var greetSub = CreateText(stepGreeting.transform, "GreetSub",
             "\u05D1\u05D5\u05D0\u05D5 \u05E0\u05DB\u05D9\u05E8 \u05D0\u05D5\u05EA\u05DA!", 36, HexColor("#777777"), // !בואו נכיר אותך
-            new Vector2(0.1f, 0.35f), new Vector2(0.9f, 0.52f), true);
+            new Vector2(0.1f, 0.35f), new Vector2(0.9f, 0.52f));
         var greetNextBtn = CreateBigButton(stepGreeting.transform, "NextButton",
             "\u05D9\u05D0\u05DC\u05DC\u05D4!", AccentColor, // !יאללה
-            new Vector2(0.25f, 0.08f), new Vector2(0.75f, 0.28f), roundedRect, true);
+            new Vector2(0.25f, 0.08f), new Vector2(0.75f, 0.28f), roundedRect);
 
         // ── STEP 1: Record Name ──
         var stepRecord = CreateStepPanel(contentArea.transform, "StepRecordName");
         CreateText(stepRecord.transform, "RecordTitle",
             "\u05D0\u05DE\u05D5\u05E8 \u05D0\u05EA \u05D4\u05E9\u05DD \u05E9\u05DC\u05DA", 42, DarkText, // אמור את השם שלך
-            new Vector2(0, 0.75f), new Vector2(1, 0.95f), true);
+            new Vector2(0, 0.75f), new Vector2(1, 0.95f));
 
         // Record indicator (red circle)
         var recIndicator = new GameObject("RecordIndicator");
@@ -454,19 +452,19 @@ public class ProfileSceneSetup : EditorWindow
         // Skip button
         var skipBtn = CreateBigButton(stepRecord.transform, "SkipButton",
             "\u05D3\u05DC\u05D2", HexColor("#BDBDBD"), // דלג (Skip)
-            new Vector2(0.30f, 0.02f), new Vector2(0.70f, 0.15f), roundedRect, true);
+            new Vector2(0.30f, 0.02f), new Vector2(0.70f, 0.15f), roundedRect);
 
         // Next button (shown after recording)
         var recNextBtn = CreateBigButton(stepRecord.transform, "RecordNextButton",
             "\u05D4\u05DE\u05E9\u05DA", AccentColor, // המשך (Continue)
-            new Vector2(0.25f, 0.02f), new Vector2(0.75f, 0.18f), roundedRect, true);
+            new Vector2(0.25f, 0.02f), new Vector2(0.75f, 0.18f), roundedRect);
         recNextBtn.SetActive(false);
 
         // ── STEP 2: Type Name ──
         var stepName = CreateStepPanel(contentArea.transform, "StepTypeName");
         CreateText(stepName.transform, "NameTitle",
             "\u05DE\u05D4 \u05D4\u05E9\u05DD \u05E9\u05DC\u05DA?", 42, DarkText, // ?מה השם שלך
-            new Vector2(0, 0.72f), new Vector2(1, 0.95f), true);
+            new Vector2(0, 0.72f), new Vector2(1, 0.95f));
 
         // Name input field
         var inputGO = new GameObject("NameInput");
@@ -505,7 +503,6 @@ public class ProfileSceneSetup : EditorWindow
         inputTMP.fontSize = 40;
         inputTMP.color = DarkText;
         inputTMP.alignment = TextAlignmentOptions.Center;
-        inputTMP.isRightToLeftText = false;
 
         // Placeholder
         var placeholderGO = new GameObject("Placeholder");
@@ -513,12 +510,11 @@ public class ProfileSceneSetup : EditorWindow
         var placeholderRT = placeholderGO.AddComponent<RectTransform>();
         StretchFull(placeholderRT);
         var placeholderTMP = placeholderGO.AddComponent<TextMeshProUGUI>();
-        placeholderTMP.text = HebrewFixer.Fix("\u05DB\u05EA\u05D1\u05D5 \u05DB\u05D0\u05DF..."); // ...כתבו כאן
+        HebrewText.SetText(placeholderTMP, "\u05DB\u05EA\u05D1\u05D5 \u05DB\u05D0\u05DF..."); // ...כתבו כאן
         placeholderTMP.fontSize = 40;
         placeholderTMP.fontStyle = FontStyles.Italic;
         placeholderTMP.color = new Color(0.6f, 0.6f, 0.6f, 0.8f);
         placeholderTMP.alignment = TextAlignmentOptions.Center;
-        placeholderTMP.isRightToLeftText = false;
 
         // TMP_InputField component
         var inputField = inputGO.AddComponent<TMP_InputField>();
@@ -531,14 +527,14 @@ public class ProfileSceneSetup : EditorWindow
 
         var nameNextBtn = CreateBigButton(stepName.transform, "NameNextButton",
             "\u05D4\u05DE\u05E9\u05DA", AccentColor, // המשך
-            new Vector2(0.25f, 0.10f), new Vector2(0.75f, 0.30f), roundedRect, true);
+            new Vector2(0.25f, 0.10f), new Vector2(0.75f, 0.30f), roundedRect);
         nameNextBtn.GetComponent<Button>().interactable = false;
 
         // ── STEP 3: Choose Age ──
         var stepAge = CreateStepPanel(contentArea.transform, "StepChooseAge");
         CreateText(stepAge.transform, "AgeTitle",
             "\u05D1\u05DF/\u05D1\u05EA \u05DB\u05DE\u05D4 \u05D0\u05EA/\u05D4?", 42, DarkText, // ?בן/בת כמה את/ה
-            new Vector2(0, 0.75f), new Vector2(1, 0.95f), true);
+            new Vector2(0, 0.75f), new Vector2(1, 0.95f));
 
         // Age buttons (1-8 in a single row for landscape)
         var ageGridGO = new GameObject("AgeGrid");
@@ -587,17 +583,17 @@ public class ProfileSceneSetup : EditorWindow
 
         var ageNextBtn = CreateBigButton(stepAge.transform, "AgeNextButton",
             "\u05D4\u05DE\u05E9\u05DA", AccentColor,
-            new Vector2(0.25f, 0.05f), new Vector2(0.75f, 0.22f), roundedRect, true);
+            new Vector2(0.25f, 0.05f), new Vector2(0.75f, 0.22f), roundedRect);
         ageNextBtn.GetComponent<Button>().interactable = false;
 
         // ── STEP 4: Choose Animal ──
         var stepAnimal = CreateStepPanel(contentArea.transform, "StepChooseAnimal");
         CreateText(stepAnimal.transform, "AnimalTitle",
             "\u05D1\u05D7\u05E8\u05D5 \u05D7\u05D9\u05D4", 42, DarkText, // בחרו חיה
-            new Vector2(0, 0.82f), new Vector2(1, 0.98f), true);
+            new Vector2(0, 0.82f), new Vector2(1, 0.98f));
         CreateText(stepAnimal.transform, "AnimalSub",
             "\u05DE\u05D9 \u05D9\u05D7\u05DB\u05D4 \u05DC\u05DB\u05DD \u05D1\u05E2\u05D5\u05DC\u05DD?", 28, HexColor("#777777"), // ?מי יחכה לכם בעולם
-            new Vector2(0, 0.72f), new Vector2(1, 0.84f), true);
+            new Vector2(0, 0.72f), new Vector2(1, 0.84f));
 
         // Animal buttons (Cat, Dog, Bear) — large images in a row
         string[] animalIds = { "Cat", "Dog", "Bear" };
@@ -692,24 +688,23 @@ public class ProfileSceneSetup : EditorWindow
             var nameLabelTMP = nameLabelGO.AddComponent<TextMeshProUGUI>();
             // Hebrew names
             string[] hebrewNames = { "\u05D7\u05EA\u05D5\u05DC", "\u05DB\u05DC\u05D1", "\u05D3\u05D5\u05D1" }; // חתול, כלב, דוב
-            nameLabelTMP.text = HebrewFixer.Fix(hebrewNames[i]);
+            HebrewText.SetText(nameLabelTMP, hebrewNames[i]);
             nameLabelTMP.fontSize = 28;
             nameLabelTMP.fontStyle = FontStyles.Bold;
             nameLabelTMP.color = DarkText;
             nameLabelTMP.alignment = TextAlignmentOptions.Center;
-            nameLabelTMP.isRightToLeftText = false;
             nameLabelTMP.raycastTarget = false;
         }
 
         var animalNextBtn = CreateBigButton(stepAnimal.transform, "AnimalNextButton",
             "\u05D4\u05DE\u05E9\u05DA", AccentColor, // המשך
-            new Vector2(0.25f, 0.05f), new Vector2(0.75f, 0.20f), roundedRect, true);
+            new Vector2(0.25f, 0.05f), new Vector2(0.75f, 0.20f), roundedRect);
 
         // ── STEP 5: Choose Color ──
         var stepColor = CreateStepPanel(contentArea.transform, "StepChooseColor");
         CreateText(stepColor.transform, "ColorTitle",
             "\u05D1\u05D7\u05E8\u05D5 \u05E6\u05D1\u05E2", 42, DarkText, // בחרו צבע
-            new Vector2(0, 0.85f), new Vector2(1, 0.98f), true);
+            new Vector2(0, 0.85f), new Vector2(1, 0.98f));
 
         // ── Card Preview (left side in landscape) ──
         var cardPreviewGO = new GameObject("CardPreview");
@@ -780,7 +775,6 @@ public class ProfileSceneSetup : EditorWindow
         cpNameTMP.alignment = TextAlignmentOptions.Center;
         cpNameTMP.enableWordWrapping = false;
         cpNameTMP.overflowMode = TextOverflowModes.Ellipsis;
-        cpNameTMP.isRightToLeftText = false;
         cpNameTMP.raycastTarget = false;
 
         // Take Selfie button (below preview, above color grid)
@@ -827,14 +821,14 @@ public class ProfileSceneSetup : EditorWindow
 
         var colorNextBtn = CreateBigButton(stepColor.transform, "ColorNextButton",
             "\u05D4\u05DE\u05E9\u05DA", AccentColor,
-            new Vector2(0.25f, 0.03f), new Vector2(0.75f, 0.18f), roundedRect, true);
+            new Vector2(0.25f, 0.03f), new Vector2(0.75f, 0.18f), roundedRect);
         colorNextBtn.GetComponent<Button>().interactable = false;
 
         // ── STEP 5: Done ──
         var stepDone = CreateStepPanel(contentArea.transform, "StepDone");
         CreateText(stepDone.transform, "DoneTitle",
             "\u05DE\u05E2\u05D5\u05DC\u05D4!", 52, DarkText, // !מעולה (Great!)
-            new Vector2(0, 0.72f), new Vector2(1, 0.95f), true);
+            new Vector2(0, 0.72f), new Vector2(1, 0.95f));
 
         // Done avatar
         var doneAvatarGO = new GameObject("DoneAvatar");
@@ -886,12 +880,11 @@ public class ProfileSceneSetup : EditorWindow
         doneNameTMP.fontStyle = FontStyles.Bold;
         doneNameTMP.color = DarkText;
         doneNameTMP.alignment = TextAlignmentOptions.Center;
-        doneNameTMP.isRightToLeftText = false;
         doneNameTMP.raycastTarget = false;
 
         var doneBtn = CreateBigButton(stepDone.transform, "DoneButton",
             "\u05D9\u05D0\u05DC\u05DC\u05D4 \u05DC\u05E9\u05D7\u05E7!", AccentColor, // !יאללה לשחק
-            new Vector2(0.20f, 0.05f), new Vector2(0.80f, 0.22f), roundedRect, true);
+            new Vector2(0.20f, 0.05f), new Vector2(0.80f, 0.22f), roundedRect);
 
         // ── Webcam Panel (Desktop camera preview overlay) ──
         var webcamPanelGO = new GameObject("WebcamPanel");
@@ -941,14 +934,33 @@ public class ProfileSceneSetup : EditorWindow
         // Capture button
         var webcamCaptureBtn = CreateBigButton(webcamPanelGO.transform, "CaptureButton",
             "\u05E6\u05DC\u05DE\u05D5!", AccentColor, // !צלמו
-            new Vector2(0.20f, 0.08f), new Vector2(0.80f, 0.18f), roundedRect, true);
+            new Vector2(0.20f, 0.08f), new Vector2(0.80f, 0.18f), roundedRect);
 
         // Cancel button
         var webcamCancelBtn = CreateBigButton(webcamPanelGO.transform, "CancelButton",
             "\u05D1\u05D9\u05D8\u05D5\u05DC", HexColor("#EF5350"), // ביטול
-            new Vector2(0.30f, 0.02f), new Vector2(0.70f, 0.08f), roundedRect, true);
+            new Vector2(0.30f, 0.02f), new Vector2(0.70f, 0.08f), roundedRect);
 
         webcamPanelGO.SetActive(false);
+
+        // ── Alin Guide (talking character, bottom-right of safe area) ──
+        var alinPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/UI/AlinGuide.prefab");
+        GameObject alinGO = null;
+        if (alinPrefab != null)
+        {
+            alinGO = (GameObject)PrefabUtility.InstantiatePrefab(alinPrefab, safeArea.transform);
+            // Position: bottom-right, above content
+            var alinRT = alinGO.GetComponent<RectTransform>();
+            alinRT.anchorMin = new Vector2(0.86f, 0f);
+            alinRT.anchorMax = new Vector2(0.86f, 0f);
+            alinRT.pivot = new Vector2(0.5f, 0f);
+            alinRT.sizeDelta = new Vector2(250f, 560f);
+            alinRT.anchoredPosition = new Vector2(0f, 10f);
+        }
+        else
+        {
+            Debug.LogWarning("AlinGuide prefab not found. Run 'Tools > Kids Learning Game > Setup Alin Guide' first.");
+        }
 
         // ── Controller ──
         var controller = canvasGO.AddComponent<ProfileCreationController>();
@@ -1011,6 +1023,10 @@ public class ProfileSceneSetup : EditorWindow
         controller.webcamCaptureButton = webcamCaptureBtn.GetComponent<Button>();
         controller.webcamCancelButton = webcamCancelBtn.GetComponent<Button>();
 
+        // Alin guide
+        if (alinGO != null)
+            controller.alinGuide = alinGO.GetComponent<AlinGuide>();
+
         // Onboarding sounds
         string soundFolder = "Assets/Sounds/On boarding/";
         string[] stepSoundFiles = {
@@ -1050,7 +1066,7 @@ public class ProfileSceneSetup : EditorWindow
     }
 
     private static GameObject CreateText(Transform parent, string name, string text, int fontSize, Color color,
-        Vector2 anchorMin, Vector2 anchorMax, bool rtl = false)
+        Vector2 anchorMin, Vector2 anchorMax)
     {
         var go = new GameObject(name);
         go.transform.SetParent(parent, false);
@@ -1060,18 +1076,17 @@ public class ProfileSceneSetup : EditorWindow
         rt.offsetMin = Vector2.zero;
         rt.offsetMax = Vector2.zero;
         var tmp = go.AddComponent<TextMeshProUGUI>();
-        tmp.text = rtl ? HebrewFixer.Fix(text) : text;
+        HebrewText.SetText(tmp, text);
         tmp.fontSize = fontSize;
         tmp.fontStyle = FontStyles.Bold;
         tmp.color = color;
         tmp.alignment = TextAlignmentOptions.Center;
-        tmp.isRightToLeftText = false;
         tmp.raycastTarget = false;
         return go;
     }
 
     private static GameObject CreateBigButton(Transform parent, string name, string label, Color bgColor,
-        Vector2 anchorMin, Vector2 anchorMax, Sprite roundedRect, bool rtl = false)
+        Vector2 anchorMin, Vector2 anchorMax, Sprite roundedRect)
     {
         var go = new GameObject(name);
         go.transform.SetParent(parent, false);
@@ -1098,12 +1113,11 @@ public class ProfileSceneSetup : EditorWindow
         var labelRT = labelGO.AddComponent<RectTransform>();
         StretchFull(labelRT);
         var labelTMP = labelGO.AddComponent<TextMeshProUGUI>();
-        labelTMP.text = rtl ? HebrewFixer.Fix(label) : label;
+        HebrewText.SetText(labelTMP, label);
         labelTMP.fontSize = 42;
         labelTMP.fontStyle = FontStyles.Bold;
         labelTMP.color = Color.white;
         labelTMP.alignment = TextAlignmentOptions.Center;
-        labelTMP.isRightToLeftText = false;
         labelTMP.raycastTarget = false;
 
         return go;
@@ -1195,12 +1209,11 @@ public class ProfileSceneSetup : EditorWindow
         labelRT.offsetMin = Vector2.zero;
         labelRT.offsetMax = Vector2.zero;
         var labelTMP = labelGO.AddComponent<TextMeshProUGUI>();
-        labelTMP.text = HebrewFixer.Fix(label);
+        HebrewText.SetText(labelTMP, label);
         labelTMP.fontSize = 34;
         labelTMP.fontStyle = FontStyles.Bold;
         labelTMP.color = Color.white;
         labelTMP.alignment = TextAlignmentOptions.Center;
-        labelTMP.isRightToLeftText = false;
         labelTMP.raycastTarget = false;
 
         return go;

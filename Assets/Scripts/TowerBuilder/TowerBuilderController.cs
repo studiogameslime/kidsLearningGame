@@ -168,9 +168,9 @@ public class TowerBuilderController : MonoBehaviour
         CreateGroundPlatform(buildOriginX, buildOriginY, towerPixelW);
 
         // Labels above towers
-        CreateLabel(HebrewFixer.Fix("\u05D3\u05D5\u05D2\u05DE\u05D4"),
+        CreateLabel("\u05D3\u05D5\u05D2\u05DE\u05D4",
             refCenterX, refOriginY + towerPixelH + 20f);
-        CreateLabel(HebrewFixer.Fix("\u05D1\u05E0\u05D4 \u05DB\u05D0\u05DF"),
+        CreateLabel("\u05D1\u05E0\u05D4 \u05DB\u05D0\u05DF",
             buildCenterX, buildOriginY + towerPixelH + 20f);
 
         // Render reference tower (fully colored, sorted bottom-to-top)
@@ -864,8 +864,7 @@ public class TowerBuilderController : MonoBehaviour
         rt.sizeDelta = new Vector2(300, 50);
 
         var tmp = go.AddComponent<TMPro.TextMeshProUGUI>();
-        tmp.text = text;
-        tmp.isRightToLeftText = false;
+        HebrewText.SetText(tmp, text);
         tmp.fontSize = 28;
         tmp.fontStyle = TMPro.FontStyles.Bold;
         tmp.color = new Color(0.95f, 0.95f, 1.0f);
@@ -882,8 +881,7 @@ public class TowerBuilderController : MonoBehaviour
         sRT.offsetMax = Vector2.zero;
         sRT.anchoredPosition = new Vector2(1.5f, -1.5f);
         var sTMP = shadowGO.AddComponent<TMPro.TextMeshProUGUI>();
-        sTMP.text = text;
-        sTMP.isRightToLeftText = false;
+        HebrewText.SetText(sTMP, text);
         sTMP.fontSize = 28;
         sTMP.fontStyle = TMPro.FontStyles.Bold;
         sTMP.color = new Color(0.10f, 0.25f, 0.10f, 0.45f);

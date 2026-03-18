@@ -99,7 +99,7 @@ public class ParentDashboardSetup : EditorWindow
 
         // Gate title
         var gateTitleGO = MakeTMP(gateGO.transform, "GateTitle",
-            HebrewFixer.Fix("\u05D0\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD"), 36, Color.white);
+            "\u05D0\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD", 36, Color.white);
         var gateTitleRT = gateTitleGO.GetComponent<RectTransform>();
         gateTitleRT.anchorMin = new Vector2(0.1f, 0.72f);
         gateTitleRT.anchorMax = new Vector2(0.9f, 0.80f);
@@ -108,7 +108,7 @@ public class ParentDashboardSetup : EditorWindow
 
         // Gate subtitle
         var gateSubGO = MakeTMP(gateGO.transform, "GateSubtitle",
-            HebrewFixer.Fix("\u05E4\u05EA\u05E8\u05D5 \u05D0\u05EA \u05D4\u05EA\u05E8\u05D2\u05D9\u05DC"), 22, new Color(1, 1, 1, 0.7f));
+            "\u05E4\u05EA\u05E8\u05D5 \u05D0\u05EA \u05D4\u05EA\u05E8\u05D2\u05D9\u05DC", 22, new Color(1, 1, 1, 0.7f));
         var gateSubRT = gateSubGO.GetComponent<RectTransform>();
         gateSubRT.anchorMin = new Vector2(0.1f, 0.64f);
         gateSubRT.anchorMax = new Vector2(0.9f, 0.72f);
@@ -168,7 +168,7 @@ public class ParentDashboardSetup : EditorWindow
 
         // Gate back button
         var gateBackGO = MakeTMP(gateGO.transform, "GateBack",
-            HebrewFixer.Fix("\u05D7\u05D6\u05E8\u05D4"), 20, new Color(1, 1, 1, 0.5f));
+            "\u05D7\u05D6\u05E8\u05D4", 20, new Color(1, 1, 1, 0.5f));
         var gateBackRT = gateBackGO.GetComponent<RectTransform>();
         gateBackRT.anchorMin = new Vector2(0.3f, 0.14f);
         gateBackRT.anchorMax = new Vector2(0.7f, 0.20f);
@@ -234,11 +234,10 @@ public class ParentDashboardSetup : EditorWindow
         backLabelRT.offsetMin = Vector2.zero;
         backLabelRT.offsetMax = Vector2.zero;
         var backTMP = backLabelGO.AddComponent<TextMeshProUGUI>();
-        backTMP.text = HebrewFixer.Fix("\u05D7\u05D6\u05E8\u05D4 \u2190"); // חזרה ←
+        HebrewText.SetText(backTMP, "\u05D7\u05D6\u05E8\u05D4 \u2190"); // חזרה ←
         backTMP.fontSize = 16;
         backTMP.color = Color.white;
         backTMP.alignment = TextAlignmentOptions.Center;
-        backTMP.isRightToLeftText = false;
         backTMP.enableWordWrapping = false;
         backTMP.raycastTarget = false;
 
@@ -260,12 +259,11 @@ public class ParentDashboardSetup : EditorWindow
         titleGO.transform.SetParent(infoCenterGO.transform, false);
         titleGO.AddComponent<RectTransform>();
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = HebrewFixer.Fix("\u05D0\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD"); // אזור הורים
+        HebrewText.SetText(titleTMP, "\u05D0\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD"); // אזור הורים
         titleTMP.fontSize = 24;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;
         titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.isRightToLeftText = false;
         titleTMP.raycastTarget = false;
         titleTMP.enableWordWrapping = false;
         titleTMP.overflowMode = TextOverflowModes.Overflow;
@@ -338,11 +336,10 @@ public class ParentDashboardSetup : EditorWindow
         var trophyLabelRT = trophyLabelGO.AddComponent<RectTransform>();
         trophyLabelRT.sizeDelta = new Vector2(50, 28);
         var trophyLabelTMP = trophyLabelGO.AddComponent<TextMeshProUGUI>();
-        trophyLabelTMP.text = HebrewFixer.Fix("\u05D2\u05D1\u05D9\u05E2"); // גביע
+        HebrewText.SetText(trophyLabelTMP, "\u05D2\u05D1\u05D9\u05E2"); // גביע
         trophyLabelTMP.fontSize = 14;
         trophyLabelTMP.color = Color.white;
         trophyLabelTMP.alignment = TextAlignmentOptions.Center;
-        trophyLabelTMP.isRightToLeftText = false;
         trophyLabelTMP.enableWordWrapping = false;
         trophyLabelTMP.raycastTarget = false;
 
@@ -415,10 +412,15 @@ public class ParentDashboardSetup : EditorWindow
         ctrl.tabContents = tabContents;
         ctrl.roundedRect = roundedRect;
         ctrl.circleSprite = circleSprite;
+        ctrl.gameDatabase = AssetDatabase.LoadAssetAtPath<GameDatabase>("Assets/Data/Games/GameDatabase.asset");
 
         // Wire gate back button
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
             gateBackBtn.onClick, ctrl.OnBackPressed);
+
+        // Ads — only in parent dashboard (behind parental gate)
+        canvasGO.AddComponent<BannerAdManager>();
+        canvasGO.AddComponent<RewardedAdManager>();
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/ParentDashboard.unity");
     }
@@ -432,11 +434,10 @@ public class ParentDashboardSetup : EditorWindow
         var rt = go.AddComponent<RectTransform>();
         rt.pivot = new Vector2(0.5f, 0.5f);
         var tmp = go.AddComponent<TextMeshProUGUI>();
-        tmp.text = text;
+        HebrewText.SetText(tmp, text);
         tmp.fontSize = 16;
         tmp.color = new Color(1, 1, 1, 0.75f);
         tmp.alignment = TextAlignmentOptions.Center;
-        tmp.isRightToLeftText = false;
         tmp.raycastTarget = false;
         tmp.enableWordWrapping = false;
         tmp.overflowMode = TextOverflowModes.Overflow;
@@ -470,11 +471,10 @@ public class ParentDashboardSetup : EditorWindow
         go.transform.SetParent(parent, false);
         go.AddComponent<RectTransform>();
         var tmp = go.AddComponent<TextMeshProUGUI>();
-        tmp.text = text;
+        HebrewText.SetText(tmp, text);
         tmp.fontSize = fontSize;
         tmp.color = color;
         tmp.alignment = TextAlignmentOptions.Center;
-        tmp.isRightToLeftText = false;
         tmp.raycastTarget = false;
         return go;
     }

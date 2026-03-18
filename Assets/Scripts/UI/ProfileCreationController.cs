@@ -71,6 +71,9 @@ public class ProfileCreationController : MonoBehaviour
     [Header("Navigation")]
     public Button backButton;
 
+    [Header("Alin Guide")]
+    public AlinGuide alinGuide;
+
     [Header("Onboarding Audio")]
     public AudioClip[] stepSounds; // one per step (0-5)
 
@@ -227,7 +230,7 @@ public class ProfileCreationController : MonoBehaviour
             if (step == 6) UpdateDoneStep();
         }
 
-        // Play step sound
+        // Play step sound + Alin talking
         if (stepSounds != null && step >= 0 && step < stepSounds.Length && stepSounds[step] != null)
         {
             if (audioSource != null)
@@ -236,6 +239,21 @@ public class ProfileCreationController : MonoBehaviour
                 audioSource.clip = stepSounds[step];
                 audioSource.Play();
             }
+
+            // Alin talks while audio plays, stays visible (idle) after
+            if (alinGuide != null)
+            {
+                if (_alinTalkCoroutine != null) StopCoroutine(_alinTalkCoroutine);
+                alinGuide.Show();
+                alinGuide.PlayTalking();
+                _alinTalkCoroutine = StartCoroutine(StopAlinTalkingAfter(stepSounds[step].length));
+            }
+        }
+        else if (alinGuide != null)
+        {
+            // No audio for this step — just show Alin idle
+            alinGuide.Show();
+            alinGuide.StopTalking();
         }
 
         // Update back button visibility (step 0 = cancel to profile selection, steps 1-5 = go back)
@@ -422,8 +440,7 @@ public class ProfileCreationController : MonoBehaviour
         if (colorPreviewName != null)
         {
             string displayName = !string.IsNullOrWhiteSpace(recordedName) ? recordedName : "";
-            colorPreviewName.text = IsHebrew(displayName) ? HebrewFixer.Fix(displayName) : displayName;
-            colorPreviewName.isRightToLeftText = false;
+            HebrewText.SetText(colorPreviewName, displayName);
         }
 
         // Update initial
@@ -582,8 +599,7 @@ public class ProfileCreationController : MonoBehaviour
     {
         if (doneNameText != null)
         {
-            doneNameText.text = IsHebrew(recordedName) ? HebrewFixer.Fix(recordedName) : recordedName;
-            doneNameText.isRightToLeftText = false;
+            HebrewText.SetText(doneNameText, recordedName);
         }
 
         if (pickedPhoto != null)
@@ -649,6 +665,17 @@ public class ProfileCreationController : MonoBehaviour
         // Set as active and go to the World
         ProfileManager.Instance.SetActiveProfile(profile);
         NavigationManager.GoToWorld();
+    }
+
+    // ── Alin Guide ──
+
+    private Coroutine _alinTalkCoroutine;
+
+    private IEnumerator StopAlinTalkingAfter(float seconds)
+    {
+        yield return new WaitForSeconds(seconds);
+        if (alinGuide != null)
+            alinGuide.StopTalking(); // stays visible in idle pose
     }
 
     // ── Onboarding Audio ──

@@ -86,7 +86,8 @@ public class MemoryGameController : MonoBehaviour
         _difficultyLevel = GameDifficultyConfig.GetLevel(gameId);
 
         // Start analytics collector
-        _stats = new GameStatsCollector(gameId);
+        string contentId = activeCategory != null ? activeCategory.categoryKey : "animals";
+        _stats = new GameStatsCollector(gameId, contentId, SessionContent.Animals);
         if (GameCompletionBridge.Instance != null)
             GameCompletionBridge.Instance.ActiveCollector = _stats;
 
@@ -200,7 +201,7 @@ public class MemoryGameController : MonoBehaviour
 
         if (firstFlipped.PairId == secondFlipped.PairId)
         {
-            _stats?.RecordCorrect();
+            _stats?.RecordCorrect("match");
             yield return new WaitForSeconds(0.2f);
             firstFlipped.IsMatched = true;
             secondFlipped.IsMatched = true;
@@ -208,17 +209,18 @@ public class MemoryGameController : MonoBehaviour
             secondFlipped.PlayMatchAndHide();
             matchedPairs++;
             _stats?.SetCustom("pairsMatched", matchedPairs);
+            _stats?.SetCustom("pairsTotal", totalPairs);
 
             if (matchedPairs >= totalPairs)
             {
-                _stats?.SetCustom("totalPairs", totalPairs);
                 yield return new WaitForSeconds(0.5f);
                 OnGameComplete();
             }
         }
         else
         {
-            _stats?.RecordMistake();
+            _stats?.RecordMistake("mismatch");
+            _stats?.IncrementCustom("mismatchCount");
             yield return new WaitForSeconds(mismatchDelay);
             firstFlipped.FlipToBack();
             secondFlipped.FlipToBack();

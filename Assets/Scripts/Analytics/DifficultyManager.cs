@@ -68,6 +68,7 @@ public static class DifficultyManager
             if (profile.currentDifficulty < MaxDifficulty)
             {
                 profile.currentDifficulty++;
+                profile.lastAutoDifficulty = profile.currentDifficulty;
                 profile.sessionsSinceDifficultyChange = 0;
                 return true;
             }
@@ -80,6 +81,7 @@ public static class DifficultyManager
             if (profile.currentDifficulty > MinDifficulty)
             {
                 profile.currentDifficulty--;
+                profile.lastAutoDifficulty = profile.currentDifficulty;
                 profile.sessionsSinceDifficultyChange = 0;
                 return true;
             }

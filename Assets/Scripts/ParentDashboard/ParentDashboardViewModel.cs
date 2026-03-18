@@ -65,6 +65,9 @@ public class GameDashboardData
     public VisibilityReasonCode visibilityReason;
     public string visibilityReasonDisplay;    // Hebrew, resolved in Build()
 
+    // Full recommendation chain (from GameRecommendationService)
+    public GameRecommendation recommendation;
+
     public int maxStreak;
 
     public string hintUsageLabel;
@@ -214,6 +217,36 @@ public static class ParentDashboardViewModel
         return VisibilityReasonLabels.TryGetValue(code, out string label) ? label : code.ToString();
     }
 
+    // ── Hebrew recommendation explanation labels ──
+    private static readonly Dictionary<RecommendationExplanation, string> ExplanationLabels =
+        new Dictionary<RecommendationExplanation, string>
+    {
+        { RecommendationExplanation.RecommendedForAgeBucket,  "\u05DE\u05D5\u05DE\u05DC\u05E5 \u05E2\u05DC \u05D9\u05D3\u05D9 \u05D4\u05DE\u05E2\u05E8\u05DB\u05EA" },   // מומלץ על ידי המערכת
+        { RecommendationExplanation.HiddenNotInAgeBucket,     "\u05DC\u05D0 \u05DE\u05D5\u05DE\u05DC\u05E5 \u05DB\u05E8\u05D2\u05E2" },                                    // לא מומלץ כרגע
+        { RecommendationExplanation.ParentForceEnabled,       "\u05D4\u05D5\u05E4\u05E2\u05DC \u05D9\u05D3\u05E0\u05D9\u05EA \u05E2\u05DC \u05D9\u05D3\u05D9 \u05D4\u05D4\u05D5\u05E8\u05D4" },  // הופעל ידנית על ידי ההורה
+        { RecommendationExplanation.ParentForceDisabled,      "\u05D4\u05D5\u05E1\u05EA\u05E8 \u05D9\u05D3\u05E0\u05D9\u05EA \u05E2\u05DC \u05D9\u05D3\u05D9 \u05D4\u05D4\u05D5\u05E8\u05D4" }, // הוסתר ידנית על ידי ההורה
+        { RecommendationExplanation.UsingBaselineByAge,       "\u05D1\u05E8\u05D9\u05E8\u05EA \u05DE\u05D7\u05D3\u05DC \u05DC\u05E4\u05D9 \u05D2\u05D9\u05DC" },           // ברירת מחדל לפי גיל
+        { RecommendationExplanation.IncreasedByPerformance,   "\u05D4\u05D5\u05EA\u05D0\u05DD \u05DC\u05E4\u05D9 \u05D1\u05D9\u05E6\u05D5\u05E2\u05D9\u05DD" },            // הותאם לפי ביצועים
+        { RecommendationExplanation.ReducedByPerformance,     "\u05D4\u05D5\u05EA\u05D0\u05DD \u05DC\u05E4\u05D9 \u05D1\u05D9\u05E6\u05D5\u05E2\u05D9\u05DD" },            // הותאם לפי ביצועים
+        { RecommendationExplanation.ParentCustomDifficulty,   "\u05E9\u05D5\u05E0\u05D4 \u05D9\u05D3\u05E0\u05D9\u05EA \u05E2\u05DC \u05D9\u05D3\u05D9 \u05D4\u05D4\u05D5\u05E8\u05D4" }, // שונה ידנית על ידי ההורה
+    };
+
+    public static string GetExplanationLabel(RecommendationExplanation code)
+    {
+        return ExplanationLabels.TryGetValue(code, out string label) ? label : code.ToString();
+    }
+
+    // ── Hebrew access mode labels ──
+    public static string GetAccessModeLabel(ParentGameAccessMode mode)
+    {
+        switch (mode)
+        {
+            case ParentGameAccessMode.ForcedEnabled:  return "\u05E4\u05E2\u05D9\u05DC";   // פעיל
+            case ParentGameAccessMode.ForcedDisabled: return "\u05DE\u05D5\u05E1\u05EA\u05E8"; // מוסתר
+            default:                                  return "\u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9"; // אוטומטי
+        }
+    }
+
     public static string GetGameName(string gameId)
     {
         return GameNames.TryGetValue(gameId, out string name) ? name : gameId;
@@ -231,7 +264,7 @@ public static class ParentDashboardViewModel
 
     // ── Main computation ──
 
-    public static ParentDashboardData Build()
+    public static ParentDashboardData Build(GameDatabase externalGameDb = null)
     {
         var profile = ProfileManager.ActiveProfile;
         if (profile == null) return null;
@@ -294,17 +327,23 @@ public static class ParentDashboardViewModel
 
         // Games
         var mapping = Resources.Load<GameCategoryMapping>("Analytics/GameCategoryMapping");
-        // Try Resources first, then find any loaded instance (same pattern as JourneyManager)
-        var gameDb = Resources.Load<GameDatabase>("GameDatabase");
+        // Use passed-in reference, then try Resources, then find any loaded instance
+        var gameDb = externalGameDb;
+        if (gameDb == null) gameDb = Resources.Load<GameDatabase>("GameDatabase");
         if (gameDb == null)
         {
             var dbs = Resources.FindObjectsOfTypeAll<GameDatabase>();
             if (dbs.Length > 0) gameDb = dbs[0];
         }
+
+        // Build set of game IDs already in analytics
+        var processedGameIds = new HashSet<string>();
+
         foreach (var gp in analytics.games)
         {
             if (gp.sessionsPlayed == 0) continue;
             var gd = BuildGameData(gp, mapping);
+            processedGameIds.Add(gp.gameId);
 
             // Populate visibility data
             int ageBucket = data.resolvedAgeBucket;
@@ -321,9 +360,65 @@ public static class ParentDashboardViewModel
             gd.visibilityReason = evalResult.reasonCode;
             gd.visibilityReasonDisplay = GetVisibilityReasonLabel(evalResult.reasonCode);
 
+            // Full recommendation chain
+            if (gameItem != null)
+                gd.recommendation = GameRecommendationService.GetRecommendation(profile, gameItem);
+
             data.games.Add(gd);
         }
-        data.games.Sort((a, b) => b.sessionsPlayed.CompareTo(a.sessionsPlayed));
+
+        // Add unplayed games from the database so the dashboard shows all games
+        if (gameDb != null && gameDb.games != null)
+        {
+            foreach (var gameItem in gameDb.games)
+            {
+                if (gameItem == null || processedGameIds.Contains(gameItem.id)) continue;
+
+                var gd = new GameDashboardData
+                {
+                    gameId = gameItem.id,
+                    gameName = GetGameName(gameItem.id),
+                    sessionsPlayed = 0,
+                    lastPlayedDisplay = "---",
+                    totalPlayTimeDisplay = "---",
+                    averageSessionDisplay = "---",
+                    difficultyModeLabel = "\u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9", // אוטומטי
+                    trendLabel = "---",
+                };
+
+                int ageBucket = data.resolvedAgeBucket;
+                gd.isInBaselineBucket = AgeBaselineConfig.IsGameInBaseline(ageBucket, gameItem.id);
+                gd.baselineVariantValue = AgeBaselineConfig.GetBaselineVariant(ageBucket, gameItem.id);
+                gd.visibilityMode = GameVisibilityService.GetOverride(profile, gameItem.id);
+
+                var evalResult = GameVisibilityService.Evaluate(profile, gameItem);
+                gd.systemVisibility = evalResult.isVisible;
+                gd.visibilityReason = evalResult.reasonCode;
+                gd.visibilityReasonDisplay = GetVisibilityReasonLabel(evalResult.reasonCode);
+
+                gd.recommendation = GameRecommendationService.GetRecommendation(profile, gameItem);
+
+                // Set difficulty display from recommendation
+                if (gd.recommendation != null)
+                {
+                    gd.currentDifficulty = gd.recommendation.finalDifficulty;
+                    gd.activeDifficultyImpact = gd.recommendation.finalVariantLabel;
+                    gd.recommendedDifficulty = gd.recommendation.systemRecommendedDifficulty;
+                    gd.recommendedDifficultyImpact = gd.recommendation.systemRecommendedVariantLabel;
+                }
+
+                data.games.Add(gd);
+            }
+        }
+
+        // Sort: recommended visible first, then hidden; within each group by sessions played
+        data.games.Sort((a, b) =>
+        {
+            bool aVis = a.recommendation != null ? a.recommendation.finalVisible : a.systemVisibility;
+            bool bVis = b.recommendation != null ? b.recommendation.finalVisible : b.systemVisibility;
+            if (aVis != bVis) return aVis ? -1 : 1; // visible first
+            return b.sessionsPlayed.CompareTo(a.sessionsPlayed);
+        });
 
         // Categories
         foreach (SkillCategory cat in Enum.GetValues(typeof(SkillCategory)))
@@ -395,7 +490,7 @@ public static class ParentDashboardViewModel
 
         // Difficulty impact labels
         gd.activeDifficultyImpact = GameDifficultyConfig.GetDifficultyImpactLabel(gp.gameId, gp.currentDifficulty);
-        gd.recommendedDifficulty = gp.currentDifficulty; // stored before override
+        gd.recommendedDifficulty = GameDifficultyConfig.GetRecommendedDifficulty(gp.gameId);
         gd.recommendedDifficultyImpact = GameDifficultyConfig.GetDifficultyImpactLabel(gp.gameId, gd.recommendedDifficulty);
 
         // Aggregate from recent sessions for completion rate and legacy fields

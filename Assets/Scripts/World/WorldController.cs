@@ -75,12 +75,17 @@ public class WorldController : MonoBehaviour
         if (profile != null && profile.journey.hasPlayedWorldIntroSound)
             yield break;
 
+        var alin = AlinGuide.Instance;
+
         // "This is your world"
         var introClip = SoundLibrary.WorldIntro();
         if (introClip != null)
         {
+            if (alin != null) alin.PlayTalking();
             BackgroundMusicManager.PlayOneShot(introClip);
-            yield return new WaitForSeconds(introClip.length + 1f);
+            yield return new WaitForSeconds(introClip.length);
+            if (alin != null) alin.StopTalking();
+            yield return new WaitForSeconds(1f);
         }
         else
         {
@@ -90,7 +95,12 @@ public class WorldController : MonoBehaviour
         // "Here all your discovered animals and colors"
         var followUp = SoundLibrary.WorldAnimalsAndColors();
         if (followUp != null)
+        {
+            if (alin != null) alin.PlayTalking();
             BackgroundMusicManager.PlayOneShot(followUp);
+            yield return new WaitForSeconds(followUp.length);
+            if (alin != null) alin.StopTalking();
+        }
 
         // Mark as played and save
         if (profile != null)
