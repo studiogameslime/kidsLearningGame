@@ -155,8 +155,7 @@ public class FlappyBirdController : MonoBehaviour
         // Move and check pipes
         UpdatePipes();
 
-        // Parallax scrolling
-        UpdateParallax();
+        // Parallax removed — background stays static
     }
 
     private void Flap()
@@ -169,8 +168,12 @@ public class FlappyBirdController : MonoBehaviour
 
     private void SpawnPipe()
     {
-        // Random gap center position
-        float gapCenterY = playAreaHeight * Random.Range(pipeMinY, pipeMaxY);
+        // Clamp gap so pipes stay within play area (below header, above ground)
+        float minGapCenter = groundY + gapSize * 0.5f + 40f;
+        float maxGapCenter = playAreaHeight - gapSize * 0.5f - 40f;
+        float gapCenterY = Random.Range(
+            Mathf.Max(minGapCenter, playAreaHeight * pipeMinY),
+            Mathf.Min(maxGapCenter, playAreaHeight * pipeMaxY));
 
         PipePair pair;
         if (pipePool.Count > 0)
@@ -190,16 +193,17 @@ public class FlappyBirdController : MonoBehaviour
         float spawnX = playAreaWidth * 0.5f + pipeWidth;
         pair.root.anchoredPosition = new Vector2(spawnX, 0);
 
-        // Top pipe: from gap top to ceiling
-        float topPipeHeight = playAreaHeight - (gapCenterY + gapSize * 0.5f);
-        pair.top.anchoredPosition = new Vector2(0, playAreaHeight);
+        // Top pipe: hangs down from ceiling to gap top
+        float gapTop = gapCenterY + gapSize * 0.5f;
+        float topPipeHeight = Mathf.Max(0, playAreaHeight - gapTop);
+        pair.top.anchoredPosition = new Vector2(0, gapTop);
         pair.top.sizeDelta = new Vector2(pipeWidth, topPipeHeight);
-        pair.top.pivot = new Vector2(0.5f, 1f);
+        pair.top.pivot = new Vector2(0.5f, 0f);
 
         // Bottom pipe: from ground to gap bottom
-        float bottomPipeHeight = gapCenterY - gapSize * 0.5f;
+        float bottomPipeHeight = Mathf.Max(0, gapCenterY - gapSize * 0.5f);
         pair.bottom.anchoredPosition = new Vector2(0, 0);
-        pair.bottom.sizeDelta = new Vector2(pipeWidth, Mathf.Max(0, bottomPipeHeight));
+        pair.bottom.sizeDelta = new Vector2(pipeWidth, bottomPipeHeight);
         pair.bottom.pivot = new Vector2(0.5f, 0f);
 
         pipes.Add(pair);
@@ -225,8 +229,6 @@ public class FlappyBirdController : MonoBehaviour
         topImg.type = Image.Type.Simple;
         topImg.color = new Color(0.85f, 0.95f, 0.85f);
         topImg.raycastTarget = false;
-        // Flip vertically
-        topRT.localScale = new Vector3(1, -1, 1);
 
         // Bottom pipe
         var botGO = new GameObject("BottomPipe");
@@ -247,9 +249,10 @@ public class FlappyBirdController : MonoBehaviour
     {
         float birdX = birdRT.anchoredPosition.x;
         float birdY = birdRT.anchoredPosition.y;
-        // Very tight collision box — half-extents are ~8% of sprite size
-        float birdW = birdRT.sizeDelta.x * 0.08f;
-        float birdH = birdRT.sizeDelta.y * 0.08f;
+        // Fixed collision box — the bird sprite (480px) is much larger than the visible bird
+        // Use a fixed pixel size for consistent collision regardless of sprite dimensions
+        float birdW = 40f;
+        float birdH = 40f;
 
         for (int i = pipes.Count - 1; i >= 0; i--)
         {
@@ -280,20 +283,20 @@ public class FlappyBirdController : MonoBehaviour
 
             // Collision check (AABB) — tight to visible pipe
             float pipeX = pos.x;
-            float halfPipeW = pipeWidth * 0.45f; // slightly inset from pipe edges
+            float halfPipeW = pipeWidth * 0.3f; // generously inset from pipe edges for kids
 
             // Check horizontal overlap first
             if (Mathf.Abs(birdX - pipeX) < birdW + halfPipeW)
             {
-                // Top pipe collision
-                float topBottom = playAreaHeight - pair.top.sizeDelta.y;
+                // Top pipe collision (pipe grows up from anchoredPosition.y)
+                float topBottom = pair.top.anchoredPosition.y;
                 if (birdY + birdH > topBottom)
                 {
                     Die();
                     return;
                 }
 
-                // Bottom pipe collision
+                // Bottom pipe collision (top edge of bottom pipe)
                 float botTop = pair.bottom.sizeDelta.y;
                 if (birdY - birdH < botTop)
                 {
@@ -411,7 +414,6 @@ public class FlappyBirdController : MonoBehaviour
         pipes.Clear();
 
         ResetBird();
-        ResetParallax();
         birdAnimator?.PlayFloating();
     }
 

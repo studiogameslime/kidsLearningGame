@@ -164,6 +164,10 @@ public class ParentDashboardController : MonoBehaviour
         // Disable kerning on all newly created TMP components
         // (the runtime cleaner only caught the gate panel components at scene load)
         DisableKerningOnDashboard();
+
+        // Show banner ad only after parental gate is passed
+        if (BannerAdManager.Instance != null)
+            BannerAdManager.Instance.ShowBanner();
     }
 
     private void DisableKerningOnDashboard()
@@ -433,15 +437,17 @@ public class ParentDashboardController : MonoBehaviour
         gridLayout.childAlignment = TextAnchor.UpperCenter;
         gridLayout.startCorner = GridLayoutGroup.Corner.UpperRight;
         var gridLE = statsGrid.AddComponent<LayoutElement>();
-        gridLE.preferredHeight = 314;
+        gridLE.preferredHeight = 330;
 
         MakeStatCell(statsGrid.transform, $"{_data.totalSessions}", "\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD"); // משחקים
         MakeStatCell(statsGrid.transform, H(_data.totalPlayTimeDisplay), "\u05D6\u05DE\u05DF \u05DE\u05E9\u05D7\u05E7 \u05DB\u05D5\u05DC\u05DC"); // זמן משחק כולל
         MakeStatCell(statsGrid.transform, $"{_data.gamesPlayedCount}", "\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05E9\u05D5\u05E0\u05D9\u05DD"); // משחקים שונים
         MakeStatCell(statsGrid.transform, H(_data.favoriteGameName), "\u05DE\u05E9\u05D7\u05E7 \u05D0\u05D4\u05D5\u05D1"); // משחק אהוב
+        MakeStatCell(statsGrid.transform, $"{_data.discoveredAnimals}", "\u05D7\u05D9\u05D5\u05EA \u05E9\u05D2\u05D9\u05DC\u05D4"); // חיות שגילה
+        MakeStatCell(statsGrid.transform, $"{_data.discoveredColors}", "\u05E6\u05D1\u05E2\u05D9\u05DD \u05E9\u05D2\u05D9\u05DC\u05D4"); // צבעים שגילה
         MakeStatCell(statsGrid.transform, $"{_data.totalBubblesPopped}", "\u05D1\u05D5\u05E2\u05D5\u05EA \u05E9\u05E4\u05E7\u05E2\u05D5"); // בועות שפקעו
         MakeStatCell(statsGrid.transform, H(_data.thisWeekPlayTimeDisplay), "\u05D6\u05DE\u05DF \u05DE\u05E9\u05D7\u05E7 \u05D4\u05E9\u05D1\u05D5\u05E2"); // זמן משחק השבוע
-        MakeStatCell(statsGrid.transform, H(_data.engagementLabel), "\u05DE\u05E2\u05D5\u05E8\u05D1\u05D5\u05EA"); // מעורבות
+        // מעורבות removed
 
         FitCard(statsCard);
 

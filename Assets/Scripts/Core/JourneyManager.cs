@@ -220,7 +220,9 @@ public class JourneyManager : MonoBehaviour
 
     public void ContinueAfterDiscovery()
     {
-        // Apply the unlock
+        // Queue as pending reward — do NOT add to unlocked lists yet.
+        // The world will add to unlocked lists when the child opens the gift box.
+        // This prevents the new animal/color from appearing before the gift is opened.
         var profile = ProfileManager.ActiveProfile;
         if (profile != null && ActiveDiscovery != null)
         {
@@ -228,15 +230,7 @@ public class JourneyManager : MonoBehaviour
             switch (ActiveDiscovery.type)
             {
                 case "animal":
-                    if (!jp.unlockedAnimalIds.Contains(ActiveDiscovery.id))
-                        jp.unlockedAnimalIds.Add(ActiveDiscovery.id);
-                    // Queue as pending reward for gift box in World
-                    jp.pendingWorldRewards.Add(new DiscoveryEntry
-                        { type = ActiveDiscovery.type, id = ActiveDiscovery.id });
-                    break;
                 case "color":
-                    if (!jp.unlockedColorIds.Contains(ActiveDiscovery.id))
-                        jp.unlockedColorIds.Add(ActiveDiscovery.id);
                     jp.pendingWorldRewards.Add(new DiscoveryEntry
                         { type = ActiveDiscovery.type, id = ActiveDiscovery.id });
                     break;

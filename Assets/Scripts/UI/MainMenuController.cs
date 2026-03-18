@@ -103,8 +103,13 @@ public class MainMenuController : MonoBehaviour
         }
     }
 
+    private bool _navigating;
+
     private void OnGameCardTapped(GameItemData game)
     {
+        if (_navigating) return;
+        _navigating = true;
+
         BackgroundMusicManager.PlayOneShot(game.nameClip);
 
         // Track game play in profile

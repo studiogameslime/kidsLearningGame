@@ -19,11 +19,24 @@ public class BannerAdManager : MonoBehaviour
     private const string BannerAdUnitId = "unused";
 #endif
 
+    public static BannerAdManager Instance { get; private set; }
     private BannerView _bannerView;
+
+    private void Awake()
+    {
+        Instance = this;
+        enabled = false; // Start disabled — call ShowBanner() after parental gate
+    }
 
     private void OnEnable()
     {
         LoadBanner();
+    }
+
+    /// <summary>Call after parental gate to show the banner ad.</summary>
+    public void ShowBanner()
+    {
+        enabled = true;
     }
 
     private void OnDisable()

@@ -133,6 +133,10 @@ public class ParentDashboardData
     public string favoriteGameName;
     public int totalBubblesPopped;
 
+    // Discoveries
+    public int discoveredAnimals;
+    public int discoveredColors;
+
     // This week
     public int thisWeekSessions;
     public string thisWeekPlayTimeDisplay;
@@ -312,6 +316,11 @@ public static class ParentDashboardViewModel
             ? GetGameName(analytics.favoriteGames[0])
             : "---";
         data.totalBubblesPopped = analytics.totalBubblesPopped;
+
+        // Discoveries
+        var journey = profile.journey;
+        data.discoveredAnimals = journey.unlockedAnimalIds != null ? journey.unlockedAnimalIds.Count : 0;
+        data.discoveredColors = journey.unlockedColorIds != null ? journey.unlockedColorIds.Count : 0;
 
         // This week
         data.thisWeekSessions = InsightsEngine.GetThisWeekSessions(analytics);

@@ -186,6 +186,8 @@ public class FlappyBirdSetup : EditorWindow
         obstGO.transform.SetParent(playRT, false);
         var obstRT = obstGO.AddComponent<RectTransform>();
         Full(obstRT);
+        // Clip pipes to play area so they don't render into the header
+        obstGO.AddComponent<RectMask2D>();
 
         // ═══════════════════════════════════════
         //  BIRD
