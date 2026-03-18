@@ -760,7 +760,8 @@ public class ColorMixingController : MonoBehaviour
             }
         }
 
-        StartNewRound();
+        if (!GameCompletionBridge.WillJourneyNavigate)
+            StartNewRound();
     }
 
     // ── wrong answer ────────────────────────────────────────────────

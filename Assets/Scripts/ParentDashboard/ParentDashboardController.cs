@@ -160,6 +160,23 @@ public class ParentDashboardController : MonoBehaviour
         dashboardPanel.gameObject.SetActive(true);
         LoadData();
         BuildAllTabs();
+
+        // Disable kerning on all newly created TMP components
+        // (the runtime cleaner only caught the gate panel components at scene load)
+        DisableKerningOnDashboard();
+    }
+
+    private void DisableKerningOnDashboard()
+    {
+        var allTmp = dashboardPanel.GetComponentsInChildren<TextMeshProUGUI>(true);
+        foreach (var tmp in allTmp)
+        {
+            #pragma warning disable 0618
+            if (tmp.enableKerning)
+                tmp.enableKerning = false;
+            #pragma warning restore 0618
+        }
+        Debug.Log($"[GlyphCleaner] Dashboard: disabled kerning on {allTmp.Length} TMP component(s)");
     }
 
     // ═══════════════════════════════════════════════════════════════

@@ -30,6 +30,13 @@ public class GameCompletionBridge : MonoBehaviour
     /// <summary>True while celebration is playing — used to block exit buttons.</summary>
     public static bool IsCelebrating => Instance != null && Instance._navigationLocked;
 
+    /// <summary>
+    /// True if the journey system will handle navigation after this game completes.
+    /// Games should check this before auto-reloading rounds — if true, skip the reload
+    /// and let the bridge navigate to the discovery scene or next journey step.
+    /// </summary>
+    public static bool WillJourneyNavigate => JourneyManager.IsJourneyActive;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void AutoCreate()
     {

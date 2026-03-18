@@ -242,7 +242,8 @@ public class SharedStickerGameController : MonoBehaviour
         currentRound++;
         yield return new WaitForSeconds(0.5f);
 
-        GenerateRound();
+        if (!GameCompletionBridge.WillJourneyNavigate)
+            GenerateRound();
     }
 
     private IEnumerator WrongSequence(GameObject tappedGO)

@@ -528,7 +528,8 @@ public class CountingGameController : MonoBehaviour
         yield return StartCoroutine(ExitAnimals());
 
         yield return new WaitForSeconds(0.2f);
-        LoadRound();
+        if (!GameCompletionBridge.WillJourneyNavigate)
+            LoadRound();
     }
 
     /// <summary>

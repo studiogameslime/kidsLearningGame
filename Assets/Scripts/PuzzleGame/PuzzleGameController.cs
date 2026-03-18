@@ -377,7 +377,9 @@ public class PuzzleGameController : MonoBehaviour
             _stats?.SetCustom("totalPieces", totalPieces);
             referenceImage.color = new Color(1f, 1f, 1f, 0f);
             ConfettiController.Instance.Play();
-            StartCoroutine(LoadNextPuzzleAfterDelay(1.5f));
+            // Only auto-reload if journey won't navigate (to discovery/next game)
+            if (!GameCompletionBridge.WillJourneyNavigate)
+                StartCoroutine(LoadNextPuzzleAfterDelay(1.5f));
         }
     }
 

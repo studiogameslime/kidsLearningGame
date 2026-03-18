@@ -510,7 +510,7 @@ public class ProfileSceneSetup : EditorWindow
         var placeholderRT = placeholderGO.AddComponent<RectTransform>();
         StretchFull(placeholderRT);
         var placeholderTMP = placeholderGO.AddComponent<TextMeshProUGUI>();
-        HebrewText.SetText(placeholderTMP, "\u05DB\u05EA\u05D1\u05D5 \u05DB\u05D0\u05DF..."); // ...כתבו כאן
+        placeholderTMP.text = "\u05DB\u05EA\u05D1\u05D5 \u05DB\u05D0\u05DF..."; // ...כתבו כאן (no RTL flag for input fields)
         placeholderTMP.fontSize = 40;
         placeholderTMP.fontStyle = FontStyles.Italic;
         placeholderTMP.color = new Color(0.6f, 0.6f, 0.6f, 0.8f);

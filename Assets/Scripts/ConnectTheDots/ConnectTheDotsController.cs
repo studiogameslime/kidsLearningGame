@@ -932,7 +932,8 @@ public class ConnectTheDotsController : MonoBehaviour
         }
 
         yield return new WaitForSeconds(0.5f);
-        LoadNewRound();
+        if (!GameCompletionBridge.WillJourneyNavigate)
+            LoadNewRound();
     }
 
     public void OnHomePressed() => NavigationManager.GoToMainMenu();

@@ -267,7 +267,8 @@ public class ShadowMatchController : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
         ConfettiController.Instance.Play();
         yield return new WaitForSeconds(2f);
-        LoadRound();
+        if (!GameCompletionBridge.WillJourneyNavigate)
+            LoadRound();
     }
 
     public void OnHomePressed() => NavigationManager.GoToMainMenu();

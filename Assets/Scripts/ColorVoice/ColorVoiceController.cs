@@ -340,16 +340,19 @@ public class ColorVoiceController : MonoBehaviour
 
         yield return new WaitForSeconds(successDelay);
 
-        // Next round or complete
-        currentRound++;
-        if (currentRound >= totalRounds)
+        if (!GameCompletionBridge.WillJourneyNavigate)
         {
-            // Reshuffle and restart
-            ShuffleColors();
-            currentRound = 0;
-        }
+            // Next round or complete
+            currentRound++;
+            if (currentRound >= totalRounds)
+            {
+                // Reshuffle and restart
+                ShuffleColors();
+                currentRound = 0;
+            }
 
-        StartCoroutine(StartRoundSequence());
+            StartCoroutine(StartRoundSequence());
+        }
     }
 
     private IEnumerator OnWrongColor(ColorPrompt spokenColor)

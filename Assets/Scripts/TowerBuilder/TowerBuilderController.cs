@@ -697,16 +697,19 @@ public class TowerBuilderController : MonoBehaviour
         yield return new WaitForSeconds(1.2f);
 
         // Next level
-        int nextLevel = currentLevelIndex + 1;
-        if (nextLevel < TowerLevels.All.Length)
+        if (!GameCompletionBridge.WillJourneyNavigate)
         {
-            currentLevelIndex = nextLevel;
-            LoadLevel();
-        }
-        else
-        {
-            PickLevel();
-            LoadLevel();
+            int nextLevel = currentLevelIndex + 1;
+            if (nextLevel < TowerLevels.All.Length)
+            {
+                currentLevelIndex = nextLevel;
+                LoadLevel();
+            }
+            else
+            {
+                PickLevel();
+                LoadLevel();
+            }
         }
     }
 

@@ -638,8 +638,11 @@ public class BallMazeController : MonoBehaviour
         ConfettiController.Instance.Play();
         yield return new WaitForSeconds(1.5f);
 
-        currentLevelIndex++;
-        LoadLevel();
+        if (!GameCompletionBridge.WillJourneyNavigate)
+        {
+            currentLevelIndex++;
+            LoadLevel();
+        }
     }
 
     private IEnumerator BoardBounce()

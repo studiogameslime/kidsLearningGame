@@ -849,7 +849,8 @@ public class FindTheAnimalController : MonoBehaviour
         }
 
         yield return new WaitForSeconds(0.6f);
-        LoadRound();
+        if (!GameCompletionBridge.WillJourneyNavigate)
+            LoadRound();
     }
 
     private void UpdateRemainingText()

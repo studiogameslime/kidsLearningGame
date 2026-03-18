@@ -822,8 +822,11 @@ public class MazeController : MonoBehaviour
         yield return new WaitForSeconds(0.8f);
 
         // Next level
-        currentLevel++;
-        LoadLevel();
+        if (!GameCompletionBridge.WillJourneyNavigate)
+        {
+            currentLevel++;
+            LoadLevel();
+        }
     }
 
     private IEnumerator JumpAnimation(RectTransform rt)

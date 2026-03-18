@@ -123,7 +123,18 @@ public class ProfileCreationController : MonoBehaviour
         if (nameNextButton != null)
             nameNextButton.onClick.AddListener(OnNameNext);
         if (nameInput != null)
+        {
             nameInput.onValueChanged.AddListener(OnNameChanged);
+
+            // Both text and placeholder need RTL=true for correct Hebrew display.
+            // TMP reverses the string for rendering — typing still works because
+            // each appended character appears at the correct RTL position.
+            if (nameInput.textComponent != null)
+                nameInput.textComponent.isRightToLeftText = true;
+            var placeholder = nameInput.placeholder as TMP_Text;
+            if (placeholder != null)
+                placeholder.isRightToLeftText = true;
+        }
 
         // Wire age buttons
         if (ageButtons != null)
