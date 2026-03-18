@@ -105,10 +105,17 @@ public class BallMazeController : MonoBehaviour
     }
 
     // ── level loading ────────────────────────────────────────────
+    private bool _levelLoading;
+
     private void LoadLevel()
     {
+        if (_levelLoading) return;
+        _levelLoading = true;
+
         ClearAll();
-        currentLevel = BallMazeLevels.All[currentLevelIndex % BallMazeLevels.All.Length];
+        // Generate a fresh procedural level based on difficulty progression
+        int difficulty = Mathf.Clamp(currentLevelIndex / 2, 0, 2); // 0-1=easy, 2-3=medium, 4+=hard
+        currentLevel = BallMazeLevels.GenerateLevel(difficulty);
         isComplete = false;
         isDragging = false;
         ballVelocity = Vector2.zero;
@@ -244,6 +251,7 @@ public class BallMazeController : MonoBehaviour
 
         fingerTarget = startPos;
         StartCoroutine(BallIdlePulse());
+        _levelLoading = false;
     }
 
     private void CreateBoardShadow(float offset, float alpha, float expand)
@@ -506,7 +514,7 @@ public class BallMazeController : MonoBehaviour
         // Check completion
         Vector2 holePos = holeRT.anchoredPosition;
         float holeDist = Vector2.Distance(pos, holePos);
-        if (holeDist < currentLevel.holeRadius * unitSize * 0.6f)
+        if (holeDist < currentLevel.holeRadius * unitSize * 0.9f)
         {
             isComplete = true;
             isDragging = false;
@@ -634,12 +642,12 @@ public class BallMazeController : MonoBehaviour
         // Phase 4: Board bounce
         yield return StartCoroutine(BoardBounce());
 
-        // Phase 5: Confetti
+        // Phase 5: Confetti — let the bridge handle analytics and journey navigation
         ConfettiController.Instance.Play();
-        yield return new WaitForSeconds(1.5f);
 
         if (!GameCompletionBridge.WillJourneyNavigate)
         {
+            yield return new WaitForSeconds(1.5f);
             currentLevelIndex++;
             LoadLevel();
         }

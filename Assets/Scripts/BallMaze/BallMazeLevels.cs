@@ -257,6 +257,16 @@ public static class BallMazeLevels
         },
     };
 
+    /// <summary>
+    /// Generates a new procedural level for the given difficulty tier.
+    /// Difficulty: 0=easy, 1=medium, 2=hard.
+    /// Path-first generation: builds path, then corridors, then validates.
+    /// </summary>
+    public static BallMazeLevel GenerateLevel(int difficulty)
+    {
+        return PathBasedMazeGenerator.Generate(difficulty);
+    }
+
     public static int GetLevelForDifficulty(int difficulty)
     {
         switch (difficulty)
