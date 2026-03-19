@@ -31,8 +31,14 @@ public class NumberMazeController : MonoBehaviour
     private NumberMazeBoardGenerator.BoardData _board;
     private int _expectedNext; // 1-based: next number the player should tap
     private List<GameObject> _cellObjects = new List<GameObject>();
+    private List<GameObject> _pathLines = new List<GameObject>();
     private NumberMazeCellView[] _cellViews;
     private Coroutine _inactivityCoroutine;
+
+    private static readonly Color PathLineColor = new Color(0.26f, 0.63f, 0.28f, 0.8f); // green
+    private static readonly Color PathGlowColor = new Color(0.26f, 0.63f, 0.28f, 0.15f);
+    private const float PathLineWidth = 8f;
+    private const float PathGlowWidth = 22f;
 
     private void Start()
     {
@@ -87,6 +93,9 @@ public class NumberMazeController : MonoBehaviour
         foreach (var go in _cellObjects)
             if (go != null) Destroy(go);
         _cellObjects.Clear();
+        foreach (var go in _pathLines)
+            if (go != null) Destroy(go);
+        _pathLines.Clear();
         _cellViews = null;
     }
 
@@ -210,6 +219,44 @@ public class NumberMazeController : MonoBehaviour
         return go;
     }
 
+    // ── PATH LINE DRAWING ──
+
+    private void DrawPathLine(Vector2 from, Vector2 to)
+    {
+        // Glow (wide, behind)
+        var glowGO = new GameObject("PathGlow");
+        glowGO.transform.SetParent(gridArea, false);
+        glowGO.transform.SetAsFirstSibling();
+        var glowRT = glowGO.AddComponent<RectTransform>();
+        var glowImg = glowGO.AddComponent<Image>();
+        glowImg.color = PathGlowColor;
+        glowImg.raycastTarget = false;
+        PositionLine(glowRT, from, to, PathGlowWidth);
+        _pathLines.Add(glowGO);
+
+        // Main line
+        var lineGO = new GameObject("PathLine");
+        lineGO.transform.SetParent(gridArea, false);
+        lineGO.transform.SetSiblingIndex(1); // above glow, below cells
+        var lineRT = lineGO.AddComponent<RectTransform>();
+        var lineImg = lineGO.AddComponent<Image>();
+        lineImg.color = PathLineColor;
+        lineImg.raycastTarget = false;
+        PositionLine(lineRT, from, to, PathLineWidth);
+        _pathLines.Add(lineGO);
+    }
+
+    private void PositionLine(RectTransform rt, Vector2 from, Vector2 to, float width)
+    {
+        Vector2 dir = to - from;
+        float distance = dir.magnitude;
+        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+        rt.sizeDelta = new Vector2(distance, width);
+        rt.anchoredPosition = from + dir * 0.5f;
+        rt.localRotation = Quaternion.Euler(0, 0, angle);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+    }
+
     // ── INPUT HANDLING ──
 
     private void OnCellTapped(int cellIndex)
@@ -226,6 +273,16 @@ public class NumberMazeController : MonoBehaviour
             // Correct!
             _stats.RecordCorrect("number_tap", _expectedNext.ToString());
             view.SetCompleted();
+
+            // Draw path line from previous cell
+            if (_expectedNext >= 2)
+            {
+                int prevCI = _board.pathCellIndices[_expectedNext - 2];
+                int currCI = cellIndex;
+                var fromPos = _cellViews[prevCI].GetComponent<RectTransform>().anchoredPosition;
+                var toPos = _cellViews[currCI].GetComponent<RectTransform>().anchoredPosition;
+                DrawPathLine(fromPos, toPos);
+            }
 
             // Disable this cell's button
             var btn = view.GetComponent<Button>();

@@ -221,10 +221,12 @@ public static class AgeBaselineConfig
         table[2] = new List<Entry>
         {
             new Entry(2, "coloring"),
-            new Entry(2, "puzzle",       4),
+            new Entry(2, "puzzle",         4),
             new Entry(2, "shadows"),
-            new Entry(2, "memory",       4),
+            new Entry(2, "memory",         4),
             new Entry(2, "towerbuilder"),
+            new Entry(2, "oddoneout"),          // very different animals, easy visual match
+            new Entry(2, "quantitymatch", 3),   // quantities 1-3
         };
 
         // ── Age 3 ──
@@ -240,6 +242,11 @@ public static class AgeBaselineConfig
             new Entry(3, "ballmaze"),
             new Entry(3, "findthecount"),
             new Entry(3, "colormixing"),
+            new Entry(3, "oddoneout"),          // still easy pool
+            new Entry(3, "quantitymatch", 3),   // quantities 1-3
+            new Entry(3, "numbertrain",   5),   // 5 wagons, 1 missing
+            new Entry(3, "colorvoice"),
+            new Entry(3, "towerstack"),
         };
 
         // ── Age 4 ──
@@ -257,6 +264,15 @@ public static class AgeBaselineConfig
             new Entry(4, "colormixing"),
             new Entry(4, "flappybird"),
             new Entry(4, "towerbuilder"),
+            new Entry(4, "oddoneout"),          // medium pool, more similar animals
+            new Entry(4, "quantitymatch", 5),   // quantities up to 5
+            new Entry(4, "numbertrain",   6),   // 6 wagons, 2 missing
+            new Entry(4, "numbermaze",    10),  // target 10, 5x3 grid
+            new Entry(4, "patterncopy",   3),   // 3x3 grid
+            new Entry(4, "letters",       3),   // 2-3 letter words
+            new Entry(4, "connectmatch",  2),   // 2x2 grid, short path
+            new Entry(4, "colorvoice"),
+            new Entry(4, "towerstack"),
         };
 
         // ── Age 5 (also used for ages 6-8) ──
@@ -274,6 +290,15 @@ public static class AgeBaselineConfig
             new Entry(5, "colormixing"),
             new Entry(5, "flappybird"),
             new Entry(5, "towerbuilder"),
+            new Entry(5, "oddoneout"),          // all animals pool
+            new Entry(5, "quantitymatch", 8),   // quantities up to 8
+            new Entry(5, "numbertrain",   7),   // 7 wagons, 3 missing
+            new Entry(5, "numbermaze",    15),  // target 15, 6x4 grid
+            new Entry(5, "patterncopy",   5),   // 5x5 grid
+            new Entry(5, "letters",       4),   // up to 4 letter words
+            new Entry(5, "connectmatch",  3),   // 3x3 grid, longer path
+            new Entry(5, "colorvoice"),
+            new Entry(5, "towerstack"),
         };
 
         // Ages 6-8 resolve via ClampAgeBucket → 5. No separate entries needed.

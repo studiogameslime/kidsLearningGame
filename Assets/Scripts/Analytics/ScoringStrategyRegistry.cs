@@ -49,6 +49,18 @@ public static class ScoringStrategyRegistry
         if (id.Contains("numbermaze"))
             return new NumberMazeScoringStrategy();
 
+        if (id.Contains("oddoneout"))
+            return new OddOneOutScoringStrategy();
+
+        if (id.Contains("quantitymatch") || id.Contains("quantity"))
+            return new QuantityMatchScoringStrategy();
+
+        if (id.Contains("connectmatch"))
+            return new ConnectMatchScoringStrategy();
+
+        if (id.Contains("numbertrain") || id.Contains("train"))
+            return new NumberTrainScoringStrategy();
+
         return _default;
     }
 }

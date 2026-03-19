@@ -147,6 +147,30 @@ public class AnalyticsSetup : EditorWindow
             W(SkillCategory.SpatialReasoning, 0.35f),
             W(SkillCategory.Attention, 0.25f)));
 
+        // ── Odd One Out ──
+        mapping.entries.Add(Entry("oddoneout",
+            W(SkillCategory.VisualMatching, 0.50f),
+            W(SkillCategory.Attention, 0.30f),
+            W(SkillCategory.ProblemSolving, 0.20f)));
+
+        // ── Quantity Match ──
+        mapping.entries.Add(Entry("quantitymatch",
+            W(SkillCategory.Numbers, 0.55f),
+            W(SkillCategory.VisualMatching, 0.25f),
+            W(SkillCategory.Attention, 0.20f)));
+
+        // ── Connect Match ──
+        mapping.entries.Add(Entry("connectmatch",
+            W(SkillCategory.SpatialReasoning, 0.40f),
+            W(SkillCategory.VisualMatching, 0.35f),
+            W(SkillCategory.FineMotor, 0.25f)));
+
+        // ── Number Train ──
+        mapping.entries.Add(Entry("numbertrain",
+            W(SkillCategory.Numbers, 0.50f),
+            W(SkillCategory.Attention, 0.25f),
+            W(SkillCategory.ProblemSolving, 0.25f)));
+
         EditorUtility.SetDirty(mapping);
     }
 
@@ -166,7 +190,8 @@ public class AnalyticsSetup : EditorWindow
             "memory", "puzzle", "coloring", "fillthedots", "findthecount",
             "findtheobject", "shadows", "colormixing", "colorvoice",
             "ballmaze", "towerbuilder", "towerstack", "sharedsticker",
-            "flappybird", "simonsays", "patterncopy", "letters", "numbermaze"
+            "flappybird", "simonsays", "patterncopy", "letters", "numbermaze",
+            "oddoneout", "quantitymatch", "connectmatch", "numbertrain"
         };
 
         // ── Age 2–2.5 years (24–30 months) ──

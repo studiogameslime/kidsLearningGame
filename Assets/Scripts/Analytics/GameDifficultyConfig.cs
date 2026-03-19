@@ -207,6 +207,67 @@ public static class GameDifficultyConfig
     }
 
     // ═══════════════════════════════════════════════════════════
+    //  NUMBER TRAIN
+    // ═══════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Returns wagon count and missing count for Number Train.
+    /// </summary>
+    public static void NumberTrainConfig(int difficulty, out int wagonCount, out int missingCount)
+    {
+        if (difficulty <= 3)      { wagonCount = 5; missingCount = 1; }
+        else if (difficulty <= 6) { wagonCount = 6; missingCount = 2; }
+        else                      { wagonCount = 7; missingCount = 3; }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  CONNECT MATCH
+    // ═══════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Returns grid size and path length for connect match.
+    /// </summary>
+    public static void ConnectMatchConfig(int difficulty, out int gridSize, out int pathLen)
+    {
+        if (difficulty <= 2)      { gridSize = 2; pathLen = 3; }
+        else if (difficulty <= 4) { gridSize = 3; pathLen = 4; }
+        else if (difficulty <= 6) { gridSize = 3; pathLen = 5; }
+        else if (difficulty <= 8) { gridSize = 4; pathLen = 6; }
+        else                      { gridSize = 4; pathLen = 8; }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  QUANTITY MATCH
+    // ═══════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Returns target number range for quantity match at a given difficulty.
+    /// </summary>
+    public static void QuantityMatchRange(int difficulty, out int minTarget, out int maxTarget)
+    {
+        if (difficulty <= 2)      { minTarget = 1; maxTarget = 3; }
+        else if (difficulty <= 4) { minTarget = 2; maxTarget = 4; }
+        else if (difficulty <= 6) { minTarget = 2; maxTarget = 5; }
+        else if (difficulty <= 8) { minTarget = 3; maxTarget = 6; }
+        else                      { minTarget = 4; maxTarget = 8; }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  ODD ONE OUT
+    // ═══════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Returns the animal pool size for odd-one-out at a given difficulty.
+    /// Low = 8 very different animals, Medium = 12, High = all 19.
+    /// </summary>
+    public static int OddOneOutPoolSize(int difficulty)
+    {
+        if (difficulty <= 3) return 8;
+        if (difficulty <= 7) return 12;
+        return 19;
+    }
+
+    // ═══════════════════════════════════════════════════════════
     //  DIFFICULTY IMPACT LABELS (Hebrew, raw unicode)
     // ═══════════════════════════════════════════════════════════
 
@@ -294,6 +355,41 @@ public static class GameDifficultyConfig
             return $"\u05E8\u05E9\u05EA {c}\u00D7{r}, {p} \u05DE\u05E1\u05E4\u05E8\u05D9\u05DD"; // רשת CxR, P מספרים
         }
 
+        // Number Train
+        if (id.Contains("numbertrain") || id.Contains("train"))
+        {
+            int wc, mc;
+            NumberTrainConfig(difficulty, out wc, out mc);
+            return $"{wc} \u05E7\u05E8\u05D5\u05E0\u05D5\u05EA, {mc} \u05D7\u05E1\u05E8\u05D9\u05DD"; // X קרונות, Y חסרים
+        }
+
+        // Connect Match
+        if (id.Contains("connectmatch"))
+        {
+            int gs, pl;
+            ConnectMatchConfig(difficulty, out gs, out pl);
+            return $"\u05E8\u05E9\u05EA {gs}\u00D7{gs}, {pl} \u05E0\u05E7\u05D5\u05D3\u05D5\u05EA"; // רשת NxN, P נקודות
+        }
+
+        // Quantity Match
+        if (id.Contains("quantitymatch") || id.Contains("quantity"))
+        {
+            int mn, mx;
+            QuantityMatchRange(difficulty, out mn, out mx);
+            return $"\u05DE\u05E1\u05E4\u05E8\u05D9\u05DD {mn}\u2013{mx}"; // מספרים X–Y
+        }
+
+        // Odd One Out
+        if (id.Contains("oddoneout"))
+        {
+            int pool = OddOneOutPoolSize(difficulty);
+            if (pool <= 8)
+                return "\u05D7\u05D9\u05D5\u05EA \u05E9\u05D5\u05E0\u05D5\u05EA \u05DE\u05D0\u05D5\u05D3"; // חיות שונות מאוד
+            if (pool <= 12)
+                return "\u05D7\u05D9\u05D5\u05EA \u05D3\u05D5\u05DE\u05D5\u05EA \u05D9\u05D5\u05EA\u05E8"; // חיות דומות יותר
+            return "\u05DB\u05DC \u05D4\u05D7\u05D9\u05D5\u05EA"; // כל החיות
+        }
+
         // Connect the dots
         if (id.Contains("fillthedots") || id.Contains("connectthedots") || id.Contains("dots"))
         {
@@ -322,6 +418,38 @@ public static class GameDifficultyConfig
     public static int BaselineVariantToDifficulty(string gameId, int variantValue)
     {
         if (variantValue <= 0) return 1;
+
+        // Number Train: variant = wagon count → difficulty
+        if (gameId == "numbertrain")
+        {
+            if (variantValue <= 5) return 1;
+            if (variantValue <= 6) return 4;
+            return 7;
+        }
+
+        // Connect Match: variant = grid size → difficulty
+        if (gameId == "connectmatch")
+        {
+            if (variantValue <= 2) return 1;
+            if (variantValue <= 3) return 3;
+            return 7;
+        }
+
+        // Quantity Match: variant = max target → difficulty
+        if (gameId == "quantitymatch")
+        {
+            if (variantValue <= 3) return 1;        // targets 1-3 → difficulty 1-2
+            if (variantValue <= 5) return 4;         // targets 2-5 → difficulty 4-6
+            return 7;                                // targets 4-8 → difficulty 7-10
+        }
+
+        // Odd One Out: variant = pool size → difficulty
+        if (gameId == "oddoneout")
+        {
+            if (variantValue <= 8) return 1;        // easy pool → difficulty 1-3
+            if (variantValue <= 12) return 4;       // medium pool → difficulty 4-7
+            return 8;                                // all animals → difficulty 8-10
+        }
 
         // Number Maze: variant = path length → difficulty
         if (gameId == "numbermaze")

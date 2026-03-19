@@ -190,6 +190,18 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Number Maze…", 0.983f);
             NumberMazeSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Odd One Out…", 0.985f);
+            OddOneOutSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Quantity Match…", 0.987f);
+            QuantityMatchSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Number Train…", 0.989f);
+            NumberTrainSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Connect Match…", 0.991f);
+            ConnectMatchSetup.RunSetupSilent();
+
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Animal Data…", 0.965f);
             WorldSceneSetup.BuildAnimalData();
 
@@ -742,9 +754,49 @@ public class ProjectSetup : EditorWindow
         numberMaze.hasSubItems = false;
         EditorUtility.SetDirty(numberMaze);
 
+        // ── Odd One Out ──
+        var oddOneOut = CreateSO<GameItemData>($"{DataPath}/OddOneOut.asset");
+        oddOneOut.id = "oddoneout";
+        oddOneOut.title = "Odd One Out";
+        oddOneOut.cardColor = HexColor("#FF7043");
+        oddOneOut.targetSceneName = "OddOneOut";
+        oddOneOut.thumbnail = LoadSprite($"{previewPath}/FindTheDifferent.png");
+        oddOneOut.hasSubItems = false;
+        EditorUtility.SetDirty(oddOneOut);
+
+        // ── Quantity Match ──
+        var quantityMatch = CreateSO<GameItemData>($"{DataPath}/QuantityMatch.asset");
+        quantityMatch.id = "quantitymatch";
+        quantityMatch.title = "Quantity Match";
+        quantityMatch.cardColor = HexColor("#AB47BC");
+        quantityMatch.targetSceneName = "QuantityMatch";
+        quantityMatch.thumbnail = LoadSprite($"{previewPath}/MatchCount.png");
+        quantityMatch.hasSubItems = false;
+        EditorUtility.SetDirty(quantityMatch);
+
+        // ── Number Train ──
+        var numberTrain = CreateSO<GameItemData>($"{DataPath}/NumberTrain.asset");
+        numberTrain.id = "numbertrain";
+        numberTrain.title = "Number Train";
+        numberTrain.cardColor = HexColor("#43A047");
+        numberTrain.targetSceneName = "NumberTrain";
+        numberTrain.thumbnail = LoadSprite($"{previewPath}/NumbersTrain.png");
+        numberTrain.hasSubItems = false;
+        EditorUtility.SetDirty(numberTrain);
+
+        // ── Connect Match ──
+        var connectMatch = CreateSO<GameItemData>($"{DataPath}/ConnectMatch.asset");
+        connectMatch.id = "connectmatch";
+        connectMatch.title = "Connect Match";
+        connectMatch.cardColor = HexColor("#26A69A");
+        connectMatch.targetSceneName = "ConnectMatch";
+        connectMatch.thumbnail = LoadSprite($"{previewPath}/MatchDotsShape.png");
+        connectMatch.hasSubItems = false;
+        EditorUtility.SetDirty(connectMatch);
+
         // ── Game Database ──
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, colorVoice, tower, towerStack, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, colorVoice, tower, towerStack, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, connectMatch };
         EditorUtility.SetDirty(db);
 
         // Validate age baseline configuration
@@ -1341,6 +1393,10 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/PatternCopy.unity",
             $"{ScenesPath}/LettersGame.unity",
             $"{ScenesPath}/NumberMaze.unity",
+            $"{ScenesPath}/OddOneOut.unity",
+            $"{ScenesPath}/QuantityMatch.unity",
+            $"{ScenesPath}/NumberTrain.unity",
+            $"{ScenesPath}/ConnectMatch.unity",
             $"{ScenesPath}/DiscoveryReveal.unity",
             $"{ScenesPath}/DrawingGallery.unity",
             $"{ScenesPath}/WorldScene.unity",
