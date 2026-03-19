@@ -49,7 +49,7 @@ public class SelectionMenuController : MonoBehaviour
 
                 case "gallery":
                     card.Setup(item.title, null, item.cardColor,
-                        () => OpenGallery(capturedGame));
+                        () => OpenImageGallery(capturedGame));
                     StyleAsOutlinedCard(card, item.cardColor, "+");
                     break;
 
@@ -219,6 +219,17 @@ public class SelectionMenuController : MonoBehaviour
         GameContext.CurrentSelection = null;
         GameContext.CustomTexture = tex;
         BubbleTransition.LoadScene(sceneName);
+    }
+
+    /// <summary>
+    /// Opens the unified in-game image gallery instead of the device gallery.
+    /// The gallery will set GameContext.CustomTexture and navigate back to the game.
+    /// </summary>
+    private void OpenImageGallery(GameItemData game)
+    {
+        GameContext.CurrentGame = game;
+        GameContext.CurrentSelection = null;
+        BubbleTransition.LoadScene("ImageGallery");
     }
 
     public void OnBackPressed()

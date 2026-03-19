@@ -207,6 +207,21 @@ public static class GameDifficultyConfig
     }
 
     // ═══════════════════════════════════════════════════════════
+    //  LETTER TRAIN
+    // ═══════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Returns wagon count and missing count for Letter Train.
+    /// Same structure as Number Train.
+    /// </summary>
+    public static void LetterTrainConfig(int difficulty, out int wagonCount, out int missingCount)
+    {
+        if (difficulty <= 3)      { wagonCount = 5; missingCount = 1; }
+        else if (difficulty <= 6) { wagonCount = 6; missingCount = 2; }
+        else                      { wagonCount = 7; missingCount = 3; }
+    }
+
+    // ═══════════════════════════════════════════════════════════
     //  NUMBER TRAIN
     // ═══════════════════════════════════════════════════════════
 
@@ -355,8 +370,16 @@ public static class GameDifficultyConfig
             return $"\u05E8\u05E9\u05EA {c}\u00D7{r}, {p} \u05DE\u05E1\u05E4\u05E8\u05D9\u05DD"; // רשת CxR, P מספרים
         }
 
+        // Letter Train
+        if (id.Contains("lettertrain"))
+        {
+            int wc, mc;
+            LetterTrainConfig(difficulty, out wc, out mc);
+            return $"{wc} \u05E7\u05E8\u05D5\u05E0\u05D5\u05EA, {mc} \u05D0\u05D5\u05EA\u05D9\u05D5\u05EA \u05D7\u05E1\u05E8\u05D5\u05EA"; // X קרונות, Y אותיות חסרות
+        }
+
         // Number Train
-        if (id.Contains("numbertrain") || id.Contains("train"))
+        if (id.Contains("numbertrain"))
         {
             int wc, mc;
             NumberTrainConfig(difficulty, out wc, out mc);
@@ -418,6 +441,14 @@ public static class GameDifficultyConfig
     public static int BaselineVariantToDifficulty(string gameId, int variantValue)
     {
         if (variantValue <= 0) return 1;
+
+        // Letter Train: variant = wagon count → difficulty
+        if (gameId == "lettertrain")
+        {
+            if (variantValue <= 5) return 1;
+            if (variantValue <= 6) return 4;
+            return 7;
+        }
 
         // Number Train: variant = wagon count → difficulty
         if (gameId == "numbertrain")

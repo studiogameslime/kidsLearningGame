@@ -27,7 +27,20 @@
       "Bash(ls:*)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:package.openupm.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(gh release:*)",
+      "Bash(curl -s https://api.github.com/repos/googleads/googleads-mobile-unity/releases/latest)",
+      "Bash(curl -L -o /tmp/GoogleMobileAds-v11.0.0.unitypackage \"https://github.com/googleads/googleads-mobile-unity/releases/download/v11.0.0/GoogleMobileAds-v11.0.0.unitypackage\")",
+      "WebFetch(domain:developers.google.com)",
+      "Bash(xargs grep:*)",
+      "Bash(where adb:*)",
+      "Read(//c/Users/matan/AppData/Local/Android/**)",
+      "Read(//c/Program Files/**)",
+      "Bash(grep -E \"\\\\.\\(cs|prefab\\)$\")",
+      "Bash(xargs -I {} basename {})",
+      "Bash(python3 -c \"from PIL import Image; print\\(''pillow ok''\\)\")",
+      "Bash(python3 -c \"import PIL; print\\(''pil ok''\\)\")",
+      "Bash(python -c \"from PIL import Image; print\\(''pillow ok''\\)\")"
     ]
   }
 }

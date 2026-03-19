@@ -14,8 +14,10 @@ public class NumberTrainSetup : EditorWindow
     private static readonly Vector2 Ref = new Vector2(1920, 1080);
     private const int TopBarHeight = 100;
 
-    private static readonly Color BgColor  = HexColor("#E8F5E9"); // soft green bg
-    private static readonly Color BarColor = HexColor("#43A047"); // green bar
+    private static readonly Color SkyColor   = HexColor("#8FD4F5");
+    private static readonly Color GrassBack = HexColor("#8ED36B");
+    private static readonly Color GrassFront = HexColor("#7CC95E");
+    private static readonly Color BarColor   = HexColor("#43A047");
 
     public static void RunSetupSilent()
     {
@@ -43,7 +45,7 @@ public class NumberTrainSetup : EditorWindow
         camGO.AddComponent<AudioListener>();
         var cam = camGO.AddComponent<Camera>();
         cam.clearFlags = CameraClearFlags.SolidColor;
-        cam.backgroundColor = BgColor;
+        cam.backgroundColor = SkyColor;
         cam.orthographic = true;
         var urp = System.Type.GetType(
             "UnityEngine.Rendering.Universal.UniversalAdditionalCameraData, Unity.RenderPipelines.Universal.Runtime");
@@ -67,8 +69,12 @@ public class NumberTrainSetup : EditorWindow
         canvasGO.AddComponent<GraphicRaycaster>();
         var root = canvasGO.transform;
 
-        // ── Background ──
-        Layer(root, "Background", null, 0, 0, 1, 1, BgColor);
+        // ── Sky background ──
+        Layer(root, "Sky", null, 0, 0, 1, 1, SkyColor);
+
+        // ── Grass layers ──
+        Layer(root, "GrassBack", null, 0, 0, 1, 0.68f, GrassBack);
+        Layer(root, "GrassFront", null, 0, 0, 1, 0.55f, GrassFront);
 
         // ── Safe Area ──
         var safeGO = new GameObject("SafeArea");
@@ -105,6 +111,25 @@ public class NumberTrainSetup : EditorWindow
         var trophyIcon = LoadSprite("Assets/Art/Icons/trophy.png");
         var trophyGO = BtnRight(bar.transform, "TrophyButton", trophyIcon, -16, -12, 62);
 
+        // ── Cloud system (sky area for spawning) ──
+        var skyAreaGO = new GameObject("SkyArea");
+        skyAreaGO.transform.SetParent(safeGO.transform, false);
+        var skyAreaRT = skyAreaGO.AddComponent<RectTransform>();
+        skyAreaRT.anchorMin = new Vector2(0, 0.68f); // above the grass line
+        skyAreaRT.anchorMax = new Vector2(1, 1);
+        skyAreaRT.offsetMin = Vector2.zero;
+        skyAreaRT.offsetMax = new Vector2(0, -TopBarHeight);
+
+        var cloudSystem = canvasGO.AddComponent<WorldCloudSystem>();
+        cloudSystem.skyArea = skyAreaRT;
+        cloudSystem.worldWidth = 1920f;
+        cloudSystem.maxClouds = 6;
+        cloudSystem.minSpeed = 10f;
+        cloudSystem.maxSpeed = 25f;
+        cloudSystem.minScale = 0.5f;
+        cloudSystem.maxScale = 1.0f;
+        cloudSystem.spawnInterval = 3f;
+
         // ══════════════════════════════════════════
         //  PLAY AREA
         // ══════════════════════════════════════════
@@ -116,21 +141,24 @@ public class NumberTrainSetup : EditorWindow
         playRT.offsetMin = new Vector2(20, 16);
         playRT.offsetMax = new Vector2(-20, -TopBarHeight);
 
-        // ── Train area (upper 60%) ──
+        // ── Rail track (aligned with wagon wheels) ──
+        BuildRailTrack(playRT, 0.42f);
+
+        // ── Train area (higher up, on the grass) ──
         var trainGO = new GameObject("TrainArea");
         trainGO.transform.SetParent(playRT, false);
         var trainRT = trainGO.AddComponent<RectTransform>();
-        trainRT.anchorMin = new Vector2(0.02f, 0.30f);
-        trainRT.anchorMax = new Vector2(0.98f, 0.95f);
+        trainRT.anchorMin = new Vector2(0.02f, 0.44f);
+        trainRT.anchorMax = new Vector2(0.98f, 0.82f);
         trainRT.offsetMin = Vector2.zero;
         trainRT.offsetMax = Vector2.zero;
 
-        // ── Options area (lower 25%) ──
+        // ── Options area (on the grass, below track) ──
         var optionsGO = new GameObject("OptionsArea");
         optionsGO.transform.SetParent(playRT, false);
         var optionsRT = optionsGO.AddComponent<RectTransform>();
-        optionsRT.anchorMin = new Vector2(0.15f, 0.02f);
-        optionsRT.anchorMax = new Vector2(0.85f, 0.26f);
+        optionsRT.anchorMin = new Vector2(0.15f, 0.06f);
+        optionsRT.anchorMax = new Vector2(0.85f, 0.34f);
         optionsRT.offsetMin = Vector2.zero;
         optionsRT.offsetMax = Vector2.zero;
 
@@ -154,6 +182,63 @@ public class NumberTrainSetup : EditorWindow
         leaderboard.gameId = "numbertrain";
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/NumberTrain.unity");
+    }
+
+    // ── RAIL TRACK ──
+
+    private static readonly Color RailColor = HexColor("#5D4037");    // dark brown
+    private static readonly Color SleeperColor = HexColor("#795548"); // lighter brown
+
+    private static void BuildRailTrack(RectTransform parent, float yCenter)
+    {
+        var trackGO = new GameObject("RailTrack");
+        trackGO.transform.SetParent(parent, false);
+        var trackRT = trackGO.AddComponent<RectTransform>();
+        trackRT.anchorMin = new Vector2(0, yCenter - 0.02f);
+        trackRT.anchorMax = new Vector2(1, yCenter + 0.02f);
+        trackRT.offsetMin = Vector2.zero;
+        trackRT.offsetMax = Vector2.zero;
+
+        // Sleepers (wooden ties across the track)
+        int sleeperCount = 30;
+        for (int i = 0; i < sleeperCount; i++)
+        {
+            var sleeperGO = new GameObject($"Sleeper_{i}");
+            sleeperGO.transform.SetParent(trackGO.transform, false);
+            var srt = sleeperGO.AddComponent<RectTransform>();
+            float t = (float)i / (sleeperCount - 1);
+            srt.anchorMin = new Vector2(t - 0.008f, 0.1f);
+            srt.anchorMax = new Vector2(t + 0.008f, 0.9f);
+            srt.offsetMin = Vector2.zero;
+            srt.offsetMax = Vector2.zero;
+            var simg = sleeperGO.AddComponent<Image>();
+            simg.color = SleeperColor;
+            simg.raycastTarget = false;
+        }
+
+        // Top rail
+        var topRailGO = new GameObject("TopRail");
+        topRailGO.transform.SetParent(trackGO.transform, false);
+        var trRT = topRailGO.AddComponent<RectTransform>();
+        trRT.anchorMin = new Vector2(0, 0.65f);
+        trRT.anchorMax = new Vector2(1, 0.80f);
+        trRT.offsetMin = Vector2.zero;
+        trRT.offsetMax = Vector2.zero;
+        var trImg = topRailGO.AddComponent<Image>();
+        trImg.color = RailColor;
+        trImg.raycastTarget = false;
+
+        // Bottom rail
+        var botRailGO = new GameObject("BottomRail");
+        botRailGO.transform.SetParent(trackGO.transform, false);
+        var brRT = botRailGO.AddComponent<RectTransform>();
+        brRT.anchorMin = new Vector2(0, 0.20f);
+        brRT.anchorMax = new Vector2(1, 0.35f);
+        brRT.offsetMin = Vector2.zero;
+        brRT.offsetMax = Vector2.zero;
+        var brImg = botRailGO.AddComponent<Image>();
+        brImg.color = RailColor;
+        brImg.raycastTarget = false;
     }
 
     // ── HELPERS ──

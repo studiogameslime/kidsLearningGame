@@ -171,6 +171,12 @@ public class AnalyticsSetup : EditorWindow
             W(SkillCategory.Attention, 0.25f),
             W(SkillCategory.ProblemSolving, 0.25f)));
 
+        // ── Letter Train ──
+        mapping.entries.Add(Entry("lettertrain",
+            W(SkillCategory.Memory, 0.40f),
+            W(SkillCategory.Attention, 0.30f),
+            W(SkillCategory.ProblemSolving, 0.30f)));
+
         EditorUtility.SetDirty(mapping);
     }
 
@@ -191,7 +197,8 @@ public class AnalyticsSetup : EditorWindow
             "findtheobject", "shadows", "colormixing", "colorvoice",
             "ballmaze", "towerbuilder", "towerstack", "sharedsticker",
             "flappybird", "simonsays", "patterncopy", "letters", "numbermaze",
-            "oddoneout", "quantitymatch", "connectmatch", "numbertrain"
+            "oddoneout", "quantitymatch", "connectmatch", "numbertrain",
+            "lettertrain"
         };
 
         // ── Age 2–2.5 years (24–30 months) ──

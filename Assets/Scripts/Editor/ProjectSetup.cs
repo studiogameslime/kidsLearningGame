@@ -199,6 +199,12 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Number Train…", 0.989f);
             NumberTrainSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Letter Train…", 0.990f);
+            LetterTrainSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Image Gallery…", 0.9905f);
+            ImageGallerySetup.RunSetupSilent();
+
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Connect Match…", 0.991f);
             ConnectMatchSetup.RunSetupSilent();
 
@@ -518,11 +524,11 @@ public class ProjectSetup : EditorWindow
         puzzle.thumbnail = LoadSprite($"{previewPath}/Puzzle.png");
         puzzle.nameClip = LoadAudioClip("Assets/Sounds/Games Names/Puzzle.mp3");
         puzzle.subItems = new List<SubItemData>();
-        // Gallery import option — first item
+        // Image gallery option — first item (opens unified in-game gallery)
         puzzle.subItems.Add(new SubItemData
         {
             id = "puzzle_gallery",
-            title = "\u05DE\u05D4\u05D2\u05DC\u05E8\u05D9\u05D4", // מהגלריה
+            title = "\u05DE\u05D4\u05EA\u05DE\u05D5\u05E0\u05D5\u05EA \u05E9\u05DC\u05D9", // מהתמונות שלי
             cardColor = new Color(0.85f, 0.75f, 0.95f),
             categoryKey = "gallery",
             targetSceneName = "PuzzleGame"
@@ -784,6 +790,16 @@ public class ProjectSetup : EditorWindow
         numberTrain.hasSubItems = false;
         EditorUtility.SetDirty(numberTrain);
 
+        // ── Letter Train ──
+        var letterTrain = CreateSO<GameItemData>($"{DataPath}/LetterTrain.asset");
+        letterTrain.id = "lettertrain";
+        letterTrain.title = "Letter Train";
+        letterTrain.cardColor = HexColor("#7E57C2");
+        letterTrain.targetSceneName = "LetterTrain";
+        letterTrain.thumbnail = LoadSprite($"{previewPath}/LettersTrain.png");
+        letterTrain.hasSubItems = false;
+        EditorUtility.SetDirty(letterTrain);
+
         // ── Connect Match ──
         var connectMatch = CreateSO<GameItemData>($"{DataPath}/ConnectMatch.asset");
         connectMatch.id = "connectmatch";
@@ -796,7 +812,7 @@ public class ProjectSetup : EditorWindow
 
         // ── Game Database ──
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, colorVoice, tower, towerStack, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, connectMatch };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, colorVoice, tower, towerStack, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, connectMatch };
         EditorUtility.SetDirty(db);
 
         // Validate age baseline configuration
@@ -1396,6 +1412,8 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/OddOneOut.unity",
             $"{ScenesPath}/QuantityMatch.unity",
             $"{ScenesPath}/NumberTrain.unity",
+            $"{ScenesPath}/LetterTrain.unity",
+            $"{ScenesPath}/ImageGallery.unity",
             $"{ScenesPath}/ConnectMatch.unity",
             $"{ScenesPath}/DiscoveryReveal.unity",
             $"{ScenesPath}/DrawingGallery.unity",

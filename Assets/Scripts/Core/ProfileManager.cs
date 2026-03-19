@@ -61,6 +61,17 @@ public class ProfileManager : MonoBehaviour
             _store = new ProfileStore();
         }
 
+        // Ensure lists aren't null (old JSON may not have newer fields)
+        if (_store.profiles != null)
+        {
+            foreach (var p in _store.profiles)
+            {
+                if (p.savedDrawings == null) p.savedDrawings = new List<SavedDrawing>();
+                if (p.parentImages == null) p.parentImages = new List<ParentImage>();
+                if (p.gameAccessOverrides == null) p.gameAccessOverrides = new List<GameAccessOverrideData>();
+            }
+        }
+
         // Restore active profile
         if (!string.IsNullOrEmpty(_store.activeProfileId))
         {

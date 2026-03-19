@@ -50,6 +50,7 @@ public class NumberTrainController : MonoBehaviour
     private int _hintsUsed;
     private float _lastInteractionTime;
     private int _placedCount;
+    private float _wagonW; // saved for option sizing
 
     // Level data
     private int _startNumber;
@@ -201,6 +202,7 @@ public class NumberTrainController : MonoBehaviour
         float areaH = trainArea.rect.height;
 
         float wagonW = Mathf.Min(220f, (areaW - (_wagonCount - 1) * 20f - 20f) / _wagonCount);
+        _wagonW = wagonW;
         float wagonH = wagonW * 0.85f;
         float connW = 20f;
         float totalW = _wagonCount * wagonW + (_wagonCount - 1) * connW;
@@ -216,8 +218,11 @@ public class NumberTrainController : MonoBehaviour
                 var connGO = new GameObject("Connector");
                 connGO.transform.SetParent(_trainGroupRT, false);
                 var connRT = connGO.AddComponent<RectTransform>();
+                connRT.anchorMin = new Vector2(0.5f, 0f);
+                connRT.anchorMax = new Vector2(0.5f, 0f);
+                connRT.pivot = new Vector2(0.5f, 0.5f);
                 connRT.sizeDelta = new Vector2(connW + 6f, 8f);
-                connRT.anchoredPosition = new Vector2(x - (wagonW + connW) / 2f, 0f);
+                connRT.anchoredPosition = new Vector2(x - (wagonW + connW) / 2f, wagonH * 0.45f);
                 var connImg = connGO.AddComponent<Image>();
                 connImg.color = ConnectorColor;
                 connImg.raycastTarget = false;
@@ -237,6 +242,9 @@ public class NumberTrainController : MonoBehaviour
         var go = new GameObject($"Wagon_{wagonIndex}");
         go.transform.SetParent(parent, false);
         var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0f); // anchor to bottom-center
+        rt.anchorMax = new Vector2(0.5f, 0f);
+        rt.pivot = new Vector2(0.5f, 0f);     // pivot at bottom edge
         rt.sizeDelta = new Vector2(w, h);
         rt.anchoredPosition = new Vector2(x, y);
 
@@ -260,9 +268,9 @@ public class NumberTrainController : MonoBehaviour
         bgImg.raycastTarget = false;
 
         // Wheels (two small circles at bottom)
-        float wheelSize = Mathf.Min(20f, w * 0.14f);
-        CreateWheel(go.transform, -w * 0.25f, -h / 2f - wheelSize * 0.3f, wheelSize);
-        CreateWheel(go.transform, w * 0.25f, -h / 2f - wheelSize * 0.3f, wheelSize);
+        float wheelSize = Mathf.Min(50f, w * 0.30f);
+        CreateWheel(go.transform, -w * 0.28f, -25f, wheelSize);
+        CreateWheel(go.transform, w * 0.28f, -25f, wheelSize);
 
         // Number text
         var textGO = new GameObject("Number");
@@ -299,6 +307,9 @@ public class NumberTrainController : MonoBehaviour
         var go = new GameObject("Wheel");
         go.transform.SetParent(parent, false);
         var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0f); // anchor to bottom of wagon
+        rt.anchorMax = new Vector2(0.5f, 0f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
         rt.sizeDelta = new Vector2(size, size);
         rt.anchoredPosition = new Vector2(x, y);
         var img = go.AddComponent<Image>();
@@ -323,7 +334,7 @@ public class NumberTrainController : MonoBehaviour
 
         float areaW = optionsArea.rect.width;
         float areaH = optionsArea.rect.height;
-        float optSize = Mathf.Min(160f, areaH * 0.90f);
+        float optSize = Mathf.Min(_wagonW, areaH * 0.95f);
         float spacing = 30f;
         float totalW = shuffled.Count * optSize + (shuffled.Count - 1) * spacing;
         float startX = -totalW / 2f + optSize / 2f;

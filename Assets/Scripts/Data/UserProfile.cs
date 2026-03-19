@@ -22,6 +22,7 @@ public class UserProfile
     public JourneyProgress journey = new JourneyProgress();
     public ChildAnalyticsProfile analytics = new ChildAnalyticsProfile();
     public List<SavedDrawing> savedDrawings = new List<SavedDrawing>();
+    public List<ParentImage> parentImages = new List<ParentImage>();
 
     // Adaptive visibility system (defaults safe for old JSON)
     public float estimatedGlobalAge;  // 0 = not yet computed, use chronological age
@@ -147,6 +148,17 @@ public class SavedDrawing
 {
     public string imagePath;   // relative path in persistentDataPath
     public string animalId;    // which animal was being colored (or "free")
+    public long createdAt;
+}
+
+/// <summary>
+/// An image uploaded by the parent for the child's games.
+/// </summary>
+[Serializable]
+public class ParentImage
+{
+    public string imagePath;   // relative path in persistentDataPath
+    public string label;       // optional parent-given label
     public long createdAt;
 }
 

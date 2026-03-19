@@ -64,10 +64,16 @@ public class ParentDashboardController : MonoBehaviour
     // Dynamic content tab state
     private const int TabStatistics = 0;
     private const int TabGames = 1;
+    private const int TabGallery = 2;
     private int _activeContentTab = TabStatistics;
     private Button _statsTabBtn;
     private Button _gamesTabBtn;
+    private Button _galleryTabBtn;
     private GameObject _statsTabBar; // runtime-created tab bar
+
+    // Gallery state
+    private List<GameObject> _galleryThumbnails = new List<GameObject>();
+    private List<Texture2D> _galleryTextures = new List<Texture2D>();
 
     private void Start()
     {
@@ -243,6 +249,9 @@ public class ParentDashboardController : MonoBehaviour
         // ScrollView 1 = Games (access + recommendation cards)
         BuildGamesTabContent();
 
+        // ScrollView 2 = Gallery (parent image uploads)
+        BuildGalleryTabContent();
+
         // Show statistics tab by default
         SwitchContentTab(TabStatistics);
     }
@@ -286,6 +295,11 @@ public class ParentDashboardController : MonoBehaviour
         _gamesTabBtn = MakeContentTabButton(_statsTabBar.transform,
             H("\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD"), false); // משחקים
         _gamesTabBtn.onClick.AddListener(() => SwitchContentTab(TabGames));
+
+        // Gallery tab button
+        _galleryTabBtn = MakeContentTabButton(_statsTabBar.transform,
+            H("\u05D2\u05DC\u05E8\u05D9\u05D4"), false); // גלריה
+        _galleryTabBtn.onClick.AddListener(() => SwitchContentTab(TabGallery));
 
         // Push scroll views down by tab bar height (130 header + 52 tab bar = 182)
         float topOffset = 182;
@@ -345,10 +359,12 @@ public class ParentDashboardController : MonoBehaviour
         // Toggle scroll views
         if (tabContents.Length > 0) tabContents[0].parent.gameObject.SetActive(tab == TabStatistics);
         if (tabContents.Length > 1) tabContents[1].parent.gameObject.SetActive(tab == TabGames);
+        if (tabContents.Length > 2) tabContents[2].parent.gameObject.SetActive(tab == TabGallery);
 
         // Update button visuals
         UpdateContentTabButton(_statsTabBtn, tab == TabStatistics);
         UpdateContentTabButton(_gamesTabBtn, tab == TabGames);
+        UpdateContentTabButton(_galleryTabBtn, tab == TabGallery);
     }
 
     private void UpdateContentTabButton(Button btn, bool active)
@@ -370,6 +386,272 @@ public class ParentDashboardController : MonoBehaviour
             var tmp = label.GetComponent<TextMeshProUGUI>();
             if (tmp != null) tmp.color = active ? Primary : TextMedium;
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  GALLERY TAB
+    // ═══════════════════════════════════════════════════════════════
+
+    private void BuildGalleryTabContent()
+    {
+        if (tabContents.Length < 3) return;
+        var parent = tabContents[2];
+
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null) return;
+
+        // ── Add Image button ──
+        var addBtnGO = new GameObject("AddImageButton");
+        addBtnGO.transform.SetParent(parent, false);
+        var addBtnRT = addBtnGO.AddComponent<RectTransform>();
+        addBtnRT.sizeDelta = new Vector2(0, 60);
+
+        var addBtnImg = addBtnGO.AddComponent<Image>();
+        if (roundedRect != null) { addBtnImg.sprite = roundedRect; addBtnImg.type = Image.Type.Sliced; }
+        addBtnImg.color = Primary;
+        addBtnImg.raycastTarget = true;
+
+        var addBtnComp = addBtnGO.AddComponent<Button>();
+        addBtnComp.targetGraphic = addBtnImg;
+        addBtnComp.onClick.AddListener(OnAddParentImage);
+
+        var addTextGO = new GameObject("Label");
+        addTextGO.transform.SetParent(addBtnGO.transform, false);
+        var addTextRT = addTextGO.AddComponent<RectTransform>();
+        addTextRT.anchorMin = Vector2.zero;
+        addTextRT.anchorMax = Vector2.one;
+        addTextRT.offsetMin = Vector2.zero;
+        addTextRT.offsetMax = Vector2.zero;
+        var addTMP = addTextGO.AddComponent<TextMeshProUGUI>();
+        HebrewText.SetText(addTMP, "+ \u05D4\u05D5\u05E1\u05E3 \u05EA\u05DE\u05D5\u05E0\u05D4"); // + הוסף תמונה
+        addTMP.fontSize = 22;
+        addTMP.fontStyle = FontStyles.Bold;
+        addTMP.color = Color.white;
+        addTMP.alignment = TextAlignmentOptions.Center;
+        addTMP.raycastTarget = false;
+
+        // ── Image grid container ──
+        var gridGO = new GameObject("ImageGrid");
+        gridGO.transform.SetParent(parent, false);
+        var gridRT = gridGO.AddComponent<RectTransform>();
+        var gridLayout = gridGO.AddComponent<GridLayoutGroup>();
+        gridLayout.cellSize = new Vector2(200, 200);
+        gridLayout.spacing = new Vector2(16, 16);
+        gridLayout.padding = new RectOffset(8, 8, 8, 8);
+        gridLayout.childAlignment = TextAnchor.UpperCenter;
+        gridLayout.startCorner = GridLayoutGroup.Corner.UpperRight; // RTL
+        var gridCSF = gridGO.AddComponent<ContentSizeFitter>();
+        gridCSF.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        // ── Load existing parent images ──
+        string basePath = Application.persistentDataPath;
+        bool hasImages = false;
+
+        if (profile.parentImages != null)
+        {
+            for (int i = profile.parentImages.Count - 1; i >= 0; i--)
+            {
+                var img = profile.parentImages[i];
+                string fullPath = System.IO.Path.Combine(basePath, img.imagePath);
+                if (!System.IO.File.Exists(fullPath)) continue;
+
+                byte[] data = System.IO.File.ReadAllBytes(fullPath);
+                var tex = new Texture2D(2, 2);
+                if (!tex.LoadImage(data)) { Destroy(tex); continue; }
+
+                _galleryTextures.Add(tex);
+                CreateGalleryThumbnail(gridRT, tex, i);
+                hasImages = true;
+            }
+        }
+
+        // ── Empty state ──
+        if (!hasImages)
+        {
+            var emptyGO = new GameObject("EmptyState");
+            emptyGO.transform.SetParent(parent, false);
+            var emptyRT = emptyGO.AddComponent<RectTransform>();
+            emptyRT.sizeDelta = new Vector2(0, 100);
+            var emptyTMP = emptyGO.AddComponent<TextMeshProUGUI>();
+            HebrewText.SetText(emptyTMP,
+                "\u05D0\u05D9\u05DF \u05E2\u05D3\u05D9\u05D9\u05DF \u05EA\u05DE\u05D5\u05E0\u05D5\u05EA.\n\u05D4\u05D5\u05E1\u05D9\u05E4\u05D5 \u05EA\u05DE\u05D5\u05E0\u05D5\u05EA \u05DC\u05D9\u05DC\u05D3 \u05DC\u05E9\u05D7\u05E7 \u05D0\u05D9\u05EA\u05DF.");
+            // אין עדיין תמונות.\nהוסיפו תמונות לילד לשחק איתן.
+            emptyTMP.fontSize = 22;
+            emptyTMP.color = TextMedium;
+            emptyTMP.alignment = TextAlignmentOptions.Center;
+            emptyTMP.raycastTarget = false;
+        }
+    }
+
+    private void CreateGalleryThumbnail(RectTransform grid, Texture2D tex, int imageIndex)
+    {
+        var go = new GameObject($"ParentImg_{imageIndex}");
+        go.transform.SetParent(grid, false);
+
+        var bgImg = go.AddComponent<Image>();
+        if (roundedRect != null) { bgImg.sprite = roundedRect; bgImg.type = Image.Type.Sliced; }
+        bgImg.color = Color.white;
+        bgImg.raycastTarget = true;
+
+        // Image
+        var imgGO = new GameObject("Image");
+        imgGO.transform.SetParent(go.transform, false);
+        var irt = imgGO.AddComponent<RectTransform>();
+        irt.anchorMin = new Vector2(0.05f, 0.05f);
+        irt.anchorMax = new Vector2(0.95f, 0.95f);
+        irt.offsetMin = Vector2.zero;
+        irt.offsetMax = Vector2.zero;
+        var rawImg = imgGO.AddComponent<RawImage>();
+        rawImg.texture = tex;
+        rawImg.raycastTarget = false;
+
+        // Delete button (small X in corner)
+        var delGO = new GameObject("DeleteBtn");
+        delGO.transform.SetParent(go.transform, false);
+        var delRT = delGO.AddComponent<RectTransform>();
+        delRT.anchorMin = new Vector2(0, 1);
+        delRT.anchorMax = new Vector2(0, 1);
+        delRT.pivot = new Vector2(0, 1);
+        delRT.anchoredPosition = new Vector2(4, -4);
+        delRT.sizeDelta = new Vector2(32, 32);
+        var delImg = delGO.AddComponent<Image>();
+        if (circleSprite != null) delImg.sprite = circleSprite;
+        delImg.color = new Color(0.9f, 0.3f, 0.3f, 0.85f);
+        delImg.raycastTarget = true;
+
+        var delTextGO = new GameObject("X");
+        delTextGO.transform.SetParent(delGO.transform, false);
+        var dtRT = delTextGO.AddComponent<RectTransform>();
+        dtRT.anchorMin = Vector2.zero;
+        dtRT.anchorMax = Vector2.one;
+        dtRT.offsetMin = Vector2.zero;
+        dtRT.offsetMax = Vector2.zero;
+        var dtTMP = delTextGO.AddComponent<TextMeshProUGUI>();
+        dtTMP.text = "\u00D7"; // ×
+        dtTMP.fontSize = 20;
+        dtTMP.fontStyle = FontStyles.Bold;
+        dtTMP.color = Color.white;
+        dtTMP.alignment = TextAlignmentOptions.Center;
+        dtTMP.raycastTarget = false;
+
+        var delBtn = delGO.AddComponent<Button>();
+        delBtn.targetGraphic = delImg;
+        int capturedIdx = imageIndex;
+        delBtn.onClick.AddListener(() => OnDeleteParentImage(capturedIdx));
+
+        _galleryThumbnails.Add(go);
+    }
+
+    private void OnAddParentImage()
+    {
+#if UNITY_EDITOR
+        string path = UnityEditor.EditorUtility.OpenFilePanel("Select Image", "", "png,jpg,jpeg");
+        if (!string.IsNullOrEmpty(path))
+        {
+            byte[] data = System.IO.File.ReadAllBytes(path);
+            SaveParentImage(data);
+        }
+#else
+        NativeGallery.GetImageFromGallery((path) =>
+        {
+            if (string.IsNullOrEmpty(path)) return;
+            byte[] data = System.IO.File.ReadAllBytes(path);
+            SaveParentImage(data);
+        }, "Select Image");
+#endif
+    }
+
+    private void SaveParentImage(byte[] imageData)
+    {
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null) return;
+
+        // Resize if needed (max 1024px)
+        var tex = new Texture2D(2, 2);
+        if (!tex.LoadImage(imageData)) { Destroy(tex); return; }
+
+        if (tex.width > 1024 || tex.height > 1024)
+        {
+            float scale = 1024f / Mathf.Max(tex.width, tex.height);
+            var rt = RenderTexture.GetTemporary((int)(tex.width * scale), (int)(tex.height * scale));
+            Graphics.Blit(tex, rt);
+            var resized = new Texture2D(rt.width, rt.height, TextureFormat.RGB24, false);
+            RenderTexture.active = rt;
+            resized.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+            resized.Apply();
+            RenderTexture.active = null;
+            RenderTexture.ReleaseTemporary(rt);
+            Destroy(tex);
+            tex = resized;
+        }
+
+        byte[] png = tex.EncodeToPNG();
+        Destroy(tex);
+
+        // Save to disk
+        string profileFolder = ProfileManager.Instance.GetProfileFolder(profile.id);
+        string imagesDir = System.IO.Path.Combine(profileFolder, "parent_images");
+        if (!System.IO.Directory.Exists(imagesDir))
+            System.IO.Directory.CreateDirectory(imagesDir);
+
+        string fileName = $"parent_{System.DateTimeOffset.UtcNow.ToUnixTimeSeconds()}.png";
+        string fullPath = System.IO.Path.Combine(imagesDir, fileName);
+        System.IO.File.WriteAllBytes(fullPath, png);
+
+        // Add to profile
+        string relativePath = $"profiles/{profile.id}/parent_images/{fileName}";
+        profile.parentImages.Add(new ParentImage
+        {
+            imagePath = relativePath,
+            label = "",
+            createdAt = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+        });
+        ProfileManager.Instance.Save();
+
+        // Refresh gallery
+        RefreshGalleryTab();
+    }
+
+    private void OnDeleteParentImage(int imageIndex)
+    {
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null || profile.parentImages == null) return;
+        if (imageIndex < 0 || imageIndex >= profile.parentImages.Count) return;
+
+        // Delete file
+        string basePath = Application.persistentDataPath;
+        string fullPath = System.IO.Path.Combine(basePath, profile.parentImages[imageIndex].imagePath);
+        if (System.IO.File.Exists(fullPath))
+            System.IO.File.Delete(fullPath);
+
+        // Remove from profile
+        profile.parentImages.RemoveAt(imageIndex);
+        ProfileManager.Instance.Save();
+
+        // Refresh gallery
+        RefreshGalleryTab();
+    }
+
+    private void RefreshGalleryTab()
+    {
+        // Clean up old thumbnails
+        foreach (var go in _galleryThumbnails)
+            if (go != null) Destroy(go);
+        _galleryThumbnails.Clear();
+        foreach (var tex in _galleryTextures)
+            if (tex != null) Destroy(tex);
+        _galleryTextures.Clear();
+
+        // Clear scroll content for gallery tab
+        if (tabContents.Length > 2)
+        {
+            var content = tabContents[2];
+            for (int i = content.childCount - 1; i >= 0; i--)
+                Destroy(content.GetChild(i).gameObject);
+        }
+
+        // Rebuild
+        BuildGalleryTabContent();
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -2042,5 +2324,12 @@ public class ParentDashboardController : MonoBehaviour
     {
         ColorUtility.TryParseHtmlString(hex, out Color c);
         return c;
+    }
+
+    private void OnDestroy()
+    {
+        foreach (var tex in _galleryTextures)
+            if (tex != null) Destroy(tex);
+        _galleryTextures.Clear();
     }
 }

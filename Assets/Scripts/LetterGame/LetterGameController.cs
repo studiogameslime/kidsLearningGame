@@ -131,6 +131,17 @@ public class LetterGameController : MonoBehaviour
             animalImage.sprite = null;
             animalImage.color = Color.white;
             animalImage.gameObject.SetActive(true);
+            // Reset to stretch mode (may have been set to fixed size for color swatches)
+            var imgRT = animalImage.GetComponent<RectTransform>();
+            if (imgRT != null)
+            {
+                imgRT.anchorMin = Vector2.zero;
+                imgRT.anchorMax = Vector2.one;
+                imgRT.offsetMin = Vector2.zero;
+                imgRT.offsetMax = Vector2.zero;
+                imgRT.sizeDelta = Vector2.zero;
+                imgRT.anchoredPosition = Vector2.zero;
+            }
         }
     }
 
@@ -196,13 +207,22 @@ public class LetterGameController : MonoBehaviour
         }
         else if (_currentWord.soundType == "color")
         {
-            // Color swatch: use circle sprite tinted with the color
+            // Color swatch: fixed-size circle centered in the image area
             if (circleSprite != null)
                 animalImage.sprite = circleSprite;
             else if (cellSprite != null)
                 animalImage.sprite = cellSprite;
             animalImage.color = _currentWord.swatchColor;
             animalImage.preserveAspect = true;
+            var imgRT = animalImage.GetComponent<RectTransform>();
+            if (imgRT != null)
+            {
+                // Center anchors + fixed size instead of stretching
+                imgRT.anchorMin = new Vector2(0.5f, 0.5f);
+                imgRT.anchorMax = new Vector2(0.5f, 0.5f);
+                imgRT.sizeDelta = new Vector2(150f, 150f);
+                imgRT.anchoredPosition = Vector2.zero;
+            }
         }
     }
 
@@ -214,11 +234,11 @@ public class LetterGameController : MonoBehaviour
 
         string word = _currentWord.hebrewWord;
         int len = word.Length;
-        // Left container: fit tiles within the container, generous spacing
-        float spacing = 14f;
-        float maxByHeight = tileArea.rect.height * 0.80f;
+        // Word tiles under image — big and readable
+        float spacing = 16f;
+        float maxByHeight = tileArea.rect.height * 0.90f;
         float maxByWidth = (tileArea.rect.width - (len - 1) * spacing) / len;
-        float tileW = Mathf.Min(90f, Mathf.Min(maxByHeight, maxByWidth));
+        float tileW = Mathf.Min(160f, Mathf.Min(maxByHeight, maxByWidth));
         float tileH = tileW;
         float totalW = len * tileW + (len - 1) * spacing;
         float startX = totalW / 2f - tileW / 2f; // rightmost tile x (RTL: first letter = rightmost)
@@ -302,10 +322,10 @@ public class LetterGameController : MonoBehaviour
 
         char[] options = LetterDistractorGenerator.Generate(_correctLetter, _difficulty);
 
-        // Right half button area: fit 3 buttons with generous spacing
+        // Answer buttons — big and easy to tap
         float maxBtnH = buttonArea.rect.height * 0.90f;
         float maxBtnW = (buttonArea.rect.width - 2 * 30f) / 3f;
-        float btnSize = Mathf.Min(maxBtnH, Mathf.Min(maxBtnW, 130f));
+        float btnSize = Mathf.Min(maxBtnH, Mathf.Min(maxBtnW, 220f));
         float spacing = 30f;
         float totalW = 3 * btnSize + 2 * spacing;
         float startX = -totalW / 2f + btnSize / 2f;

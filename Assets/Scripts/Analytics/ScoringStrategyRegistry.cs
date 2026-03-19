@@ -58,8 +58,11 @@ public static class ScoringStrategyRegistry
         if (id.Contains("connectmatch"))
             return new ConnectMatchScoringStrategy();
 
-        if (id.Contains("numbertrain") || id.Contains("train"))
+        if (id.Contains("numbertrain"))
             return new NumberTrainScoringStrategy();
+
+        if (id.Contains("lettertrain"))
+            return new LetterTrainScoringStrategy();
 
         return _default;
     }

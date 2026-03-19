@@ -116,27 +116,12 @@ public class NumberMazeSetup : EditorWindow
         playRT.offsetMin = new Vector2(24, 24);
         playRT.offsetMax = new Vector2(-24, -TopBarHeight);
 
-        // ── Progress text (top of play area) ──
-        var progGO = new GameObject("ProgressText");
-        progGO.transform.SetParent(playRT, false);
-        var progRT = progGO.AddComponent<RectTransform>();
-        progRT.anchorMin = new Vector2(0.2f, 0.94f);
-        progRT.anchorMax = new Vector2(0.8f, 1.0f);
-        progRT.offsetMin = Vector2.zero;
-        progRT.offsetMax = Vector2.zero;
-        var progTMP = progGO.AddComponent<TextMeshProUGUI>();
-        progTMP.text = "0/5";
-        progTMP.fontSize = 34;
-        progTMP.color = ProgressClr;
-        progTMP.alignment = TextAlignmentOptions.Center;
-        progTMP.raycastTarget = false;
-
         // ── Grid area (main portion of play area) ──
         var gridGO = new GameObject("GridArea");
         gridGO.transform.SetParent(playRT, false);
         var gridRT = gridGO.AddComponent<RectTransform>();
-        gridRT.anchorMin = new Vector2(0.02f, 0.05f);
-        gridRT.anchorMax = new Vector2(0.98f, 0.93f);
+        gridRT.anchorMin = new Vector2(0.02f, 0.03f);
+        gridRT.anchorMax = new Vector2(0.98f, 0.97f);
         gridRT.offsetMin = Vector2.zero;
         gridRT.offsetMax = Vector2.zero;
 
@@ -146,7 +131,7 @@ public class NumberMazeSetup : EditorWindow
         var ctrl = canvasGO.AddComponent<NumberMazeController>();
         ctrl.gridArea = gridRT;
         ctrl.titleText = titleTMP;
-        ctrl.progressText = progTMP;
+        ctrl.progressText = null;
         ctrl.cellSprite = roundedRect;
 
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
