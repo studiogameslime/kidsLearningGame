@@ -181,6 +181,15 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Simon Says…", 0.977f);
             SimonSaysSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Pattern Copy…", 0.979f);
+            PatternCopySetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Letter Game…", 0.981f);
+            LetterGameSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Number Maze…", 0.983f);
+            NumberMazeSetup.RunSetupSilent();
+
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Animal Data…", 0.965f);
             WorldSceneSetup.BuildAnimalData();
 
@@ -660,15 +669,7 @@ public class ProjectSetup : EditorWindow
         tower.cardColor = HexColor("#42A5F5");
         tower.targetSceneName = "TowerBuilder";
         tower.thumbnail = LoadSprite($"{previewPath}/Lego.png");
-        tower.hasSubItems = true;
-        tower.selectionScreenTitle = "\u05D1\u05E0\u05D4 \u05D0\u05EA \u05D4\u05DE\u05D2\u05D3\u05DC"; // בנה את המגדל
-        tower.subItems = new List<SubItemData>
-        {
-            new SubItemData { id = "tower_easy",      title = "\u05E7\u05DC",          cardColor = HexColor("#66BB6A"), categoryKey = "0", targetSceneName = "TowerBuilder" },
-            new SubItemData { id = "tower_medium",    title = "\u05D1\u05D9\u05E0\u05D5\u05E0\u05D9", cardColor = HexColor("#FFA726"), categoryKey = "1", targetSceneName = "TowerBuilder" },
-            new SubItemData { id = "tower_hard",      title = "\u05E7\u05E9\u05D4",    cardColor = HexColor("#EF5350"), categoryKey = "2", targetSceneName = "TowerBuilder" },
-            new SubItemData { id = "tower_veryhard",  title = "\u05DE\u05D0\u05EA\u05D2\u05E8", cardColor = HexColor("#AB47BC"), categoryKey = "3", targetSceneName = "TowerBuilder" },
-        };
+        tower.hasSubItems = false; // Direct launch — difficulty chosen by adaptive system
         EditorUtility.SetDirty(tower);
 
         // ── Tower Stack ──
@@ -711,9 +712,39 @@ public class ProjectSetup : EditorWindow
         simonSays.hasSubItems = false;
         EditorUtility.SetDirty(simonSays);
 
+        // ── Pattern Copy ──
+        var patternCopy = CreateSO<GameItemData>($"{DataPath}/PatternCopy.asset");
+        patternCopy.id = "patterncopy";
+        patternCopy.title = "Pattern Copy";
+        patternCopy.cardColor = HexColor("#7E57C2");
+        patternCopy.targetSceneName = "PatternCopy";
+        patternCopy.thumbnail = LoadSprite($"{previewPath}/PatternCopy.png");
+        patternCopy.hasSubItems = false;
+        EditorUtility.SetDirty(patternCopy);
+
+        // ── Letters (First Letter) ──
+        var letters = CreateSO<GameItemData>($"{DataPath}/Letters.asset");
+        letters.id = "letters";
+        letters.title = "First Letter";
+        letters.cardColor = HexColor("#66BB6A");
+        letters.targetSceneName = "LettersGame";
+        letters.thumbnail = LoadSprite($"{previewPath}/MissingLetter.png");
+        letters.hasSubItems = false;
+        EditorUtility.SetDirty(letters);
+
+        // ── Number Maze ──
+        var numberMaze = CreateSO<GameItemData>($"{DataPath}/NumberMaze.asset");
+        numberMaze.id = "numbermaze";
+        numberMaze.title = "Number Maze";
+        numberMaze.cardColor = HexColor("#42A5F5");
+        numberMaze.targetSceneName = "NumberMaze";
+        numberMaze.thumbnail = LoadSprite($"{previewPath}/NumberMaze.png");
+        numberMaze.hasSubItems = false;
+        EditorUtility.SetDirty(numberMaze);
+
         // ── Game Database ──
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, colorVoice, tower, towerStack, sharedSticker, flappyBird, simonSays };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, colorVoice, tower, towerStack, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze };
         EditorUtility.SetDirty(db);
 
         // Validate age baseline configuration
@@ -1307,6 +1338,9 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/SharedSticker.unity",
             $"{ScenesPath}/FlappyBird.unity",
             $"{ScenesPath}/SimonSays.unity",
+            $"{ScenesPath}/PatternCopy.unity",
+            $"{ScenesPath}/LettersGame.unity",
+            $"{ScenesPath}/NumberMaze.unity",
             $"{ScenesPath}/DiscoveryReveal.unity",
             $"{ScenesPath}/DrawingGallery.unity",
             $"{ScenesPath}/WorldScene.unity",

@@ -129,6 +129,24 @@ public class AnalyticsSetup : EditorWindow
             W(SkillCategory.InstructionFollowing, 0.30f),
             W(SkillCategory.Attention, 0.25f)));
 
+        // ── Pattern Copy ──
+        mapping.entries.Add(Entry("patterncopy",
+            W(SkillCategory.VisualMatching, 0.40f),
+            W(SkillCategory.SpatialReasoning, 0.35f),
+            W(SkillCategory.Attention, 0.25f)));
+
+        // ── Letter Game (First Letter) ──
+        mapping.entries.Add(Entry("letters",
+            W(SkillCategory.VisualMatching, 0.40f),
+            W(SkillCategory.Memory, 0.30f),
+            W(SkillCategory.Attention, 0.30f)));
+
+        // ── Number Maze ──
+        mapping.entries.Add(Entry("numbermaze",
+            W(SkillCategory.Numbers, 0.40f),
+            W(SkillCategory.SpatialReasoning, 0.35f),
+            W(SkillCategory.Attention, 0.25f)));
+
         EditorUtility.SetDirty(mapping);
     }
 
@@ -148,7 +166,7 @@ public class AnalyticsSetup : EditorWindow
             "memory", "puzzle", "coloring", "fillthedots", "findthecount",
             "findtheobject", "shadows", "colormixing", "colorvoice",
             "ballmaze", "towerbuilder", "towerstack", "sharedsticker",
-            "flappybird", "simonsays"
+            "flappybird", "simonsays", "patterncopy", "letters", "numbermaze"
         };
 
         // ── Age 2–2.5 years (24–30 months) ──

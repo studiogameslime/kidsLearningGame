@@ -159,6 +159,54 @@ public static class GameDifficultyConfig
     }
 
     // ═══════════════════════════════════════════════════════════
+    //  PATTERN COPY
+    // ═══════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Returns the grid size for the pattern copy game.
+    /// Difficulty 1-2 → 3, 3-4 → 4, 5-6 → 5, 7-8 → 6, 9-10 → 7
+    /// </summary>
+    public static int PatternCopyGridSize(int difficulty)
+    {
+        return PatternGenerator.GetGridSize(difficulty);
+    }
+
+    /// <summary>
+    /// Returns the fill density (0-1) for the pattern copy game.
+    /// </summary>
+    public static float PatternCopyDensity(int difficulty)
+    {
+        return PatternGenerator.GetDensity(difficulty);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  LETTER GAME (First Letter)
+    // ═══════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Returns the max word length allowed for the letter game at a given difficulty.
+    /// Difficulty 1-3 → 2-3 letter words, 4-6 → up to 4, 7-10 → all words.
+    /// </summary>
+    public static int LetterGameMaxWordLength(int difficulty)
+    {
+        if (difficulty <= 3) return 3;
+        if (difficulty <= 6) return 4;
+        return 99;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  NUMBER MAZE
+    // ═══════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Returns grid config for the number maze at a given difficulty.
+    /// </summary>
+    public static void NumberMazeGridConfig(int difficulty, out int cols, out int rows, out int pathLength)
+    {
+        NumberMazeBoardGenerator.GetGridConfig(difficulty, out cols, out rows, out pathLength);
+    }
+
+    // ═══════════════════════════════════════════════════════════
     //  DIFFICULTY IMPACT LABELS (Hebrew, raw unicode)
     // ═══════════════════════════════════════════════════════════
 
@@ -219,6 +267,33 @@ public static class GameDifficultyConfig
             return $"\u05E8\u05E6\u05E3 \u05E9\u05DC {seq} \u05E6\u05E2\u05D3\u05D9\u05DD"; // רצף של X צעדים
         }
 
+        // Pattern Copy
+        if (id.Contains("pattern") || id.Contains("patterncopy"))
+        {
+            int grid = PatternCopyGridSize(difficulty);
+            int density = Mathf.RoundToInt(PatternCopyDensity(difficulty) * 100f);
+            return $"\u05DC\u05D5\u05D7 {grid}\u00D7{grid}, {density}% \u05DE\u05D9\u05DC\u05D5\u05D9"; // לוח AxA, X% מילוי
+        }
+
+        // Letter Game
+        if (id.Contains("letter"))
+        {
+            int maxLen = LetterGameMaxWordLength(difficulty);
+            if (maxLen <= 3)
+                return "\u05DE\u05D9\u05DC\u05D9\u05DD \u05E9\u05DC 2\u20133 \u05D0\u05D5\u05EA\u05D9\u05D5\u05EA"; // מילים של 2–3 אותיות
+            if (maxLen <= 4)
+                return "\u05DE\u05D9\u05DC\u05D9\u05DD \u05E9\u05DC \u05E2\u05D3 4 \u05D0\u05D5\u05EA\u05D9\u05D5\u05EA"; // מילים של עד 4 אותיות
+            return "\u05DB\u05DC \u05D4\u05DE\u05D9\u05DC\u05D9\u05DD"; // כל המילים
+        }
+
+        // Number Maze
+        if (id.Contains("numbermaze"))
+        {
+            int c, r, p;
+            NumberMazeGridConfig(difficulty, out c, out r, out p);
+            return $"\u05E8\u05E9\u05EA {c}\u00D7{r}, {p} \u05DE\u05E1\u05E4\u05E8\u05D9\u05DD"; // רשת CxR, P מספרים
+        }
+
         // Connect the dots
         if (id.Contains("fillthedots") || id.Contains("connectthedots") || id.Contains("dots"))
         {
@@ -248,6 +323,22 @@ public static class GameDifficultyConfig
     {
         if (variantValue <= 0) return 1;
 
+        // Number Maze: variant = path length → difficulty
+        if (gameId == "numbermaze")
+        {
+            if (variantValue <= 10) return 1;       // 5x3, 10 numbers → difficulty 1-4
+            if (variantValue <= 15) return 5;        // 6x4, 15 numbers → difficulty 5-8
+            return 9;                                // 7x5, 20 numbers → difficulty 9-10
+        }
+
+        // Letter Game: variant = max word length → difficulty
+        if (gameId == "letters")
+        {
+            if (variantValue <= 3) return 1;       // 2-3 letter words → difficulty 1-3
+            if (variantValue <= 4) return 4;        // up to 4 letter words → difficulty 4-6
+            return 7;                               // all words → difficulty 7-10
+        }
+
         // Puzzle: variant = piece count → grid size → difficulty
         if (gameId == "puzzle")
         {
@@ -255,6 +346,16 @@ public static class GameDifficultyConfig
             if (variantValue <= 9) return 4;         // 3x3 = 9 pieces → difficulty 4-6
             if (variantValue <= 16) return 7;        // 4x4 = 16 pieces → difficulty 7-9
             return 10;                               // 5x5 = 25 pieces → difficulty 10
+        }
+
+        // Pattern Copy: variant = grid size → difficulty
+        if (gameId == "patterncopy")
+        {
+            if (variantValue <= 3) return 1;         // 3x3 → difficulty 1-2
+            if (variantValue <= 4) return 3;          // 4x4 → difficulty 3-4
+            if (variantValue <= 5) return 5;           // 5x5 → difficulty 5-6
+            if (variantValue <= 6) return 7;           // 6x6 → difficulty 7-8
+            return 9;                                  // 7x7 → difficulty 9-10
         }
 
         // Memory: variant = card count → difficulty

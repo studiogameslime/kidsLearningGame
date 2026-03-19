@@ -335,24 +335,34 @@ public class RewardRevealController : MonoBehaviour
         Color bubbleColor = new Color(solidColor.r, solidColor.g, solidColor.b, 0.7f);
 
         float balloonSize = 110f * Random.Range(0.9f, 1.1f);
+        float skyWidth = skyArea.rect.width;
+        if (skyWidth <= 0) skyWidth = 1920f;
+        float skyHeight = skyArea.rect.height;
+        if (skyHeight <= 0) skyHeight = 600f;
+        float grassHeight = grassArea.rect.height;
 
-        // Create balloon at gift position (in grassArea initially)
+        // Create the balloon directly in skyArea with ribbon from the start
         var go = new GameObject($"RevealedBalloon_{colorId}");
-        go.transform.SetParent(grassArea, false);
+        go.transform.SetParent(skyArea, false);
         var rt = go.AddComponent<RectTransform>();
         rt.anchorMin = Vector2.zero;
         rt.anchorMax = Vector2.zero;
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = new Vector2(fromPos.x, fromPos.y + giftSize * 0.5f);
         rt.sizeDelta = new Vector2(balloonSize, balloonSize);
         rt.localScale = Vector3.zero;
+
+        // Start position: convert gift grass position to sky-relative
+        // Place at the bottom of the sky area (near the grass)
+        float startX = fromPos.x;
+        float startY = -skyHeight * 0.1f; // just below sky area
+        rt.anchoredPosition = new Vector2(startX, startY);
 
         var img = go.AddComponent<Image>();
         img.color = bubbleColor;
         img.raycastTarget = true;
         if (circleSprite != null) img.sprite = circleSprite;
 
-        // Add shine
+        // Shine
         var shineGO = new GameObject("Shine");
         shineGO.transform.SetParent(go.transform, false);
         var shineRT = shineGO.AddComponent<RectTransform>();
@@ -365,7 +375,20 @@ public class RewardRevealController : MonoBehaviour
         shineImg.color = new Color(1f, 1f, 1f, 0.4f);
         shineImg.raycastTarget = false;
 
-        // Pop out from gift
+        // Ribbon — attached from the start so it's always visible
+        var ribbonGO = new GameObject("Ribbon");
+        ribbonGO.transform.SetParent(go.transform, false);
+        var ribbonRT = ribbonGO.AddComponent<RectTransform>();
+        ribbonRT.anchorMin = new Vector2(0.5f, 0f);
+        ribbonRT.anchorMax = new Vector2(0.5f, 0f);
+        ribbonRT.pivot = new Vector2(0.5f, 1f);
+        ribbonRT.anchoredPosition = Vector2.zero;
+        ribbonRT.sizeDelta = new Vector2(20f, balloonSize * 0.975f);
+        var ribbonString = ribbonGO.AddComponent<BalloonString>();
+        ribbonString.ribbonColor = new Color(
+            bubbleColor.r * 0.65f, bubbleColor.g * 0.65f, bubbleColor.b * 0.65f, 0.55f);
+
+        // Pop in
         float t = 0f;
         float popDur = 0.3f;
         while (t < popDur)
@@ -380,57 +403,41 @@ public class RewardRevealController : MonoBehaviour
         }
         rt.localScale = Vector3.one;
 
-        SpawnCelebrationParticles(rt.anchoredPosition + new Vector2(0, 50f), 10);
+        SpawnCelebrationParticles(
+            grassArea.InverseTransformPoint(skyArea.TransformPoint(rt.anchoredPosition)),
+            10);
 
         yield return new WaitForSeconds(0.3f);
 
-        // Float upward with gentle sway toward sky
+        // Float upward smoothly to final sky position — no reparenting, no jump
         float floatDur = 2f;
         t = 0f;
-        Vector2 startPos = rt.anchoredPosition;
-        float grassHeight = grassArea.rect.height;
-        float skyHeight = skyArea != null ? skyArea.rect.height : 600f;
-        float targetY = grassHeight + skyHeight * 0.5f;
+        Vector2 floatStart = rt.anchoredPosition;
+        float finalX = Random.Range(200f, skyWidth - 200f);
+        float finalY = skyHeight * Random.Range(0.2f, 0.6f);
+        Vector2 floatEnd = new Vector2(finalX, finalY);
 
         while (t < floatDur)
         {
             t += Time.deltaTime;
             float p = Mathf.SmoothStep(0f, 1f, t / floatDur);
-            float swayX = Mathf.Sin(t * 2.5f) * 30f;
-            float y = Mathf.Lerp(startPos.y, targetY, p);
-            rt.anchoredPosition = new Vector2(startPos.x + swayX, y);
+            float swayX = Mathf.Sin(t * 2.5f) * 20f;
+            Vector2 pos = Vector2.Lerp(floatStart, floatEnd, p);
+            pos.x += swayX;
+            rt.anchoredPosition = pos;
             yield return null;
         }
+        rt.anchoredPosition = floatEnd;
 
-        // Reparent to skyArea as a proper WorldBalloon
-        float skyWidth = skyArea.rect.width;
-        if (skyWidth <= 0) skyWidth = 1920f;
-
-        go.transform.SetParent(skyArea, false);
-        rt.anchoredPosition = new Vector2(
-            Random.Range(200f, skyWidth - 200f),
-            skyHeight * Random.Range(0.2f, 0.6f));
-
-        // Add ribbon
-        var ribbonGO = new GameObject("Ribbon");
-        ribbonGO.transform.SetParent(go.transform, false);
-        var ribbonRT = ribbonGO.AddComponent<RectTransform>();
-        ribbonRT.anchorMin = new Vector2(0.5f, 0f);
-        ribbonRT.anchorMax = new Vector2(0.5f, 0f);
-        ribbonRT.pivot = new Vector2(0.5f, 1f);
-        ribbonRT.anchoredPosition = Vector2.zero;
-        ribbonRT.sizeDelta = new Vector2(20f, balloonSize * 0.975f);
-        var ribbonString = ribbonGO.AddComponent<BalloonString>();
-        ribbonString.ribbonColor = new Color(
-            bubbleColor.r * 0.65f, bubbleColor.g * 0.65f, bubbleColor.b * 0.65f, 0.55f);
-
-        // Add WorldBalloon for floating behavior
+        // Add WorldBalloon for ongoing floating behavior
+        // Set basePosition directly to avoid jerk on Start()
         var balloon = go.AddComponent<WorldBalloon>();
         balloon.bubbleColor = bubbleColor;
         balloon.circleSprite = circleSprite;
         balloon.skyWidth = skyWidth;
         balloon.skyHeight = skyHeight;
         balloon.padding = 200f;
+        balloon.SetBasePosition(floatEnd);
     }
 
     // ── Helpers ─────────────────────────────────────────────────

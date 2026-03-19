@@ -77,7 +77,15 @@ public class TowerBuilderController : MonoBehaviour
         for (int i = 0; i < spriteKeys.Count && i < spriteValues.Count; i++)
             spriteLookup[spriteKeys[i]] = spriteValues[i];
 
-        // Get difficulty from GameContext
+        // Auto-pick difficulty from adaptive system based on child's level
+        int adaptiveDiff = GameDifficultyConfig.GetLevel("towerbuilder");
+        // Map 1-10 difficulty scale to 0-3 tower difficulty tiers
+        if (adaptiveDiff <= 3)       difficulty = 0; // easy
+        else if (adaptiveDiff <= 5)  difficulty = 1; // medium
+        else if (adaptiveDiff <= 8)  difficulty = 2; // hard
+        else                         difficulty = 3; // very hard
+
+        // Allow manual override if selection was passed (e.g. from journey)
         if (GameContext.CurrentSelection != null)
         {
             int d;
@@ -423,9 +431,9 @@ public class TowerBuilderController : MonoBehaviour
                 if (b == a) continue;
                 var below = level.bricks[b];
 
-                // Check if below's top edge meets this brick's bottom edge
+                // Check if below's top edge meets this brick's bottom edge (with tolerance)
                 float belowTop = below.gridY + below.HeightUnits;
-                if (!Mathf.Approximately(belowTop, brick.gridY)) continue;
+                if (Mathf.Abs(belowTop - brick.gridY) > 0.1f) continue;
 
                 // Check horizontal overlap
                 float belowLeft = below.gridX;
@@ -513,6 +521,25 @@ public class TowerBuilderController : MonoBehaviour
                 bestSlot = i;
             }
         }
+
+        #if UNITY_EDITOR
+        if (bestSlot >= 0)
+        {
+            var dbgSlot = buildSlots[bestSlot];
+            bool ready = IsSlotReady(bestSlot);
+            int bIdx = dbgSlot.brickIndex;
+            string supporters = "";
+            foreach (int sup in brickSupporters[bIdx])
+                supporters += $"{sup}(filled={IsBrickPlaced(sup)}) ";
+            Debug.Log($"[Tower] Drop brick={brick.brickType}/{brick.brickColor} → slot={bestSlot} " +
+                $"type={dbgSlot.brickType}/{dbgSlot.color} ready={ready} " +
+                $"supporters=[{supporters}] dist={bestDist:F0}");
+        }
+        else
+        {
+            Debug.Log($"[Tower] Drop brick={brick.brickType}/{brick.brickColor} → no matching slot found within threshold={snapThreshold:F0}");
+        }
+        #endif
 
         if (bestSlot >= 0 && IsSlotReady(bestSlot))
         {

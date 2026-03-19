@@ -34,9 +34,22 @@ public class WorldBalloon : MonoBehaviour
         img = GetComponent<Image>();
     }
 
+    private bool _baseSet;
+
+    /// <summary>
+    /// Pre-set base position to avoid a visual jerk on the first frame.
+    /// Call right after AddComponent, before Start() runs.
+    /// </summary>
+    public void SetBasePosition(Vector2 pos)
+    {
+        basePosition = pos;
+        _baseSet = true;
+    }
+
     private void Start()
     {
-        basePosition = rt.anchoredPosition;
+        if (!_baseSet)
+            basePosition = rt.anchoredPosition;
         phaseX = Random.Range(0f, Mathf.PI * 2f);
         phaseY = Random.Range(0f, Mathf.PI * 2f);
         freqX = Random.Range(0.3f, 0.8f);
@@ -45,6 +58,10 @@ public class WorldBalloon : MonoBehaviour
         ampY = Random.Range(10f, 25f);
         breathPhase = Random.Range(0f, Mathf.PI * 2f);
         breathFreq = Random.Range(2.5f, 3.5f);
+        // Start with current time phase so sine wave begins at 0 offset
+        float now = Time.time;
+        phaseX = -now * freqX;
+        phaseY = -now * freqY;
     }
 
     private void Update()

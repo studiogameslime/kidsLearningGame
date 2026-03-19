@@ -40,6 +40,15 @@ public static class ScoringStrategyRegistry
         if (id.Contains("puzzle") || id.Contains("jigsaw"))
             return new PuzzleGameScoringStrategy();
 
+        if (id.Contains("pattern") || id.Contains("patterncopy"))
+            return new PatternCopyScoringStrategy();
+
+        if (id.Contains("letter"))
+            return new LetterGameScoringStrategy();
+
+        if (id.Contains("numbermaze"))
+            return new NumberMazeScoringStrategy();
+
         return _default;
     }
 }

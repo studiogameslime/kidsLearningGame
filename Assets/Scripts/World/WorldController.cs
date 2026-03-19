@@ -35,7 +35,7 @@ public class WorldController : MonoBehaviour
     public float worldPadding = 250f;
     public float animalSize = 280f;
     public float balloonSize = 110f;
-    public int balloonsPerColor = 2;
+    public int balloonsPerColor = 1;
     public float shadowOffsetY = -8f;
 
     [Header("Exclusion Zones")]
@@ -212,28 +212,12 @@ public class WorldController : MonoBehaviour
         if (viewportParent != null && viewportParent.rect.width > 0)
             viewportWidth = viewportParent.rect.width;
 
-        float neededWidth = animalCount * animalSpacing + worldPadding * 2;
-        float worldWidth;
-
-        if (neededWidth > viewportWidth)
-        {
-            // Many animals — expand beyond viewport for scrolling
-            worldContent.anchorMin = new Vector2(0, 0);
-            worldContent.anchorMax = new Vector2(0, 1);
-            worldContent.pivot = new Vector2(0, 0.5f);
-            worldContent.sizeDelta = new Vector2(neededWidth, 0);
-            worldContent.anchoredPosition = Vector2.zero;
-            worldWidth = neededWidth;
-        }
-        else
-        {
-            // Content fits viewport — stretch to fill, no scrolling
-            worldContent.anchorMin = Vector2.zero;
-            worldContent.anchorMax = Vector2.one;
-            worldContent.offsetMin = Vector2.zero;
-            worldContent.offsetMax = Vector2.zero;
-            worldWidth = viewportWidth;
-        }
+        // Always fit viewport — no horizontal scrolling, animals squeeze to fit
+        worldContent.anchorMin = Vector2.zero;
+        worldContent.anchorMax = Vector2.one;
+        worldContent.offsetMin = Vector2.zero;
+        worldContent.offsetMax = Vector2.zero;
+        float worldWidth = viewportWidth;
 
         // Update cloud system with world width
         if (cloudSystem != null)
