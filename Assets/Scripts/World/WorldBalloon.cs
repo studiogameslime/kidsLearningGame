@@ -10,6 +10,7 @@ using UnityEngine.UI;
 public class WorldBalloon : MonoBehaviour
 {
     public Color bubbleColor;
+    public string colorId; // discovery color ID (e.g. "Red", "Blue") for sound playback
     public float skyWidth;
     public float skyHeight;
     public float padding;
@@ -90,6 +91,10 @@ public class WorldBalloon : MonoBehaviour
             profile.analytics.totalBubblesPopped++;
             ProfileManager.Instance?.Save();
         }
+
+        // Play color name sound
+        if (!string.IsNullOrEmpty(colorId))
+            SoundLibrary.PlayColorName(colorId);
 
         SpawnPopParticles();
         StartCoroutine(PopAndRespawn());

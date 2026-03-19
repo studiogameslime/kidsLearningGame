@@ -30,6 +30,9 @@ public class WorldController : MonoBehaviour
     [Header("Rewards")]
     public RewardRevealController rewardReveal;
 
+    [Header("Game Shelf")]
+    public Sprite gameShelfSprite; // "Games Collection" sprite from Art folder
+
     [Header("Settings")]
     public float animalSpacing = 320f;
     public float worldPadding = 250f;
@@ -57,6 +60,10 @@ public class WorldController : MonoBehaviour
         if (homeButton != null) homeButton.onClick.AddListener(OnHomePressed);
         if (gamesButton != null) gamesButton.onClick.AddListener(OnGamesPressed);
         if (parentAreaButton != null) parentAreaButton.onClick.AddListener(OnParentAreaPressed);
+
+        // Hide header games button — game shelf in the world replaces it
+        if (gamesButton != null)
+            gamesButton.gameObject.SetActive(false);
 
         BuildAnimalSpriteLookup();
         UpdateProfileAvatar();
@@ -232,6 +239,9 @@ public class WorldController : MonoBehaviour
 
         // Spawn balloons for unlocked colors
         SpawnBalloons(jp.unlockedColorIds, worldWidth);
+
+        // Spawn game shelf on grass (right-center area)
+        SpawnGameShelf(worldWidth);
     }
 
     private void SpawnAnimals(List<string> animalIds, float worldWidth)
@@ -427,6 +437,7 @@ public class WorldController : MonoBehaviour
 
                 var balloon = go.AddComponent<WorldBalloon>();
                 balloon.bubbleColor = bubbleColor;
+                balloon.colorId = colorId;
                 balloon.circleSprite = circleSprite;
                 balloon.skyWidth = worldWidth;
                 balloon.skyHeight = skyHeight;
@@ -434,6 +445,51 @@ public class WorldController : MonoBehaviour
                 spawnedBalloons.Add(balloon);
             }
         }
+    }
+
+    private void SpawnGameShelf(float worldWidth)
+    {
+        // Load from Resources if not set in Inspector
+        if (gameShelfSprite == null)
+            gameShelfSprite = Resources.Load<Sprite>("Games Collection");
+
+        if (grassArea == null || gameShelfSprite == null) return;
+
+        float grassHeight = grassArea.rect.height;
+        if (grassHeight <= 0) grassHeight = 500f;
+
+        float shelfSize = 200f;
+
+        // Shadow behind the shelf
+        var shadowGO = new GameObject("ShelfShadow");
+        shadowGO.transform.SetParent(grassArea, false);
+        var shadowRT = shadowGO.AddComponent<RectTransform>();
+        shadowRT.anchorMin = new Vector2(0.5f, 0.5f);
+        shadowRT.anchorMax = new Vector2(0.5f, 0.5f);
+        shadowRT.pivot = new Vector2(0.5f, 0.5f);
+        shadowRT.sizeDelta = new Vector2(shelfSize * 0.75f, shelfSize * 0.18f);
+        shadowRT.anchoredPosition = new Vector2(165.44f, 139f - 5f);
+        var shadowImg = shadowGO.AddComponent<Image>();
+        if (circleSprite != null) shadowImg.sprite = circleSprite;
+        shadowImg.color = new Color(0f, 0f, 0f, 0.12f);
+        shadowImg.raycastTarget = false;
+
+        // Game shelf — anchored at center, matching Inspector values
+        var go = new GameObject("GameShelf");
+        go.transform.SetParent(grassArea, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0f);
+        rt.sizeDelta = new Vector2(shelfSize, shelfSize);
+        rt.anchoredPosition = new Vector2(165.44f, 139f);
+
+        var img = go.AddComponent<Image>();
+        img.sprite = gameShelfSprite;
+        img.preserveAspect = true;
+        img.raycastTarget = true;
+
+        go.AddComponent<WorldGameShelf>();
     }
 
     private Color GetColorById(string colorId)

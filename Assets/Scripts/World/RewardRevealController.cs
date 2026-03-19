@@ -306,19 +306,16 @@ public class RewardRevealController : MonoBehaviour
 
         yield return new WaitForSeconds(0.8f);
 
-        // Move to permanent position on the grass
+        // Move to permanent position on the grass (shadow follows)
         float targetX = grassWidth * Random.Range(0.2f, 0.8f);
         float targetY = grassHeight * Random.Range(0.18f, 0.32f);
-        yield return MoveToPosition(rt, new Vector2(targetX, targetY), 0.6f);
-
-        // Move shadow to match
-        shadowRT.anchoredPosition = new Vector2(targetX, targetY - 10f);
-        shadowRT.localScale = new Vector3(0.9f, 0.4f, 1f);
+        yield return MoveToPosition(rt, new Vector2(targetX, targetY), 0.6f, shadowRT);
 
         // Add WorldAnimal component for future interaction
         var animal = go.AddComponent<WorldAnimal>();
         animal.animalId = animalId;
         animal.groundY = targetY;
+        animal.shadowTransform = shadowRT;
 
         // Return to idle
         if (spriteAnim != null)
@@ -433,6 +430,7 @@ public class RewardRevealController : MonoBehaviour
         // Set basePosition directly to avoid jerk on Start()
         var balloon = go.AddComponent<WorldBalloon>();
         balloon.bubbleColor = bubbleColor;
+        balloon.colorId = colorId;
         balloon.circleSprite = circleSprite;
         balloon.skyWidth = skyWidth;
         balloon.skyHeight = skyHeight;
@@ -477,9 +475,12 @@ public class RewardRevealController : MonoBehaviour
         rt.anchoredPosition = start;
     }
 
-    private IEnumerator MoveToPosition(RectTransform rt, Vector2 target, float dur)
+    private IEnumerator MoveToPosition(RectTransform rt, Vector2 target, float dur,
+        RectTransform shadowRT = null)
     {
         Vector2 start = rt.anchoredPosition;
+        Vector2 shadowStart = shadowRT != null ? shadowRT.anchoredPosition : Vector2.zero;
+        Vector2 shadowTarget = new Vector2(target.x, target.y - 10f);
         float t = 0f;
         while (t < dur)
         {
@@ -489,9 +490,14 @@ public class RewardRevealController : MonoBehaviour
             // Gentle bob during movement
             float bob = Mathf.Sin(t * 8f) * 5f * (1f - t / dur);
             rt.anchoredPosition += new Vector2(0, bob);
+            // Shadow follows on the ground (no bob)
+            if (shadowRT != null)
+                shadowRT.anchoredPosition = Vector2.Lerp(shadowStart, shadowTarget, p);
             yield return null;
         }
         rt.anchoredPosition = target;
+        if (shadowRT != null)
+            shadowRT.anchoredPosition = shadowTarget;
     }
 
     private void SpawnCelebrationParticles(Vector2 pos, int count)

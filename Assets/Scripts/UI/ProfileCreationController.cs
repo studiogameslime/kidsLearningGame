@@ -6,7 +6,7 @@ using TMPro;
 
 /// <summary>
 /// Multi-step onboarding flow for creating a new profile.
-/// Steps: 1) Greeting → 2) Record name → 3) Type name → 4) Choose age → 5) Choose color/photo → 6) Save
+/// Steps: 1) Greeting → 2) Type name → 3) Choose age → 4) Choose animal → 5) Choose color/photo → 6) Save
 /// </summary>
 public class ProfileCreationController : MonoBehaviour
 {
@@ -98,6 +98,17 @@ public class ProfileCreationController : MonoBehaviour
         "#FFF59D", "#FFCC80", "#FFAB91", "#BCAAA4"
     };
 
+    // Color sound name per AvatarColors index. null = hide (duplicate sound).
+    private static readonly string[] ColorSoundNames = {
+        "Red", "Pink", "Purple", null,          // B39DDB duplicate purple
+        "Blue", "Light Blue", null, "Green",    // 80CBC4 duplicate green
+        "Yellow", "Orange", null, "Brown"       // FFAB91 duplicate orange
+    };
+
+    // Maps new step index → stepSounds array index (recording step removed).
+    // Steps: 0=Greeting, 1=TypeName, 2=Age, 3=Animal, 4=Color, 5=Done
+    private static readonly int[] StepSoundMap = { 0, 1, 3, 4, 5, -1 };
+
     private void Start()
     {
         audioSource = gameObject.AddComponent<AudioSource>();
@@ -146,7 +157,15 @@ public class ProfileCreationController : MonoBehaviour
             }
         }
         if (ageNextButton != null)
-            ageNextButton.onClick.AddListener(() => GoToStep(4));
+            ageNextButton.onClick.AddListener(() => GoToStep(3));
+
+        // Change "8" to "8+" on the last age button
+        if (ageButtons != null && ageButtons.Length >= 8)
+        {
+            var lastAgeText = ageButtons[7].GetComponentInChildren<TextMeshProUGUI>();
+            if (lastAgeText != null)
+                lastAgeText.text = "+8";
+        }
 
         // Wire animal buttons
         string[] animalIds = { "Cat", "Dog", "Bear" };
@@ -160,7 +179,7 @@ public class ProfileCreationController : MonoBehaviour
             }
         }
         if (animalNextButton != null)
-            animalNextButton.onClick.AddListener(() => GoToStep(5));
+            animalNextButton.onClick.AddListener(() => GoToStep(4));
 
         InitAnimalAnimations();
 
@@ -172,7 +191,17 @@ public class ProfileCreationController : MonoBehaviour
             colorButtons[i].onClick.AddListener(() => OnColorSelected(idx, hex));
         }
         if (colorNextButton != null)
-            colorNextButton.onClick.AddListener(() => GoToStep(6));
+            colorNextButton.onClick.AddListener(() => GoToStep(5));
+
+        // Hide color buttons without unique Alin sounds
+        if (colorButtons != null)
+        {
+            for (int i = 0; i < colorButtons.Length && i < ColorSoundNames.Length; i++)
+            {
+                if (ColorSoundNames[i] == null)
+                    colorButtons[i].gameObject.SetActive(false);
+            }
+        }
 
         // Wire pick photo button
         if (pickPhotoButton != null)
@@ -221,33 +250,36 @@ public class ProfileCreationController : MonoBehaviour
     private void GoToStep(int step)
     {
         currentStep = step;
+
+        // Steps: 0=Greeting, 1=TypeName, 2=Age, 3=Animal, 4=Color, 5=Done
         if (stepGreeting != null) stepGreeting.SetActive(step == 0);
-        if (stepRecordName != null) stepRecordName.SetActive(step == 1);
-        if (stepTypeName != null) stepTypeName.SetActive(step == 2);
-        if (stepChooseAge != null) stepChooseAge.SetActive(step == 3);
+        if (stepRecordName != null) stepRecordName.SetActive(false); // recording step removed
+        if (stepTypeName != null) stepTypeName.SetActive(step == 1);
+        if (stepChooseAge != null) stepChooseAge.SetActive(step == 2);
         if (stepChooseAnimal != null)
         {
-            stepChooseAnimal.SetActive(step == 4);
-            if (step == 4) PlayOnboardingClip("Sounds/Onboarding/WhatIsYourFavoriteAnimal");
+            stepChooseAnimal.SetActive(step == 3);
+            if (step == 3) PlayOnboardingClip("Sounds/Onboarding/WhatIsYourFavoriteAnimal");
         }
         if (stepChooseColor != null)
         {
-            stepChooseColor.SetActive(step == 5);
-            if (step == 5) UpdateColorPreview();
+            stepChooseColor.SetActive(step == 4);
+            if (step == 4) UpdateColorPreview();
         }
         if (stepDone != null)
         {
-            stepDone.SetActive(step == 6);
-            if (step == 6) UpdateDoneStep();
+            stepDone.SetActive(step == 5);
+            if (step == 5) UpdateDoneStep();
         }
 
-        // Play step sound + Alin talking
-        if (stepSounds != null && step >= 0 && step < stepSounds.Length && stepSounds[step] != null)
+        // Play step sound using mapping (recording step removed, indices shifted)
+        int soundIdx = (step >= 0 && step < StepSoundMap.Length) ? StepSoundMap[step] : -1;
+        if (soundIdx >= 0 && stepSounds != null && soundIdx < stepSounds.Length && stepSounds[soundIdx] != null)
         {
             if (audioSource != null)
             {
                 audioSource.Stop();
-                audioSource.clip = stepSounds[step];
+                audioSource.clip = stepSounds[soundIdx];
                 audioSource.Play();
             }
 
@@ -257,7 +289,7 @@ public class ProfileCreationController : MonoBehaviour
                 if (_alinTalkCoroutine != null) StopCoroutine(_alinTalkCoroutine);
                 alinGuide.Show();
                 alinGuide.PlayTalking();
-                _alinTalkCoroutine = StartCoroutine(StopAlinTalkingAfter(stepSounds[step].length));
+                _alinTalkCoroutine = StartCoroutine(StopAlinTalkingAfter(stepSounds[soundIdx].length));
             }
         }
         else if (alinGuide != null)
@@ -267,9 +299,8 @@ public class ProfileCreationController : MonoBehaviour
             alinGuide.StopTalking();
         }
 
-        // Update back button visibility (step 0 = cancel to profile selection, steps 1-5 = go back)
         if (backButton != null)
-            backButton.gameObject.SetActive(step < 6);
+            backButton.gameObject.SetActive(step < 5);
     }
 
     private void OnBackPressed()
@@ -365,7 +396,7 @@ public class ProfileCreationController : MonoBehaviour
     {
         recordedName = nameInput != null ? nameInput.text.Trim() : "";
         if (string.IsNullOrWhiteSpace(recordedName)) return;
-        GoToStep(3);
+        GoToStep(2);
     }
 
     public static bool IsHebrew(string text)
@@ -464,21 +495,29 @@ public class ProfileCreationController : MonoBehaviour
         selectedColorHex = hex;
         ColorUtility.TryParseHtmlString(hex, out Color c);
 
-        // Clear picked photo when choosing a color
-        pickedPhoto = null;
-        pickedPhotoPath = null;
-
+        // Always update the circle background color
         if (colorPreview != null)
             colorPreview.color = c;
 
-        if (colorPreviewPhoto != null)
-            colorPreviewPhoto.gameObject.SetActive(false);
-
-        if (colorPreviewInitial != null)
+        // Photo has priority — don't override it with color initial
+        if (pickedPhoto == null)
         {
-            colorPreviewInitial.gameObject.SetActive(true);
-            if (!string.IsNullOrWhiteSpace(recordedName))
-                colorPreviewInitial.text = recordedName.Substring(0, 1).ToUpper();
+            if (colorPreviewPhoto != null)
+                colorPreviewPhoto.gameObject.SetActive(false);
+
+            if (colorPreviewInitial != null)
+            {
+                colorPreviewInitial.gameObject.SetActive(true);
+                if (!string.IsNullOrWhiteSpace(recordedName))
+                    colorPreviewInitial.text = recordedName.Substring(0, 1).ToUpper();
+            }
+        }
+
+        // Play Alin color sound
+        if (index >= 0 && index < ColorSoundNames.Length && ColorSoundNames[index] != null)
+        {
+            var clip = Resources.Load<AudioClip>($"Sounds/Colors/{ColorSoundNames[index]}");
+            if (clip != null) BackgroundMusicManager.PlayOneShot(clip);
         }
 
         // Highlight selected color button

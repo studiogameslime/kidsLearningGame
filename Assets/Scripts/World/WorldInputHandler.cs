@@ -94,6 +94,14 @@ public class WorldInputHandler : MonoBehaviour
                 return;
             }
 
+            // Check for game shelf (game selection entry point)
+            var shelf = go.GetComponent<WorldGameShelf>();
+            if (shelf != null)
+            {
+                shelf.OnTap();
+                return;
+            }
+
             // Check for toy box (main play button)
             var toyBox = go.GetComponent<WorldToyBox>();
             if (toyBox != null)
