@@ -260,6 +260,7 @@ public class LetterTrainController : MonoBehaviour
             var wagonGO = CreateWagon(_trainGroupRT, x, 0, wagonW, wagonH, i, empty);
             _wagonObjects.Add(wagonGO);
         }
+
     }
 
     private GameObject CreateWagon(RectTransform parent, float x, float y,
@@ -327,6 +328,92 @@ public class LetterTrainController : MonoBehaviour
         }
 
         return go;
+    }
+
+    private void CreateLocomotive(RectTransform parent, float x, float y, float w, float h)
+    {
+        var go = new GameObject("Locomotive");
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0f);
+        rt.anchorMax = new Vector2(0.5f, 0f);
+        rt.pivot = new Vector2(0.5f, 0f);
+        rt.sizeDelta = new Vector2(w, h);
+        rt.anchoredPosition = new Vector2(x, y);
+
+        // Body (purple to match letter train theme)
+        var bgImg = go.AddComponent<Image>();
+        if (cellSprite != null) { bgImg.sprite = cellSprite; bgImg.type = Image.Type.Sliced; }
+        bgImg.color = HexColor("#7B1FA2");
+        bgImg.raycastTarget = false;
+
+        // Border
+        var borderGO = new GameObject("Border");
+        borderGO.transform.SetParent(go.transform, false);
+        var brt = borderGO.AddComponent<RectTransform>();
+        brt.anchorMin = Vector2.zero;
+        brt.anchorMax = Vector2.one;
+        brt.offsetMin = new Vector2(-4, -4);
+        brt.offsetMax = new Vector2(4, 4);
+        borderGO.transform.SetAsFirstSibling();
+        var bimg = borderGO.AddComponent<Image>();
+        if (cellSprite != null) { bimg.sprite = cellSprite; bimg.type = Image.Type.Sliced; }
+        bimg.color = HexColor("#6A1B9A");
+        bimg.raycastTarget = false;
+
+        // Chimney
+        var chimneyGO = new GameObject("Chimney");
+        chimneyGO.transform.SetParent(go.transform, false);
+        var chimneyRT = chimneyGO.AddComponent<RectTransform>();
+        chimneyRT.anchorMin = new Vector2(0.5f, 1f);
+        chimneyRT.anchorMax = new Vector2(0.5f, 1f);
+        chimneyRT.pivot = new Vector2(0.5f, 0f);
+        chimneyRT.sizeDelta = new Vector2(w * 0.25f, h * 0.4f);
+        chimneyRT.anchoredPosition = new Vector2(0, 2);
+        var chimneyImg = chimneyGO.AddComponent<Image>();
+        if (cellSprite != null) { chimneyImg.sprite = cellSprite; chimneyImg.type = Image.Type.Sliced; }
+        chimneyImg.color = HexColor("#424242");
+        chimneyImg.raycastTarget = false;
+
+        // Chimney cap
+        var capGO = new GameObject("ChimneyCap");
+        capGO.transform.SetParent(chimneyGO.transform, false);
+        var capRT = capGO.AddComponent<RectTransform>();
+        capRT.anchorMin = new Vector2(0.5f, 1f);
+        capRT.anchorMax = new Vector2(0.5f, 1f);
+        capRT.pivot = new Vector2(0.5f, 0f);
+        capRT.sizeDelta = new Vector2(w * 0.38f, h * 0.08f);
+        capRT.anchoredPosition = Vector2.zero;
+        var capImg = capGO.AddComponent<Image>();
+        if (cellSprite != null) { capImg.sprite = cellSprite; capImg.type = Image.Type.Sliced; }
+        capImg.color = HexColor("#616161");
+        capImg.raycastTarget = false;
+
+        // Animated smoke system
+        var smokeEmitter = chimneyGO.AddComponent<TrainSmokeEmitter>();
+        smokeEmitter.circleSprite = circleSprite;
+        smokeEmitter.driftX = 1f; // drift right (train moves left)
+
+        // Wheels
+        float wheelSize = Mathf.Min(50f, w * 0.30f);
+        CreateWheel(go.transform, -w * 0.22f, -25f, wheelSize);
+        CreateWheel(go.transform, w * 0.22f, -25f, wheelSize);
+
+        // Connector to last wagon
+        var connGO = new GameObject("LocoConnector");
+        connGO.transform.SetParent(parent, false);
+        var connRT = connGO.AddComponent<RectTransform>();
+        connRT.anchorMin = new Vector2(0.5f, 0f);
+        connRT.anchorMax = new Vector2(0.5f, 0f);
+        connRT.pivot = new Vector2(0.5f, 0.5f);
+        connRT.sizeDelta = new Vector2(24f, 8f);
+        connRT.anchoredPosition = new Vector2(x + (w + 20f) / 2f, h * 0.45f); // connector to the right (toward wagons)
+        var connImg = connGO.AddComponent<Image>();
+        connImg.color = ConnectorColor;
+        connImg.raycastTarget = false;
+        _connectorObjects.Add(connGO);
+
+        _wagonObjects.Add(go);
     }
 
     private void CreateWheel(Transform parent, float x, float y, float size)

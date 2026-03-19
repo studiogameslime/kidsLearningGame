@@ -37,6 +37,7 @@ public class BannerAdManager : MonoBehaviour
     public void ShowBanner()
     {
         enabled = true;
+        LoadBanner();
     }
 
     private void OnDisable()
