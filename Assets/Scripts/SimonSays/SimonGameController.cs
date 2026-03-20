@@ -10,7 +10,7 @@ using TMPro;
 /// Each successful round adds one more color to the sequence.
 /// Wooden toy board aesthetic with 4 large colored buttons.
 /// </summary>
-public class SimonGameController : MonoBehaviour
+public class SimonGameController : BaseMiniGame
 {
     [Header("Board")]
     public RectTransform boardRT;
@@ -62,9 +62,25 @@ public class SimonGameController : MonoBehaviour
     private int bestRound;
     private int _startSequenceLength = 2;
     private float _speedMultiplier = 1f;
-    private GameStatsCollector _stats;
 
-    private void Start()
+    // ── BaseMiniGame Hooks ──────────────────────────────────────
+
+    protected override string GetFallbackGameId() => "simonsays";
+
+    protected override void OnGameInit()
+    {
+        isEndless = true;
+        playConfettiOnRoundWin = false;
+        playConfettiOnSessionWin = false;
+        delayBeforeNextRound = 0f;
+
+        // Apply difficulty
+        _startSequenceLength = GameDifficultyConfig.SimonStartSequence(Difficulty);
+        _speedMultiplier = GameDifficultyConfig.SimonSpeedMultiplier(Difficulty);
+        Debug.Log($"[Difficulty] Game=simon Level={Difficulty} Sequence={_startSequenceLength} Speed={_speedMultiplier:F2}x");
+    }
+
+    protected override void OnRoundSetup()
     {
         // Load best score
         var profile = ProfileManager.ActiveProfile;
@@ -78,6 +94,7 @@ public class SimonGameController : MonoBehaviour
         for (int i = 0; i < colorButtonComponents.Length; i++)
         {
             int idx = i;
+            colorButtonComponents[i].onClick.RemoveAllListeners();
             colorButtonComponents[i].onClick.AddListener(() => OnColorPressed(idx));
             // Prevent Button's own color tint from fighting our glow animation
             colorButtonComponents[i].transition = Selectable.Transition.None;
@@ -101,18 +118,6 @@ public class SimonGameController : MonoBehaviour
     {
         sequence.Clear();
         currentRound = 0;
-
-        // Start analytics
-        _stats = new GameStatsCollector("simonsays");
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
-
-        // Apply difficulty
-        int diffLevel = GameDifficultyConfig.GetLevel("simonsays");
-        _startSequenceLength = GameDifficultyConfig.SimonStartSequence(diffLevel);
-        _speedMultiplier = GameDifficultyConfig.SimonSpeedMultiplier(diffLevel);
-        Debug.Log($"[Difficulty] Game=simon Level={diffLevel} Sequence={_startSequenceLength} Speed={_speedMultiplier:F2}x");
-
         StartNextRound();
     }
 
@@ -226,14 +231,14 @@ public class SimonGameController : MonoBehaviour
         if (idx == sequence[inputIndex])
         {
             // Correct
-            _stats?.RecordCorrect();
+            Stats?.RecordCorrect();
             StartCoroutine(CorrectInput(idx));
         }
         else
         {
             // Wrong
-            _stats?.RecordMistake();
-            _stats?.SetCustom("roundReached", currentRound);
+            Stats?.RecordMistake();
+            Stats?.SetCustom("roundReached", currentRound);
             StartCoroutine(WrongInput());
         }
     }
@@ -273,6 +278,9 @@ public class SimonGameController : MonoBehaviour
 
         // Save progress
         SaveProgress();
+
+        // Record round complete for stats tracking
+        CompleteRound();
 
         yield return new WaitForSeconds(0.6f);
 
@@ -364,5 +372,5 @@ public class SimonGameController : MonoBehaviour
 
     // ── NAVIGATION ─────────────────────────────────────────────
 
-    public void OnHomePressed() => NavigationManager.GoToMainMenu();
+    public void OnHomePressed() => ExitGame();
 }

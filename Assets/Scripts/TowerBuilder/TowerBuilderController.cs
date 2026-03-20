@@ -11,7 +11,7 @@ using UnityEngine.UI;
 ///
 /// Difficulty: 0=Easy (3-4 bricks), 1=Medium (6-8), 2=Hard (10-12), 3=Very Hard (15+).
 /// </summary>
-public class TowerBuilderController : MonoBehaviour
+public class TowerBuilderController : BaseMiniGame
 {
     [Header("UI References")]
     public RectTransform playArea;
@@ -42,7 +42,6 @@ public class TowerBuilderController : MonoBehaviour
     // Build-order and guidance
     private int wrongAttemptCount;
     private Coroutine highlightCoroutine;
-    private GameStatsCollector _stats;
 
     // Tower layout calculation cache
     private float studW;
@@ -67,9 +66,17 @@ public class TowerBuilderController : MonoBehaviour
         public int brickIndex; // index into currentLevel.bricks
     }
 
-    // ── lifecycle ────────────────────────────────────────────────
-    private void Start()
+    // ── BaseMiniGame Hooks ──────────────────────────────────────
+
+    protected override string GetFallbackGameId() => "towerbuilder";
+
+    protected override void OnGameInit()
     {
+        totalRounds = 1;
+        isEndless = false;
+        playConfettiOnSessionWin = true;
+        delayAfterFinalRound = 2.5f;
+
         canvas = GetComponentInParent<Canvas>();
 
         // Build sprite lookup
@@ -77,13 +84,11 @@ public class TowerBuilderController : MonoBehaviour
         for (int i = 0; i < spriteKeys.Count && i < spriteValues.Count; i++)
             spriteLookup[spriteKeys[i]] = spriteValues[i];
 
-        // Auto-pick difficulty from adaptive system based on child's level
-        int adaptiveDiff = GameDifficultyConfig.GetLevel("towerbuilder");
         // Map 1-10 difficulty scale to 0-3 tower difficulty tiers
-        if (adaptiveDiff <= 3)       difficulty = 0; // easy
-        else if (adaptiveDiff <= 5)  difficulty = 1; // medium
-        else if (adaptiveDiff <= 8)  difficulty = 2; // hard
-        else                         difficulty = 3; // very hard
+        if (Difficulty <= 3)       difficulty = 0; // easy
+        else if (Difficulty <= 5)  difficulty = 1; // medium
+        else if (Difficulty <= 8)  difficulty = 2; // hard
+        else                       difficulty = 3; // very hard
 
         // Allow manual override if selection was passed (e.g. from journey)
         if (GameContext.CurrentSelection != null)
@@ -92,14 +97,14 @@ public class TowerBuilderController : MonoBehaviour
             if (int.TryParse(GameContext.CurrentSelection.categoryKey, out d))
                 difficulty = d;
         }
+    }
 
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "towerbuilder";
-        _stats = new GameStatsCollector(gameId);
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
-
+    protected override void OnRoundSetup()
+    {
         StartCoroutine(StartAfterLayout());
     }
+
+    // ── lifecycle ────────────────────────────────────────────────
 
     private IEnumerator StartAfterLayout()
     {
@@ -557,7 +562,7 @@ public class TowerBuilderController : MonoBehaviour
 
             // Snap: copy the exact transform from the slot
             brick.SnapToSlot(slot.slotRT, this);
-            _stats?.RecordCorrect();
+            Stats?.RecordCorrect();
             placedCount++;
 
             if (placedCount >= currentLevel.bricks.Length)
@@ -566,7 +571,7 @@ public class TowerBuilderController : MonoBehaviour
         else
         {
             // Wrong placement
-            _stats?.RecordMistake();
+            Stats?.RecordMistake();
             wrongAttemptCount++;
             brick.ReturnToStart(this);
 
@@ -695,8 +700,6 @@ public class TowerBuilderController : MonoBehaviour
         isComplete = true;
         yield return new WaitForSeconds(0.3f);
 
-        ConfettiController.Instance.Play();
-
         // Sort placed bricks by Y position (bottom to top) for sparkle wave
         var placedBricks = new List<DraggableBrick>();
         foreach (var brick in paletteBricks)
@@ -721,23 +724,13 @@ public class TowerBuilderController : MonoBehaviour
         // Gentle whole-tower bounce: all placed bricks scale together
         yield return StartCoroutine(TowerBounce(placedBricks));
 
-        yield return new WaitForSeconds(1.2f);
+        yield return new WaitForSeconds(0.5f);
 
-        // Next level
-        if (!GameCompletionBridge.WillJourneyNavigate)
-        {
-            int nextLevel = currentLevelIndex + 1;
-            if (nextLevel < TowerLevels.All.Length)
-            {
-                currentLevelIndex = nextLevel;
-                LoadLevel();
-            }
-            else
-            {
-                PickLevel();
-                LoadLevel();
-            }
-        }
+        // Let BaseMiniGame handle confetti, stats, and journey navigation
+        CompleteRound();
+
+        // If journey won't navigate and we're back to playing, load next level
+        // (BaseMiniGame will reset CurrentRound and call OnRoundSetup for free play)
     }
 
     /// <summary>
@@ -940,5 +933,5 @@ public class TowerBuilderController : MonoBehaviour
     }
 
     // ── navigation ──────────────────────────────────────────────
-    public void OnHomePressed() => NavigationManager.GoToMainMenu();
+    public void OnHomePressed() => ExitGame();
 }

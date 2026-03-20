@@ -11,7 +11,7 @@ using TMPro;
 /// Difficulty: 0=Easy (4×2), 1=Medium (4×3), 2=Hard (4×4)
 /// Cards maintain 3:4 portrait aspect ratio.
 /// </summary>
-public class MemoryGameController : MonoBehaviour
+public class MemoryGameController : BaseMiniGame
 {
     [Header("Data")]
     public List<MemoryCategoryData> categories;
@@ -37,59 +37,35 @@ public class MemoryGameController : MonoBehaviour
     private bool isProcessing;
     private int matchedPairs;
     private int totalPairs;
-    private GameStatsCollector _stats;
-    private int _difficultyLevel = 1;
 
-    private void Start()
+    // ── BaseMiniGame Overrides ──
+
+    protected override string GetFallbackGameId() => "memory";
+
+    protected override string GetContentId()
     {
+        return activeCategory != null ? activeCategory.categoryKey : "animals";
+    }
+
+    protected override void OnGameInit()
+    {
+        totalRounds = 1;
+        contentCategory = SessionContent.Animals;
+        playConfettiOnSessionWin = true;
+
         activeCategory = FindCategory();
         if (activeCategory == null)
-        {
             Debug.LogError("MemoryGameController: No matching category found!");
-            return;
-        }
-
-        SetupGame();
     }
 
-    private MemoryCategoryData FindCategory()
+    protected override void OnRoundSetup()
     {
-        string key = GameContext.CurrentSelection != null
-            ? GameContext.CurrentSelection.categoryKey
-            : "animals";
+        if (activeCategory == null) return;
 
-        foreach (var cat in categories)
-            if (cat.categoryKey == key)
-                return cat;
-
-        return categories.Count > 0 ? categories[0] : null;
-    }
-
-    // ── GRID CONFIGURATION ──
-
-    private void GetGridConfig(out int cols, out int rows, out int pairs)
-    {
-        GameDifficultyConfig.MemoryGridConfig(_difficultyLevel, out cols, out rows, out pairs);
-    }
-
-    // ── GAME SETUP ──
-
-    private void SetupGame()
-    {
         matchedPairs = 0;
         firstFlipped = null;
         secondFlipped = null;
         isProcessing = false;
-
-        // Apply difficulty
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "memory";
-        _difficultyLevel = GameDifficultyConfig.GetLevel(gameId);
-
-        // Start analytics collector
-        string contentId = activeCategory != null ? activeCategory.categoryKey : "animals";
-        _stats = new GameStatsCollector(gameId, contentId, SessionContent.Animals);
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
 
         // Clear existing cards
         foreach (Transform child in cardContainer)
@@ -99,7 +75,7 @@ public class MemoryGameController : MonoBehaviour
         int cols, rows, pairs;
         GetGridConfig(out cols, out rows, out pairs);
         totalPairs = Mathf.Min(pairs, activeCategory.cardFaces.Count);
-        Debug.Log($"[Difficulty] Game=memory Level={_difficultyLevel} Cards={totalPairs * 2} Pairs={totalPairs} Grid={cols}x{rows}");
+        Debug.Log($"[Difficulty] Game=memory Level={Difficulty} Cards={totalPairs * 2} Pairs={totalPairs} Grid={cols}x{rows}");
 
         // Configure grid layout
         ConfigureGrid(cols, rows);
@@ -126,6 +102,33 @@ public class MemoryGameController : MonoBehaviour
             card.SetRandomRotation(cardRotationRange);
             allCards.Add(card);
         }
+    }
+
+    protected override void OnRoundCleanup()
+    {
+        foreach (Transform child in cardContainer)
+            Destroy(child.gameObject);
+        allCards.Clear();
+    }
+
+    private MemoryCategoryData FindCategory()
+    {
+        string key = GameContext.CurrentSelection != null
+            ? GameContext.CurrentSelection.categoryKey
+            : "animals";
+
+        foreach (var cat in categories)
+            if (cat.categoryKey == key)
+                return cat;
+
+        return categories.Count > 0 ? categories[0] : null;
+    }
+
+    // ── GRID CONFIGURATION ──
+
+    private void GetGridConfig(out int cols, out int rows, out int pairs)
+    {
+        GameDifficultyConfig.MemoryGridConfig(Difficulty, out cols, out rows, out pairs);
     }
 
     /// <summary>
@@ -179,7 +182,7 @@ public class MemoryGameController : MonoBehaviour
 
     private void OnCardClicked(MemoryCard card)
     {
-        if (isProcessing || card.IsFaceUp || card.IsMatched) return;
+        if (IsInputLocked || isProcessing || card.IsFaceUp || card.IsMatched) return;
 
         if (firstFlipped == null)
         {
@@ -201,26 +204,26 @@ public class MemoryGameController : MonoBehaviour
 
         if (firstFlipped.PairId == secondFlipped.PairId)
         {
-            _stats?.RecordCorrect("match");
+            Stats?.RecordCorrect("match");
             yield return new WaitForSeconds(0.2f);
             firstFlipped.IsMatched = true;
             secondFlipped.IsMatched = true;
             firstFlipped.PlayMatchAndHide();
             secondFlipped.PlayMatchAndHide();
             matchedPairs++;
-            _stats?.SetCustom("pairsMatched", matchedPairs);
-            _stats?.SetCustom("pairsTotal", totalPairs);
+            Stats?.SetCustom("pairsMatched", matchedPairs);
+            Stats?.SetCustom("pairsTotal", totalPairs);
 
             if (matchedPairs >= totalPairs)
             {
                 yield return new WaitForSeconds(0.5f);
-                OnGameComplete();
+                CompleteRound();
             }
         }
         else
         {
-            _stats?.RecordMistake("mismatch");
-            _stats?.IncrementCustom("mismatchCount");
+            Stats?.RecordMistake("mismatch");
+            Stats?.IncrementCustom("mismatchCount");
             yield return new WaitForSeconds(mismatchDelay);
             firstFlipped.FlipToBack();
             secondFlipped.FlipToBack();
@@ -230,11 +233,6 @@ public class MemoryGameController : MonoBehaviour
         firstFlipped = null;
         secondFlipped = null;
         isProcessing = false;
-    }
-
-    private void OnGameComplete()
-    {
-        ConfettiController.Instance.Play();
     }
 
     private void PlayCardAnimalName(MemoryCard card)
@@ -249,7 +247,7 @@ public class MemoryGameController : MonoBehaviour
         SoundLibrary.PlayAnimalName(name);
     }
 
-    public void OnExitPressed() => NavigationManager.GoToMainMenu();
+    public void OnExitPressed() => ExitGame();
 
     // ── Utility ──
 

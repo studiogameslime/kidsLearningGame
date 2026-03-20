@@ -8,7 +8,7 @@ using TMPro;
 /// Shows a target color, listens for the child to say its name in Hebrew,
 /// evaluates the answer, and provides kid-friendly feedback.
 /// </summary>
-public class ColorVoiceController : MonoBehaviour
+public class ColorVoiceController : BaseMiniGame
 {
     [Header("UI References")]
     public Image colorCircle;
@@ -20,7 +20,6 @@ public class ColorVoiceController : MonoBehaviour
     public TextMeshProUGUI debugText;  // toggle via inspector for dev
 
     [Header("Settings")]
-    public int totalRounds = 7;
     public float successDelay = 1.5f;
     public float retryDelay = 1.0f;
     public float listenTimeout = 8f;
@@ -34,25 +33,27 @@ public class ColorVoiceController : MonoBehaviour
     private ISpeechRecognizer recognizer;
     private AudioSource audioSource;
     private ColorPrompt currentColor;
-    private int currentRound;
     private int retryCount;
     private bool isRoundActive;
     private Coroutine listenTimeoutCoroutine;
     private Coroutine micPulseCoroutine;
-    private GameStatsCollector _stats;
 
     // Shuffled color order for variety
     private ColorPrompt[] shuffledColors;
 
-    private void Start()
+    // ── BaseMiniGame Overrides ──
+
+    protected override string GetFallbackGameId() => "colorvoice";
+
+    protected override void OnGameInit()
     {
+        totalRounds = 7;
+        playConfettiOnRoundWin = true;
+        playConfettiOnSessionWin = true;
+        playWinSound = false; // we play our own successClip
+
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
-
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "colorvoice";
-        _stats = new GameStatsCollector(gameId);
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
 
         // Create platform-appropriate recognizer
 #if UNITY_EDITOR
@@ -82,8 +83,16 @@ public class ColorVoiceController : MonoBehaviour
         if (debugText != null) debugText.gameObject.SetActive(false);
 
         ShuffleColors();
-        currentRound = 0;
+    }
+
+    protected override void OnRoundSetup()
+    {
         StartCoroutine(WaitForInitThenStart());
+    }
+
+    protected override void OnRoundCleanup()
+    {
+        StopListeningUI();
     }
 
     private void OnDestroy()
@@ -98,6 +107,12 @@ public class ColorVoiceController : MonoBehaviour
             recognizer.OnError -= OnRecognizerError;
             recognizer.Destroy();
         }
+    }
+
+    protected override void OnGameExit()
+    {
+        StopListeningUI();
+        base.OnGameExit();
     }
 
     // ── Round Flow ──
@@ -136,12 +151,12 @@ public class ColorVoiceController : MonoBehaviour
     private IEnumerator StartRoundSequence()
     {
         // Pick color for this round
-        currentColor = shuffledColors[currentRound % shuffledColors.Length];
+        currentColor = shuffledColors[CurrentRound % shuffledColors.Length];
         retryCount = 0;
 
         // Update progress
         if (progressText != null)
-            progressText.text = $"{currentRound + 1}/{totalRounds}";
+            progressText.text = $"{CurrentRound + 1}/{totalRounds}";
 
         // Hide old feedback
         if (feedbackText != null) feedbackText.gameObject.SetActive(false);
@@ -318,7 +333,7 @@ public class ColorVoiceController : MonoBehaviour
 
     private IEnumerator OnCorrectAnswer()
     {
-        _stats?.RecordCorrect();
+        Stats?.RecordCorrect();
         // Happy feedback
         if (feedbackText != null)
         {
@@ -332,32 +347,18 @@ public class ColorVoiceController : MonoBehaviour
         // Success sound
         if (successClip != null) audioSource.PlayOneShot(successClip);
 
-        // Confetti!
-        ConfettiController.Instance.Play();
-
         // Bounce animation on color circle
         yield return BounceAnimation(colorCircle.rectTransform);
 
         yield return new WaitForSeconds(successDelay);
 
-        if (!GameCompletionBridge.WillJourneyNavigate)
-        {
-            // Next round or complete
-            currentRound++;
-            if (currentRound >= totalRounds)
-            {
-                // Reshuffle and restart
-                ShuffleColors();
-                currentRound = 0;
-            }
-
-            StartCoroutine(StartRoundSequence());
-        }
+        // Complete the round — triggers confetti + analytics via BaseMiniGame
+        CompleteRound();
     }
 
     private IEnumerator OnWrongColor(ColorPrompt spokenColor)
     {
-        _stats?.RecordMistake();
+        Stats?.RecordMistake();
         retryCount++;
 
         if (feedbackText != null)
@@ -516,7 +517,7 @@ public class ColorVoiceController : MonoBehaviour
     public void OnHomePressed()
     {
         StopListeningUI();
-        NavigationManager.GoToMainMenu();
+        ExitGame();
     }
 
     public void OnRestartPressed()
@@ -524,7 +525,8 @@ public class ColorVoiceController : MonoBehaviour
         StopListeningUI();
         StopAllCoroutines();
         ShuffleColors();
-        currentRound = 0;
+        // Re-trigger round setup via the base class would require restarting,
+        // but since we manage rounds internally, just restart the sequence
         StartCoroutine(StartRoundSequence());
     }
 }

@@ -11,7 +11,7 @@ using UnityEngine.UI;
 /// Visual: wooden table board with frame, block shadows, ball shadow.
 /// Physics: velocity-based drag with inertia, bounce on collision.
 /// </summary>
-public class BallMazeController : MonoBehaviour
+public class BallMazeController : BaseMiniGame
 {
     [Header("UI References")]
     public RectTransform playArea;
@@ -43,7 +43,6 @@ public class BallMazeController : MonoBehaviour
     private bool isDragging;
     private bool isComplete;
     private Vector2 fingerTarget; // current finger position in board-local coords
-    private GameStatsCollector _stats;
 
     // Physics constants
     private const float FOLLOW_SPEED = 18f;     // how quickly ball follows finger
@@ -69,21 +68,28 @@ public class BallMazeController : MonoBehaviour
         public RectTransform shadowRT; // shadow (for rotating blocks)
     }
 
-    // ── lifecycle ────────────────────────────────────────────────
-    private void Start()
-    {
-        canvas = GetComponentInParent<Canvas>();
+    // ── BaseMiniGame Hooks ──────────────────────────────────────
 
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "ballmaze";
-        _stats = new GameStatsCollector(gameId);
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
+    protected override string GetFallbackGameId() => "ballmaze";
+
+    protected override void OnGameInit()
+    {
+        totalRounds = 1;
+        isEndless = false;
+        playConfettiOnSessionWin = true;
+        delayAfterFinalRound = 2.5f;
+
+        canvas = GetComponentInParent<Canvas>();
 
         spriteLookup = new Dictionary<string, Sprite>();
         for (int i = 0; i < spriteKeys.Count && i < spriteValues.Count; i++)
             spriteLookup[spriteKeys[i]] = spriteValues[i];
 
         currentLevelIndex = 0;
+    }
+
+    protected override void OnRoundSetup()
+    {
         StartCoroutine(StartAfterLayout());
     }
 
@@ -95,7 +101,7 @@ public class BallMazeController : MonoBehaviour
         LoadLevel();
     }
 
-    private void Update()
+    protected override void OnGameplayUpdate()
     {
         if (isComplete) return;
 
@@ -114,8 +120,8 @@ public class BallMazeController : MonoBehaviour
 
         ClearAll();
         // Generate a fresh procedural level based on difficulty progression
-        int difficulty = Mathf.Clamp(currentLevelIndex / 2, 0, 2); // 0-1=easy, 2-3=medium, 4+=hard
-        currentLevel = BallMazeLevels.GenerateLevel(difficulty);
+        int levelDifficulty = Mathf.Clamp(currentLevelIndex / 2, 0, 2); // 0-1=easy, 2-3=medium, 4+=hard
+        currentLevel = BallMazeLevels.GenerateLevel(levelDifficulty);
         isComplete = false;
         isDragging = false;
         ballVelocity = Vector2.zero;
@@ -599,8 +605,8 @@ public class BallMazeController : MonoBehaviour
     // ── completion ───────────────────────────────────────────────
     private IEnumerator CompletionSequence()
     {
-        _stats?.RecordCorrect();
-        _stats?.SetCustom("levelCompleted", currentLevelIndex);
+        Stats?.RecordCorrect();
+        Stats?.SetCustom("levelCompleted", currentLevelIndex);
         // Phase 1: Pull ball into hole
         Vector2 ballStart = ballRT.anchoredPosition;
         Vector2 holePos = holeRT.anchoredPosition;
@@ -642,15 +648,18 @@ public class BallMazeController : MonoBehaviour
         // Phase 4: Board bounce
         yield return StartCoroutine(BoardBounce());
 
-        // Phase 5: Confetti — let the bridge handle analytics and journey navigation
-        ConfettiController.Instance.Play();
+        yield return new WaitForSeconds(0.5f);
 
-        if (!GameCompletionBridge.WillJourneyNavigate)
-        {
-            yield return new WaitForSeconds(1.5f);
-            currentLevelIndex++;
-            LoadLevel();
-        }
+        // Let BaseMiniGame handle confetti, stats, and journey navigation
+        CompleteRound();
+
+        // If journey won't navigate and we're back to playing, load next level in OnRoundSetup
+    }
+
+    protected override void OnRoundCleanup()
+    {
+        // Advance to next level for free-play restart
+        currentLevelIndex++;
     }
 
     private IEnumerator BoardBounce()
@@ -783,5 +792,5 @@ public class BallMazeController : MonoBehaviour
     }
 
     // ── navigation ───────────────────────────────────────────────
-    public void OnHomePressed() => NavigationManager.GoToMainMenu();
+    public void OnHomePressed() => ExitGame();
 }

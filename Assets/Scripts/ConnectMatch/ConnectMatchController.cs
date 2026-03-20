@@ -9,7 +9,7 @@ using System.Collections.Generic;
 /// Left side: reference pattern. Right side: interactive dot grid.
 /// Child connects dots to recreate the shape. Uses profile color for dots/lines.
 /// </summary>
-public class ConnectMatchController : MonoBehaviour
+public class ConnectMatchController : BaseMiniGame
 {
     [Header("Layout")]
     public RectTransform referenceArea; // left: shows target pattern
@@ -24,19 +24,12 @@ public class ConnectMatchController : MonoBehaviour
     public Sprite dotSprite;   // Circle.png
     public Sprite cellSprite;  // RoundedRect.png
 
-    [Header("Settings")]
-    public int totalRounds = 5;
-
     // Colors — loaded from profile
     private Color _playerColor = HexColor("#90CAF9"); // default blue
     private Color _playerColorDim;
     private Color _playerColorGlow;
 
     // State
-    private GameStatsCollector _stats;
-    private int _difficulty = 1;
-    private int _currentRound;
-    private bool _roundActive;
     private int _mistakesThisRound;
     private int _hintsUsed;
     private float _lastInteractionTime;
@@ -72,32 +65,27 @@ public class ConnectMatchController : MonoBehaviour
     private const float DotSizeBase = 50f;
     private const float HitRadiusMultiplier = 1.4f;
 
-    private void Start()
+    // ── BASE MINI GAME HOOKS ──
+
+    protected override void Start()
     {
         // Load player color from profile
         LoadPlayerColor();
-        _currentRound = 0;
-        LoadRound();
+        base.Start();
     }
 
-    private void LoadPlayerColor()
+    protected override void OnGameInit()
     {
-        var profile = ProfileManager.ActiveProfile;
-        if (profile != null && !string.IsNullOrEmpty(profile.avatarColorHex))
-        {
-            if (ColorUtility.TryParseHtmlString(profile.avatarColorHex, out Color parsed))
-                _playerColor = parsed;
-        }
-        _playerColorDim = new Color(_playerColor.r, _playerColor.g, _playerColor.b, 0.4f);
-        _playerColorGlow = new Color(_playerColor.r, _playerColor.g, _playerColor.b, 0.2f);
+        totalRounds = 5;
+        playWinSound = true;
+        delayBeforeNextRound = 1.5f;
+        delayAfterFinalRound = 2.5f;
     }
 
-    // ── ROUND LIFECYCLE ──
+    protected override string GetFallbackGameId() => "connectmatch";
 
-    private void LoadRound()
+    protected override void OnRoundSetup()
     {
-        ClearRound();
-        _roundActive = true;
         _mistakesThisRound = 0;
         _hintsUsed = 0;
         _expectedStep = 0;
@@ -105,14 +93,7 @@ public class ConnectMatchController : MonoBehaviour
         _directionChosen = false;
         _effectivePath = null;
 
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "connectmatch";
-        _stats = new GameStatsCollector(gameId);
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
-        _stats.SetTotalRoundsPlanned(1);
-
-        _difficulty = GameDifficultyConfig.GetLevel(gameId);
-        _level = ConnectMatchLevelData.Generate(_difficulty);
+        _level = ConnectMatchLevelData.Generate(Difficulty);
 
         // Build reference (left)
         BuildGrid(referenceArea, refLineContainer, _level, true);
@@ -127,16 +108,13 @@ public class ConnectMatchController : MonoBehaviour
         _lastInteractionTime = Time.time;
         _inactivityCoroutine = StartCoroutine(InactivityMonitor());
 
-        _stats.SetCustom("gridSize", (float)(_level.gridCols * _level.gridRows));
-        _stats.SetCustom("pathLength", (float)_level.targetPath.Length);
-        _stats.SetCustom("difficulty", (float)_difficulty);
+        Stats.SetCustom("gridSize", (float)(_level.gridCols * _level.gridRows));
+        Stats.SetCustom("pathLength", (float)_level.targetPath.Length);
 
-        // No initial hints — only after 5s inactivity
-
-        Debug.Log($"[ConnectMatch] Round {_currentRound + 1}: {_level.gridCols}x{_level.gridRows}, path={_level.targetPath.Length}, difficulty={_difficulty}");
+        Debug.Log($"[ConnectMatch] Round {CurrentRound + 1}: {_level.gridCols}x{_level.gridRows}, path={_level.targetPath.Length}, difficulty={Difficulty}");
     }
 
-    private void ClearRound()
+    protected override void OnRoundCleanup()
     {
         if (_inactivityCoroutine != null)
         {
@@ -155,6 +133,82 @@ public class ConnectMatchController : MonoBehaviour
         if (_liveLineGO != null) Destroy(_liveLineGO);
         _liveLineGO = null;
         _isDragging = false;
+    }
+
+    protected override void OnBeforeComplete()
+    {
+        Stats.SetCustom("mistakes", (float)_mistakesThisRound);
+        Stats.SetCustom("hintsUsed", (float)_hintsUsed);
+        Stats.SetCustom("responseTime", Time.time - _roundStartTime);
+    }
+
+    protected override IEnumerator OnAfterComplete()
+    {
+        // Wave pulse all connected dots
+        for (int i = 0; i < _playerPath.Count; i++)
+        {
+            if (_playDots.ContainsKey(_playerPath[i]))
+            {
+                var rt = _playDots[_playerPath[i]].GetComponent<RectTransform>();
+                StartCoroutine(CelebrateBounce(rt, i * 0.08f));
+            }
+        }
+        yield return new WaitForSeconds(1.0f);
+    }
+
+    protected override void OnGameplayUpdate()
+    {
+        if (playArea == null) return;
+
+        bool pressed = Input.GetMouseButton(0);
+        bool justPressed = Input.GetMouseButtonDown(0);
+        bool justReleased = Input.GetMouseButtonUp(0);
+
+        if (justPressed)
+        {
+            _isDragging = true;
+        }
+
+        if (pressed && _isDragging)
+        {
+            Vector2 localPoint;
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                playArea, Input.mousePosition, null, out localPoint))
+            {
+                // Update live line from last connected dot
+                if (_playerPath.Count > 0 && _playDots.ContainsKey(_playerPath[_playerPath.Count - 1]))
+                {
+                    var fromPos = _playDots[_playerPath[_playerPath.Count - 1]]
+                        .GetComponent<RectTransform>().anchoredPosition;
+                    _liveLineGO.SetActive(true);
+                    _liveLineImg.color = new Color(_playerColor.r, _playerColor.g, _playerColor.b, 0.5f);
+                    PositionLine(_liveLineRT, fromPos, localPoint, LineWidth * 0.8f);
+                }
+
+                // Select dot only when finger drags over it
+                var hitDot = FindNearestDot(localPoint);
+                if (hitDot.HasValue)
+                    TrySelectDot(hitDot.Value);
+            }
+        }
+
+        if (justReleased)
+        {
+            _isDragging = false;
+            if (_liveLineGO != null) _liveLineGO.SetActive(false);
+        }
+    }
+
+    private void LoadPlayerColor()
+    {
+        var profile = ProfileManager.ActiveProfile;
+        if (profile != null && !string.IsNullOrEmpty(profile.avatarColorHex))
+        {
+            if (ColorUtility.TryParseHtmlString(profile.avatarColorHex, out Color parsed))
+                _playerColor = parsed;
+        }
+        _playerColorDim = new Color(_playerColor.r, _playerColor.g, _playerColor.b, 0.4f);
+        _playerColorGlow = new Color(_playerColor.r, _playerColor.g, _playerColor.b, 0.2f);
     }
 
     // ── GRID BUILDING ──
@@ -273,51 +327,7 @@ public class ConnectMatchController : MonoBehaviour
         _liveLineGO.SetActive(false);
     }
 
-    // ── INPUT (Update-based touch/mouse) ──
-
-    private void Update()
-    {
-        if (!_roundActive || playArea == null) return;
-
-        bool pressed = Input.GetMouseButton(0);
-        bool justPressed = Input.GetMouseButtonDown(0);
-        bool justReleased = Input.GetMouseButtonUp(0);
-
-        if (justPressed)
-        {
-            // Start dragging — only begin, don't select yet
-            _isDragging = true;
-        }
-
-        if (pressed && _isDragging)
-        {
-            Vector2 localPoint;
-            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                playArea, Input.mousePosition, null, out localPoint))
-            {
-                // Update live line from last connected dot
-                if (_playerPath.Count > 0 && _playDots.ContainsKey(_playerPath[_playerPath.Count - 1]))
-                {
-                    var fromPos = _playDots[_playerPath[_playerPath.Count - 1]]
-                        .GetComponent<RectTransform>().anchoredPosition;
-                    _liveLineGO.SetActive(true);
-                    _liveLineImg.color = new Color(_playerColor.r, _playerColor.g, _playerColor.b, 0.5f);
-                    PositionLine(_liveLineRT, fromPos, localPoint, LineWidth * 0.8f);
-                }
-
-                // Select dot only when finger drags over it
-                var hitDot = FindNearestDot(localPoint);
-                if (hitDot.HasValue)
-                    TrySelectDot(hitDot.Value);
-            }
-        }
-
-        if (justReleased)
-        {
-            _isDragging = false;
-            if (_liveLineGO != null) _liveLineGO.SetActive(false);
-        }
-    }
+    // ── INPUT ──
 
     private Vector2Int? FindNearestDot(Vector2 localPoint)
     {
@@ -374,7 +384,7 @@ public class ConnectMatchController : MonoBehaviour
             else
             {
                 _mistakesThisRound++;
-                _stats.RecordMistake("wrong_start", $"{coord.x},{coord.y}");
+                RecordMistake("wrong_start", $"{coord.x},{coord.y}");
                 ShakeDot(coord);
             }
             return;
@@ -397,21 +407,18 @@ public class ConnectMatchController : MonoBehaviour
             // Check completion
             if (_playerPath.Count >= _effectivePath.Length)
             {
-                _roundActive = false;
                 _isDragging = false;
                 if (_liveLineGO != null) _liveLineGO.SetActive(false);
-                _stats.RecordCorrect("path_complete");
-                _stats.SetCustom("mistakes", (float)_mistakesThisRound);
-                _stats.SetCustom("hintsUsed", (float)_hintsUsed);
-                _stats.SetCustom("responseTime", Time.time - _roundStartTime);
-                StartCoroutine(OnRoundComplete());
+                RecordCorrect("path_complete");
+
+                CompleteRound();
             }
         }
         else
         {
             // Wrong dot — soft feedback only, no immediate hint
             _mistakesThisRound++;
-            _stats.RecordMistake("wrong_dot", $"{coord.x},{coord.y}");
+            RecordMistake("wrong_dot", $"{coord.x},{coord.y}");
             ShakeDot(coord);
         }
     }
@@ -419,7 +426,7 @@ public class ConnectMatchController : MonoBehaviour
     private void AcceptDot(Vector2Int coord)
     {
         _playerPath.Add(coord);
-        _stats.RecordCorrect("dot_connect", $"{coord.x},{coord.y}");
+        RecordCorrect("dot_connect", $"{coord.x},{coord.y}");
 
         // Brighten this dot
         if (_playDots.ContainsKey(coord))
@@ -453,9 +460,9 @@ public class ConnectMatchController : MonoBehaviour
         // Highlight next expected dot
         if (_effectivePath != null)
         {
-            int nextIdx = _playerPath.Count;
-            if (nextIdx < _effectivePath.Length)
-                HighlightDot(_effectivePath[nextIdx], false);
+            int nextIdx2 = _playerPath.Count;
+            if (nextIdx2 < _effectivePath.Length)
+                HighlightDot(_effectivePath[nextIdx2], false);
         }
     }
 
@@ -616,44 +623,7 @@ public class ConnectMatchController : MonoBehaviour
         }
     }
 
-    // ── COMPLETION ──
-
-    private IEnumerator OnRoundComplete()
-    {
-        // Wave pulse all connected dots
-        for (int i = 0; i < _playerPath.Count; i++)
-        {
-            if (_playDots.ContainsKey(_playerPath[i]))
-            {
-                var rt = _playDots[_playerPath[i]].GetComponent<RectTransform>();
-                StartCoroutine(CelebrateBounce(rt, i * 0.08f));
-            }
-        }
-
-        SoundLibrary.PlayRandomFeedback();
-        yield return new WaitForSeconds(1.0f);
-
-        _currentRound++;
-        _stats.RecordRoundComplete();
-
-        if (_currentRound >= totalRounds)
-        {
-            if (ConfettiController.Instance != null)
-                ConfettiController.Instance.Play();
-
-            if (!GameCompletionBridge.WillJourneyNavigate)
-            {
-                yield return new WaitForSeconds(2.5f);
-                _currentRound = 0;
-                LoadRound();
-            }
-        }
-        else
-        {
-            yield return new WaitForSeconds(1.5f);
-            LoadRound();
-        }
-    }
+    // ── CELEBRATION ──
 
     private IEnumerator CelebrateBounce(RectTransform rt, float delay)
     {
@@ -673,13 +643,13 @@ public class ConnectMatchController : MonoBehaviour
 
     private IEnumerator InactivityMonitor()
     {
-        while (_roundActive)
+        while (!IsInputLocked)
         {
             yield return new WaitForSeconds(1f);
-            if (_roundActive && Time.time - _lastInteractionTime >= 5f)
+            if (!IsInputLocked && Time.time - _lastInteractionTime >= 5f)
             {
                 _hintsUsed++;
-                _stats.RecordHint();
+                RecordHint();
                 HintNextDot();
                 _lastInteractionTime = Time.time;
             }
@@ -690,8 +660,7 @@ public class ConnectMatchController : MonoBehaviour
 
     public void OnHomePressed()
     {
-        if (_roundActive && _stats != null) _stats.Abandon();
-        NavigationManager.GoToMainMenu();
+        ExitGame();
     }
 
     private static Color HexColor(string hex)

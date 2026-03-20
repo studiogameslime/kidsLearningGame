@@ -20,7 +20,7 @@ using TMPro;
 /// - Falls back to hardcoded simple shapes if no generated data found
 /// - Completion: animal reveal + Hebrew name → celebration
 /// </summary>
-public class ConnectTheDotsController : MonoBehaviour
+public class ConnectTheDotsController : BaseMiniGame
 {
     [Header("UI References")]
     public RectTransform playArea;
@@ -61,7 +61,6 @@ public class ConnectTheDotsController : MonoBehaviour
     private bool roundComplete;
     private int roundNumber;
     private float currentDotSize;
-    private GameStatsCollector _stats;
 
     // Sprite-generated shapes loaded at runtime, filtered by difficulty
     private DotShapeData[] allGeneratedShapes;
@@ -204,19 +203,33 @@ public class ConnectTheDotsController : MonoBehaviour
     private List<GameObject> bgStars = new List<GameObject>();
 
     // ══════════════════════════════════════════
-    //  LIFECYCLE
+    //  BASE MINI GAME HOOKS
     // ══════════════════════════════════════════
 
-    private void Start()
+    protected override string GetFallbackGameId() => "connectthedots";
+
+    protected override void Start()
     {
         canvas = GetComponentInParent<Canvas>();
         roundNumber = 0;
 
         // Apply difficulty: map 1-10 → 0-2 tier for shape filtering
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "connectthedots";
-        int diffLevel = GameDifficultyConfig.GetLevel(gameId);
-        difficulty = GameDifficultyConfig.ConnectDotsTier(diffLevel);
-        Debug.Log($"[Difficulty] Game=connectthedots Level={diffLevel} Tier={difficulty}");
+        // Note: Difficulty is set by BaseMiniGame.Start(), so we read it in OnGameInit
+        // But we need canvas before base.Start(), so set it here
+
+        base.Start();
+    }
+
+    protected override void OnGameInit()
+    {
+        totalRounds = 1;
+        isEndless = true;
+        playWinSound = true;
+        playConfettiOnRoundWin = true;
+        delayBeforeNextRound = 0.5f;
+
+        difficulty = GameDifficultyConfig.ConnectDotsTier(Difficulty);
+        Debug.Log($"[Difficulty] Game=connectthedots Level={Difficulty} Tier={difficulty}");
 
         // Load all generated shapes, then filter by difficulty+complexity
         allGeneratedShapes = Resources.LoadAll<DotShapeData>("DotShapes");
@@ -254,76 +267,10 @@ public class ConnectTheDotsController : MonoBehaviour
         liveGlowGO.SetActive(false);
 
         PlaceBackgroundStars();
-        LoadNewRound();
     }
 
-    private ShapeDef PickRandomShape()
+    protected override void OnRoundSetup()
     {
-        int index;
-        if (Shapes.Length == 1)
-            index = 0;
-        else
-        {
-            do { index = Random.Range(0, Shapes.Length); }
-            while (index == lastShapeIndex);
-        }
-        lastShapeIndex = index;
-        return Shapes[index];
-    }
-
-    /// <summary>
-    /// Build the list of shapes eligible for the current difficulty.
-    /// Easy = Low complexity only. Medium = Low+Medium. Hard = all.
-    /// </summary>
-    private void BuildEligibleShapes()
-    {
-        eligibleShapes.Clear();
-        lastGenShapeIndex = -1;
-
-        if (allGeneratedShapes == null || allGeneratedShapes.Length == 0)
-            return;
-
-        foreach (var shape in allGeneratedShapes)
-        {
-            if (shape != null && shape.IsAllowedForDifficulty(difficulty))
-            {
-                var pts = shape.GetPoints(difficulty);
-                if (pts != null && pts.Length >= 3)
-                    eligibleShapes.Add(shape);
-            }
-        }
-
-        if (eligibleShapes.Count > 0)
-            Debug.Log($"ConnectTheDots: {eligibleShapes.Count} shapes eligible for difficulty {difficulty} " +
-                      $"(of {allGeneratedShapes.Length} total)");
-    }
-
-    /// <summary>Pick an eligible shape, avoiding the last one played.</summary>
-    private DotShapeData PickGeneratedShape()
-    {
-        int count = eligibleShapes.Count;
-        int index;
-        if (count == 1)
-            index = 0;
-        else
-        {
-            do { index = Random.Range(0, count); }
-            while (index == lastGenShapeIndex);
-        }
-        lastGenShapeIndex = index;
-        return eligibleShapes[index];
-    }
-
-    private void LoadNewRound()
-    {
-        ClearRound();
-
-        // Start analytics for this round
-        string gId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "fillthedots";
-        _stats = new GameStatsCollector(gId);
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
-
         // Prefer generated shapes if available; fall back to hardcoded
         Vector2[] layout;
         if (eligibleShapes.Count > 0)
@@ -399,30 +346,7 @@ public class ConnectTheDotsController : MonoBehaviour
         roundNumber++;
     }
 
-    private void CreateGuideLines()
-    {
-        for (int i = 0; i < totalDots; i++)
-        {
-            int next = (i + 1) % totalDots;
-            var fromRT = dots[i].GetComponent<RectTransform>();
-            var toRT = dots[next].GetComponent<RectTransform>();
-
-            var lineGO = new GameObject("GuideLine");
-            lineGO.transform.SetParent(lineContainer, false);
-            lineGO.transform.SetAsFirstSibling();
-
-            var lineRT = lineGO.AddComponent<RectTransform>();
-            var lineImg = lineGO.AddComponent<Image>();
-            lineImg.color = new Color(1f, 0.95f, 0.8f, guideLineAlpha);
-            lineImg.raycastTarget = false;
-
-            PositionLine(lineRT, fromRT.anchoredPosition, toRT.anchoredPosition, lineWidth * 0.5f);
-
-            guideLines.Add(lineGO);
-        }
-    }
-
-    private void ClearRound()
+    protected override void OnRoundCleanup()
     {
         foreach (var c in activeCoroutines) if (c != null) StopCoroutine(c);
         activeCoroutines.Clear();
@@ -448,345 +372,13 @@ public class ConnectTheDotsController : MonoBehaviour
         roundComplete = false;
     }
 
-    // ══════════════════════════════════════════
-    //  BACKGROUND STARS (decorative twinkling)
-    // ══════════════════════════════════════════
-
-    private void PlaceBackgroundStars()
+    protected override void OnBeforeComplete()
     {
-        if (starLayer == null) return;
-
-        // Get a circle sprite from the dot prefab for star visuals
-        Sprite circleSprite = null;
-        if (dotPrefab != null)
-        {
-            var dp = dotPrefab.GetComponent<DotPoint>();
-            if (dp != null && dp.dotImage != null)
-                circleSprite = dp.dotImage.sprite;
-        }
-
-        int count = Random.Range(80, 120);
-        for (int i = 0; i < count; i++)
-        {
-            float cx = Random.Range(0.02f, 0.98f);
-            float cy = Random.Range(0.08f, 0.98f);
-            float sz = Random.Range(3f, 10f);
-
-            // A few slightly larger stars
-            if (Random.value < 0.1f) sz = Random.Range(10f, 16f);
-
-            var go = new GameObject($"BgStar_{i}");
-            go.transform.SetParent(starLayer, false);
-            var rt = go.AddComponent<RectTransform>();
-            rt.anchorMin = new Vector2(cx, cy);
-            rt.anchorMax = new Vector2(cx, cy);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = Vector2.zero;
-            rt.sizeDelta = new Vector2(sz, sz);
-
-            var img = go.AddComponent<Image>();
-            if (circleSprite != null) img.sprite = circleSprite;
-            img.raycastTarget = false;
-
-            // Warm white/yellow tint
-            float warmth = Random.Range(0f, 1f);
-            float baseAlpha = Random.Range(0.15f, 0.55f);
-            if (sz > 10f) baseAlpha = Random.Range(0.4f, 0.7f);
-            img.color = new Color(
-                1f,
-                0.92f + warmth * 0.08f,
-                0.7f + warmth * 0.3f,
-                baseAlpha);
-
-            bgStars.Add(go);
-
-            // Each star twinkles at its own pace
-            activeCoroutines.Add(StartCoroutine(TwinkleStar(img, baseAlpha, i)));
-        }
+        Stats?.SetCustom("totalDots", totalDots);
     }
 
-    private IEnumerator TwinkleStar(Image img, float baseAlpha, int index)
+    protected override IEnumerator OnAfterComplete()
     {
-        if (img == null) yield break;
-        float speed = Random.Range(0.3f, 0.8f);
-        float range = baseAlpha * Random.Range(0.3f, 0.6f);
-        float phase = index * 0.7f + Random.Range(0f, Mathf.PI * 2f);
-
-        while (img != null)
-        {
-            float a = baseAlpha + Mathf.Sin(Time.time * speed * Mathf.PI * 2f + phase) * range;
-            Color c = img.color;
-            img.color = new Color(c.r, c.g, c.b, Mathf.Clamp01(a));
-            yield return null;
-        }
-    }
-
-    // ══════════════════════════════════════════
-    //  UPDATE — input handling (UNCHANGED MECHANICS)
-    // ══════════════════════════════════════════
-
-    private void Update()
-    {
-        if (roundComplete) return;
-
-        Vector2 screenPos;
-        bool pointerDown = false;
-        bool pointerUp = false;
-
-        if (Input.touchCount > 0)
-        {
-            var touch = Input.GetTouch(0);
-            screenPos = touch.position;
-            pointerDown = true;
-            if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
-                pointerUp = true;
-        }
-        else if (Input.GetMouseButton(0))
-        {
-            screenPos = Input.mousePosition;
-            pointerDown = true;
-        }
-        else if (Input.GetMouseButtonUp(0))
-        {
-            screenPos = Input.mousePosition;
-            pointerUp = true;
-        }
-        else
-        {
-            if (isDrawing)
-            {
-                isDrawing = false;
-                HideLiveLines();
-            }
-            return;
-        }
-
-        Vector2 localPoint;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            playArea, screenPos,
-            canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera,
-            out localPoint);
-
-        if (pointerUp)
-        {
-            isDrawing = false;
-            HideLiveLines();
-            return;
-        }
-
-        if (!pointerDown) return;
-
-        // Scale hit radius tighter when dots are dense to avoid skipping
-        float scaledHitRadius = hitRadius * Mathf.Lerp(1f, 0.6f, Mathf.InverseLerp(8f, 30f, totalDots));
-        float detectRadius = currentDotSize * scaledHitRadius;
-
-        // Not yet drawing — must press on the current dot to start
-        if (!isDrawing)
-        {
-            int targetIdx = (currentDotIndex < totalDots) ? currentDotIndex : 0;
-            var startDot = dots[targetIdx];
-            var startRT = startDot.GetComponent<RectTransform>();
-            float dist = Vector2.Distance(localPoint, startRT.anchoredPosition);
-
-            if (dist < detectRadius)
-            {
-                if (currentDotIndex == 0)
-                    ActivateDot(startDot);
-                isDrawing = true;
-            }
-            return;
-        }
-
-        // Currently drawing — update live line from last dot to finger
-        int lastActivated = Mathf.Min(currentDotIndex - 1, totalDots - 1);
-        if (lastActivated >= 0)
-        {
-            Vector2 fromPos = dots[lastActivated].GetComponent<RectTransform>().anchoredPosition;
-            UpdateLiveLine(fromPos, localPoint);
-        }
-
-        // Check if finger reached the next dot
-        if (currentDotIndex < totalDots)
-        {
-            var nextDot = dots[currentDotIndex];
-            var dotRT = nextDot.GetComponent<RectTransform>();
-            float dist = Vector2.Distance(localPoint, dotRT.anchoredPosition);
-
-            if (dist < detectRadius)
-            {
-                ActivateDot(nextDot);
-            }
-        }
-        // All dots done — check if finger reached dot 0 to close
-        else
-        {
-            var firstDot = dots[0];
-            var firstRT = firstDot.GetComponent<RectTransform>();
-            float dist = Vector2.Distance(localPoint, firstRT.anchoredPosition);
-
-            if (dist < detectRadius)
-            {
-                DrawLine(dots[totalDots - 1], dots[0]);
-                dots[0].Activate();
-                isDrawing = false;
-                roundComplete = true;
-                HideLiveLines();
-                StartCoroutine(OnAllDotsConnected());
-            }
-        }
-    }
-
-    private void HideLiveLines()
-    {
-        if (liveLineGO != null) liveLineGO.SetActive(false);
-        if (liveGlowGO != null) liveGlowGO.SetActive(false);
-    }
-
-    private void UpdateLiveLine(Vector2 from, Vector2 to)
-    {
-        // Main line — warm constellation glow
-        liveLineGO.SetActive(true);
-        liveLineImg.color = new Color(ConstellationColor.r, ConstellationColor.g, ConstellationColor.b, 0.7f);
-        PositionLine(liveLineRT, from, to, lineWidth);
-
-        // Glow behind — soft warm halo
-        liveGlowGO.SetActive(true);
-        liveGlowImg.color = ConstellationGlow;
-        PositionLine(liveGlowRT, from, to, lineWidth * 3.5f);
-    }
-
-    private void ActivateDot(DotPoint dot)
-    {
-        if (dot.dotIndex != currentDotIndex) return;
-
-        dot.Activate();
-
-        // Spark particles at dot position
-        SpawnSparks(dot.GetComponent<RectTransform>().anchoredPosition, currentLineColor);
-
-        // Draw permanent line from previous dot (with glow)
-        if (currentDotIndex > 0)
-            DrawLine(dots[currentDotIndex - 1], dot);
-
-        currentDotIndex++;
-        _stats?.RecordCorrect();
-
-        if (currentDotIndex < totalDots)
-        {
-            dots[currentDotIndex].SetAsNext();
-        }
-        else
-        {
-            dots[0].SetAsNext();
-        }
-    }
-
-    private void DrawLine(DotPoint from, DotPoint to)
-    {
-        Vector2 fromPos = from.GetComponent<RectTransform>().anchoredPosition;
-        Vector2 toPos = to.GetComponent<RectTransform>().anchoredPosition;
-
-        // Glow layer — warm golden halo
-        var glowGO = new GameObject("LineGlow");
-        glowGO.transform.SetParent(lineContainer, false);
-        glowGO.transform.SetAsFirstSibling();
-        var glowRT = glowGO.AddComponent<RectTransform>();
-        var glowImg = glowGO.AddComponent<Image>();
-        glowImg.color = ConstellationGlow;
-        glowImg.raycastTarget = false;
-        PositionLine(glowRT, fromPos, toPos, lineWidth * 3.5f);
-        drawnLines.Add(glowGO);
-
-        // Main line — constellation white/yellow
-        var lineGO = new GameObject("DrawnLine");
-        lineGO.transform.SetParent(lineContainer, false);
-        var lineRT = lineGO.AddComponent<RectTransform>();
-        var lineImg = lineGO.AddComponent<Image>();
-        lineImg.color = ConstellationColor;
-        lineImg.raycastTarget = false;
-        PositionLine(lineRT, fromPos, toPos, lineWidth);
-        drawnLines.Add(lineGO);
-    }
-
-    private void PositionLine(RectTransform rt, Vector2 from, Vector2 to, float width)
-    {
-        Vector2 dir = to - from;
-        float distance = dir.magnitude;
-        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-
-        rt.sizeDelta = new Vector2(distance, width);
-        rt.anchoredPosition = from + dir * 0.5f;
-        rt.localRotation = Quaternion.Euler(0, 0, angle);
-        rt.pivot = new Vector2(0.5f, 0.5f);
-    }
-
-    // ══════════════════════════════════════════
-    //  SPARK PARTICLES
-    // ══════════════════════════════════════════
-
-    private void SpawnSparks(Vector2 pos, Color color)
-    {
-        int count = Random.Range(5, 9);
-        for (int i = 0; i < count; i++)
-        {
-            var go = new GameObject("Spark");
-            go.transform.SetParent(playArea, false);
-            var rt = go.AddComponent<RectTransform>();
-            rt.anchoredPosition = pos;
-            float sz = Random.Range(5f, 12f);
-            rt.sizeDelta = new Vector2(sz, sz);
-            var img = go.AddComponent<Image>();
-            img.raycastTarget = false;
-
-            var circleSprite = dots.Count > 0 && dots[0].dotImage != null ? dots[0].dotImage.sprite : null;
-            if (circleSprite != null) img.sprite = circleSprite;
-
-            // Golden/warm white sparks like tiny stars
-            float warmth = Random.Range(0.7f, 1f);
-            img.color = new Color(1f, 0.9f * warmth, 0.6f * warmth, 1f);
-
-            sparkParticles.Add(go);
-
-            float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
-            float speed = Random.Range(80f, 200f);
-            Vector2 vel = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * speed;
-
-            activeCoroutines.Add(StartCoroutine(AnimateSpark(rt, img, vel)));
-        }
-    }
-
-    private IEnumerator AnimateSpark(RectTransform rt, Image img, Vector2 velocity)
-    {
-        float life = Random.Range(0.25f, 0.45f);
-        float t = 0f;
-        Vector2 startPos = rt.anchoredPosition;
-
-        while (t < life)
-        {
-            t += Time.deltaTime;
-            float p = t / life;
-            if (rt == null) yield break;
-
-            rt.anchoredPosition = startPos + velocity * p;
-            rt.localScale = Vector3.one * (1f - p * 0.6f);
-
-            Color c = img.color;
-            img.color = new Color(c.r, c.g, c.b, 1f - p);
-            yield return null;
-        }
-
-        if (rt != null) Destroy(rt.gameObject);
-    }
-
-    // ══════════════════════════════════════════
-    //  COMPLETION — celebration + reveal
-    // ══════════════════════════════════════════
-
-    private IEnumerator OnAllDotsConnected()
-    {
-        _stats?.SetCustom("totalDots", totalDots);
-        ConfettiController.Instance.Play();
-
         // Play animal name audio if applicable
         if (!string.IsNullOrEmpty(currentShape.animalId))
             SoundLibrary.PlayAnimalName(currentShape.animalId);
@@ -932,12 +524,432 @@ public class ConnectTheDotsController : MonoBehaviour
         }
 
         yield return new WaitForSeconds(0.5f);
-        if (!GameCompletionBridge.WillJourneyNavigate)
-            LoadNewRound();
     }
 
-    public void OnHomePressed() => NavigationManager.GoToMainMenu();
-    public void OnRestartPressed() => LoadNewRound();
+    // ══════════════════════════════════════════
+    //  SHAPE SELECTION
+    // ══════════════════════════════════════════
+
+    private ShapeDef PickRandomShape()
+    {
+        int index;
+        if (Shapes.Length == 1)
+            index = 0;
+        else
+        {
+            do { index = Random.Range(0, Shapes.Length); }
+            while (index == lastShapeIndex);
+        }
+        lastShapeIndex = index;
+        return Shapes[index];
+    }
+
+    /// <summary>
+    /// Build the list of shapes eligible for the current difficulty.
+    /// Easy = Low complexity only. Medium = Low+Medium. Hard = all.
+    /// </summary>
+    private void BuildEligibleShapes()
+    {
+        eligibleShapes.Clear();
+        lastGenShapeIndex = -1;
+
+        if (allGeneratedShapes == null || allGeneratedShapes.Length == 0)
+            return;
+
+        foreach (var shape in allGeneratedShapes)
+        {
+            if (shape != null && shape.IsAllowedForDifficulty(difficulty))
+            {
+                var pts = shape.GetPoints(difficulty);
+                if (pts != null && pts.Length >= 3)
+                    eligibleShapes.Add(shape);
+            }
+        }
+
+        if (eligibleShapes.Count > 0)
+            Debug.Log($"ConnectTheDots: {eligibleShapes.Count} shapes eligible for difficulty {difficulty} " +
+                      $"(of {allGeneratedShapes.Length} total)");
+    }
+
+    /// <summary>Pick an eligible shape, avoiding the last one played.</summary>
+    private DotShapeData PickGeneratedShape()
+    {
+        int count = eligibleShapes.Count;
+        int index;
+        if (count == 1)
+            index = 0;
+        else
+        {
+            do { index = Random.Range(0, count); }
+            while (index == lastGenShapeIndex);
+        }
+        lastGenShapeIndex = index;
+        return eligibleShapes[index];
+    }
+
+    private void CreateGuideLines()
+    {
+        for (int i = 0; i < totalDots; i++)
+        {
+            int next = (i + 1) % totalDots;
+            var fromRT = dots[i].GetComponent<RectTransform>();
+            var toRT = dots[next].GetComponent<RectTransform>();
+
+            var lineGO = new GameObject("GuideLine");
+            lineGO.transform.SetParent(lineContainer, false);
+            lineGO.transform.SetAsFirstSibling();
+
+            var lineRT = lineGO.AddComponent<RectTransform>();
+            var lineImg = lineGO.AddComponent<Image>();
+            lineImg.color = new Color(1f, 0.95f, 0.8f, guideLineAlpha);
+            lineImg.raycastTarget = false;
+
+            PositionLine(lineRT, fromRT.anchoredPosition, toRT.anchoredPosition, lineWidth * 0.5f);
+
+            guideLines.Add(lineGO);
+        }
+    }
+
+    // ══════════════════════════════════════════
+    //  BACKGROUND STARS (decorative twinkling)
+    // ══════════════════════════════════════════
+
+    private void PlaceBackgroundStars()
+    {
+        if (starLayer == null) return;
+
+        // Get a circle sprite from the dot prefab for star visuals
+        Sprite circleSprite = null;
+        if (dotPrefab != null)
+        {
+            var dp = dotPrefab.GetComponent<DotPoint>();
+            if (dp != null && dp.dotImage != null)
+                circleSprite = dp.dotImage.sprite;
+        }
+
+        int count = Random.Range(80, 120);
+        for (int i = 0; i < count; i++)
+        {
+            float cx = Random.Range(0.02f, 0.98f);
+            float cy = Random.Range(0.08f, 0.98f);
+            float sz = Random.Range(3f, 10f);
+
+            // A few slightly larger stars
+            if (Random.value < 0.1f) sz = Random.Range(10f, 16f);
+
+            var go = new GameObject($"BgStar_{i}");
+            go.transform.SetParent(starLayer, false);
+            var rt = go.AddComponent<RectTransform>();
+            rt.anchorMin = new Vector2(cx, cy);
+            rt.anchorMax = new Vector2(cx, cy);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(sz, sz);
+
+            var img = go.AddComponent<Image>();
+            if (circleSprite != null) img.sprite = circleSprite;
+            img.raycastTarget = false;
+
+            // Warm white/yellow tint
+            float warmth = Random.Range(0f, 1f);
+            float baseAlpha = Random.Range(0.15f, 0.55f);
+            if (sz > 10f) baseAlpha = Random.Range(0.4f, 0.7f);
+            img.color = new Color(
+                1f,
+                0.92f + warmth * 0.08f,
+                0.7f + warmth * 0.3f,
+                baseAlpha);
+
+            bgStars.Add(go);
+
+            // Each star twinkles at its own pace
+            activeCoroutines.Add(StartCoroutine(TwinkleStar(img, baseAlpha, i)));
+        }
+    }
+
+    private IEnumerator TwinkleStar(Image img, float baseAlpha, int index)
+    {
+        if (img == null) yield break;
+        float speed = Random.Range(0.3f, 0.8f);
+        float range = baseAlpha * Random.Range(0.3f, 0.6f);
+        float phase = index * 0.7f + Random.Range(0f, Mathf.PI * 2f);
+
+        while (img != null)
+        {
+            float a = baseAlpha + Mathf.Sin(Time.time * speed * Mathf.PI * 2f + phase) * range;
+            Color c = img.color;
+            img.color = new Color(c.r, c.g, c.b, Mathf.Clamp01(a));
+            yield return null;
+        }
+    }
+
+    // ══════════════════════════════════════════
+    //  UPDATE — input handling (UNCHANGED MECHANICS)
+    // ══════════════════════════════════════════
+
+    protected override void OnGameplayUpdate()
+    {
+        if (roundComplete) return;
+
+        Vector2 screenPos;
+        bool pointerDown = false;
+        bool pointerUp = false;
+
+        if (Input.touchCount > 0)
+        {
+            var touch = Input.GetTouch(0);
+            screenPos = touch.position;
+            pointerDown = true;
+            if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
+                pointerUp = true;
+        }
+        else if (Input.GetMouseButton(0))
+        {
+            screenPos = Input.mousePosition;
+            pointerDown = true;
+        }
+        else if (Input.GetMouseButtonUp(0))
+        {
+            screenPos = Input.mousePosition;
+            pointerUp = true;
+        }
+        else
+        {
+            if (isDrawing)
+            {
+                isDrawing = false;
+                HideLiveLines();
+            }
+            return;
+        }
+
+        Vector2 localPoint;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            playArea, screenPos,
+            canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera,
+            out localPoint);
+
+        if (pointerUp)
+        {
+            isDrawing = false;
+            HideLiveLines();
+            return;
+        }
+
+        if (!pointerDown) return;
+
+        // Scale hit radius tighter when dots are dense to avoid skipping
+        float scaledHitRadius = hitRadius * Mathf.Lerp(1f, 0.6f, Mathf.InverseLerp(8f, 30f, totalDots));
+        float detectRadius = currentDotSize * scaledHitRadius;
+
+        // Not yet drawing — must press on the current dot to start
+        if (!isDrawing)
+        {
+            int targetIdx = (currentDotIndex < totalDots) ? currentDotIndex : 0;
+            var startDot = dots[targetIdx];
+            var startRT = startDot.GetComponent<RectTransform>();
+            float dist = Vector2.Distance(localPoint, startRT.anchoredPosition);
+
+            if (dist < detectRadius)
+            {
+                if (currentDotIndex == 0)
+                    ActivateDot(startDot);
+                isDrawing = true;
+            }
+            return;
+        }
+
+        // Currently drawing — update live line from last dot to finger
+        int lastActivated = Mathf.Min(currentDotIndex - 1, totalDots - 1);
+        if (lastActivated >= 0)
+        {
+            Vector2 fromPos = dots[lastActivated].GetComponent<RectTransform>().anchoredPosition;
+            UpdateLiveLine(fromPos, localPoint);
+        }
+
+        // Check if finger reached the next dot
+        if (currentDotIndex < totalDots)
+        {
+            var nextDot = dots[currentDotIndex];
+            var dotRT = nextDot.GetComponent<RectTransform>();
+            float dist = Vector2.Distance(localPoint, dotRT.anchoredPosition);
+
+            if (dist < detectRadius)
+            {
+                ActivateDot(nextDot);
+            }
+        }
+        // All dots done — check if finger reached dot 0 to close
+        else
+        {
+            var firstDot = dots[0];
+            var firstRT = firstDot.GetComponent<RectTransform>();
+            float dist = Vector2.Distance(localPoint, firstRT.anchoredPosition);
+
+            if (dist < detectRadius)
+            {
+                DrawLine(dots[totalDots - 1], dots[0]);
+                dots[0].Activate();
+                isDrawing = false;
+                roundComplete = true;
+                HideLiveLines();
+                CompleteRound();
+            }
+        }
+    }
+
+    private void HideLiveLines()
+    {
+        if (liveLineGO != null) liveLineGO.SetActive(false);
+        if (liveGlowGO != null) liveGlowGO.SetActive(false);
+    }
+
+    private void UpdateLiveLine(Vector2 from, Vector2 to)
+    {
+        // Main line — warm constellation glow
+        liveLineGO.SetActive(true);
+        liveLineImg.color = new Color(ConstellationColor.r, ConstellationColor.g, ConstellationColor.b, 0.7f);
+        PositionLine(liveLineRT, from, to, lineWidth);
+
+        // Glow behind — soft warm halo
+        liveGlowGO.SetActive(true);
+        liveGlowImg.color = ConstellationGlow;
+        PositionLine(liveGlowRT, from, to, lineWidth * 3.5f);
+    }
+
+    private void ActivateDot(DotPoint dot)
+    {
+        if (dot.dotIndex != currentDotIndex) return;
+
+        dot.Activate();
+
+        // Spark particles at dot position
+        SpawnSparks(dot.GetComponent<RectTransform>().anchoredPosition, currentLineColor);
+
+        // Draw permanent line from previous dot (with glow)
+        if (currentDotIndex > 0)
+            DrawLine(dots[currentDotIndex - 1], dot);
+
+        currentDotIndex++;
+        RecordCorrect();
+
+        if (currentDotIndex < totalDots)
+        {
+            dots[currentDotIndex].SetAsNext();
+        }
+        else
+        {
+            dots[0].SetAsNext();
+        }
+    }
+
+    private void DrawLine(DotPoint from, DotPoint to)
+    {
+        Vector2 fromPos = from.GetComponent<RectTransform>().anchoredPosition;
+        Vector2 toPos = to.GetComponent<RectTransform>().anchoredPosition;
+
+        // Glow layer — warm golden halo
+        var glowGO = new GameObject("LineGlow");
+        glowGO.transform.SetParent(lineContainer, false);
+        glowGO.transform.SetAsFirstSibling();
+        var glowRT = glowGO.AddComponent<RectTransform>();
+        var glowImg = glowGO.AddComponent<Image>();
+        glowImg.color = ConstellationGlow;
+        glowImg.raycastTarget = false;
+        PositionLine(glowRT, fromPos, toPos, lineWidth * 3.5f);
+        drawnLines.Add(glowGO);
+
+        // Main line — constellation white/yellow
+        var lineGO = new GameObject("DrawnLine");
+        lineGO.transform.SetParent(lineContainer, false);
+        var lineRT = lineGO.AddComponent<RectTransform>();
+        var lineImg = lineGO.AddComponent<Image>();
+        lineImg.color = ConstellationColor;
+        lineImg.raycastTarget = false;
+        PositionLine(lineRT, fromPos, toPos, lineWidth);
+        drawnLines.Add(lineGO);
+    }
+
+    private void PositionLine(RectTransform rt, Vector2 from, Vector2 to, float width)
+    {
+        Vector2 dir = to - from;
+        float distance = dir.magnitude;
+        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+
+        rt.sizeDelta = new Vector2(distance, width);
+        rt.anchoredPosition = from + dir * 0.5f;
+        rt.localRotation = Quaternion.Euler(0, 0, angle);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+    }
+
+    // ══════════════════════════════════════════
+    //  SPARK PARTICLES
+    // ══════════════════════════════════════════
+
+    private void SpawnSparks(Vector2 pos, Color color)
+    {
+        int count = Random.Range(5, 9);
+        for (int i = 0; i < count; i++)
+        {
+            var go = new GameObject("Spark");
+            go.transform.SetParent(playArea, false);
+            var rt = go.AddComponent<RectTransform>();
+            rt.anchoredPosition = pos;
+            float sz = Random.Range(5f, 12f);
+            rt.sizeDelta = new Vector2(sz, sz);
+            var img = go.AddComponent<Image>();
+            img.raycastTarget = false;
+
+            var circleSprite = dots.Count > 0 && dots[0].dotImage != null ? dots[0].dotImage.sprite : null;
+            if (circleSprite != null) img.sprite = circleSprite;
+
+            // Golden/warm white sparks like tiny stars
+            float warmth = Random.Range(0.7f, 1f);
+            img.color = new Color(1f, 0.9f * warmth, 0.6f * warmth, 1f);
+
+            sparkParticles.Add(go);
+
+            float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
+            float speed = Random.Range(80f, 200f);
+            Vector2 vel = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * speed;
+
+            activeCoroutines.Add(StartCoroutine(AnimateSpark(rt, img, vel)));
+        }
+    }
+
+    private IEnumerator AnimateSpark(RectTransform rt, Image img, Vector2 velocity)
+    {
+        float life = Random.Range(0.25f, 0.45f);
+        float t = 0f;
+        Vector2 startPos = rt.anchoredPosition;
+
+        while (t < life)
+        {
+            t += Time.deltaTime;
+            float p = t / life;
+            if (rt == null) yield break;
+
+            rt.anchoredPosition = startPos + velocity * p;
+            rt.localScale = Vector3.one * (1f - p * 0.6f);
+
+            Color c = img.color;
+            img.color = new Color(c.r, c.g, c.b, 1f - p);
+            yield return null;
+        }
+
+        if (rt != null) Destroy(rt.gameObject);
+    }
+
+    // ══════════════════════════════════════════
+    //  NAVIGATION
+    // ══════════════════════════════════════════
+
+    public void OnHomePressed() => ExitGame();
+    public void OnRestartPressed()
+    {
+        OnRoundCleanup();
+        OnRoundSetup();
+    }
 
     /// <summary>
     /// Scale visual dot size based on point count.

@@ -14,7 +14,7 @@ using TMPro;
 /// - Only ONE target hints at a time after inactivity
 /// - Generous tap zones for toddlers (age 3)
 /// </summary>
-public class FindTheAnimalController : MonoBehaviour
+public class FindTheAnimalController : BaseMiniGame
 {
     [Header("UI")]
     public Image targetImage;
@@ -72,9 +72,7 @@ public class FindTheAnimalController : MonoBehaviour
     private bool isRoundActive;
     private int roundNumber;
     private float lastInteractionTime;
-    private int _difficultyLevel = 1;
     private string[] _allowedAnimals;
-    private GameStatsCollector _stats;
 
     private List<GameObject> spawnedAnimals = new List<GameObject>();
     private List<int> targetIndices = new List<int>();
@@ -121,34 +119,31 @@ public class FindTheAnimalController : MonoBehaviour
         }
     }
 
-    // ── Lifecycle ──
+    // ── Base Mini Game Hooks ──
 
-    private void Start()
+    protected override string GetFallbackGameId() => "findtheanimal";
+
+    protected override void OnGameInit()
     {
+        totalRounds = 1;
+        isEndless = true;
+        playWinSound = true;
+        playConfettiOnRoundWin = true;
+        delayBeforeNextRound = 0.6f;
+
         roundNumber = 0;
 
         // Apply difficulty — filter animal pool by tier
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "findtheanimal";
-        _difficultyLevel = GameDifficultyConfig.GetLevel(gameId);
-        _allowedAnimals = GameDifficultyConfig.GetAnimalPool(_difficultyLevel);
-        Debug.Log($"[Difficulty] Game=findtheanimal Level={_difficultyLevel} Tier={GameDifficultyConfig.FindAnimalTier(_difficultyLevel)} Pool={string.Join(",", _allowedAnimals)}");
-
-        LoadRound();
+        _allowedAnimals = GameDifficultyConfig.GetAnimalPool(Difficulty);
+        Debug.Log($"[Difficulty] Game=findtheanimal Level={Difficulty} Tier={GameDifficultyConfig.FindAnimalTier(Difficulty)} Pool={string.Join(",", _allowedAnimals)}");
     }
 
-    private void LoadRound()
+    protected override void OnRoundSetup()
     {
-        ClearRound();
         isRoundActive = true;
         targetsFound = 0;
         lastInteractionTime = Time.time;
         foundIndices.Clear();
-
-        // Start analytics for this round
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "findtheobject";
-        _stats = new GameStatsCollector(gameId);
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
         targetIndices.Clear();
 
         var game = GameContext.CurrentGame;
@@ -225,7 +220,7 @@ public class FindTheAnimalController : MonoBehaviour
         roundNumber++;
     }
 
-    private void ClearRound()
+    protected override void OnRoundCleanup()
     {
         if (hintCoroutine != null) { StopCoroutine(hintCoroutine); hintCoroutine = null; }
         currentlyHintingIndex = -1;
@@ -235,6 +230,27 @@ public class FindTheAnimalController : MonoBehaviour
         spawnedAnimals.Clear();
         foreach (var go in worldObjects) if (go != null) Destroy(go);
         worldObjects.Clear();
+    }
+
+    protected override void OnBeforeComplete()
+    {
+        Stats?.SetCustom("targetsFound", targetCount);
+    }
+
+    protected override IEnumerator OnAfterComplete()
+    {
+        // Wait for the last animal's success animation to finish
+        yield return new WaitForSeconds(1.5f);
+
+        // Fade remaining animals
+        foreach (var animal in spawnedAnimals)
+        {
+            if (animal == null) continue;
+            var cg = animal.GetComponent<CanvasGroup>() ?? animal.AddComponent<CanvasGroup>();
+            cg.alpha = 0.15f;
+        }
+
+        yield return new WaitForSeconds(0.6f);
     }
 
     // ═══════════════════════════════════════
@@ -709,13 +725,13 @@ public class FindTheAnimalController : MonoBehaviour
 
     private void OnAnimalTapped(string animalId, int index, GameObject go)
     {
-        if (!isRoundActive) return;
+        if (!isRoundActive || IsInputLocked) return;
 
         lastInteractionTime = Time.time;
 
         if (animalId == targetAnimal.id)
         {
-            _stats?.RecordCorrect();
+            RecordCorrect();
             targetsFound++;
             foundIndices.Add(index);
             UpdateRemainingText();
@@ -727,14 +743,13 @@ public class FindTheAnimalController : MonoBehaviour
 
             if (targetsFound >= targetCount)
             {
-                _stats?.SetCustom("targetsFound", targetCount);
                 isRoundActive = false;
-                StartCoroutine(AdvanceRound());
+                CompleteRound();
             }
         }
         else
         {
-            _stats?.RecordMistake();
+            RecordMistake();
             StartCoroutine(WrongTapAnimation(go));
         }
     }
@@ -833,34 +848,18 @@ public class FindTheAnimalController : MonoBehaviour
         vrt.localRotation = orig;
     }
 
-    private IEnumerator AdvanceRound()
-    {
-        // Wait for the last animal's success animation to finish
-        yield return new WaitForSeconds(1.5f);
-
-        ConfettiController.Instance.Play();
-        yield return new WaitForSeconds(1.2f);
-
-        foreach (var animal in spawnedAnimals)
-        {
-            if (animal == null) continue;
-            var cg = animal.GetComponent<CanvasGroup>() ?? animal.AddComponent<CanvasGroup>();
-            cg.alpha = 0.15f;
-        }
-
-        yield return new WaitForSeconds(0.6f);
-        if (!GameCompletionBridge.WillJourneyNavigate)
-            LoadRound();
-    }
-
     private void UpdateRemainingText()
     {
         if (remainingText != null)
             remainingText.text = (targetCount - targetsFound).ToString();
     }
 
-    public void OnHomePressed() => NavigationManager.GoToMainMenu();
-    public void OnRestartPressed() => LoadRound();
+    public void OnHomePressed() => ExitGame();
+    public void OnRestartPressed()
+    {
+        OnRoundCleanup();
+        OnRoundSetup();
+    }
 
     private static void Shuffle<T>(List<T> list)
     {

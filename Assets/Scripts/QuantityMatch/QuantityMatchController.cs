@@ -9,7 +9,7 @@ using System.Collections.Generic;
 /// Shows a target number at top, 4 animal-group tiles at bottom.
 /// Child taps the tile whose animal count matches the target number.
 /// </summary>
-public class QuantityMatchController : MonoBehaviour
+public class QuantityMatchController : BaseMiniGame
 {
     [Header("Layout")]
     public RectTransform numberArea;   // top zone for the big number
@@ -22,9 +22,6 @@ public class QuantityMatchController : MonoBehaviour
     [Header("Sprites")]
     public Sprite cellSprite; // RoundedRect
 
-    [Header("Settings")]
-    public int totalRounds = 5;
-
     private static readonly string[] AllAnimals =
     {
         "Elephant", "Giraffe", "Horse", "Cow", "Lion",
@@ -32,10 +29,6 @@ public class QuantityMatchController : MonoBehaviour
         "Chicken", "Duck", "Bird", "Fish", "Frog", "Snake", "Turtle"
     };
 
-    private GameStatsCollector _stats;
-    private int _difficulty = 1;
-    private int _currentRound;
-    private bool _roundActive;
     private int _attemptsThisRound;
     private int _hintsUsed;
     private float _lastInteractionTime;
@@ -50,28 +43,25 @@ public class QuantityMatchController : MonoBehaviour
     private Coroutine _inactivityCoroutine;
     private string _lastCorrectAnimal;
 
-    private void Start()
+    // ── BASE MINI GAME HOOKS ─────────────────────────────────────
+
+    protected override void OnGameInit()
     {
-        _currentRound = 0;
-        LoadRound();
+        totalRounds = 5;
+        contentCategory = "";
+        playWinSound = true;
+        delayBeforeNextRound = 1.2f;
+        delayAfterFinalRound = 2.5f;
     }
 
-    // ── ROUND LIFECYCLE ──
+    protected override string GetFallbackGameId() => "quantitymatch";
 
-    private void LoadRound()
+    protected override string GetContentId() => null;
+
+    protected override void OnRoundSetup()
     {
-        ClearRound();
-        _roundActive = true;
         _attemptsThisRound = 0;
         _hintsUsed = 0;
-
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "quantitymatch";
-        _stats = new GameStatsCollector(gameId);
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
-        _stats.SetTotalRoundsPlanned(1);
-
-        _difficulty = GameDifficultyConfig.GetLevel(gameId);
 
         // Generate round
         GenerateRound();
@@ -87,13 +77,12 @@ public class QuantityMatchController : MonoBehaviour
         _lastInteractionTime = Time.time;
         _inactivityCoroutine = StartCoroutine(InactivityMonitor());
 
-        _stats.SetCustom("targetNumber", (float)_targetNumber);
-        _stats.SetCustom("difficulty", (float)_difficulty);
+        Stats.SetCustom("targetNumber", (float)_targetNumber);
 
-        Debug.Log($"[QuantityMatch] Round {_currentRound + 1}: target={_targetNumber}, correct at slot {_correctTileIndex}, quantities=[{_tileQuantities[0]},{_tileQuantities[1]},{_tileQuantities[2]},{_tileQuantities[3]}], difficulty={_difficulty}");
+        Debug.Log($"[QuantityMatch] Round {CurrentRound + 1}: target={_targetNumber}, correct at slot {_correctTileIndex}, quantities=[{_tileQuantities[0]},{_tileQuantities[1]},{_tileQuantities[2]},{_tileQuantities[3]}], difficulty={Difficulty}");
     }
 
-    private void ClearRound()
+    protected override void OnRoundCleanup()
     {
         if (_inactivityCoroutine != null)
         {
@@ -105,13 +94,20 @@ public class QuantityMatchController : MonoBehaviour
         _tileObjects.Clear();
     }
 
+    protected override void OnBeforeComplete()
+    {
+        Stats.SetCustom("attemptsThisRound", (float)_attemptsThisRound);
+        Stats.SetCustom("hintsUsed", (float)_hintsUsed);
+        Stats.SetCustom("responseTime", Time.time - _roundStartTime);
+    }
+
     // ── ROUND GENERATION ──
 
     private void GenerateRound()
     {
         // Determine target number range based on difficulty
         int minTarget, maxTarget;
-        GetTargetRange(_difficulty, out minTarget, out maxTarget);
+        GetTargetRange(Difficulty, out minTarget, out maxTarget);
         _targetNumber = Random.Range(minTarget, maxTarget + 1);
 
         // Generate 4 unique quantities: 1 correct + 3 distractors
@@ -133,7 +129,7 @@ public class QuantityMatchController : MonoBehaviour
     private void GenerateQuantities()
     {
         // Build distractor pool: close to target, all unique, no duplicates of target
-        int maxSpread = GetDistractorSpread(_difficulty);
+        int maxSpread = GetDistractorSpread(Difficulty);
 
         var quantities = new HashSet<int>();
         quantities.Add(_targetNumber);
@@ -422,31 +418,25 @@ public class QuantityMatchController : MonoBehaviour
 
     private void OnTileTapped(int tileIndex)
     {
-        if (!_roundActive) return;
+        if (IsInputLocked) return;
         _lastInteractionTime = Time.time;
         _attemptsThisRound++;
 
-        float responseTime = Time.time - _roundStartTime;
-
         if (tileIndex == _correctTileIndex)
         {
-            _roundActive = false;
-            _stats.RecordCorrect("quantity_match", _targetNumber.ToString());
-            _stats.SetCustom("attemptsThisRound", (float)_attemptsThisRound);
-            _stats.SetCustom("hintsUsed", (float)_hintsUsed);
-            _stats.SetCustom("responseTime", responseTime);
+            RecordCorrect("quantity_match", _targetNumber.ToString());
             StartCoroutine(OnCorrectSequence(tileIndex));
         }
         else
         {
-            _stats.RecordMistake("wrong_quantity", _tileQuantities[tileIndex].ToString());
+            RecordMistake("wrong_quantity", _tileQuantities[tileIndex].ToString());
             StartCoroutine(ShakeTile(_tileObjects[tileIndex]));
 
             // After 2 wrong taps, hint
             if (_attemptsThisRound >= 3 && _attemptsThisRound % 2 == 1)
             {
                 _hintsUsed++;
-                _stats.RecordHint();
+                RecordHint();
                 StartCoroutine(PulseHint(_tileObjects[_correctTileIndex]));
             }
         }
@@ -477,8 +467,6 @@ public class QuantityMatchController : MonoBehaviour
         // Bounce correct tile
         StartCoroutine(CelebrateBounce(_tileObjects[correctTile].GetComponent<RectTransform>(), 0f));
 
-        SoundLibrary.PlayRandomFeedback();
-
         yield return new WaitForSeconds(0.5f);
 
         // Play animal name
@@ -486,26 +474,8 @@ public class QuantityMatchController : MonoBehaviour
 
         yield return new WaitForSeconds(1.0f);
 
-        _currentRound++;
-        _stats.RecordRoundComplete();
-
-        if (_currentRound >= totalRounds)
-        {
-            if (ConfettiController.Instance != null)
-                ConfettiController.Instance.Play();
-
-            if (!GameCompletionBridge.WillJourneyNavigate)
-            {
-                yield return new WaitForSeconds(2.5f);
-                _currentRound = 0;
-                LoadRound();
-            }
-        }
-        else
-        {
-            yield return new WaitForSeconds(1.2f);
-            LoadRound();
-        }
+        // All game-specific animations done — let base handle stats, confetti, round advance
+        CompleteRound();
     }
 
     // ── ANIMATIONS ──
@@ -584,13 +554,13 @@ public class QuantityMatchController : MonoBehaviour
 
     private IEnumerator InactivityMonitor()
     {
-        while (_roundActive)
+        while (!IsInputLocked)
         {
             yield return new WaitForSeconds(1f);
-            if (_roundActive && Time.time - _lastInteractionTime >= 6f)
+            if (!IsInputLocked && Time.time - _lastInteractionTime >= 6f)
             {
                 _hintsUsed++;
-                _stats.RecordHint();
+                RecordHint();
                 StartCoroutine(PulseHint(_tileObjects[_correctTileIndex]));
                 _lastInteractionTime = Time.time;
             }
@@ -601,8 +571,7 @@ public class QuantityMatchController : MonoBehaviour
 
     public void OnHomePressed()
     {
-        if (_roundActive && _stats != null) _stats.Abandon();
-        NavigationManager.GoToMainMenu();
+        ExitGame();
     }
 
     private static Color HexColor(string hex)

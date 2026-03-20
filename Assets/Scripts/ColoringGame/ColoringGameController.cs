@@ -8,7 +8,7 @@ using UnityEngine.UI;
 /// Drives the coloring/drawing game scene.
 /// Reads GameContext to determine mode (free draw vs coloring) and which animal to use.
 /// </summary>
-public class ColoringGameController : MonoBehaviour
+public class ColoringGameController : BaseMiniGame
 {
     [Header("Canvas")]
     public DrawingCanvas drawingCanvas;
@@ -67,14 +67,21 @@ public class ColoringGameController : MonoBehaviour
     private List<Image> brushIndicators = new List<Image>();
     private List<Image> brushTipImages = new List<Image>();
     private List<Image> stickerIndicators = new List<Image>();
-    private GameStatsCollector _stats;
 
-    private void Start()
+    // ── BaseMiniGame Hooks ──────────────────────────────────────
+
+    protected override string GetFallbackGameId() => "coloring";
+
+    protected override void OnGameInit()
     {
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "coloring";
-        _stats = new GameStatsCollector(gameId);
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
+        isEndless = true;
+        playConfettiOnRoundWin = true;
+        playWinSound = false;
+        delayBeforeNextRound = 0f;
+    }
+
+    protected override void OnRoundSetup()
+    {
         // Init drawing canvas
         drawingCanvas.Init();
         drawingCanvas.SetColor(PaletteColors[selectedColorIndex]);
@@ -471,14 +478,14 @@ public class ColoringGameController : MonoBehaviour
     /// <summary>Called by Done button during journey mode.</summary>
     public void OnDonePressed()
     {
-        _stats?.RecordCorrect();
-        ConfettiController.Instance.Play();
+        Stats?.RecordCorrect();
+        CompleteRound(); // BaseMiniGame handles confetti
     }
 
     /// <summary>Called by Home button.</summary>
     public void OnHomePressed()
     {
-        NavigationManager.GoToMainMenu();
+        ExitGame();
     }
 
     /// <summary>
@@ -542,9 +549,9 @@ public class ColoringGameController : MonoBehaviour
         var result = new Texture2D(size.x, size.y, TextureFormat.RGBA32, false);
         result.SetPixels(drawPixels);
         result.Apply();
-        byte[] png = result.EncodeToPNG();
+        byte[] pngData = result.EncodeToPNG();
         Destroy(result);
-        return png;
+        return pngData;
     }
 
     private static Color HexColor(string hex)

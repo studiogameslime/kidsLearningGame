@@ -5,10 +5,11 @@ using System.Collections;
 using System.Collections.Generic;
 
 /// <summary>
-/// Main controller for the Odd One Out game ("מצא את השונה").
+/// Odd One Out game ("מצא את השונה").
 /// Shows 4 animals in a row — 3 identical, 1 different. Child taps the odd one.
+/// Now inherits from BaseMiniGame for standardized lifecycle.
 /// </summary>
-public class OddOneOutController : MonoBehaviour
+public class OddOneOutController : BaseMiniGame
 {
     [Header("Layout")]
     public RectTransform rowArea; // horizontal strip for 4 animal slots
@@ -18,9 +19,6 @@ public class OddOneOutController : MonoBehaviour
 
     [Header("Sprites")]
     public Sprite cellSprite; // RoundedRect for card bg
-
-    [Header("Settings")]
-    public int totalRounds = 5;
 
     // ── All 19 animals ──
     private static readonly string[] AllAnimals =
@@ -37,11 +35,6 @@ public class OddOneOutController : MonoBehaviour
         { "Elephant", "Giraffe", "Horse", "Cow", "Lion", "Dog", "Cat",
           "Sheep", "Monkey", "Donkey", "Bear", "Zebra" };
 
-    private GameStatsCollector _stats;
-    private int _difficulty = 1;
-    private int _currentRound;
-    private int _score;
-    private bool _roundActive;
     private int _attemptsThisRound;
     private int _hintsUsed;
     private float _lastInteractionTime;
@@ -56,48 +49,37 @@ public class OddOneOutController : MonoBehaviour
     private UISpriteAnimator[] _animators = new UISpriteAnimator[4];
     private Coroutine _inactivityCoroutine;
 
-    private void Start()
+    // ── BaseMiniGame Hooks ──
+
+    protected override string GetFallbackGameId() => "oddoneout";
+
+    protected override void OnGameInit()
     {
-        _currentRound = 0;
-        _score = 0;
-        LoadRound();
+        totalRounds = 5;
+        contentCategory = SessionContent.Animals;
+        playWinSound = true;
+        delayBeforeNextRound = 0f; // we handle timing in OnAfterComplete
+        delayAfterFinalRound = 0f;
     }
 
-    // ── ROUND LIFECYCLE ──
-
-    private void LoadRound()
+    protected override void OnRoundSetup()
     {
-        ClearRound();
-        _roundActive = true;
         _attemptsThisRound = 0;
         _hintsUsed = 0;
 
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "oddoneout";
-        _stats = new GameStatsCollector(gameId);
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
-        _stats.SetTotalRoundsPlanned(1);
-
-        _difficulty = GameDifficultyConfig.GetLevel(gameId);
-
-        // Pick animals for this round
         PickAnimals();
-
-        // Assign slots: 3 × major, 1 × odd
         _oddIndex = Random.Range(0, 4);
-
-        // Build the 4 animal cards
         BuildRow();
 
         _lastInteractionTime = Time.time;
         _inactivityCoroutine = StartCoroutine(InactivityMonitor());
 
-        _stats.SetCustom("difficulty", (float)_difficulty);
+        Stats.SetCustom("difficulty", (float)Difficulty);
 
-        Debug.Log($"[OddOneOut] Round {_currentRound + 1}: major={_majorAnimal}, odd={_oddAnimal} at slot {_oddIndex}, difficulty={_difficulty}");
+        Debug.Log($"[OddOneOut] Round {CurrentRound + 1}: major={_majorAnimal}, odd={_oddAnimal} at slot {_oddIndex}, difficulty={Difficulty}");
     }
 
-    private void ClearRound()
+    protected override void OnRoundCleanup()
     {
         if (_inactivityCoroutine != null)
         {
@@ -113,22 +95,42 @@ public class OddOneOutController : MonoBehaviour
             _animators[i] = null;
     }
 
+    protected override void OnBeforeComplete()
+    {
+        Stats.SetCustom("attemptsThisRound", (float)_attemptsThisRound);
+        Stats.SetCustom("hintsUsed", (float)_hintsUsed);
+
+        // Stop inactivity monitor
+        if (_inactivityCoroutine != null)
+        {
+            StopCoroutine(_inactivityCoroutine);
+            _inactivityCoroutine = null;
+        }
+    }
+
+    protected override IEnumerator OnAfterComplete()
+    {
+        yield return new WaitForSeconds(1.0f);
+    }
+
+    protected override void OnGameExit()
+    {
+        base.OnGameExit();
+        OnRoundCleanup();
+    }
+
     // ── ANIMAL SELECTION ──
 
     private void PickAnimals()
     {
-        // Choose pool based on difficulty
-        // Low difficulty: pick from very different animals (easy to distinguish)
-        // High difficulty: pick from similar-looking animals
         string[] pool;
-        if (_difficulty <= 3)
+        if (Difficulty <= 3)
             pool = EasyPool;
-        else if (_difficulty <= 7)
+        else if (Difficulty <= 7)
             pool = MediumPool;
         else
             pool = AllAnimals;
 
-        // Pick two different animals, avoiding immediate repetition
         int safety = 0;
         do
         {
@@ -156,7 +158,6 @@ public class OddOneOutController : MonoBehaviour
         float areaW = rowArea.rect.width;
         float areaH = rowArea.rect.height;
 
-        // 4 cards with spacing
         float spacing = 30f;
         float maxCardW = (areaW - 3 * spacing) / 4f;
         float cardSize = Mathf.Min(maxCardW, areaH * 0.90f, 320f);
@@ -172,7 +173,6 @@ public class OddOneOutController : MonoBehaviour
             var slotGO = CreateAnimalSlot(rowArea, x, 0f, cardSize, i, animalId);
             _slotObjects.Add(slotGO);
 
-            // Pop-in animation
             StartCoroutine(PopIn(slotGO.GetComponent<RectTransform>(), 0.15f + i * 0.1f));
         }
     }
@@ -233,7 +233,6 @@ public class OddOneOutController : MonoBehaviour
         }
         else
         {
-            // Fallback static sprite
             var sprite = Resources.Load<Sprite>($"AnimalSprites/{animalId}");
             if (sprite != null) animalImg.sprite = sprite;
         }
@@ -257,31 +256,27 @@ public class OddOneOutController : MonoBehaviour
 
     private void OnSlotTapped(int slotIndex)
     {
-        if (!_roundActive) return;
+        if (IsInputLocked) return;
         _lastInteractionTime = Time.time;
         _attemptsThisRound++;
 
         if (slotIndex == _oddIndex)
         {
             // Correct!
-            _roundActive = false;
-            _stats.RecordCorrect("odd_found", _oddAnimal);
-            _stats.SetCustom("attemptsThisRound", (float)_attemptsThisRound);
-            _stats.SetCustom("hintsUsed", (float)_hintsUsed);
-            _score++;
+            RecordCorrect("odd_found", _oddAnimal);
             StartCoroutine(OnCorrectSequence(slotIndex));
         }
         else
         {
             // Wrong — soft feedback, keep round active
-            _stats.RecordMistake("wrong_slot", _majorAnimal);
+            RecordMistake("wrong_slot", _majorAnimal);
             StartCoroutine(ShakeSlot(_slotObjects[slotIndex]));
 
             // After 2 wrong taps, hint
             if (_attemptsThisRound >= 3 && _attemptsThisRound % 2 == 1)
             {
                 _hintsUsed++;
-                _stats.RecordHint();
+                RecordHint();
                 StartCoroutine(PulseHint(_slotObjects[_oddIndex]));
             }
         }
@@ -312,36 +307,10 @@ public class OddOneOutController : MonoBehaviour
             }
         }
 
-        SoundLibrary.PlayRandomFeedback();
-
         yield return new WaitForSeconds(0.4f);
 
-        // Play animal name of the odd one
-        SoundLibrary.PlayAnimalName(_oddAnimal);
-
-        yield return new WaitForSeconds(1.0f);
-
-        _currentRound++;
-        _stats.RecordRoundComplete();
-
-        if (_currentRound >= totalRounds)
-        {
-            if (ConfettiController.Instance != null)
-                ConfettiController.Instance.Play();
-
-            if (!GameCompletionBridge.WillJourneyNavigate)
-            {
-                yield return new WaitForSeconds(2.5f);
-                _currentRound = 0;
-                _score = 0;
-                LoadRound();
-            }
-        }
-        else
-        {
-            yield return new WaitForSeconds(1.2f);
-            LoadRound();
-        }
+        // CompleteRound handles: sound, stats, confetti, round advance, journey check
+        CompleteRound();
     }
 
     // ── ANIMATIONS ──
@@ -406,13 +375,13 @@ public class OddOneOutController : MonoBehaviour
 
     private IEnumerator InactivityMonitor()
     {
-        while (_roundActive)
+        while (CurrentState == GameState.Playing)
         {
             yield return new WaitForSeconds(1f);
-            if (_roundActive && Time.time - _lastInteractionTime >= 6f)
+            if (CurrentState == GameState.Playing && Time.time - _lastInteractionTime >= 6f)
             {
                 _hintsUsed++;
-                _stats.RecordHint();
+                RecordHint();
                 StartCoroutine(PulseHint(_slotObjects[_oddIndex]));
                 _lastInteractionTime = Time.time;
             }
@@ -423,8 +392,7 @@ public class OddOneOutController : MonoBehaviour
 
     public void OnHomePressed()
     {
-        if (_roundActive && _stats != null) _stats.Abandon();
-        NavigationManager.GoToMainMenu();
+        ExitGame();
     }
 
     private static Color HexColor(string hex)

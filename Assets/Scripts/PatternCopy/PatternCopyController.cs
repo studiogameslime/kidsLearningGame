@@ -10,7 +10,7 @@ using TMPro;
 /// Tap cells to toggle ON/OFF. Auto-wins when pattern matches exactly.
 /// After 5 seconds of inactivity, hints by flashing one correct unfilled cell.
 /// </summary>
-public class PatternCopyController : MonoBehaviour
+public class PatternCopyController : BaseMiniGame
 {
     [Header("Layout")]
     public RectTransform sourceGridParent;
@@ -40,18 +40,23 @@ public class PatternCopyController : MonoBehaviour
     private Image[,] _sourceCellImages;
     private Image[,] _playerCellImages;
     private int _filledTarget;
-    private int _roundsPlayed;
     private int _undoCount;
-    private GameStatsCollector _stats;
     private Color _playerColor;
-    private bool _roundActive;
-    private bool _celebrating;
     private float _lastTapTime;
     private Coroutine _hintCoroutine;
     private bool _hintActive;
 
-    private void Start()
+    // ── BASE MINI GAME HOOKS ─────────────────────────────────────
+
+    protected override void OnGameInit()
     {
+        totalRounds = 1;
+        isEndless = true; // endless free-play rounds
+        playConfettiOnRoundWin = true;
+        contentCategory = SessionContent.Matching;
+        playWinSound = true;
+        delayBeforeNextRound = 2.5f;
+
         // Resolve player color from profile
         _playerColor = sourceFilledColor;
         var profile = ProfileManager.ActiveProfile;
@@ -61,27 +66,15 @@ public class PatternCopyController : MonoBehaviour
             if (ColorUtility.TryParseHtmlString(profile.avatarColorHex, out parsed))
                 _playerColor = parsed;
         }
-
-        LoadRound();
     }
 
-    private void Update()
-    {
-        if (!_roundActive || _celebrating) return;
+    protected override string GetFallbackGameId() => "patterncopy";
 
-        // Check inactivity for hint
-        if (Time.realtimeSinceStartup - _lastTapTime >= hintDelay && !_hintActive)
-        {
-            _hintCoroutine = StartCoroutine(ShowHint());
-        }
-    }
+    protected override string GetContentId() => null;
 
-    private void LoadRound()
+    protected override void OnRoundSetup()
     {
-        _roundsPlayed++;
         _undoCount = 0;
-        _celebrating = false;
-        _roundActive = true;
         _hintActive = false;
         _lastTapTime = Time.realtimeSinceStartup;
 
@@ -91,31 +84,65 @@ public class PatternCopyController : MonoBehaviour
             _hintCoroutine = null;
         }
 
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "patterncopy";
-        int difficulty = GameDifficultyConfig.GetLevel(gameId);
-
-        _stats = new GameStatsCollector(gameId, null, SessionContent.Matching);
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
-
-        var pattern = PatternGenerator.Generate(difficulty);
+        var pattern = PatternGenerator.Generate(Difficulty);
         _gridSize = pattern.gridSize;
         _sourcePattern = pattern.cells;
         _filledTarget = pattern.filledCount;
         _playerGrid = new bool[_gridSize, _gridSize];
 
-        _stats.SetCustom("gridSize", _gridSize);
-        _stats.SetCustom("filledCells", _filledTarget);
-        _stats.SetCustom("difficulty", difficulty);
-        _stats.SetTotalRoundsPlanned(1);
+        Stats.SetCustom("gridSize", _gridSize);
+        Stats.SetCustom("filledCells", _filledTarget);
 
-        Debug.Log($"[PatternCopy] Difficulty={difficulty} Grid={_gridSize}x{_gridSize} Filled={_filledTarget}");
+        Debug.Log($"[PatternCopy] Difficulty={Difficulty} Grid={_gridSize}x{_gridSize} Filled={_filledTarget}");
 
         BuildGrid(sourceGridParent, _sourcePattern, true, ref _sourceCellImages);
         BuildGrid(playerGridParent, _playerGrid, false, ref _playerCellImages);
         UpdateScoreText();
         StartCoroutine(AnimateGridsIn());
     }
+
+    protected override void OnRoundCleanup()
+    {
+        if (_hintCoroutine != null)
+        {
+            StopCoroutine(_hintCoroutine);
+            _hintCoroutine = null;
+        }
+        _hintActive = false;
+    }
+
+    protected override void OnGameplayUpdate()
+    {
+        // Check inactivity for hint
+        if (Time.realtimeSinceStartup - _lastTapTime >= hintDelay && !_hintActive)
+        {
+            _hintCoroutine = StartCoroutine(ShowHint());
+        }
+    }
+
+    protected override void OnBeforeComplete()
+    {
+        int correctFilled = 0, wrongFilled = 0;
+        for (int r = 0; r < _gridSize; r++)
+            for (int c = 0; c < _gridSize; c++)
+            {
+                if (_playerGrid[r, c] && _sourcePattern[r, c]) correctFilled++;
+                if (_playerGrid[r, c] && !_sourcePattern[r, c]) wrongFilled++;
+            }
+
+        Stats.SetCustom("correctFilled", correctFilled);
+        Stats.SetCustom("wrongFilled", wrongFilled);
+        Stats.SetCustom("missedCells", 0);
+        Stats.SetCustom("undoCorrectCount", _undoCount);
+    }
+
+    protected override IEnumerator OnAfterComplete()
+    {
+        // Flash all player cells green briefly
+        yield return StartCoroutine(WinFlash());
+    }
+
+    // ── GRID BUILDING ────────────────────────────────────────────
 
     private void BuildGrid(RectTransform parent, bool[,] grid, bool isSource, ref Image[,] imageArray)
     {
@@ -178,7 +205,7 @@ public class PatternCopyController : MonoBehaviour
 
     private void OnPlayerCellTapped(int row, int col)
     {
-        if (!_roundActive || _celebrating) return;
+        if (IsInputLocked) return;
 
         // Cancel any active hint
         if (_hintCoroutine != null)
@@ -204,20 +231,20 @@ public class PatternCopyController : MonoBehaviour
         if (!wasOn && _playerGrid[row, col])
         {
             if (shouldBeOn)
-                _stats.RecordCorrect("fill", $"{row},{col}");
+                RecordCorrect("fill", $"{row},{col}");
             else
-                _stats.RecordMistake("fill_wrong", $"{row},{col}");
+                RecordMistake("fill_wrong", $"{row},{col}");
         }
         else if (wasOn && !_playerGrid[row, col])
         {
             if (shouldBeOn)
             {
                 _undoCount++;
-                _stats.RecordMistake("undo_correct", $"{row},{col}");
+                RecordMistake("undo_correct", $"{row},{col}");
             }
             else
             {
-                _stats.RecordCorrect("undo_wrong", $"{row},{col}");
+                RecordCorrect("undo_wrong", $"{row},{col}");
             }
         }
 
@@ -225,7 +252,7 @@ public class PatternCopyController : MonoBehaviour
 
         // Check for auto-win
         if (CheckPatternMatch())
-            StartCoroutine(OnPatternComplete());
+            CompleteRound();
     }
 
     private void UpdateScoreText()
@@ -253,42 +280,6 @@ public class PatternCopyController : MonoBehaviour
         return true;
     }
 
-    private IEnumerator OnPatternComplete()
-    {
-        _roundActive = false;
-        _celebrating = true;
-
-        // Record metrics
-        int correctFilled = 0, wrongFilled = 0;
-        for (int r = 0; r < _gridSize; r++)
-            for (int c = 0; c < _gridSize; c++)
-            {
-                if (_playerGrid[r, c] && _sourcePattern[r, c]) correctFilled++;
-                if (_playerGrid[r, c] && !_sourcePattern[r, c]) wrongFilled++;
-            }
-
-        _stats.SetCustom("correctFilled", correctFilled);
-        _stats.SetCustom("wrongFilled", wrongFilled);
-        _stats.SetCustom("missedCells", 0);
-        _stats.SetCustom("undoCorrectCount", _undoCount);
-        _stats.RecordRoundComplete();
-
-        // Flash all player cells green briefly
-        yield return StartCoroutine(WinFlash());
-
-        // Celebration
-        ConfettiController.Instance?.Play();
-
-        yield return new WaitForSeconds(2f);
-
-        // Next round or let journey navigate
-        if (!GameCompletionBridge.WillJourneyNavigate)
-        {
-            yield return new WaitForSeconds(0.5f);
-            LoadRound();
-        }
-    }
-
     private IEnumerator WinFlash()
     {
         // Quick green flash on all filled cells
@@ -311,7 +302,7 @@ public class PatternCopyController : MonoBehaviour
     private IEnumerator ShowHint()
     {
         _hintActive = true;
-        _stats.RecordHint();
+        RecordHint();
 
         // Find a cell that should be ON but isn't (or is ON but shouldn't be)
         // Prioritize: unfilled correct cells
@@ -343,13 +334,13 @@ public class PatternCopyController : MonoBehaviour
         // Pulse the source cell 3 times
         for (int pulse = 0; pulse < 3; pulse++)
         {
-            if (!_roundActive) break;
+            if (IsInputLocked) break;
 
             float duration = 0.4f;
             float elapsed = 0f;
             while (elapsed < duration)
             {
-                if (!_roundActive) break;
+                if (IsInputLocked) break;
                 elapsed += Time.deltaTime;
                 float t = Mathf.Sin(elapsed / duration * Mathf.PI);
                 sourceImg.color = Color.Lerp(origColor, hintColor, t);
@@ -431,8 +422,6 @@ public class PatternCopyController : MonoBehaviour
 
     public void OnHomePressed()
     {
-        if (_roundActive && _stats != null)
-            _stats.Abandon();
-        NavigationManager.GoToMainMenu();
+        ExitGame();
     }
 }

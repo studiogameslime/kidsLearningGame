@@ -8,7 +8,7 @@ using UnityEngine.UI;
 /// player taps to flap upward, obstacles scroll from right to left.
 /// Uses UI-based rendering (RectTransform + Image) like all other mini-games.
 /// </summary>
-public class FlappyBirdController : MonoBehaviour
+public class FlappyBirdController : BaseMiniGame
 {
     [Header("Bird")]
     public RectTransform birdRT;
@@ -52,7 +52,6 @@ public class FlappyBirdController : MonoBehaviour
     private readonly List<PipePair> pipePool = new List<PipePair>();
     private float[] parallaxOffsets;
     private float smoothTilt;          // current visual tilt angle (smoothed)
-    private GameStatsCollector _stats;
 
     private struct PipePair
     {
@@ -62,7 +61,20 @@ public class FlappyBirdController : MonoBehaviour
         public bool scored;
     }
 
-    private void Start()
+    // ── BaseMiniGame Hooks ──────────────────────────────────────
+
+    protected override string GetFallbackGameId() => "flappybird";
+
+    protected override void OnGameInit()
+    {
+        isEndless = true;
+        playConfettiOnRoundWin = false;
+        playConfettiOnSessionWin = false;
+        playWinSound = false;
+        delayBeforeNextRound = 0f;
+    }
+
+    protected override void OnRoundSetup()
     {
         // Load best score
         var profile = ProfileManager.ActiveProfile;
@@ -87,7 +99,7 @@ public class FlappyBirdController : MonoBehaviour
         isDead = false;
     }
 
-    private void Update()
+    protected override void OnGameplayUpdate()
     {
         if (isDead) return;
 
@@ -103,9 +115,6 @@ public class FlappyBirdController : MonoBehaviour
             {
                 isPlaying = true;
                 velocity = flapStrength;
-                _stats = new GameStatsCollector("flappybird");
-                if (GameCompletionBridge.Instance != null)
-                    GameCompletionBridge.Instance.ActiveCollector = _stats;
             }
             return;
         }
@@ -278,7 +287,7 @@ public class FlappyBirdController : MonoBehaviour
                 pair.scored = true;
                 pipes[i] = pair;
                 score++;
-                _stats?.RecordCorrect();
+                Stats?.RecordCorrect();
             }
 
             // Collision check (AABB) — tight to visible pipe
@@ -348,8 +357,8 @@ public class FlappyBirdController : MonoBehaviour
         if (isDead) return;
         isDead = true;
         isPlaying = false;
-        _stats?.SetCustom("finalScore", score);
-        _stats?.RecordMistake(); // death = mistake
+        Stats?.SetCustom("finalScore", score);
+        Stats?.RecordMistake(); // death = mistake
 
         // Save score
         if (score > bestScore)
@@ -365,6 +374,8 @@ public class FlappyBirdController : MonoBehaviour
             ProfileManager.Instance?.Save();
         }
 
+        // Record round complete for stats tracking, then run death visuals
+        CompleteRound();
         StartCoroutine(DeathSequence());
     }
 
@@ -427,5 +438,5 @@ public class FlappyBirdController : MonoBehaviour
 
     // ── NAVIGATION ──────────────────────────────────────────────
 
-    public void OnHomePressed() => NavigationManager.GoToMainMenu();
+    public void OnHomePressed() => ExitGame();
 }

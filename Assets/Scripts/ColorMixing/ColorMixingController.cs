@@ -14,7 +14,7 @@ using TMPro;
 /// Combos: Red+Yellow=Orange, Blue+Yellow=Green, Red+Blue=Purple,
 ///         Red+White=Pink, Blue+White=LightBlue
 /// </summary>
-public class ColorMixingController : MonoBehaviour
+public class ColorMixingController : BaseMiniGame
 {
     [Header("UI References")]
     public RectTransform playArea;
@@ -106,20 +106,28 @@ public class ColorMixingController : MonoBehaviour
     private List<Image> paletteBtnImages = new List<Image>();
     private string lastTargetName = "";
     private Coroutine targetPulseRoutine;
-    private GameStatsCollector _stats;
 
-    // ── lifecycle ───────────────────────────────────────────────────
-    private void Start()
+    // ── BaseMiniGame Overrides ──
+
+    protected override string GetFallbackGameId() => "colormixing";
+
+    protected override void OnGameInit()
     {
+        isEndless = true;
+        playConfettiOnRoundWin = true;
+
         canvas = GetComponentInParent<Canvas>();
-
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "colormixing";
-        _stats = new GameStatsCollector(gameId);
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
-
         CreatePaletteButtons();
+    }
+
+    protected override void OnRoundSetup()
+    {
         StartNewRound();
+    }
+
+    protected override void OnRoundCleanup()
+    {
+        // Cleanup handled inline by StartNewRound resets
     }
 
     // ── palette (tappable buttons) ──────────────────────────────────
@@ -271,7 +279,7 @@ public class ColorMixingController : MonoBehaviour
     // ── color tap handler ───────────────────────────────────────────
     private void OnColorTapped(string colorId, Color color, RectTransform btnRT)
     {
-        if (isAnimating) return;
+        if (IsInputLocked || isAnimating) return;
 
         // Determine which container to fill
         bool fillLeft = containerLeftColorId == null;
@@ -553,12 +561,12 @@ public class ColorMixingController : MonoBehaviour
 
         if (correct)
         {
-            _stats?.RecordCorrect();
+            Stats?.RecordCorrect();
             yield return SuccessSequence(resultColor);
         }
         else
         {
-            _stats?.RecordMistake();
+            Stats?.RecordMistake();
             yield return WrongSequence();
         }
     }
@@ -720,8 +728,6 @@ public class ColorMixingController : MonoBehaviour
     {
         if (targetPulseRoutine != null) StopCoroutine(targetPulseRoutine);
 
-        ConfettiController.Instance.Play();
-
         // Glow around mixing container
         if (mixContainerGlow != null)
         {
@@ -745,6 +751,9 @@ public class ColorMixingController : MonoBehaviour
         // Bounce target
         yield return ElasticBounce(targetColorCircle.transform.parent.parent, 1.1f, 0.25f);
 
+        // Complete the round — triggers confetti + sound via BaseMiniGame
+        CompleteRound();
+
         yield return new WaitForSeconds(0.6f);
 
         // Fade glow
@@ -759,9 +768,6 @@ public class ColorMixingController : MonoBehaviour
                 yield return null;
             }
         }
-
-        if (!GameCompletionBridge.WillJourneyNavigate)
-            StartNewRound();
     }
 
     // ── wrong answer ────────────────────────────────────────────────
@@ -995,7 +1001,7 @@ public class ColorMixingController : MonoBehaviour
     }
 
     // ── navigation ──────────────────────────────────────────────────
-    public void OnHomePressed() => NavigationManager.GoToMainMenu();
+    public void OnHomePressed() => ExitGame();
 
     private static string GetColorSoundName(string colorId)
     {

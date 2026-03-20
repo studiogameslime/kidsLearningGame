@@ -8,7 +8,7 @@ using UnityEngine.UI;
 /// multiple stickers. Exactly one sticker appears on both cards. The player must
 /// find and tap the shared sticker. Difficulty increases as rounds progress.
 /// </summary>
-public class SharedStickerGameController : MonoBehaviour
+public class SharedStickerGameController : BaseMiniGame
 {
     [Header("Card Containers")]
     public RectTransform leftCardArea;
@@ -27,33 +27,51 @@ public class SharedStickerGameController : MonoBehaviour
     // Difficulty: stickers per card at each stage
     private static readonly int[] DifficultyStickers = { 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8 };
 
-    private int currentRound;
+    private int internalRound; // tracks difficulty progression across endless rounds
     private int sharedStickerIndex; // index into stickerSprites of the shared one
     private List<GameObject> spawnedStickers = new List<GameObject>();
     private bool acceptingInput = true;
-    private int roundScore;
-    private GameStatsCollector _stats;
 
     // Track which sticker GameObjects are the shared ones (one per card)
     private readonly List<Image> sharedStickerImages = new List<Image>();
 
-    private void Start()
+    // ── BaseMiniGame Overrides ──
+
+    protected override string GetFallbackGameId() => "sharedsticker";
+
+    protected override void OnGameInit()
     {
-        currentRound = 0;
-        roundScore = 0;
+        isEndless = true;
+        playConfettiOnRoundWin = false;   // we manually play confetti every 3 rounds
+        playConfettiOnSessionWin = false;  // endless game, no session win
+        internalRound = 0;
+    }
 
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "sharedsticker";
-        _stats = new GameStatsCollector(gameId);
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
-
+    protected override void OnRoundSetup()
+    {
         GenerateRound();
+    }
+
+    protected override void OnRoundCleanup()
+    {
+        ClearStickers();
+    }
+
+    protected override IEnumerator OnAfterComplete()
+    {
+        // Play confetti every 3 correct answers
+        if (CurrentRound > 0 && (CurrentRound) % 3 == 0)
+        {
+            if (ConfettiController.Instance != null)
+                ConfettiController.Instance.Play();
+        }
+        yield break;
     }
 
     // ── GENERATION ──────────────────────────────────────────────
 
     private int StickersPerCard =>
-        DifficultyStickers[Mathf.Min(currentRound, DifficultyStickers.Length - 1)];
+        DifficultyStickers[Mathf.Min(internalRound, DifficultyStickers.Length - 1)];
 
     private void GenerateRound()
     {
@@ -206,16 +224,16 @@ public class SharedStickerGameController : MonoBehaviour
 
     private void OnStickerTapped(int stickerIndex, GameObject tappedGO)
     {
-        if (!acceptingInput) return;
+        if (IsInputLocked || !acceptingInput) return;
 
         if (stickerIndex == sharedStickerIndex)
         {
-            _stats?.RecordCorrect();
+            Stats?.RecordCorrect();
             StartCoroutine(CorrectSequence(tappedGO));
         }
         else
         {
-            _stats?.RecordMistake();
+            Stats?.RecordMistake();
             StartCoroutine(WrongSequence(tappedGO));
         }
     }
@@ -233,17 +251,11 @@ public class SharedStickerGameController : MonoBehaviour
 
         yield return new WaitForSeconds(0.8f);
 
-        roundScore++;
+        internalRound++;
 
-        // Play confetti every 3 correct answers
-        if (roundScore % 3 == 0)
-            ConfettiController.Instance.Play();
-
-        currentRound++;
-        yield return new WaitForSeconds(0.5f);
-
-        if (!GameCompletionBridge.WillJourneyNavigate)
-            GenerateRound();
+        // Complete the round — triggers feedback via BaseMiniGame
+        // Confetti is handled in OnAfterComplete every 3 rounds
+        CompleteRound();
     }
 
     private IEnumerator WrongSequence(GameObject tappedGO)
@@ -323,7 +335,7 @@ public class SharedStickerGameController : MonoBehaviour
 
     // ── NAVIGATION ──────────────────────────────────────────────
 
-    public void OnHomePressed() => NavigationManager.GoToMainMenu();
+    public void OnHomePressed() => ExitGame();
 
     // ── UTILITY ─────────────────────────────────────────────────
 

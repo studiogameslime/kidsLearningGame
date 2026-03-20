@@ -11,7 +11,7 @@ using System.Collections.Generic;
 /// Player drags numbers from the bottom into the correct empty wagons.
 /// On success the train exits to the right.
 /// </summary>
-public class NumberTrainController : MonoBehaviour
+public class NumberTrainController : BaseMiniGame
 {
     [Header("Layout")]
     public RectTransform trainArea;   // horizontal strip for the train
@@ -23,9 +23,6 @@ public class NumberTrainController : MonoBehaviour
     [Header("Sprites")]
     public Sprite cellSprite;    // RoundedRect
     public Sprite circleSprite;  // Circle
-
-    [Header("Settings")]
-    public int totalRounds = 5;
 
     // Colors
     private static readonly Color WagonBg       = HexColor("#BBDEFB");
@@ -42,15 +39,12 @@ public class NumberTrainController : MonoBehaviour
     private static readonly Color ConnectorColor = HexColor("#78909C");
 
     // State
-    private GameStatsCollector _stats;
-    private int _difficulty = 1;
-    private int _currentRound;
-    private bool _roundActive;
     private int _mistakesThisRound;
     private int _hintsUsed;
     private float _lastInteractionTime;
     private int _placedCount;
     private float _wagonW; // saved for option sizing
+    private bool _trainReady; // true after entrance animation completes
 
     // Level data
     private int _startNumber;
@@ -78,44 +72,39 @@ public class NumberTrainController : MonoBehaviour
 
     private Coroutine _inactivityCoroutine;
 
-    private void Start()
+    // ── BASE MINI GAME HOOKS ──
+
+    protected override void OnGameInit()
     {
-        _currentRound = 0;
-        LoadRound();
+        totalRounds = 1;
+        isEndless = true;
+        playConfettiOnRoundWin = false; // we trigger confetti manually before train exit
+        playWinSound = true;
+        delayBeforeNextRound = 2.5f;
     }
 
-    // ── ROUND LIFECYCLE ──
+    protected override string GetFallbackGameId() => "numbertrain";
 
-    private void LoadRound()
+    protected override void OnRoundSetup()
     {
-        ClearRound();
-        _roundActive = false; // becomes true after train entrance
         _mistakesThisRound = 0;
         _hintsUsed = 0;
         _placedCount = 0;
-
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "numbertrain";
-        _stats = new GameStatsCollector(gameId);
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
-        _stats.SetTotalRoundsPlanned(1);
-
-        _difficulty = GameDifficultyConfig.GetLevel(gameId);
+        _trainReady = false;
 
         GenerateLevel();
         BuildTrain();
         BuildOptions();
 
-        _stats.SetCustom("difficulty", (float)_difficulty);
-        _stats.SetCustom("wagonCount", (float)_wagonCount);
-        _stats.SetCustom("missingCount", (float)_totalMissing);
-        _stats.SetCustom("startNumber", (float)_startNumber);
+        Stats.SetCustom("wagonCount", (float)_wagonCount);
+        Stats.SetCustom("missingCount", (float)_totalMissing);
+        Stats.SetCustom("startNumber", (float)_startNumber);
 
         // Animate train entrance
         StartCoroutine(TrainEntrance());
     }
 
-    private void ClearRound()
+    protected override void OnRoundCleanup()
     {
         if (_inactivityCoroutine != null)
         {
@@ -137,18 +126,36 @@ public class NumberTrainController : MonoBehaviour
         _draggedOption = null;
     }
 
+    protected override void OnBeforeComplete()
+    {
+        Stats.SetCustom("mistakes", (float)_mistakesThisRound);
+        Stats.SetCustom("hintsUsed", (float)_hintsUsed);
+    }
+
+    protected override IEnumerator OnAfterComplete()
+    {
+        // Bounce all wagons in wave
+        for (int i = 0; i < _wagonObjects.Count; i++)
+            StartCoroutine(BounceWagon(i));
+
+        yield return new WaitForSeconds(0.8f);
+
+        // Train exits to the right
+        yield return StartCoroutine(TrainExit());
+    }
+
     // ── LEVEL GENERATION ──
 
     private void GenerateLevel()
     {
         // Wagon count based on difficulty
-        if (_difficulty <= 3)      _wagonCount = 5;
-        else if (_difficulty <= 6) _wagonCount = 6;
+        if (Difficulty <= 3)      _wagonCount = 5;
+        else if (Difficulty <= 6) _wagonCount = 6;
         else                       _wagonCount = 7;
 
         // Missing count based on difficulty
-        if (_difficulty <= 2)      _totalMissing = 1;
-        else if (_difficulty <= 5) _totalMissing = 2;
+        if (Difficulty <= 2)      _totalMissing = 1;
+        else if (Difficulty <= 5) _totalMissing = 2;
         else                       _totalMissing = 3;
 
         // Start number
@@ -180,7 +187,7 @@ public class NumberTrainController : MonoBehaviour
             _missingValues[i] = _sequence[idx];
         }
 
-        Debug.Log($"[NumberTrain] Round {_currentRound + 1}: sequence {_startNumber}-{_startNumber + _wagonCount - 1}, missing {_totalMissing}, difficulty {_difficulty}");
+        Debug.Log($"[NumberTrain] Round {CurrentRound + 1}: sequence {_startNumber}-{_startNumber + _wagonCount - 1}, missing {_totalMissing}, difficulty {Difficulty}");
     }
 
     // ── TRAIN BUILDING ──
@@ -492,7 +499,7 @@ public class NumberTrainController : MonoBehaviour
 
     public void OnOptionDragBegin(GameObject option, int value, PointerEventData eventData)
     {
-        if (!_roundActive) return;
+        if (!_trainReady || IsInputLocked) return;
         _lastInteractionTime = Time.time;
 
         _draggedOption = option;
@@ -508,7 +515,7 @@ public class NumberTrainController : MonoBehaviour
 
     public void OnOptionDrag(PointerEventData eventData)
     {
-        if (_draggedOption == null || !_roundActive) return;
+        if (_draggedOption == null || !_trainReady || IsInputLocked) return;
 
         Vector2 localPoint;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
@@ -521,7 +528,7 @@ public class NumberTrainController : MonoBehaviour
 
     public void OnOptionDragEnd(PointerEventData eventData)
     {
-        if (_draggedOption == null || !_roundActive) return;
+        if (_draggedOption == null || !_trainReady || IsInputLocked) return;
 
         _draggedRT.localScale = Vector3.one;
 
@@ -537,7 +544,7 @@ public class NumberTrainController : MonoBehaviour
         {
             // Wrong wagon — return to original
             _mistakesThisRound++;
-            _stats.RecordMistake("wrong_wagon", $"{_draggedValue}→slot{targetWagon}");
+            RecordMistake("wrong_wagon", $"{_draggedValue}→slot{targetWagon}");
             StartCoroutine(ReturnToOriginal(_draggedRT, _dragOriginalPos));
             StartCoroutine(ShakeWagon(targetWagon));
         }
@@ -554,7 +561,7 @@ public class NumberTrainController : MonoBehaviour
 
     private void PlaceNumberInWagon(int wagonIndex, int value, GameObject option)
     {
-        _stats.RecordCorrect("number_placed", value.ToString());
+        RecordCorrect("number_placed", value.ToString());
         _placedCount++;
 
         // Update wagon text
@@ -591,10 +598,10 @@ public class NumberTrainController : MonoBehaviour
         // Check if all placed
         if (_placedCount >= _totalMissing)
         {
-            _roundActive = false;
-            _stats.SetCustom("mistakes", (float)_mistakesThisRound);
-            _stats.SetCustom("hintsUsed", (float)_hintsUsed);
-            StartCoroutine(OnRoundComplete());
+            // Confetti immediately when last number placed (includes feedback sound)
+            ConfettiController.Instance?.Play();
+
+            CompleteRound();
         }
     }
 
@@ -660,7 +667,7 @@ public class NumberTrainController : MonoBehaviour
         }
         _trainGroupRT.anchoredPosition = target;
 
-        _roundActive = true;
+        _trainReady = true;
         _lastInteractionTime = Time.time;
         _inactivityCoroutine = StartCoroutine(InactivityMonitor());
     }
@@ -726,53 +733,17 @@ public class NumberTrainController : MonoBehaviour
         rt.anchoredPosition = target;
     }
 
-    // ── COMPLETION ──
-
-    private IEnumerator OnRoundComplete()
-    {
-        // Bounce all wagons in wave
-        for (int i = 0; i < _wagonObjects.Count; i++)
-            StartCoroutine(BounceWagon(i));
-
-        SoundLibrary.PlayRandomFeedback();
-        yield return new WaitForSeconds(0.8f);
-
-        // Train exits to the right
-        yield return StartCoroutine(TrainExit());
-
-        _currentRound++;
-        _stats.RecordRoundComplete();
-
-        if (_currentRound >= totalRounds)
-        {
-            if (ConfettiController.Instance != null)
-                ConfettiController.Instance.Play();
-
-            if (!GameCompletionBridge.WillJourneyNavigate)
-            {
-                yield return new WaitForSeconds(2.5f);
-                _currentRound = 0;
-                LoadRound();
-            }
-        }
-        else
-        {
-            yield return new WaitForSeconds(0.5f);
-            LoadRound();
-        }
-    }
-
     // ── INACTIVITY / HINTS ──
 
     private IEnumerator InactivityMonitor()
     {
-        while (_roundActive)
+        while (!IsInputLocked)
         {
             yield return new WaitForSeconds(1f);
-            if (_roundActive && Time.time - _lastInteractionTime >= 6f)
+            if (!IsInputLocked && _trainReady && Time.time - _lastInteractionTime >= 6f)
             {
                 _hintsUsed++;
-                _stats.RecordHint();
+                RecordHint();
                 HintNextEmpty();
                 _lastInteractionTime = Time.time;
             }
@@ -817,8 +788,7 @@ public class NumberTrainController : MonoBehaviour
 
     public void OnHomePressed()
     {
-        if (_roundActive && _stats != null) _stats.Abandon();
-        NavigationManager.GoToMainMenu();
+        ExitGame();
     }
 
     private static Color HexColor(string hex)

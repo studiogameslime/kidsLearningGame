@@ -13,7 +13,7 @@ using TMPro;
 /// Uses wood/stone sprites from the TowerGame asset pack and
 /// layered world background from Art/World.
 /// </summary>
-public class TowerStackController : MonoBehaviour
+public class TowerStackController : BaseMiniGame
 {
     [Header("UI References")]
     public RectTransform playArea;
@@ -79,23 +79,34 @@ public class TowerStackController : MonoBehaviour
 
     private float cameraOffset;
     private float targetCameraOffset;
-    private GameStatsCollector _stats;
 
     private GameObject gameOverPanel;
     private List<GameObject> spawnedObjects = new List<GameObject>();
 
-    // ── lifecycle ────────────────────────────────────────────────
+    // ── BaseMiniGame Hooks ──────────────────────────────────────
 
-    private void Start()
+    protected override string GetFallbackGameId() => "towerstack";
+
+    protected override void OnGameInit()
     {
+        isEndless = true;
+        playConfettiOnRoundWin = false;
+        playConfettiOnSessionWin = false;
+        delayBeforeNextRound = 0f;
+
         canvas = GetComponentInParent<Canvas>();
 
         spriteLookup = new Dictionary<string, Sprite>();
         for (int i = 0; i < spriteKeys.Count && i < spriteValues.Count; i++)
             spriteLookup[spriteKeys[i]] = spriteValues[i];
+    }
 
+    protected override void OnRoundSetup()
+    {
         StartCoroutine(InitAfterLayout());
     }
+
+    // ── lifecycle ────────────────────────────────────────────────
 
     private IEnumerator InitAfterLayout()
     {
@@ -116,7 +127,7 @@ public class TowerStackController : MonoBehaviour
         StartGame();
     }
 
-    private void Update()
+    protected override void OnGameplayUpdate()
     {
         if (!isStarted || isGameOver) return;
 
@@ -226,9 +237,6 @@ public class TowerStackController : MonoBehaviour
         colorIdx = 0;
         isGameOver = false;
 
-        _stats = new GameStatsCollector("towerstack");
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
         isDropping = false;
         isMoving = false;
         cameraOffset = 0f;
@@ -429,7 +437,7 @@ public class TowerStackController : MonoBehaviour
         PlaceBlockVisual(overlapLeft, overlapRight, towerTopY, droppedSpriteKey);
         towerTopY += BLOCK_H;
         score++;
-        _stats?.RecordCorrect();
+        Stats?.RecordCorrect();
         if (score > bestScore) bestScore = score;
 
         StackPiece placed = stack[stack.Count - 1];
@@ -693,8 +701,9 @@ public class TowerStackController : MonoBehaviour
     {
         isGameOver = true;
         isMoving = false;
-        _stats?.SetCustom("finalScore", score);
-        _stats?.RecordMistake();
+        Stats?.SetCustom("finalScore", score);
+        Stats?.RecordMistake();
+        CompleteRound();
         StartCoroutine(GameOverSequence());
     }
 
@@ -823,7 +832,7 @@ public class TowerStackController : MonoBehaviour
         StartGame();
     }
 
-    public void OnHomePressed() => NavigationManager.GoToMainMenu();
+    public void OnHomePressed() => ExitGame();
 
     // ── helpers ───────────────────────────────────────────────────
 

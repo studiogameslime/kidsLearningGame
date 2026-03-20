@@ -13,7 +13,7 @@ using UnityEngine.UI;
 /// Children drag pieces from the left onto matching slots on the right.
 /// Pieces snap when placed correctly. Confetti on completion.
 /// </summary>
-public class PuzzleGameController : MonoBehaviour
+public class PuzzleGameController : BaseMiniGame
 {
     [Header("UI References")]
     public RectTransform boardArea;          // right side — puzzle board
@@ -30,24 +30,30 @@ public class PuzzleGameController : MonoBehaviour
     private int gridSize = 3;
     private int totalPieces => gridSize * gridSize;
     private int lastAnimalIndex = -1;
-    private GameStatsCollector _stats;
 
-    private void Start()
+    // ── BaseMiniGame Overrides ──
+
+    protected override string GetFallbackGameId() => "puzzle";
+
+    protected override void OnGameInit()
     {
+        totalRounds = 1;
+        playConfettiOnSessionWin = true;
+
         canvas = GetComponentInParent<Canvas>();
 
-        // Apply difficulty
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "puzzle";
-        int diffLevel = GameDifficultyConfig.GetLevel(gameId);
-        gridSize = GameDifficultyConfig.PuzzleGridSize(diffLevel);
-        Debug.Log($"[Difficulty] Game=puzzle Level={diffLevel} Grid={gridSize}x{gridSize} Pieces={totalPieces}");
+        gridSize = GameDifficultyConfig.PuzzleGridSize(Difficulty);
+        Debug.Log($"[Difficulty] Game=puzzle Level={Difficulty} Grid={gridSize}x{gridSize} Pieces={totalPieces}");
+    }
 
-        // Start analytics
-        _stats = new GameStatsCollector(gameId);
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
-
+    protected override void OnRoundSetup()
+    {
         LoadRandomPuzzle();
+    }
+
+    protected override void OnRoundCleanup()
+    {
+        ClearPuzzle();
     }
 
     private Sprite PickRandomPuzzleSprite()
@@ -369,31 +375,18 @@ public class PuzzleGameController : MonoBehaviour
 
     public void OnPiecePlaced()
     {
-        _stats?.RecordCorrect();
-        _stats?.SetCustom("piecesPlaced", placedCount + 1);
+        Stats?.RecordCorrect();
+        Stats?.SetCustom("piecesPlaced", placedCount + 1);
         placedCount++;
         if (placedCount >= totalPieces)
         {
-            _stats?.SetCustom("totalPieces", totalPieces);
+            Stats?.SetCustom("totalPieces", totalPieces);
             referenceImage.color = new Color(1f, 1f, 1f, 0f);
-            ConfettiController.Instance.Play();
-            // Only auto-reload if journey won't navigate (to discovery/next game)
-            if (!GameCompletionBridge.WillJourneyNavigate)
-                StartCoroutine(LoadNextPuzzleAfterDelay(1.5f));
+            CompleteRound();
         }
     }
 
-    private IEnumerator LoadNextPuzzleAfterDelay(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        ClearPuzzle();
-        LoadRandomPuzzle();
-    }
-
-    public void OnHomePressed()
-    {
-        NavigationManager.GoToMainMenu();
-    }
+    public void OnHomePressed() => ExitGame();
 
     private static Texture2D GetReadableTexture(Sprite sprite)
     {

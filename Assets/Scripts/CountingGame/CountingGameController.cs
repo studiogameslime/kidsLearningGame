@@ -11,7 +11,7 @@ using TMPro;
 ///
 /// Difficulty: 0=Easy (1-3), 1=Medium (1-5), 2=Hard (1-8)
 /// </summary>
-public class CountingGameController : MonoBehaviour
+public class CountingGameController : BaseMiniGame
 {
     [Header("UI References")]
     public RectTransform animalArea;
@@ -32,10 +32,7 @@ public class CountingGameController : MonoBehaviour
     private List<GameObject> answerButtons = new List<GameObject>();
     private int correctAnswer;
     private string currentAnimalId;
-    private bool isRoundActive;
     private Coroutine idleAnimCoroutine;
-    private GameStatsCollector _stats;
-    private int _difficultyLevel = 1;
     private int _minCount;
     private int _maxCount;
 
@@ -68,29 +65,25 @@ public class CountingGameController : MonoBehaviour
         {"Chicken","\u05EA\u05E8\u05E0\u05D2\u05D5\u05DC"},{"Donkey","\u05D7\u05DE\u05D5\u05E8"}
     };
 
-    private void Start()
+    // ── BASE MINI GAME HOOKS ──
+
+    protected override string GetFallbackGameId() => "counting";
+
+    protected override void OnGameInit()
     {
-        LoadRound();
+        totalRounds = 1;
+        isEndless = true;
+        playWinSound = true;
+        playConfettiOnRoundWin = true;
+        delayBeforeNextRound = 0.2f;
+
+        GameDifficultyConfig.CountingRange(Difficulty, out _minCount, out _maxCount);
     }
 
-    // ── ROUND LIFECYCLE ──
-
-    private void LoadRound()
+    protected override void OnRoundSetup()
     {
-        ClearRound();
-        isRoundActive = true;
-
-        // Start analytics collector for this round
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "counting";
-        _stats = new GameStatsCollector(gameId);
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
-
-        // Apply difficulty
-        _difficultyLevel = GameDifficultyConfig.GetLevel(gameId);
-        GameDifficultyConfig.CountingRange(_difficultyLevel, out _minCount, out _maxCount);
         correctAnswer = Random.Range(_minCount, _maxCount + 1);
-        Debug.Log($"[Difficulty] Game=counting Level={_difficultyLevel} Animals={correctAnswer} Range={_minCount}-{_maxCount}");
+        Debug.Log($"[Difficulty] Game=counting Level={Difficulty} Animals={correctAnswer} Range={_minCount}-{_maxCount}");
 
         // Pick random animal
         var animalInfo = PickRandomAnimal();
@@ -156,7 +149,7 @@ public class CountingGameController : MonoBehaviour
         idleAnimCoroutine = StartCoroutine(RandomIdleAnimations());
     }
 
-    private void ClearRound()
+    protected override void OnRoundCleanup()
     {
         if (idleAnimCoroutine != null)
         {
@@ -176,6 +169,90 @@ public class CountingGameController : MonoBehaviour
         // Hide counting number
         if (countNumberText != null)
             countNumberText.gameObject.SetActive(false);
+    }
+
+    protected override void OnBeforeComplete()
+    {
+        Stats?.SetCustom("correctAnswer", correctAnswer);
+        Stats?.SetCustom("animalCount", correctAnswer);
+    }
+
+    protected override IEnumerator OnAfterComplete()
+    {
+        // Stop idle animations
+        if (idleAnimCoroutine != null)
+        {
+            StopCoroutine(idleAnimCoroutine);
+            idleAnimCoroutine = null;
+        }
+
+        // Sort animals left-to-right for counting order
+        List<int> sortedIndices = new List<int>();
+        for (int i = 0; i < spawnedAnimals.Count; i++)
+            sortedIndices.Add(i);
+        sortedIndices.Sort((a, b) =>
+        {
+            var posA = spawnedAnimals[a].GetComponent<RectTransform>().anchoredPosition;
+            var posB = spawnedAnimals[b].GetComponent<RectTransform>().anchoredPosition;
+            // Sort by row first (top to bottom), then left to right
+            float rowA = Mathf.Round(posA.y / 50f);
+            float rowB = Mathf.Round(posB.y / 50f);
+            if (rowA != rowB) return rowB.CompareTo(rowA); // top first
+            return posA.x.CompareTo(posB.x);
+        });
+
+        // Show large counting number at top center
+        if (countNumberText != null)
+        {
+            countNumberText.text = "";
+            countNumberText.gameObject.SetActive(true);
+            countNumberText.transform.localScale = Vector3.one;
+        }
+
+        yield return new WaitForSeconds(0.4f);
+
+        // Count through: update central number + animate each animal
+        for (int i = 0; i < sortedIndices.Count; i++)
+        {
+            int idx = sortedIndices[i];
+            int currentCount = i + 1;
+            int colorIdx = i % NumberDarkColors.Length;
+
+            // Update the single large counting number
+            if (countNumberText != null)
+            {
+                countNumberText.text = currentCount.ToString();
+                countNumberText.color = NumberDarkColors[colorIdx];
+                // Bounce the counting number
+                StartCoroutine(BounceOnce(countNumberText.rectTransform));
+            }
+
+            // Highlight the current animal (tint brighter)
+            var animalImg = spawnedAnimals[idx].GetComponent<Image>();
+            if (animalImg != null)
+                animalImg.color = new Color(1f, 1f, 0.7f, 1f); // warm highlight
+
+            // Play success animation on this animal
+            if (idx < animalAnimators.Count && animalAnimators[idx] != null)
+                animalAnimators[idx].PlaySuccess();
+
+            // Bounce the animal
+            var animalRT = spawnedAnimals[idx].GetComponent<RectTransform>();
+            StartCoroutine(CountBounce(animalRT));
+
+            yield return new WaitForSeconds(0.55f);
+
+            // Return animal to normal color
+            if (animalImg != null)
+                animalImg.color = Color.white;
+        }
+
+        yield return new WaitForSeconds(0.8f);
+
+        // Exit animation
+        yield return StartCoroutine(ExitAnimals());
+
+        yield return new WaitForSeconds(0.2f);
     }
 
     // ── QUESTION TEXT ──
@@ -328,7 +405,7 @@ public class CountingGameController : MonoBehaviour
     {
         List<int> options = GenerateAnswerOptions();
 
-        float spacing = _difficultyLevel <= 4 ? 60f : 40f;
+        float spacing = Difficulty <= 4 ? 60f : 40f;
         float totalW = options.Count * buttonSize + (options.Count - 1) * spacing;
         float startX = -totalW / 2f + buttonSize / 2f;
 
@@ -430,143 +507,19 @@ public class CountingGameController : MonoBehaviour
 
     private void OnNumberTapped(int number, GameObject btnGO)
     {
-        if (!isRoundActive) return;
+        if (IsInputLocked) return;
 
         if (number == correctAnswer)
         {
-            isRoundActive = false;
-            _stats?.RecordCorrect();
-            _stats?.SetCustom("correctAnswer", correctAnswer);
-            _stats?.SetCustom("animalCount", correctAnswer);
+            RecordCorrect();
             btnGO.GetComponent<Image>().color = CorrectColor;
-            StartCoroutine(OnCorrect());
+            CompleteRound();
         }
         else
         {
-            _stats?.RecordMistake();
+            RecordMistake();
             StartCoroutine(WrongFeedback(btnGO));
         }
-    }
-
-    // ── CORRECT ANSWER CELEBRATION ──
-
-    private IEnumerator OnCorrect()
-    {
-        ConfettiController.Instance.Play();
-
-        // Stop idle animations
-        if (idleAnimCoroutine != null)
-        {
-            StopCoroutine(idleAnimCoroutine);
-            idleAnimCoroutine = null;
-        }
-
-        // Sort animals left-to-right for counting order
-        List<int> sortedIndices = new List<int>();
-        for (int i = 0; i < spawnedAnimals.Count; i++)
-            sortedIndices.Add(i);
-        sortedIndices.Sort((a, b) =>
-        {
-            var posA = spawnedAnimals[a].GetComponent<RectTransform>().anchoredPosition;
-            var posB = spawnedAnimals[b].GetComponent<RectTransform>().anchoredPosition;
-            // Sort by row first (top to bottom), then left to right
-            float rowA = Mathf.Round(posA.y / 50f);
-            float rowB = Mathf.Round(posB.y / 50f);
-            if (rowA != rowB) return rowB.CompareTo(rowA); // top first
-            return posA.x.CompareTo(posB.x);
-        });
-
-        // Show large counting number at top center
-        if (countNumberText != null)
-        {
-            countNumberText.text = "";
-            countNumberText.gameObject.SetActive(true);
-            countNumberText.transform.localScale = Vector3.one;
-        }
-
-        yield return new WaitForSeconds(0.4f);
-
-        // Count through: update central number + animate each animal
-        for (int i = 0; i < sortedIndices.Count; i++)
-        {
-            int idx = sortedIndices[i];
-            int currentCount = i + 1;
-            int colorIdx = i % NumberDarkColors.Length;
-
-            // Update the single large counting number
-            if (countNumberText != null)
-            {
-                countNumberText.text = currentCount.ToString();
-                countNumberText.color = NumberDarkColors[colorIdx];
-                // Bounce the counting number
-                StartCoroutine(BounceOnce(countNumberText.rectTransform));
-            }
-
-            // Highlight the current animal (tint brighter)
-            var animalImg = spawnedAnimals[idx].GetComponent<Image>();
-            if (animalImg != null)
-                animalImg.color = new Color(1f, 1f, 0.7f, 1f); // warm highlight
-
-            // Play success animation on this animal
-            if (idx < animalAnimators.Count && animalAnimators[idx] != null)
-                animalAnimators[idx].PlaySuccess();
-
-            // Bounce the animal
-            var animalRT = spawnedAnimals[idx].GetComponent<RectTransform>();
-            StartCoroutine(CountBounce(animalRT));
-
-            yield return new WaitForSeconds(0.55f);
-
-            // Return animal to normal color
-            if (animalImg != null)
-                animalImg.color = Color.white;
-        }
-
-        yield return new WaitForSeconds(0.8f);
-
-        // Exit animation
-        yield return StartCoroutine(ExitAnimals());
-
-        yield return new WaitForSeconds(0.2f);
-        if (!GameCompletionBridge.WillJourneyNavigate)
-            LoadRound();
-    }
-
-    /// <summary>
-    /// Stronger bounce for the counting celebration — animal jumps up and lands back.
-    /// </summary>
-    private IEnumerator CountBounce(RectTransform rt)
-    {
-        Vector2 origPos = rt.anchoredPosition;
-        Vector3 origScale = rt.localScale;
-        float jumpHeight = 30f;
-
-        // Jump up
-        float t = 0f;
-        float upDur = 0.12f;
-        while (t < upDur)
-        {
-            t += Time.deltaTime;
-            float p = Mathf.Clamp01(t / upDur);
-            rt.anchoredPosition = origPos + new Vector2(0, jumpHeight * Mathf.Sin(p * Mathf.PI * 0.5f));
-            rt.localScale = origScale * (1f + 0.15f * p);
-            yield return null;
-        }
-
-        // Fall back down
-        t = 0f;
-        float downDur = 0.15f;
-        while (t < downDur)
-        {
-            t += Time.deltaTime;
-            float p = Mathf.Clamp01(t / downDur);
-            rt.anchoredPosition = origPos + new Vector2(0, jumpHeight * (1f - p));
-            rt.localScale = origScale * (1.15f - 0.15f * p);
-            yield return null;
-        }
-
-        rt.anchoredPosition = origPos;
-        rt.localScale = origScale;
     }
 
     // ── EXIT ANIMATION ──
@@ -667,6 +620,43 @@ public class CountingGameController : MonoBehaviour
     }
 
     /// <summary>
+    /// Stronger bounce for the counting celebration — animal jumps up and lands back.
+    /// </summary>
+    private IEnumerator CountBounce(RectTransform rt)
+    {
+        Vector2 origPos = rt.anchoredPosition;
+        Vector3 origScale = rt.localScale;
+        float jumpHeight = 30f;
+
+        // Jump up
+        float t = 0f;
+        float upDur = 0.12f;
+        while (t < upDur)
+        {
+            t += Time.deltaTime;
+            float p = Mathf.Clamp01(t / upDur);
+            rt.anchoredPosition = origPos + new Vector2(0, jumpHeight * Mathf.Sin(p * Mathf.PI * 0.5f));
+            rt.localScale = origScale * (1f + 0.15f * p);
+            yield return null;
+        }
+
+        // Fall back down
+        t = 0f;
+        float downDur = 0.15f;
+        while (t < downDur)
+        {
+            t += Time.deltaTime;
+            float p = Mathf.Clamp01(t / downDur);
+            rt.anchoredPosition = origPos + new Vector2(0, jumpHeight * (1f - p));
+            rt.localScale = origScale * (1.15f - 0.15f * p);
+            yield return null;
+        }
+
+        rt.anchoredPosition = origPos;
+        rt.localScale = origScale;
+    }
+
+    /// <summary>
     /// Occasionally trigger idle animations on random animals to keep the scene alive.
     /// Subtle, infrequent, not all at once.
     /// </summary>
@@ -679,7 +669,7 @@ public class CountingGameController : MonoBehaviour
             float wait = Random.Range(2.5f, 5f);
             yield return new WaitForSeconds(wait);
 
-            if (!isRoundActive || animalAnimators.Count == 0) continue;
+            if (IsInputLocked || animalAnimators.Count == 0) continue;
 
             // Pick one random animal to give a small bounce
             int idx = Random.Range(0, spawnedAnimals.Count);
@@ -732,5 +722,5 @@ public class CountingGameController : MonoBehaviour
 
     // ── NAVIGATION ──
 
-    public void OnHomePressed() => NavigationManager.GoToMainMenu();
+    public void OnHomePressed() => ExitGame();
 }

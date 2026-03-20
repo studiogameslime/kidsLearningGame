@@ -107,7 +107,6 @@ public class ConfettiController : MonoBehaviour
         if (isPlaying) return;
         // Register analytics immediately at celebration start
         GameCompletionBridge.Instance?.OnConfettiPlayed();
-        SoundLibrary.PlayRandomFeedback();
         StartCoroutine(PlayConfettiThenNotify(ParticleCount));
     }
 

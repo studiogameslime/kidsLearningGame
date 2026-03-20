@@ -9,7 +9,7 @@ using System.Collections.Generic;
 /// Shows an image (animal/color), Hebrew word with missing first letter,
 /// and 3 answer buttons. Child taps the correct first letter.
 /// </summary>
-public class LetterGameController : MonoBehaviour
+public class LetterGameController : BaseMiniGame
 {
     [Header("Layout")]
     public RectTransform imageArea;
@@ -26,14 +26,7 @@ public class LetterGameController : MonoBehaviour
     public Sprite cellSprite;      // RoundedRect
     public Sprite circleSprite;    // Circle
 
-    [Header("Settings")]
-    public int totalRounds = 5;
-
-    private GameStatsCollector _stats;
-    private int _difficulty = 1;
-    private int _currentRound;
     private int _score;
-    private bool _roundActive;
     private int _attemptsThisRound;
     private int _hintsUsed;
     private float _lastInteractionTime;
@@ -51,31 +44,30 @@ public class LetterGameController : MonoBehaviour
     private Coroutine _inactivityCoroutine;
     private Button _correctButton;
 
-    private void Start()
+    // ── BASE MINI GAME HOOKS ──
+
+    protected override void Start()
     {
         if (replayButton != null)
             replayButton.onClick.AddListener(ReplaySound);
-        _currentRound = 0;
         _score = 0;
-        LoadRound();
+        base.Start();
     }
 
-    // ── ROUND LIFECYCLE ──
-
-    private void LoadRound()
+    protected override void OnGameInit()
     {
-        ClearRound();
-        _roundActive = true;
+        totalRounds = 5;
+        playWinSound = true;
+        delayBeforeNextRound = 1.5f;
+        delayAfterFinalRound = 2.0f;
+    }
+
+    protected override string GetFallbackGameId() => "letters";
+
+    protected override void OnRoundSetup()
+    {
         _attemptsThisRound = 0;
         _hintsUsed = 0;
-
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "letters";
-        _stats = new GameStatsCollector(gameId);
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
-        _stats.SetTotalRoundsPlanned(1);
-
-        _difficulty = GameDifficultyConfig.GetLevel(gameId);
 
         // Pick a word
         _currentWord = PickWord();
@@ -100,12 +92,12 @@ public class LetterGameController : MonoBehaviour
         // Start inactivity monitor
         _inactivityCoroutine = StartCoroutine(InactivityMonitor());
 
-        _stats.SetCustom("wordLength", (float)_currentWord.wordLength);
+        Stats.SetCustom("wordLength", (float)_currentWord.wordLength);
 
-        Debug.Log($"[LetterGame] Round {_currentRound + 1}: {_currentWord.id} ({_currentWord.hebrewWord}), first letter: {_correctLetter}, difficulty: {_difficulty}");
+        Debug.Log($"[LetterGame] Round {CurrentRound + 1}: {_currentWord.id} ({_currentWord.hebrewWord}), first letter: {_correctLetter}, difficulty: {Difficulty}");
     }
 
-    private void ClearRound()
+    protected override void OnRoundCleanup()
     {
         if (_inactivityCoroutine != null)
         {
@@ -145,9 +137,38 @@ public class LetterGameController : MonoBehaviour
         }
     }
 
+    protected override void OnBeforeComplete()
+    {
+        Stats.SetCustom("attemptsThisRound", (float)_attemptsThisRound);
+        Stats.SetCustom("hintsUsed", (float)_hintsUsed);
+    }
+
+    protected override IEnumerator OnAfterComplete()
+    {
+        // Flash button green already happened before CompleteRound()
+        // Wave bounce all tiles
+        for (int i = 0; i < _tileObjects.Count; i++)
+        {
+            var tv = _tileObjects[i].GetComponent<LetterTileView>();
+            if (tv != null) tv.WaveBounce(i * 0.08f);
+        }
+
+        // Play success animation on sprite
+        if (_spriteAnimator != null)
+            _spriteAnimator.PlaySuccess();
+
+        yield return new WaitForSeconds(0.5f);
+
+        // Update score
+        _score++;
+        UpdateScoreText();
+    }
+
+    // ── WORD PICKING ──
+
     private LetterWordBank.WordEntry PickWord()
     {
-        var pool = LetterWordBank.GetFilteredPool(_difficulty);
+        var pool = LetterWordBank.GetFilteredPool(Difficulty);
         if (pool.Count == 0) pool = new List<LetterWordBank.WordEntry>(LetterWordBank.Pool);
 
         // Remove recently used
@@ -320,7 +341,7 @@ public class LetterGameController : MonoBehaviour
     {
         if (buttonArea == null || cellSprite == null) return;
 
-        char[] options = LetterDistractorGenerator.Generate(_correctLetter, _difficulty);
+        char[] options = LetterDistractorGenerator.Generate(_correctLetter, Difficulty);
 
         // Answer buttons — big and easy to tap
         float maxBtnH = buttonArea.rect.height * 0.90f;
@@ -412,29 +433,25 @@ public class LetterGameController : MonoBehaviour
 
     private void OnAnswerTapped(char letter, GameObject btnGO)
     {
-        if (!_roundActive) return;
+        if (IsInputLocked) return;
         _lastInteractionTime = Time.time;
         _attemptsThisRound++;
 
         if (letter == _correctLetter)
         {
-            _roundActive = false;
-            _stats.RecordCorrect("first_letter", _currentWord.id);
-            _stats.SetCustom("attemptsThisRound", (float)_attemptsThisRound);
-            _stats.SetCustom("hintsUsed", (float)_hintsUsed);
-            _score++;
+            RecordCorrect("first_letter", _currentWord.id);
             StartCoroutine(OnCorrectSequence(btnGO));
         }
         else
         {
-            _stats.RecordMistake("wrong_letter", letter.ToString());
+            RecordMistake("wrong_letter", letter.ToString());
             StartCoroutine(ShakeButton(btnGO));
 
             // After 2 wrong attempts, hint
             if (_attemptsThisRound >= 3 && _correctButton != null)
             {
                 _hintsUsed++;
-                _stats.RecordHint();
+                RecordHint();
                 StartCoroutine(PulseHint(_correctButton.gameObject));
             }
         }
@@ -450,49 +467,11 @@ public class LetterGameController : MonoBehaviour
         if (_missingTile != null)
             _missingTile.RevealLetter(_correctLetter, 0.1f);
 
-        // Play success sound
-        SoundLibrary.PlayRandomFeedback();
-
         yield return new WaitForSeconds(0.3f);
 
-        // Wave bounce all tiles
-        for (int i = 0; i < _tileObjects.Count; i++)
-        {
-            var tv = _tileObjects[i].GetComponent<LetterTileView>();
-            if (tv != null) tv.WaveBounce(i * 0.08f);
-        }
-
-        // Play success animation on sprite
-        if (_spriteAnimator != null)
-            _spriteAnimator.PlaySuccess();
-
-        yield return new WaitForSeconds(0.5f);
-
-        // Update score
-        _currentRound++;
-        UpdateScoreText();
-
-        _stats.RecordRoundComplete();
-
-        if (_currentRound >= totalRounds)
-        {
-            // Game complete — trigger confetti
-            if (ConfettiController.Instance != null)
-                ConfettiController.Instance.Play();
-
-            if (!GameCompletionBridge.WillJourneyNavigate)
-            {
-                yield return new WaitForSeconds(2f);
-                _currentRound = 0;
-                _score = 0;
-                LoadRound();
-            }
-        }
-        else
-        {
-            yield return new WaitForSeconds(1.5f);
-            LoadRound();
-        }
+        // CompleteRound handles: sound, stats, confetti, round advance
+        // OnAfterComplete will do the wave bounce + sprite success anim
+        CompleteRound();
     }
 
     // ── ANIMATIONS ──
@@ -578,10 +557,10 @@ public class LetterGameController : MonoBehaviour
 
     private IEnumerator InactivityMonitor()
     {
-        while (_roundActive)
+        while (!IsInputLocked)
         {
             yield return new WaitForSeconds(1f);
-            if (_roundActive && Time.time - _lastInteractionTime >= 5f)
+            if (!IsInputLocked && Time.time - _lastInteractionTime >= 5f)
             {
                 PlayWordSound();
                 _lastInteractionTime = Time.time;
@@ -601,8 +580,7 @@ public class LetterGameController : MonoBehaviour
 
     public void OnHomePressed()
     {
-        if (_roundActive && _stats != null) _stats.Abandon();
-        NavigationManager.GoToMainMenu();
+        ExitGame();
     }
 
     private static Color HexColor(string hex)

@@ -13,7 +13,7 @@ using UnityEngine.UI;
 /// The child drags each animal onto its matching shadow.
 /// Proximity hints pulse the correct shadow when an animal is dragged near.
 /// </summary>
-public class ShadowMatchController : MonoBehaviour
+public class ShadowMatchController : BaseMiniGame
 {
     [Header("References")]
     public RectTransform shadowsArea;
@@ -32,9 +32,12 @@ public class ShadowMatchController : MonoBehaviour
     private List<ShadowSlot> shadows = new List<ShadowSlot>();
     private int matchedCount;
     private Material silhouetteMaterial;
-    private GameStatsCollector _stats;
 
-    private void Start()
+    // ── Base Mini Game Hooks ──
+
+    protected override string GetFallbackGameId() => "shadows";
+
+    protected override void Start()
     {
         canvas = GetComponentInParent<Canvas>();
 
@@ -45,17 +48,21 @@ public class ShadowMatchController : MonoBehaviour
             silhouetteMaterial.SetColor("_Color", SilhouetteColor);
         }
 
-        LoadRound();
+        base.Start();
     }
 
-    private void LoadRound()
+    protected override void OnGameInit()
     {
-        ClearRound();
+        totalRounds = 1;
+        isEndless = true;
+        playWinSound = true;
+        playConfettiOnRoundWin = true;
+        delayBeforeNextRound = 0.5f;
+    }
 
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "shadows";
-        _stats = new GameStatsCollector(gameId);
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
+    protected override void OnRoundSetup()
+    {
+        matchedCount = 0;
 
         var game = GameContext.CurrentGame;
         if (game == null || game.subItems == null || game.subItems.Count < animalCount)
@@ -188,7 +195,7 @@ public class ShadowMatchController : MonoBehaviour
         }
     }
 
-    private void ClearRound()
+    protected override void OnRoundCleanup()
     {
         foreach (var a in animals) if (a != null) Destroy(a.gameObject);
         animals.Clear();
@@ -239,10 +246,10 @@ public class ShadowMatchController : MonoBehaviour
                 if (!string.IsNullOrEmpty(animal.soundName))
                     SoundLibrary.PlayAnimalName(animal.soundName);
 
-                _stats?.RecordCorrect();
+                RecordCorrect();
                 matchedCount++;
                 if (matchedCount >= animalCount)
-                    StartCoroutine(RoundComplete());
+                    CompleteRound();
                 else
                     UpdateGuidedPulse();
 
@@ -262,17 +269,12 @@ public class ShadowMatchController : MonoBehaviour
         }
     }
 
-    private IEnumerator RoundComplete()
+    public void OnHomePressed() => ExitGame();
+    public void OnRestartPressed()
     {
-        yield return new WaitForSeconds(0.5f);
-        ConfettiController.Instance.Play();
-        yield return new WaitForSeconds(2f);
-        if (!GameCompletionBridge.WillJourneyNavigate)
-            LoadRound();
+        OnRoundCleanup();
+        OnRoundSetup();
     }
-
-    public void OnHomePressed() => NavigationManager.GoToMainMenu();
-    public void OnRestartPressed() => LoadRound();
 
     private static void Shuffle<T>(List<T> list)
     {

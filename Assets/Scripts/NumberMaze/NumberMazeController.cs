@@ -9,7 +9,7 @@ using System.Collections.Generic;
 /// Shows a grid of numbered tiles. Player taps numbers 1→2→3→...→N in order.
 /// The correct sequence follows an orthogonally adjacent path on the grid.
 /// </summary>
-public class NumberMazeController : MonoBehaviour
+public class NumberMazeController : BaseMiniGame
 {
     [Header("Layout")]
     public RectTransform gridArea;
@@ -21,9 +21,6 @@ public class NumberMazeController : MonoBehaviour
     [Header("Sprites")]
     public Sprite cellSprite; // RoundedRect
 
-    private GameStatsCollector _stats;
-    private int _difficulty = 1;
-    private bool _roundActive;
     private int _mistakesThisRound;
     private int _hintsUsed;
     private float _lastInteractionTime;
@@ -40,37 +37,36 @@ public class NumberMazeController : MonoBehaviour
     private const float PathLineWidth = 8f;
     private const float PathGlowWidth = 22f;
 
-    private void Start()
+    // ── BASE MINI GAME HOOKS ─────────────────────────────────────
+
+    protected override void OnGameInit()
     {
-        LoadRound();
+        totalRounds = 1;
+        isEndless = true; // endless free-play rounds
+        playConfettiOnRoundWin = true;
+        contentCategory = "";
+        playWinSound = true;
+        delayBeforeNextRound = 2.5f;
     }
 
-    // ── ROUND LIFECYCLE ──
+    protected override string GetFallbackGameId() => "numbermaze";
 
-    private void LoadRound()
+    protected override string GetContentId() => null;
+
+    protected override void OnRoundSetup()
     {
-        ClearRound();
-        _roundActive = true;
         _mistakesThisRound = 0;
         _hintsUsed = 0;
         _expectedNext = 1;
 
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "numbermaze";
-        _stats = new GameStatsCollector(gameId);
-        if (GameCompletionBridge.Instance != null)
-            GameCompletionBridge.Instance.ActiveCollector = _stats;
-        _stats.SetTotalRoundsPlanned(1);
-
-        _difficulty = GameDifficultyConfig.GetLevel(gameId);
-
         // Generate board
         int cols, rows, pathLen;
-        NumberMazeBoardGenerator.GetGridConfig(_difficulty, out cols, out rows, out pathLen);
+        NumberMazeBoardGenerator.GetGridConfig(Difficulty, out cols, out rows, out pathLen);
         _board = NumberMazeBoardGenerator.Generate(cols, rows, pathLen);
 
-        _stats.SetCustom("gridCols", (float)cols);
-        _stats.SetCustom("gridRows", (float)rows);
-        _stats.SetCustom("pathLength", (float)_board.pathLength);
+        Stats.SetCustom("gridCols", (float)cols);
+        Stats.SetCustom("gridRows", (float)rows);
+        Stats.SetCustom("pathLength", (float)_board.pathLength);
 
         // Build grid UI
         BuildGrid();
@@ -79,10 +75,10 @@ public class NumberMazeController : MonoBehaviour
         _lastInteractionTime = Time.time;
         _inactivityCoroutine = StartCoroutine(InactivityMonitor());
 
-        Debug.Log($"[NumberMaze] Grid {cols}x{rows}, path {_board.pathLength}, difficulty {_difficulty}");
+        Debug.Log($"[NumberMaze] Grid {cols}x{rows}, path {_board.pathLength}, difficulty {Difficulty}");
     }
 
-    private void ClearRound()
+    protected override void OnRoundCleanup()
     {
         if (_inactivityCoroutine != null)
         {
@@ -97,6 +93,28 @@ public class NumberMazeController : MonoBehaviour
             if (go != null) Destroy(go);
         _pathLines.Clear();
         _cellViews = null;
+    }
+
+    protected override void OnBeforeComplete()
+    {
+        Stats.SetCustom("mistakes", (float)_mistakesThisRound);
+        Stats.SetCustom("hintsUsed", (float)_hintsUsed);
+    }
+
+    protected override IEnumerator OnAfterComplete()
+    {
+        // Wave-complete all path cells
+        for (int i = 0; i < _board.pathLength; i++)
+        {
+            int ci = _board.pathCellIndices[i];
+            if (_cellViews[ci] != null)
+            {
+                var rt = _cellViews[ci].GetComponent<RectTransform>();
+                StartCoroutine(CelebrateBounce(rt, i * 0.06f));
+            }
+        }
+
+        yield return new WaitForSeconds(0.8f);
     }
 
     // ── GRID BUILDING ──
@@ -261,7 +279,7 @@ public class NumberMazeController : MonoBehaviour
 
     private void OnCellTapped(int cellIndex)
     {
-        if (!_roundActive) return;
+        if (IsInputLocked) return;
         _lastInteractionTime = Time.time;
 
         var cell = _board.cells[cellIndex];
@@ -271,7 +289,7 @@ public class NumberMazeController : MonoBehaviour
         if (cell.isOnPath && cell.pathOrder == _expectedNext - 1)
         {
             // Correct!
-            _stats.RecordCorrect("number_tap", _expectedNext.ToString());
+            RecordCorrect("number_tap", _expectedNext.ToString());
             view.SetCompleted();
 
             // Draw path line from previous cell
@@ -294,27 +312,33 @@ public class NumberMazeController : MonoBehaviour
             // Check if completed
             if (_expectedNext > _board.pathLength)
             {
-                _roundActive = false;
-                _stats.SetCustom("mistakes", (float)_mistakesThisRound);
-                _stats.SetCustom("hintsUsed", (float)_hintsUsed);
-                StartCoroutine(OnRoundComplete());
+                // Play feedback and celebrate BEFORE CompleteRound
+                StartCoroutine(OnMazeComplete());
             }
         }
         else
         {
             // Wrong tap
             _mistakesThisRound++;
-            _stats.RecordMistake("wrong_cell", cell.displayNumber.ToString());
+            RecordMistake("wrong_cell", cell.displayNumber.ToString());
             view.ShowError();
 
             // After 3 mistakes on this round, hint
             if (_mistakesThisRound >= 3 && _mistakesThisRound % 2 == 1)
             {
                 _hintsUsed++;
-                _stats.RecordHint();
+                RecordHint();
                 HintNextCell();
             }
         }
+    }
+
+    private IEnumerator OnMazeComplete()
+    {
+        yield return new WaitForSeconds(0.8f);
+
+        // Base handles sound + confetti + round advance
+        CompleteRound();
     }
 
     private void HintNextCell()
@@ -327,36 +351,7 @@ public class NumberMazeController : MonoBehaviour
         }
     }
 
-    // ── COMPLETION ──
-
-    private IEnumerator OnRoundComplete()
-    {
-        // Wave-complete all path cells
-        for (int i = 0; i < _board.pathLength; i++)
-        {
-            int ci = _board.pathCellIndices[i];
-            if (_cellViews[ci] != null)
-            {
-                var rt = _cellViews[ci].GetComponent<RectTransform>();
-                StartCoroutine(CelebrateBounce(rt, i * 0.06f));
-            }
-        }
-
-        SoundLibrary.PlayRandomFeedback();
-        yield return new WaitForSeconds(0.8f);
-
-        _stats.RecordRoundComplete();
-
-        // Confetti
-        if (ConfettiController.Instance != null)
-            ConfettiController.Instance.Play();
-
-        if (!GameCompletionBridge.WillJourneyNavigate)
-        {
-            yield return new WaitForSeconds(2.5f);
-            LoadRound();
-        }
-    }
+    // ── ANIMATIONS ──
 
     private IEnumerator CelebrateBounce(RectTransform rt, float delay)
     {
@@ -387,10 +382,10 @@ public class NumberMazeController : MonoBehaviour
 
     private IEnumerator InactivityMonitor()
     {
-        while (_roundActive)
+        while (!IsInputLocked)
         {
             yield return new WaitForSeconds(1f);
-            if (_roundActive && Time.time - _lastInteractionTime >= 6f)
+            if (!IsInputLocked && Time.time - _lastInteractionTime >= 6f)
             {
                 HintNextCell();
                 _lastInteractionTime = Time.time;
@@ -402,7 +397,6 @@ public class NumberMazeController : MonoBehaviour
 
     public void OnHomePressed()
     {
-        if (_roundActive && _stats != null) _stats.Abandon();
-        NavigationManager.GoToMainMenu();
+        ExitGame();
     }
 }
