@@ -28,6 +28,9 @@ public class UserProfile
     public float estimatedGlobalAge;  // 0 = not yet computed, use chronological age
     public List<GameAccessOverrideData> gameAccessOverrides = new List<GameAccessOverrideData>();
 
+    // Store review
+    public bool hasShownStoreReview;
+
     public UserProfile()
     {
         id = Guid.NewGuid().ToString("N").Substring(0, 8);

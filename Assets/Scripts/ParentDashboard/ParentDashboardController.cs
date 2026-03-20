@@ -167,6 +167,9 @@ public class ParentDashboardController : MonoBehaviour
         LoadData();
         BuildAllTabs();
 
+        // Request store review on first visit
+        StoreReviewManager.TryRequestReview();
+
         // Disable kerning on all newly created TMP components
         // (the runtime cleaner only caught the gate panel components at scene load)
         DisableKerningOnDashboard();
@@ -1049,6 +1052,9 @@ public class ParentDashboardController : MonoBehaviour
             bool newState = !capturedState;
             var profile = ProfileManager.ActiveProfile;
             if (profile == null) return;
+
+            // Prevent disabling the last visible game
+            if (!newState && WouldLeaveZeroVisibleGames(capturedId)) return;
 
             var mode = newState ? ParentGameAccessMode.ForcedEnabled : ParentGameAccessMode.ForcedDisabled;
             GameVisibilityService.SetOverride(profile, capturedId, mode);
@@ -1963,6 +1969,9 @@ public class ParentDashboardController : MonoBehaviour
         var profile = ProfileManager.ActiveProfile;
         if (profile == null) return;
 
+        // Prevent disabling the last visible game
+        if (newMode == ParentGameAccessMode.ForcedDisabled && WouldLeaveZeroVisibleGames(gameId)) return;
+
         // Update override
         GameVisibilityService.SetOverride(profile, gameId, newMode);
         ProfileManager.Instance.Save();
@@ -2011,6 +2020,25 @@ public class ParentDashboardController : MonoBehaviour
         foreach (var g in gameDb.games)
             if (g != null && g.id == gameId) return g;
         return null;
+    }
+
+    /// <summary>
+    /// Returns true if disabling this game would leave zero visible games.
+    /// Used to prevent the parent from disabling ALL games.
+    /// </summary>
+    private bool WouldLeaveZeroVisibleGames(string gameIdToDisable)
+    {
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null || gameDatabase == null) return false;
+
+        int visibleCount = 0;
+        foreach (var g in gameDatabase.games)
+        {
+            if (g == null || g.id == gameIdToDisable) continue;
+            var result = GameVisibilityService.Evaluate(profile, g);
+            if (result.isVisible) visibleCount++;
+        }
+        return visibleCount == 0;
     }
 
     // ═══════════════════════════════════════════════════════════════

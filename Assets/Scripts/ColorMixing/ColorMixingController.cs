@@ -281,6 +281,9 @@ public class ColorMixingController : BaseMiniGame
     {
         if (IsInputLocked || isAnimating) return;
 
+        // Prevent picking the same color twice
+        if (containerLeftColorId == colorId) return;
+
         // Determine which container to fill
         bool fillLeft = containerLeftColorId == null;
         bool fillRight = !fillLeft && containerRightColorId == null;

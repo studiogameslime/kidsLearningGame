@@ -109,6 +109,12 @@ public static class NavigationManager
     /// <summary>Open the reusable selection screen for a game that has sub-items.</summary>
     public static void GoToSelectionMenu(GameItemData game)
     {
+        if (game == null) return;
+        if (!game.hasSubItems || game.subItems == null || game.subItems.Count == 0)
+        {
+            GoToGame(game);
+            return;
+        }
         GameContext.CurrentGame = game;
         GameContext.CurrentSelection = null;
         SceneManager.LoadScene(SelectionMenuScene);
@@ -117,6 +123,7 @@ public static class NavigationManager
     /// <summary>Open a game scene directly (no sub-selection).</summary>
     public static void GoToGame(GameItemData game)
     {
+        if (game == null) return;
         GameContext.CurrentGame = game;
         GameContext.CurrentSelection = null;
         BubbleTransition.LoadScene(game.targetSceneName);
@@ -125,10 +132,11 @@ public static class NavigationManager
     /// <summary>Open a game scene with a specific sub-item selected.</summary>
     public static void GoToGame(GameItemData game, SubItemData selection)
     {
+        if (game == null) return;
         GameContext.CurrentGame = game;
         GameContext.CurrentSelection = selection;
 
-        string scene = !string.IsNullOrEmpty(selection.targetSceneName)
+        string scene = (selection != null && !string.IsNullOrEmpty(selection.targetSceneName))
             ? selection.targetSceneName
             : game.targetSceneName;
 

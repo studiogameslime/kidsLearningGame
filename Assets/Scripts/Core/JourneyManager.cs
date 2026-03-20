@@ -79,21 +79,23 @@ public class JourneyManager : MonoBehaviour
         var jp = profile.journey;
 
         // Seed starter animals/colors on first journey
-        if (jp.discoveryQueue.Count == 0 && jp.unlockedAnimalIds.Count == 0)
+        // WorldController seeds starter GIFTS (pendingWorldRewards) on first world visit.
+        // Here we only seed directly to unlocked lists if gifts weren't queued.
+        if (jp.discoveryQueue.Count == 0 && jp.unlockedAnimalIds.Count == 0 && jp.pendingWorldRewards.Count == 0)
         {
-            // Only unlock animal/colors if no pending starter gifts
-            // (gifts will unlock them when opened)
-            if (jp.pendingWorldRewards.Count == 0)
-            {
-                string favAnimal = profile.favoriteAnimalId;
-                if (string.IsNullOrEmpty(favAnimal)) favAnimal = "Cat";
-                if (!jp.unlockedAnimalIds.Contains(favAnimal))
-                    jp.unlockedAnimalIds.Add(favAnimal);
+            string favAnimal = profile.favoriteAnimalId;
+            if (string.IsNullOrEmpty(favAnimal)) favAnimal = "Cat";
+            if (!jp.unlockedAnimalIds.Contains(favAnimal))
+                jp.unlockedAnimalIds.Add(favAnimal);
 
-                foreach (var id in DiscoveryCatalog.StarterColors)
-                    if (!jp.unlockedColorIds.Contains(id)) jp.unlockedColorIds.Add(id);
-            }
+            foreach (var id in DiscoveryCatalog.StarterColors)
+                if (!jp.unlockedColorIds.Contains(id)) jp.unlockedColorIds.Add(id);
 
+            jp.gamesUntilNextDiscovery = 1;
+            ProfileManager.Instance.Save();
+        }
+        else if (jp.gamesUntilNextDiscovery <= 0)
+        {
             jp.gamesUntilNextDiscovery = 1;
             ProfileManager.Instance.Save();
         }
@@ -119,7 +121,8 @@ public class JourneyManager : MonoBehaviour
                 bestGame = allGameIds[Random.Range(0, allGameIds.Count)];
             if (bestGame == null)
             {
-                Debug.LogError("JourneyManager: No visible games.");
+                Debug.LogError("JourneyManager: No visible games. Ending journey.");
+                EndJourney();
                 return;
             }
             LoadGame(bestGame, favAnimal);
@@ -145,7 +148,8 @@ public class JourneyManager : MonoBehaviour
             stat.timesPlayedInJourney++;
         }
 
-        jp.gamesUntilNextDiscovery--;
+        if (DiscoveryCatalog.HasMore(jp))
+            jp.gamesUntilNextDiscovery--;
 
         // Check for puzzle → coloring chain
         if (completedGameId == "puzzle" && GameContext.CurrentSelection != null)
@@ -222,8 +226,18 @@ public class JourneyManager : MonoBehaviour
             var jp = profile.journey;
             if (ActiveDiscovery.type == "animal" || ActiveDiscovery.type == "color")
             {
-                jp.pendingWorldRewards.Add(new DiscoveryEntry
-                    { type = ActiveDiscovery.type, id = ActiveDiscovery.id });
+                // Skip if already unlocked or already pending
+                bool alreadyUnlocked = (ActiveDiscovery.type == "animal" && jp.unlockedAnimalIds.Contains(ActiveDiscovery.id))
+                                    || (ActiveDiscovery.type == "color" && jp.unlockedColorIds.Contains(ActiveDiscovery.id));
+                bool alreadyPending = false;
+                foreach (var e in jp.pendingWorldRewards)
+                    if (e.type == ActiveDiscovery.type && e.id == ActiveDiscovery.id) { alreadyPending = true; break; }
+
+                if (!alreadyUnlocked && !alreadyPending)
+                {
+                    jp.pendingWorldRewards.Add(new DiscoveryEntry
+                        { type = ActiveDiscovery.type, id = ActiveDiscovery.id });
+                }
             }
             ProfileManager.Instance.Save();
         }
@@ -262,7 +276,8 @@ public class JourneyManager : MonoBehaviour
 
         if (allGameIds.Count == 0)
         {
-            Debug.LogError("JourneyManager: No visible games.");
+            Debug.LogError("JourneyManager: No visible games. Ending journey.");
+            EndJourney();
             return;
         }
 

@@ -32,10 +32,28 @@ public class RewardRevealController : MonoBehaviour
         var profile = ProfileManager.ActiveProfile;
         if (profile == null) return;
 
-        var pending = profile.journey.pendingWorldRewards;
+        var jp = profile.journey;
+        var pending = jp.pendingWorldRewards;
         if (pending == null || pending.Count == 0) return;
 
-        // Find the first animal/color reward (games don't appear in world)
+        // Purge any items that are already unlocked (safety net after crash/corruption)
+        bool purged = false;
+        for (int i = pending.Count - 1; i >= 0; i--)
+        {
+            var e = pending[i];
+            bool alreadyUnlocked = (e.type == "animal" && jp.unlockedAnimalIds.Contains(e.id))
+                                || (e.type == "color" && jp.unlockedColorIds.Contains(e.id));
+            if (alreadyUnlocked)
+            {
+                Debug.Log($"[RewardReveal] Purging already-unlocked pending reward: {e.type}/{e.id}");
+                pending.RemoveAt(i);
+                purged = true;
+            }
+        }
+        if (purged) ProfileManager.Instance.Save();
+        if (pending.Count == 0) return;
+
+        // Find the first animal/color reward
         DiscoveryEntry first = null;
         foreach (var entry in pending)
         {
