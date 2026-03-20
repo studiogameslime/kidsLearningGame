@@ -76,10 +76,11 @@ public class ConnectMatchController : BaseMiniGame
 
     protected override void OnGameInit()
     {
-        totalRounds = 5;
+        totalRounds = 1;
+        isEndless = true;
         playWinSound = true;
+        playConfettiOnRoundWin = true;
         delayBeforeNextRound = 1.5f;
-        delayAfterFinalRound = 2.5f;
     }
 
     protected override string GetFallbackGameId() => "connectmatch";
@@ -283,7 +284,7 @@ public class ConnectMatchController : BaseMiniGame
         }
         else
         {
-            // Play dots: all shown in player color (dim), will brighten on connection
+            // Play dots: all start dim, become bold when connected
             img.color = _playerColorDim;
         }
 
@@ -457,13 +458,7 @@ public class ConnectMatchController : BaseMiniGame
             }
         }
 
-        // Highlight next expected dot
-        if (_effectivePath != null)
-        {
-            int nextIdx2 = _playerPath.Count;
-            if (nextIdx2 < _effectivePath.Length)
-                HighlightDot(_effectivePath[nextIdx2], false);
-        }
+        // Next dot hint only after inactivity, not immediately
     }
 
     private bool IsAdjacent(Vector2Int a, Vector2Int b, bool diagonals)

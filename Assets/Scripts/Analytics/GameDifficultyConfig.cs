@@ -49,12 +49,13 @@ public static class GameDifficultyConfig
     /// </summary>
     public static void MemoryGridConfig(int difficulty, out int cols, out int rows, out int pairs)
     {
-        if (difficulty <= 2)      { cols = 2; rows = 2; pairs = 2; }   // 4 cards
+        // Landscape grids: more columns, fewer rows to fill horizontal space (1920x1080)
+        if (difficulty <= 2)      { cols = 4; rows = 1; pairs = 2; }   // 4 cards
         else if (difficulty <= 4) { cols = 4; rows = 2; pairs = 4; }   // 8 cards
-        else if (difficulty <= 6) { cols = 4; rows = 3; pairs = 6; }   // 12 cards
-        else if (difficulty <= 8) { cols = 4; rows = 4; pairs = 8; }   // 16 cards
-        else if (difficulty <= 9) { cols = 5; rows = 4; pairs = 10; }  // 20 cards
-        else                      { cols = 6; rows = 4; pairs = 12; }  // 24 cards
+        else if (difficulty <= 6) { cols = 6; rows = 2; pairs = 6; }   // 12 cards
+        else if (difficulty <= 8) { cols = 8; rows = 2; pairs = 8; }   // 16 cards
+        else if (difficulty <= 9) { cols = 8; rows = 3; pairs = 10; }  // 20 cards (6-8-6 with spacers)
+        else                      { cols = 8; rows = 3; pairs = 12; }  // 24 cards
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -68,10 +69,10 @@ public static class GameDifficultyConfig
     public static void CountingRange(int difficulty, out int min, out int max)
     {
         if (difficulty <= 2)      { min = 1; max = 3; }
-        else if (difficulty <= 4) { min = 3; max = 5; }
-        else if (difficulty <= 6) { min = 5; max = 7; }
-        else if (difficulty <= 8) { min = 7; max = 9; }
-        else                      { min = 9; max = 12; }
+        else if (difficulty <= 4) { min = 2; max = 5; }
+        else if (difficulty <= 6) { min = 3; max = 7; }
+        else if (difficulty <= 8) { min = 5; max = 9; }
+        else                      { min = 6; max = 10; }
     }
 
     // ═══════════════════════════════════════════════════════════

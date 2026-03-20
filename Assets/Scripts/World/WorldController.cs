@@ -92,7 +92,6 @@ public class WorldController : MonoBehaviour
             BackgroundMusicManager.PlayOneShot(introClip);
             yield return new WaitForSeconds(introClip.length);
             if (alin != null) alin.StopTalking();
-            yield return new WaitForSeconds(1f);
         }
         else
         {

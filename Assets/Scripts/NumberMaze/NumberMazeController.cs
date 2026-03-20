@@ -298,6 +298,7 @@ public class NumberMazeController : BaseMiniGame
         {
             // Correct!
             RecordCorrect("number_tap", _expectedNext.ToString());
+            SoundLibrary.PlayNumberName(cell.displayNumber);
             view.SetCompleted();
 
             // Draw path line from previous cell

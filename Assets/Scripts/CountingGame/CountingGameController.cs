@@ -97,12 +97,9 @@ public class CountingGameController : BaseMiniGame
         // Update question text
         UpdateQuestion(animalInfo.id);
 
-        // Show small animal icon next to question
+        // Hide header animal icon (not needed with static title)
         if (questionAnimalIcon != null)
-        {
-            questionAnimalIcon.sprite = animalInfo.sprite;
-            questionAnimalIcon.gameObject.SetActive(true);
-        }
+            questionAnimalIcon.gameObject.SetActive(false);
 
         // Load animation data
         AnimalAnimData animData = null;
@@ -177,7 +174,7 @@ public class CountingGameController : BaseMiniGame
         Stats?.SetCustom("animalCount", correctAnswer);
     }
 
-    protected override IEnumerator OnAfterComplete()
+    private IEnumerator CountThenComplete()
     {
         // Stop idle animations
         if (idleAnimCoroutine != null)
@@ -194,10 +191,9 @@ public class CountingGameController : BaseMiniGame
         {
             var posA = spawnedAnimals[a].GetComponent<RectTransform>().anchoredPosition;
             var posB = spawnedAnimals[b].GetComponent<RectTransform>().anchoredPosition;
-            // Sort by row first (top to bottom), then left to right
             float rowA = Mathf.Round(posA.y / 50f);
             float rowB = Mathf.Round(posB.y / 50f);
-            if (rowA != rowB) return rowB.CompareTo(rowA); // top first
+            if (rowA != rowB) return rowB.CompareTo(rowA);
             return posA.x.CompareTo(posB.x);
         });
 
@@ -211,26 +207,28 @@ public class CountingGameController : BaseMiniGame
 
         yield return new WaitForSeconds(0.4f);
 
-        // Count through: update central number + animate each animal
+        // Count through: number sound + animate each animal
         for (int i = 0; i < sortedIndices.Count; i++)
         {
             int idx = sortedIndices[i];
             int currentCount = i + 1;
             int colorIdx = i % NumberDarkColors.Length;
 
+            // Play number sound (1, 2, 3...)
+            SoundLibrary.PlayNumberName(currentCount);
+
             // Update the single large counting number
             if (countNumberText != null)
             {
                 countNumberText.text = currentCount.ToString();
                 countNumberText.color = NumberDarkColors[colorIdx];
-                // Bounce the counting number
                 StartCoroutine(BounceOnce(countNumberText.rectTransform));
             }
 
-            // Highlight the current animal (tint brighter)
+            // Highlight the current animal
             var animalImg = spawnedAnimals[idx].GetComponent<Image>();
             if (animalImg != null)
-                animalImg.color = new Color(1f, 1f, 0.7f, 1f); // warm highlight
+                animalImg.color = new Color(1f, 1f, 0.7f, 1f);
 
             // Play success animation on this animal
             if (idx < animalAnimators.Count && animalAnimators[idx] != null)
@@ -240,13 +238,21 @@ public class CountingGameController : BaseMiniGame
             var animalRT = spawnedAnimals[idx].GetComponent<RectTransform>();
             StartCoroutine(CountBounce(animalRT));
 
-            yield return new WaitForSeconds(0.55f);
+            yield return new WaitForSeconds(1.1f);
 
             // Return animal to normal color
             if (animalImg != null)
                 animalImg.color = Color.white;
         }
 
+        yield return new WaitForSeconds(0.3f);
+
+        // Now trigger confetti + feedback sound
+        CompleteRound();
+    }
+
+    protected override IEnumerator OnAfterComplete()
+    {
         yield return new WaitForSeconds(0.8f);
 
         // Exit animation
@@ -504,7 +510,8 @@ public class CountingGameController : BaseMiniGame
         {
             RecordCorrect();
             btnGO.GetComponent<Image>().color = CorrectColor;
-            CompleteRound();
+            // Don't CompleteRound yet — start counting animation first
+            StartCoroutine(CountThenComplete());
         }
         else
         {

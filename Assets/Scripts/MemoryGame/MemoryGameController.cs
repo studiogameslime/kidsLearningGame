@@ -94,13 +94,50 @@ public class MemoryGameController : BaseMiniGame
         }
         ShuffleList(entries);
 
-        // Spawn cards
-        for (int i = 0; i < entries.Count; i++)
+        // Spawn cards with spacers for short rows (e.g. 6-8-6 in 8-col grid)
+        int totalCards = entries.Count;
+        int totalSlots = cols * rows;
+        int emptySlots = totalSlots - totalCards;
+
+        // Build a set of spacer positions: for short rows, put 1 spacer at start and 1 at end
+        var spacerSlots = new HashSet<int>();
+        if (emptySlots > 0 && rows >= 3)
         {
-            var card = Instantiate(cardPrefab, cardContainer);
-            card.Setup(entries[i].pairId, entries[i].face, activeCategory.cardBack, OnCardClicked);
-            card.SetRandomRotation(cardRotationRange);
-            allCards.Add(card);
+            int perShortRow = emptySlots / 2; // e.g. 4 empty / 2 short rows = 2 per row
+            int half = perShortRow / 2;       // e.g. 1 at start, 1 at end
+
+            // Row 0 (first row)
+            for (int s = 0; s < half; s++)
+                spacerSlots.Add(s);                          // start of row 0
+            for (int s = 0; s < perShortRow - half; s++)
+                spacerSlots.Add(cols - 1 - s);               // end of row 0
+
+            // Last row
+            int lastRowStart = cols * (rows - 1);
+            for (int s = 0; s < half; s++)
+                spacerSlots.Add(lastRowStart + s);           // start of last row
+            for (int s = 0; s < perShortRow - half; s++)
+                spacerSlots.Add(lastRowStart + cols - 1 - s); // end of last row
+        }
+
+        int cardIndex = 0;
+        for (int slot = 0; slot < totalSlots; slot++)
+        {
+            if (spacerSlots.Contains(slot))
+            {
+                var spacer = new GameObject("Spacer");
+                spacer.transform.SetParent(cardContainer);
+                spacer.AddComponent<RectTransform>();
+                spacer.AddComponent<LayoutElement>();
+            }
+            else if (cardIndex < entries.Count)
+            {
+                var card = Instantiate(cardPrefab, cardContainer);
+                card.Setup(entries[cardIndex].pairId, entries[cardIndex].face, activeCategory.cardBack, OnCardClicked);
+                card.SetRandomRotation(cardRotationRange);
+                allCards.Add(card);
+                cardIndex++;
+            }
         }
     }
 
@@ -147,10 +184,10 @@ public class MemoryGameController : BaseMiniGame
         float boardW = boardArea.rect.width;
         float boardH = boardArea.rect.height;
 
-        // Scale spacing with column count for balanced breathing room
-        float spacing = cols <= 4 ? 20f : (cols <= 6 ? 18f : 14f);
-        float padH = 20f;
-        float padV = 16f;
+        // Tight spacing to maximize card area
+        float spacing = cols <= 4 ? 12f : (cols <= 6 ? 10f : 8f);
+        float padH = 8f;
+        float padV = 8f;
 
         float availW = boardW - padH * 2f - (cols - 1) * spacing;
         float availH = boardH - padV * 2f - (rows - 1) * spacing;

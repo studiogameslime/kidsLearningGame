@@ -276,8 +276,8 @@ public class MemoryGameSetup : EditorWindow
         var boardGO = new GameObject("BoardPanel");
         boardGO.transform.SetParent(safeArea.transform, false);
         var boardRT = boardGO.AddComponent<RectTransform>();
-        boardRT.anchorMin = new Vector2(0.02f, 0.02f);
-        boardRT.anchorMax = new Vector2(0.98f, 0.88f);
+        boardRT.anchorMin = new Vector2(0.005f, 0.01f);
+        boardRT.anchorMax = new Vector2(0.995f, 0.90f);
         boardRT.offsetMin = Vector2.zero;
         boardRT.offsetMax = Vector2.zero;
 
@@ -298,8 +298,8 @@ public class MemoryGameSetup : EditorWindow
         rimGO.transform.SetParent(boardGO.transform, false);
         var rimRT = rimGO.AddComponent<RectTransform>();
         Full(rimRT);
-        rimRT.offsetMin = new Vector2(3, 3);
-        rimRT.offsetMax = new Vector2(-3, -3);
+        rimRT.offsetMin = new Vector2(2, 2);
+        rimRT.offsetMax = new Vector2(-2, -2);
         var rimImg = rimGO.AddComponent<Image>();
         rimImg.sprite = roundedRect;
         rimImg.type = Image.Type.Sliced;
@@ -311,8 +311,8 @@ public class MemoryGameSetup : EditorWindow
         woodSurface.transform.SetParent(boardGO.transform, false);
         var woodSurfaceRT = woodSurface.AddComponent<RectTransform>();
         Full(woodSurfaceRT);
-        woodSurfaceRT.offsetMin = new Vector2(6, 6);
-        woodSurfaceRT.offsetMax = new Vector2(-6, -6);
+        woodSurfaceRT.offsetMin = new Vector2(3, 3);
+        woodSurfaceRT.offsetMax = new Vector2(-3, -3);
 
         // Create horizontal wood planks
         CreateWoodPlanks(woodSurface.transform, roundedRect);
@@ -322,8 +322,8 @@ public class MemoryGameSetup : EditorWindow
         gridContent.transform.SetParent(boardGO.transform, false);
         var gridContentRT = gridContent.AddComponent<RectTransform>();
         Full(gridContentRT);
-        gridContentRT.offsetMin = new Vector2(10, 10);
-        gridContentRT.offsetMax = new Vector2(-10, -10);
+        gridContentRT.offsetMin = new Vector2(4, 4);
+        gridContentRT.offsetMax = new Vector2(-4, -4);
 
         // GridLayoutGroup (cell size set dynamically by controller)
         var grid = gridContent.AddComponent<GridLayoutGroup>();

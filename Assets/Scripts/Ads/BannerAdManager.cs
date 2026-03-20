@@ -10,11 +10,10 @@ using GoogleMobileAds.Api;
 /// </summary>
 public class BannerAdManager : MonoBehaviour
 {
-    // Test ad unit IDs from Google — safe for development
 #if UNITY_ANDROID
-    private const string BannerAdUnitId = "ca-app-pub-3940256099942544/6300978111";
+    private const string BannerAdUnitId = "ca-app-pub-4452511612073107/4780012630";
 #elif UNITY_IOS
-    private const string BannerAdUnitId = "ca-app-pub-3940256099942544/2934735716";
+    private const string BannerAdUnitId = "ca-app-pub-4452511612073107/4780012630";
 #else
     private const string BannerAdUnitId = "unused";
 #endif

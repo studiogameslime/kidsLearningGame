@@ -464,8 +464,9 @@ public class QuantityMatchController : BaseMiniGame
             if (img != null) { var c = img.color; c.a = 0.35f; img.color = c; }
         }
 
-        // Bounce correct tile
+        // Bounce correct tile + play number sound
         StartCoroutine(CelebrateBounce(_tileObjects[correctTile].GetComponent<RectTransform>(), 0f));
+        SoundLibrary.PlayNumberName(_targetNumber);
 
         yield return new WaitForSeconds(1.5f);
 

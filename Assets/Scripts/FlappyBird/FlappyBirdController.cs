@@ -97,6 +97,38 @@ public class FlappyBirdController : BaseMiniGame
         ResetBird();
         isPlaying = false;
         isDead = false;
+
+        // Pre-spawn pipes so they're visible before first tap
+        PreSpawnPipes();
+
+        // Show tap prompt
+        StartCoroutine(TapPrompt());
+    }
+
+    private void PreSpawnPipes()
+    {
+        float spacing = pipeSpeed * spawnInterval;
+        float startX = playAreaWidth * 0.25f;
+        for (int i = 0; i < 3; i++)
+            SpawnPipeAt(startX + i * spacing);
+        spawnTimer = spawnInterval;
+    }
+
+    private System.Collections.IEnumerator TapPrompt()
+    {
+        // Create a pulsing "tap to start" hint using the bird
+        while (!isPlaying && !isDead)
+        {
+            // Pulse bird scale as hint to tap
+            float t = Time.time * 3f;
+            float scale = 1f + 0.08f * Mathf.Sin(t);
+            if (birdRT != null)
+                birdRT.localScale = new Vector3(-scale, scale, 1f);
+            yield return null;
+        }
+        // Reset scale when game starts
+        if (birdRT != null)
+            birdRT.localScale = new Vector3(-1, 1, 1);
     }
 
     protected override void OnGameplayUpdate()
@@ -374,8 +406,7 @@ public class FlappyBirdController : BaseMiniGame
             ProfileManager.Instance?.Save();
         }
 
-        // Record round complete for stats tracking, then run death visuals
-        CompleteRound();
+        // Death visuals then restart (don't use CompleteRound — flappy manages its own loop)
         StartCoroutine(DeathSequence());
     }
 
@@ -426,6 +457,47 @@ public class FlappyBirdController : BaseMiniGame
 
         ResetBird();
         birdAnimator?.PlayFloating();
+
+        PreSpawnPipes();
+        StartCoroutine(TapPrompt());
+    }
+
+    private void SpawnPipeAt(float xPos)
+    {
+        float minGapCenter = groundY + gapSize * 0.5f + 40f;
+        float maxGapCenter = playAreaHeight - gapSize * 0.5f - 40f;
+        float gapCenterY = Random.Range(
+            Mathf.Max(minGapCenter, playAreaHeight * pipeMinY),
+            Mathf.Min(maxGapCenter, playAreaHeight * pipeMaxY));
+
+        PipePair pair;
+        if (pipePool.Count > 0)
+        {
+            pair = pipePool[pipePool.Count - 1];
+            pipePool.RemoveAt(pipePool.Count - 1);
+            pair.root.gameObject.SetActive(true);
+        }
+        else
+        {
+            pair = CreatePipePair();
+        }
+
+        pair.scored = false;
+        pair.root.anchoredPosition = new Vector2(xPos, 0);
+
+        float gapTop = gapCenterY + gapSize * 0.5f;
+        float topPipeHeight = Mathf.Max(0, playAreaHeight - gapTop);
+        pair.top.anchoredPosition = new Vector2(0, gapTop);
+        pair.top.sizeDelta = new Vector2(pipeWidth, topPipeHeight);
+        pair.top.pivot = new Vector2(0.5f, 0f);
+
+        float gapBottom = gapCenterY - gapSize * 0.5f;
+        float bottomPipeHeight = Mathf.Max(0, gapBottom - groundY);
+        pair.bottom.anchoredPosition = new Vector2(0, groundY);
+        pair.bottom.sizeDelta = new Vector2(pipeWidth, bottomPipeHeight);
+        pair.bottom.pivot = new Vector2(0.5f, 0f);
+
+        pipes.Add(pair);
     }
 
     private void ResetBird()

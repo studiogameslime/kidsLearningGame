@@ -37,8 +37,11 @@ public class InGameLeaderboard : MonoBehaviour
 
     private void Start()
     {
+        // Hide trophy button in game scenes — leaderboard only accessible from parent dashboard
         if (trophyButton != null)
-            trophyButton.onClick.AddListener(OnTrophyPressed);
+        {
+            trophyButton.gameObject.SetActive(false);
+        }
     }
 
     private void OnTrophyPressed()

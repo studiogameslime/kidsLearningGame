@@ -33,6 +33,19 @@ public static class SoundLibrary
         if (clip != null) BackgroundMusicManager.PlayOneShot(clip);
     }
 
+    // ── Number Names ──
+
+    public static AudioClip NumberName(int number)
+    {
+        return Resources.Load<AudioClip>($"Sounds/Numbers/{number}");
+    }
+
+    public static void PlayNumberName(int number)
+    {
+        var clip = NumberName(number);
+        if (clip != null) BackgroundMusicManager.PlayOneShot(clip);
+    }
+
     // ── Feedback (random win clip) ──
 
     private static readonly string[] FeedbackClips =
@@ -45,6 +58,7 @@ public static class SoundLibrary
 
     public static void PlayRandomFeedback()
     {
+        if (Random.value > 0.3f) return; // 30% chance to play
         string path = FeedbackClips[Random.Range(0, FeedbackClips.Length)];
         var clip = Resources.Load<AudioClip>(path);
         if (clip != null) BackgroundMusicManager.PlayOneShot(clip);

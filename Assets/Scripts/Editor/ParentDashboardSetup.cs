@@ -99,42 +99,42 @@ public class ParentDashboardSetup : EditorWindow
 
         // Gate title
         var gateTitleGO = MakeTMP(gateGO.transform, "GateTitle",
-            "\u05D0\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD", 36, Color.white);
+            "\u05D0\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD", 52, Color.white);
         var gateTitleRT = gateTitleGO.GetComponent<RectTransform>();
         gateTitleRT.anchorMin = new Vector2(0.1f, 0.72f);
-        gateTitleRT.anchorMax = new Vector2(0.9f, 0.80f);
+        gateTitleRT.anchorMax = new Vector2(0.9f, 0.84f);
         gateTitleRT.offsetMin = gateTitleRT.offsetMax = Vector2.zero;
         gateTitleGO.GetComponent<TextMeshProUGUI>().fontStyle = FontStyles.Bold;
 
         // Gate subtitle
         var gateSubGO = MakeTMP(gateGO.transform, "GateSubtitle",
-            "\u05E4\u05EA\u05E8\u05D5 \u05D0\u05EA \u05D4\u05EA\u05E8\u05D2\u05D9\u05DC", 22, new Color(1, 1, 1, 0.7f));
+            "\u05E4\u05EA\u05E8\u05D5 \u05D0\u05EA \u05D4\u05EA\u05E8\u05D2\u05D9\u05DC", 32, new Color(1, 1, 1, 0.7f));
         var gateSubRT = gateSubGO.GetComponent<RectTransform>();
-        gateSubRT.anchorMin = new Vector2(0.1f, 0.64f);
+        gateSubRT.anchorMin = new Vector2(0.1f, 0.62f);
         gateSubRT.anchorMax = new Vector2(0.9f, 0.72f);
         gateSubRT.offsetMin = gateSubRT.offsetMax = Vector2.zero;
 
         // Question text
-        var questionGO = MakeTMP(gateGO.transform, "QuestionText", "? = 5 + 3", 48, Color.white);
+        var questionGO = MakeTMP(gateGO.transform, "QuestionText", "? = 5 + 3", 72, Color.white);
         var questionRT = questionGO.GetComponent<RectTransform>();
-        questionRT.anchorMin = new Vector2(0.1f, 0.52f);
-        questionRT.anchorMax = new Vector2(0.9f, 0.64f);
+        questionRT.anchorMin = new Vector2(0.1f, 0.48f);
+        questionRT.anchorMax = new Vector2(0.9f, 0.62f);
         questionRT.offsetMin = questionRT.offsetMax = Vector2.zero;
         var questionTMP = questionGO.GetComponent<TextMeshProUGUI>();
         questionTMP.fontStyle = FontStyles.Bold;
 
-        // Answer buttons (2x2 grid)
+        // Answer buttons (2x2 grid — larger for landscape)
         var answerButtons = new Button[4];
         var answerLabels = new TextMeshProUGUI[4];
-        float btnW = 220, btnH = 80, gap = 20;
+        float btnW = 320, btnH = 100, gap = 30;
         float gridW = btnW * 2 + gap;
         float gridH = btnH * 2 + gap;
 
         var answersGO = new GameObject("Answers");
         answersGO.transform.SetParent(gateGO.transform, false);
         var answersRT = answersGO.AddComponent<RectTransform>();
-        answersRT.anchorMin = new Vector2(0.5f, 0.28f);
-        answersRT.anchorMax = new Vector2(0.5f, 0.28f);
+        answersRT.anchorMin = new Vector2(0.5f, 0.22f);
+        answersRT.anchorMax = new Vector2(0.5f, 0.22f);
         answersRT.pivot = new Vector2(0.5f, 0.5f);
         answersRT.sizeDelta = new Vector2(gridW, gridH);
 
@@ -159,7 +159,7 @@ public class ParentDashboardSetup : EditorWindow
             var btn = btnGO.AddComponent<Button>();
             btn.targetGraphic = btnBg;
 
-            var labelGO = MakeTMP(btnGO.transform, "Label", "0", 28, HexColor("#2C3E50"));
+            var labelGO = MakeTMP(btnGO.transform, "Label", "0", 40, HexColor("#2C3E50"));
             Full(labelGO.GetComponent<RectTransform>());
 
             answerButtons[i] = btn;
@@ -168,10 +168,10 @@ public class ParentDashboardSetup : EditorWindow
 
         // Gate back button
         var gateBackGO = MakeTMP(gateGO.transform, "GateBack",
-            "\u05D7\u05D6\u05E8\u05D4", 20, new Color(1, 1, 1, 0.5f));
+            "\u05D7\u05D6\u05E8\u05D4", 28, new Color(1, 1, 1, 0.5f));
         var gateBackRT = gateBackGO.GetComponent<RectTransform>();
-        gateBackRT.anchorMin = new Vector2(0.3f, 0.14f);
-        gateBackRT.anchorMax = new Vector2(0.7f, 0.20f);
+        gateBackRT.anchorMin = new Vector2(0.3f, 0.06f);
+        gateBackRT.anchorMax = new Vector2(0.7f, 0.14f);
         gateBackRT.offsetMin = gateBackRT.offsetMax = Vector2.zero;
         var gateBackBtn = gateBackGO.AddComponent<Button>();
         gateBackBtn.targetGraphic = gateBackGO.GetComponent<TextMeshProUGUI>();

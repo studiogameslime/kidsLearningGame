@@ -11,9 +11,9 @@ using GoogleMobileAds.Api;
 public class RewardedAdManager : MonoBehaviour
 {
 #if UNITY_ANDROID
-    private const string AdUnitId = "ca-app-pub-3940256099942544/5224354917"; // test
+    private const string AdUnitId = "ca-app-pub-4452511612073107/3466930965";
 #elif UNITY_IOS
-    private const string AdUnitId = "ca-app-pub-3940256099942544/1712485313"; // test
+    private const string AdUnitId = "ca-app-pub-4452511612073107/3466930965";
 #else
     private const string AdUnitId = "unused";
 #endif

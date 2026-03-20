@@ -158,8 +158,8 @@ public class NumberTrainController : BaseMiniGame
         else if (Difficulty <= 5) _totalMissing = 2;
         else                       _totalMissing = 3;
 
-        // Start number
-        int maxStart = Mathf.Max(1, 15 - _wagonCount);
+        // Start number — cap so last wagon doesn't exceed 10
+        int maxStart = Mathf.Max(1, 11 - _wagonCount);
         _startNumber = Random.Range(1, maxStart + 1);
 
         // Build sequence
@@ -562,6 +562,7 @@ public class NumberTrainController : BaseMiniGame
     private void PlaceNumberInWagon(int wagonIndex, int value, GameObject option)
     {
         RecordCorrect("number_placed", value.ToString());
+        SoundLibrary.PlayNumberName(value);
         _placedCount++;
 
         // Update wagon text
