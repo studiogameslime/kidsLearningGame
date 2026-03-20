@@ -11,7 +11,7 @@ using TMPro;
 /// </summary>
 public class ParentDashboardSetup : EditorWindow
 {
-    private static readonly Vector2 Ref = new Vector2(1080, 1920);
+    private static readonly Vector2 Ref = new Vector2(1920, 1080);
 
     // Palette
     private static readonly Color BgColor = HexColor("#F0F2F5");
@@ -21,7 +21,7 @@ public class ParentDashboardSetup : EditorWindow
     private static readonly Color GateBg = HexColor("#2C3E50");
     private static readonly Color AnswerBg = HexColor("#ECF0F1");
 
-    private const int HeaderHeight = 130;
+    private static readonly int HeaderHeight = SetupConstants.HeaderHeight;
 
     public static void RunSetupSilent()
     {
@@ -70,7 +70,7 @@ public class ParentDashboardSetup : EditorWindow
         var scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = Ref;
-        scaler.matchWidthOrHeight = 0f;
+        scaler.matchWidthOrHeight = 0.5f;
         canvasGO.AddComponent<GraphicRaycaster>();
 
         // Background

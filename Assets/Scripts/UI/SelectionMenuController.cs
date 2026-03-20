@@ -234,6 +234,6 @@ public class SelectionMenuController : MonoBehaviour
 
     public void OnBackPressed()
     {
-        NavigationManager.GoToMainMenu();
+        NavigationManager.GoToGamesCollection();
     }
 }

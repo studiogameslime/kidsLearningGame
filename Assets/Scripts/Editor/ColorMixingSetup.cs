@@ -60,7 +60,7 @@ public class ColorMixingSetup : EditorWindow
     private static readonly Color WcPurple = new Color(0.68f, 0.48f, 0.82f, 0.05f);
     private static readonly Color WcOrange = new Color(1.00f, 0.65f, 0.20f, 0.05f);
 
-    private const int HeaderHeight = 130;
+    private static readonly int HeaderHeight = SetupConstants.HeaderHeight;
 
     public static void RunSetupSilent()
     {

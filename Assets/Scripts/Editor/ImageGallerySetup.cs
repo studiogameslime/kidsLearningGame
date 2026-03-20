@@ -13,7 +13,7 @@ using TMPro;
 public class ImageGallerySetup : EditorWindow
 {
     private static readonly Vector2 Ref = new Vector2(1920, 1080);
-    private const int TopBarHeight = 100;
+    private static readonly int TopBarHeight = SetupConstants.HeaderHeight;
 
     private static readonly Color BgColor      = HexColor("#F5F0EB");
     private static readonly Color BarColor     = HexColor("#8D6E63"); // warm brown

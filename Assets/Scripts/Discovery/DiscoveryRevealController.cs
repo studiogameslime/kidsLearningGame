@@ -19,7 +19,7 @@ public class DiscoveryRevealController : MonoBehaviour
     public int textureWidth = 960;
     public int textureHeight = 540;
     public int brushRadius = 160;
-    public float revealThreshold = 0.7f;
+    public float revealThreshold = 0.5f;
 
     private Texture2D scratchTex;
     private Color32[] pixels;
@@ -57,9 +57,6 @@ public class DiscoveryRevealController : MonoBehaviour
                 break;
             case "color":
                 SetupColorReveal(discovery.id);
-                break;
-            case "game":
-                SetupGameReveal(discovery.id);
                 break;
         }
     }
@@ -101,14 +98,6 @@ public class DiscoveryRevealController : MonoBehaviour
             backgroundImage.color = new Color(0.98f, 0.95f, 0.90f); // warm cream
     }
 
-    private void SetupGameReveal(string gameId)
-    {
-        if (revealImage != null)
-            revealImage.color = new Color(0.6f, 0.4f, 0.9f); // purple placeholder
-
-        if (backgroundImage != null)
-            backgroundImage.color = new Color(0.95f, 0.93f, 0.99f); // light purple
-    }
 
     private void CreateScratchOverlay()
     {
@@ -312,7 +301,6 @@ public class DiscoveryRevealController : MonoBehaviour
         {
             case "animal": return GetAnimalHebrew(discovery.id);
             case "color":  return GetColorHebrew(discovery.id);
-            case "game":   return GetGameHebrew(discovery.id);
             default:       return discovery.id;
         }
     }
@@ -364,25 +352,7 @@ public class DiscoveryRevealController : MonoBehaviour
 
     private string GetGameHebrew(string id)
     {
-        switch (id)
-        {
-            case "memory":       return "\u05DE\u05E9\u05D7\u05E7 \u05D6\u05D9\u05DB\u05E8\u05D5\u05DF"; // משחק זיכרון
-            case "puzzle":       return "\u05E4\u05D0\u05D6\u05DC";           // פאזל
-            case "coloring":     return "\u05E6\u05D1\u05D9\u05E2\u05D4";     // צביעה
-            case "fillthedots":  return "\u05D7\u05D1\u05E8 \u05E0\u05E7\u05D5\u05D3\u05D5\u05EA"; // חבר נקודות
-            case "shadows":      return "\u05D4\u05EA\u05D0\u05DE\u05EA \u05E6\u05DC\u05DC\u05D9\u05DD"; // התאמת צללים
-            case "colormixing":  return "\u05E2\u05E8\u05D1\u05D5\u05D1 \u05E6\u05D1\u05E2\u05D9\u05DD"; // ערבוב צבעים
-            case "ballmaze":     return "\u05DE\u05D1\u05D5\u05DA \u05D4\u05DB\u05D3\u05D5\u05E8"; // מבוך הכדור
-            case "towerbuilder": return "\u05D1\u05E0\u05D4 \u05DE\u05D2\u05D3\u05DC";       // בנה מגדל
-            case "towerstack":   return "\u05D1\u05E0\u05D4 \u05D0\u05EA \u05D4\u05DE\u05D2\u05D3\u05DC"; // בנה את המגדל
-            case "colorvoice":   return "\u05D0\u05DE\u05E8\u05D5 \u05D0\u05EA \u05D4\u05E6\u05D1\u05E2"; // אמרו את הצבע
-            case "findtheobject":return "\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05D7\u05D9\u05D4"; // מצא את החיה
-            case "findthecount": return "\u05E1\u05E4\u05D9\u05E8\u05D4";     // ספירה
-            case "sharedsticker":return "\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05DE\u05E9\u05D5\u05EA\u05E3"; // מצא את המשותף
-            case "flappybird":   return "\u05DE\u05E2\u05D5\u05E3 \u05D4\u05E6\u05D9\u05E4\u05D5\u05E8"; // מעוף הציפור
-            case "simonsays":    return "\u05D6\u05DB\u05E8\u05D5 \u05D0\u05EA \u05D4\u05E6\u05D1\u05E2\u05D9\u05DD"; // זכרו את הצבעים
-            default:             return id;
-        }
+        return ParentDashboardViewModel.GetGameName(id);
     }
 
     private Color GetColorById(string colorId)

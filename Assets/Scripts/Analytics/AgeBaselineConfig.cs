@@ -242,6 +242,8 @@ public static class AgeBaselineConfig
             new Entry(3, "ballmaze"),
             new Entry(3, "findthecount"),
             new Entry(3, "colormixing"),
+            new Entry(3, "shadows"),
+            new Entry(3, "towerbuilder"),
             new Entry(3, "oddoneout"),          // still easy pool
             new Entry(3, "quantitymatch", 3),   // quantities 1-3
             new Entry(3, "numbertrain",   5),   // 5 wagons, 1 missing
@@ -264,6 +266,7 @@ public static class AgeBaselineConfig
             new Entry(4, "colormixing"),
             new Entry(4, "flappybird"),
             new Entry(4, "towerbuilder"),
+            new Entry(4, "shadows"),
             new Entry(4, "oddoneout"),          // medium pool, more similar animals
             new Entry(4, "quantitymatch", 5),   // quantities up to 5
             new Entry(4, "numbertrain",   6),   // 6 wagons, 2 missing
@@ -291,6 +294,7 @@ public static class AgeBaselineConfig
             new Entry(5, "colormixing"),
             new Entry(5, "flappybird"),
             new Entry(5, "towerbuilder"),
+            new Entry(5, "shadows"),
             new Entry(5, "oddoneout"),          // all animals pool
             new Entry(5, "quantitymatch", 8),   // quantities up to 8
             new Entry(5, "numbertrain",   7),   // 7 wagons, 3 missing

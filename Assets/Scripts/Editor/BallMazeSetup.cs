@@ -14,7 +14,7 @@ public class BallMazeSetup : EditorWindow
 {
     private static readonly Vector2 Ref = new Vector2(1920, 1080);
     private const string MazeArt = "Assets/Art/Maze/";
-    private const int HeaderHeight = 130;
+    private static readonly int HeaderHeight = SetupConstants.HeaderHeight;
 
     private static readonly Color HeaderColor = new Color(0.30f, 0.65f, 0.85f, 0.80f);
 

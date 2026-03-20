@@ -15,7 +15,7 @@ public class WorldSceneSetup : EditorWindow
 {
     private static readonly Vector2 Ref = new Vector2(1920, 1080);
     private static readonly Color TopBarColor = HexColor("#5BA84C");
-    private const int TopBarHeight = 130;
+    private static readonly int TopBarHeight = SetupConstants.HeaderHeight;
 
     // Day mode default colors (environment handles transitions)
     private static readonly Color DaySky = HexColor("#8FD4F5");
@@ -508,13 +508,15 @@ public class WorldSceneSetup : EditorWindow
         toyBoxRT.anchorMax = new Vector2(0.50f, 0);
         toyBoxRT.pivot = new Vector2(0.5f, 0);
         toyBoxRT.sizeDelta = new Vector2(300, 330);
-        toyBoxRT.anchoredPosition = new Vector2(0, 330);
+        toyBoxRT.anchoredPosition = new Vector2(-80, 330);
 
         var toyBoxImg = toyBoxGO.AddComponent<Image>();
         toyBoxImg.sprite = toyBoxSprite;
         toyBoxImg.preserveAspect = true;
         toyBoxImg.raycastTarget = true;
         toyBoxImg.color = Color.white;
+        // Shrink tap area: 40px inset from each side, 80px from top (lid area)
+        toyBoxImg.raycastPadding = new Vector4(40, 20, 40, 80);
 
         var worldToyBox = toyBoxGO.AddComponent<WorldToyBox>();
 

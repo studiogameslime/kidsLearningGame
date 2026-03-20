@@ -32,7 +32,7 @@ public class TowerBuilderSetup : EditorWindow
     // Header
     private static readonly Color HeaderColor = new Color(0.30f, 0.65f, 0.85f, 0.80f);
 
-    private const int HeaderHeight = 130;
+    private static readonly int HeaderHeight = SetupConstants.HeaderHeight;
 
     [MenuItem("Tools/Kids Learning Game/Setup Tower Builder")]
     public static void ShowWindow()

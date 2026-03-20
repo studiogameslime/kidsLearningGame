@@ -186,13 +186,7 @@ public class ShadowMatchController : BaseMiniGame
         // Pulse first unmatched animal to encourage interaction
         UpdateGuidedPulse();
 
-        // Announce first animal name
-        if (picked.Count > 0)
-        {
-            string key = picked[0].categoryKey;
-            if (!string.IsNullOrEmpty(key))
-                SoundLibrary.PlayAnimalName(char.ToUpper(key[0]) + key.Substring(1));
-        }
+        // Animal names are announced when matched, not on round start
     }
 
     protected override void OnRoundCleanup()

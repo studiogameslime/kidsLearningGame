@@ -13,7 +13,7 @@ using TMPro;
 public class SimonSaysSetup : EditorWindow
 {
     private static readonly Vector2 Ref = new Vector2(1920, 1080);
-    private const int TopBarHeight = 130;
+    private static readonly int TopBarHeight = SetupConstants.HeaderHeight;
 
     // Warm wood table palette (matching SharedSticker)
     private static readonly Color WoodDark      = HexColor("#8B6914");

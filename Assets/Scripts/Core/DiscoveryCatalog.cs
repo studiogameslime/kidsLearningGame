@@ -8,9 +8,7 @@ using System.Collections.Generic;
 public static class DiscoveryCatalog
 {
     // Starter content (seeded on first journey)
-    public static readonly string[] StarterAnimals = { "Cat", "Dog", "Bear" };
     public static readonly string[] StarterColors = { "Red", "Blue", "Yellow" };
-    public static readonly string[] StarterGameIds = { "memory", "findthecount", "findtheobject" };
 
     // Discovery order (includes Cat/Dog/Bear since only the favorite is seeded)
     private static readonly string[] AnimalOrder =
@@ -25,16 +23,9 @@ public static class DiscoveryCatalog
         "Green", "Orange", "Purple", "Pink", "Cyan", "Brown", "Black"
     };
 
-    // Uses actual GameItemData.id values
-    private static readonly string[] GameOrder =
-    {
-        "shadows", "puzzle", "colormixing", "fillthedots",
-        "ballmaze", "coloring", "colorvoice", "towerbuilder", "towerstack", "sharedsticker", "flappybird", "simonsays"
-    };
-
     public static bool HasMore(JourneyProgress jp)
     {
-        return NextAnimal(jp) != null || NextColor(jp) != null || NextGame(jp) != null;
+        return NextAnimal(jp) != null || NextColor(jp) != null;
     }
 
     /// <summary>
@@ -48,7 +39,8 @@ public static class DiscoveryCatalog
         {
             // Capitalize first letter for matching
             string id = char.ToUpper(animalKey[0]) + animalKey.Substring(1).ToLower();
-            if (!jp.unlockedAnimalIds.Contains(id) && System.Array.Exists(AnimalOrder, a => a == id))
+            if (!jp.unlockedAnimalIds.Contains(id) && !IsAlreadyPendingOrQueued(jp, "animal", id)
+                && System.Array.Exists(AnimalOrder, a => a == id))
                 return new DiscoveryEntry { type = "animal", id = id };
         }
 
@@ -56,7 +48,8 @@ public static class DiscoveryCatalog
         if (!string.IsNullOrEmpty(colorKey))
         {
             string id = char.ToUpper(colorKey[0]) + colorKey.Substring(1).ToLower();
-            if (!jp.unlockedColorIds.Contains(id) && System.Array.Exists(ColorOrder, c => c == id))
+            if (!jp.unlockedColorIds.Contains(id) && !IsAlreadyPendingOrQueued(jp, "color", id)
+                && System.Array.Exists(ColorOrder, c => c == id))
                 return new DiscoveryEntry { type = "color", id = id };
         }
 
@@ -66,13 +59,6 @@ public static class DiscoveryCatalog
     public static DiscoveryEntry GetNext(JourneyProgress jp)
     {
         int discoveryIndex = jp.discoveryQueue.Count;
-
-        // Every 5th discovery is a game
-        if (discoveryIndex > 0 && discoveryIndex % 5 == 0)
-        {
-            var game = NextGame(jp);
-            if (game != null) return game;
-        }
 
         // Pattern: 2 animals, 1 color (positions 0,1 = animal, 2 = color, repeat)
         int cyclePos = discoveryIndex % 3;
@@ -92,17 +78,23 @@ public static class DiscoveryCatalog
         var color = NextColor(jp);
         if (color != null) return color;
 
-        var game2 = NextGame(jp);
-        if (game2 != null) return game2;
-
         return null;
+    }
+
+    private static bool IsAlreadyPendingOrQueued(JourneyProgress jp, string type, string id)
+    {
+        foreach (var e in jp.pendingWorldRewards)
+            if (e.type == type && e.id == id) return true;
+        foreach (var e in jp.discoveryQueue)
+            if (e.type == type && e.id == id) return true;
+        return false;
     }
 
     private static DiscoveryEntry NextAnimal(JourneyProgress jp)
     {
         foreach (var id in AnimalOrder)
         {
-            if (!jp.unlockedAnimalIds.Contains(id))
+            if (!jp.unlockedAnimalIds.Contains(id) && !IsAlreadyPendingOrQueued(jp, "animal", id))
                 return new DiscoveryEntry { type = "animal", id = id };
         }
         return null;
@@ -112,19 +104,10 @@ public static class DiscoveryCatalog
     {
         foreach (var id in ColorOrder)
         {
-            if (!jp.unlockedColorIds.Contains(id))
+            if (!jp.unlockedColorIds.Contains(id) && !IsAlreadyPendingOrQueued(jp, "color", id))
                 return new DiscoveryEntry { type = "color", id = id };
         }
         return null;
     }
 
-    private static DiscoveryEntry NextGame(JourneyProgress jp)
-    {
-        foreach (var id in GameOrder)
-        {
-            if (!jp.unlockedGameIds.Contains(id))
-                return new DiscoveryEntry { type = "game", id = id };
-        }
-        return null;
-    }
 }

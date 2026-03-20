@@ -19,7 +19,7 @@ public class ConnectTheDotsSetup : EditorWindow
     private static readonly Color NightSkyBottom = HexColor("#1A2D5A");
     private static readonly Color HorizonGlowColor = HexColor("#2A4080");
 
-    private const int TopBarHeight = 130;
+    private static readonly int TopBarHeight = SetupConstants.HeaderHeight;
     private const float DotSize = 80f;
 
     public static void RunSetupSilent()

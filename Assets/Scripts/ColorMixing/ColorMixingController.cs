@@ -770,7 +770,7 @@ public class ColorMixingController : BaseMiniGame
         }
     }
 
-    // ── wrong answer ────────────────────────────────────────────────
+    // ── wrong answer — reset containers but keep same target ────────
     private IEnumerator WrongSequence()
     {
         // Gentle wobble on mixing container
@@ -791,7 +791,20 @@ public class ColorMixingController : BaseMiniGame
             yield return null;
         }
 
-        StartNewRound();
+        // Reset containers but keep the same target color
+        containerLeftColorId = null;
+        containerRightColorId = null;
+        ResetContainerFill(containerLeftFill);
+        ResetContainerFill(containerRightFill);
+        ResetContainerFill(mixContainerFill);
+        ResetContainerTransform(containerLeftBody);
+        ResetContainerTransform(containerRightBody);
+        ResetContainerTransform(mixContainerBody);
+        if (mixContainerGlow != null)
+            mixContainerGlow.color = new Color(1, 1, 1, 0);
+
+        SetPaletteInteractable(true);
+        isAnimating = false;
     }
 
     // ── target animations ───────────────────────────────────────────

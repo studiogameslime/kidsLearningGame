@@ -91,7 +91,7 @@ public static class NavigationManager
     public static void GoToGamesCollection()
     {
         GameContext.Clear();
-        BubbleTransition.LoadScene(MainMenuScene);
+        SceneManager.LoadScene(MainMenuScene);
     }
 
     /// <summary>Go to the parent dashboard (analytics).</summary>
@@ -111,7 +111,7 @@ public static class NavigationManager
     {
         GameContext.CurrentGame = game;
         GameContext.CurrentSelection = null;
-        BubbleTransition.LoadScene(SelectionMenuScene);
+        SceneManager.LoadScene(SelectionMenuScene);
     }
 
     /// <summary>Open a game scene directly (no sub-selection).</summary>

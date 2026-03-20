@@ -19,7 +19,7 @@ using System.IO;
 /// </summary>
 public class PuzzleGameSetup : EditorWindow
 {
-    private static readonly Vector2 Ref = new Vector2(1080, 1920);
+    private static readonly Vector2 Ref = new Vector2(1920, 1080);
 
     // Desert palette — warm pastel tones
     private static readonly Color SkyColor       = HexColor("#E8D8C8");  // warm sandy sky
@@ -29,7 +29,7 @@ public class PuzzleGameSetup : EditorWindow
     private static readonly Color GroundColor    = HexColor("#E0C9A0");  // soft sand floor
     private static readonly Color TopBarColor    = HexColor("#C4A882");  // warm brown header
 
-    private const int TopBarHeight = 130;
+    private static readonly int TopBarHeight = SetupConstants.HeaderHeight;
 
     // Animal colors for cards
     private static readonly Color[] AnimalColors = {
@@ -178,7 +178,7 @@ public class PuzzleGameSetup : EditorWindow
         var scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = Ref;
-        scaler.matchWidthOrHeight = 0f;
+        scaler.matchWidthOrHeight = 0.5f;
         canvasGO.AddComponent<GraphicRaycaster>();
         var root = canvasGO.transform;
 

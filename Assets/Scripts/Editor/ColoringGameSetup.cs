@@ -33,18 +33,18 @@ public class ColoringGameSetup : EditorWindow
     private static readonly Color ToolRowBg     = HexColor("#F5EDE4");
 
     // Layout
-    private const int TopBarHeight    = 130;
-    private const int CanvasPad       = 12;
-    private const int RefImageSize    = 320;
-    private const int ColorCircleSize = 54;
-    private const int BrushBtnSize    = 80;
-    private const int StickerSize     = 72;
-    private const int ToolBtnSize     = 60;
-    private const int SectionTitleFontSize = 20;
-    private const int PanelPadH       = 12; // horizontal padding inside right panel
-    private const int ToolRowHeight   = 72;
+    private static readonly int TopBarHeight    = SetupConstants.HeaderHeight;
+    private const int CanvasPad       = 8;
+    private const int RefImageSize    = 260;
+    private const int ColorCircleSize = 90;
+    private const int BrushBtnSize    = 90;
+    private const int StickerSize     = 90;
+    private const int ToolBtnSize     = 112;
+    private const int SectionTitleFontSize = 18;
+    private const int PanelPadH       = 4;
+    private const int ToolRowHeight   = 124;
 
-    private const float LeftRatio = 0.64f;
+    private const float LeftRatio = 0.52f;
 
     public static void RunSetupSilent()
     {
@@ -349,23 +349,26 @@ public class ColoringGameSetup : EditorWindow
         panelGO.transform.SetParent(rightGO.transform, false);
         var panelRT = panelGO.AddComponent<RectTransform>();
         Full(panelRT);
-        panelRT.offsetMin = new Vector2(PanelPadH, 8);
-        panelRT.offsetMax = new Vector2(-PanelPadH, -8);
+        panelRT.offsetMin = new Vector2(PanelPadH, 4);
+        panelRT.offsetMax = new Vector2(-PanelPadH, -4);
         var panelVL = panelGO.AddComponent<VerticalLayoutGroup>();
-        panelVL.spacing = 12;
+        panelVL.spacing = 4;
+        // Top area height: ref image + padding (~30% of panel)
+        int topAreaHeight = RefImageSize + 24;
         panelVL.childAlignment = TextAnchor.UpperCenter;
         panelVL.childForceExpandWidth = true;
         panelVL.childForceExpandHeight = false;
-        panelVL.padding = new RectOffset(0, 0, 0, 0);
+        panelVL.padding = new RectOffset(0, 0, topAreaHeight, 8);
 
-        // ── 1. Reference Image (hidden by default, shown for animal coloring) ──
+        // ── 1. Reference Image (outside layout, anchored top-left of right panel) ──
         var refBgGO = new GameObject("RefBackground");
-        refBgGO.transform.SetParent(panelGO.transform, false);
-        refBgGO.AddComponent<RectTransform>();
-        var refBgLE = refBgGO.AddComponent<LayoutElement>();
-        refBgLE.preferredHeight = RefImageSize + 16;
-        refBgLE.preferredWidth = RefImageSize + 16;
-        refBgLE.flexibleWidth = 0;
+        refBgGO.transform.SetParent(rightGO.transform, false);
+        var refBgRT = refBgGO.AddComponent<RectTransform>();
+        refBgRT.anchorMin = new Vector2(0, 1);
+        refBgRT.anchorMax = new Vector2(0, 1);
+        refBgRT.pivot = new Vector2(0, 1);
+        refBgRT.anchoredPosition = new Vector2(8, -8);
+        refBgRT.sizeDelta = new Vector2(RefImageSize + 16, RefImageSize + 16);
         var refBgImg = refBgGO.AddComponent<Image>();
         refBgImg.sprite = roundedRect; refBgImg.type = Image.Type.Sliced;
         refBgImg.color = new Color(1f, 1f, 1f, 0.95f); refBgImg.raycastTarget = false;
@@ -378,20 +381,27 @@ public class ColoringGameSetup : EditorWindow
         var refImg = refGO.AddComponent<Image>();
         refImg.preserveAspect = true; refImg.raycastTarget = false; refImg.color = Color.white;
 
-        // ── 2. Action Icons Row (no title) ──
-        var toolRowGO = StretchImage(panelGO.transform, "ToolRow", ToolRowBg);
-        toolRowGO.GetComponent<Image>().sprite = roundedRect;
-        toolRowGO.GetComponent<Image>().type = Image.Type.Sliced;
-        var toolRowLE = toolRowGO.AddComponent<LayoutElement>();
-        toolRowLE.preferredHeight = ToolRowHeight;
-        toolRowLE.flexibleWidth = 1;
+        // ── 2. Action Icons (outside layout, to the right of reference image) ──
+        var toolRowGO = new GameObject("ToolRow");
+        toolRowGO.transform.SetParent(rightGO.transform, false);
+        var toolRowRT = toolRowGO.AddComponent<RectTransform>();
+        toolRowRT.anchorMin = new Vector2(0, 1);
+        toolRowRT.anchorMax = new Vector2(1, 1);
+        toolRowRT.pivot = new Vector2(0, 1);
+        // Position: starts after reference image, vertically centered with it
+        float toolRowX = RefImageSize + 32;
+        toolRowRT.anchoredPosition = new Vector2(toolRowX, -8);
+        toolRowRT.sizeDelta = new Vector2(-(toolRowX + 8), ToolRowHeight);
+        var toolRowBgImg = toolRowGO.AddComponent<Image>();
+        toolRowBgImg.sprite = roundedRect; toolRowBgImg.type = Image.Type.Sliced;
+        toolRowBgImg.color = ToolRowBg; toolRowBgImg.raycastTarget = false;
 
         var toolRowLayout = toolRowGO.AddComponent<HorizontalLayoutGroup>();
-        toolRowLayout.spacing = 24;
+        toolRowLayout.spacing = 16;
         toolRowLayout.childAlignment = TextAnchor.MiddleCenter;
         toolRowLayout.childForceExpandWidth = false;
         toolRowLayout.childForceExpandHeight = false;
-        toolRowLayout.padding = new RectOffset(20, 20, 6, 6);
+        toolRowLayout.padding = new RectOffset(8, 8, 4, 4);
 
         var phoneIcon = LoadSprite("Assets/Art/Icons/phone.png");
         var eraserGO = ToolButton(toolRowGO.transform, "EraserButton", phoneIcon, roundedRect);
@@ -418,16 +428,16 @@ public class ColoringGameSetup : EditorWindow
         paletteGO.transform.SetParent(panelGO.transform, false);
         paletteGO.AddComponent<RectTransform>();
         var paletteLE = paletteGO.AddComponent<LayoutElement>();
-        paletteLE.preferredHeight = ColorCircleSize * 2 + 10 + 8;
+        paletteLE.preferredHeight = ColorCircleSize * 2 + 8 + 4;
         paletteLE.flexibleWidth = 1;
 
         var paletteGrid = paletteGO.AddComponent<GridLayoutGroup>();
         paletteGrid.cellSize = new Vector2(ColorCircleSize, ColorCircleSize);
-        paletteGrid.spacing = new Vector2(10, 10);
+        paletteGrid.spacing = new Vector2(8, 8);
         paletteGrid.childAlignment = TextAnchor.MiddleCenter;
         paletteGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        paletteGrid.constraintCount = 6;
-        paletteGrid.padding = new RectOffset(2, 2, 2, 2);
+        paletteGrid.constraintCount = 9;
+        paletteGrid.padding = new RectOffset(0, 0, 0, 0);
 
         // ── 4. מברשות (Brushes) ──
         SectionTitle(panelGO.transform, "\u05DE\u05D1\u05E8\u05E9\u05D5\u05EA");
@@ -444,7 +454,7 @@ public class ColoringGameSetup : EditorWindow
         brushLayout.childAlignment = TextAnchor.MiddleCenter;
         brushLayout.childForceExpandWidth = false;
         brushLayout.childForceExpandHeight = false;
-        brushLayout.padding = new RectOffset(20, 20, 0, 0);
+        brushLayout.padding = new RectOffset(10, 10, 0, 0);
 
         // ── 5. מדבקות (Stickers) — NO scroll, grid fills remaining space ──
         SectionTitle(panelGO.transform, "\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA");
@@ -458,11 +468,11 @@ public class ColoringGameSetup : EditorWindow
 
         var stickerGrid = stickerContentGO.AddComponent<GridLayoutGroup>();
         stickerGrid.cellSize = new Vector2(StickerSize, StickerSize);
-        stickerGrid.spacing = new Vector2(10, 10);
+        stickerGrid.spacing = new Vector2(8, 8);
         stickerGrid.childAlignment = TextAnchor.UpperCenter;
         stickerGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        stickerGrid.constraintCount = 5;
-        stickerGrid.padding = new RectOffset(2, 2, 2, 2);
+        stickerGrid.constraintCount = 9;
+        stickerGrid.padding = new RectOffset(0, 0, 0, 0);
 
         // ═══════════════════════════════════
         //  LOAD ASSETS
@@ -538,7 +548,8 @@ public class ColoringGameSetup : EditorWindow
         var go = new GameObject("SectionTitle");
         go.transform.SetParent(parent, false);
         go.AddComponent<RectTransform>();
-        go.AddComponent<LayoutElement>().preferredHeight = SectionTitleFontSize + 10;
+        var le = go.AddComponent<LayoutElement>();
+        le.preferredHeight = SectionTitleFontSize + 8;
         var tmp = go.AddComponent<TextMeshProUGUI>();
         HebrewText.SetText(tmp, hebrewText);
         tmp.fontSize = SectionTitleFontSize;

@@ -11,13 +11,13 @@ using TMPro;
 /// </summary>
 public class ColorVoiceGameSetup : EditorWindow
 {
-    private static readonly Vector2 Ref = new Vector2(1080, 1920);
+    private static readonly Vector2 Ref = new Vector2(1920, 1080);
 
     private static readonly Color BgColor     = HexColor("#FFF8E1"); // warm cream
     private static readonly Color TopBarColor = HexColor("#FF8A65"); // warm coral
     private static readonly Color DarkText    = HexColor("#4A4A4A");
 
-    private const int TopBarHeight   = 130;
+    private static readonly int TopBarHeight   = SetupConstants.HeaderHeight;
     private const int BottomBarHeight = 120;
 
     public static void RunSetupSilent()
@@ -72,7 +72,7 @@ public class ColorVoiceGameSetup : EditorWindow
         var scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = Ref;
-        scaler.matchWidthOrHeight = 0f;
+        scaler.matchWidthOrHeight = 0.5f;
         canvasGO.AddComponent<GraphicRaycaster>();
 
         // Background

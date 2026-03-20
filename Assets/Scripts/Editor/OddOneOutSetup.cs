@@ -12,10 +12,10 @@ using TMPro;
 public class OddOneOutSetup : EditorWindow
 {
     private static readonly Vector2 Ref = new Vector2(1920, 1080);
-    private const int TopBarHeight = 100;
+    private static readonly int TopBarHeight = SetupConstants.HeaderHeight;
 
-    private static readonly Color BgColor  = HexColor("#F5F0EB");
-    private static readonly Color BarColor = HexColor("#FF7043"); // warm orange
+    private static readonly Color BgColor  = WoodTableBackground.TableBaseColor;
+    private static readonly Color BarColor = WoodTableBackground.HeaderColor;
 
     public static void RunSetupSilent()
     {
@@ -66,8 +66,8 @@ public class OddOneOutSetup : EditorWindow
         canvasGO.AddComponent<GraphicRaycaster>();
         var root = canvasGO.transform;
 
-        // ── Background ──
-        Layer(root, "Background", null, 0, 0, 1, 1, BgColor);
+        // ── Wood Background ──
+        WoodTableBackground.CreateBackground(root);
 
         // ── Safe Area ──
         var safeGO = new GameObject("SafeArea");
@@ -92,7 +92,7 @@ public class OddOneOutSetup : EditorWindow
         HebrewText.SetText(titleTMP, "\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05E9\u05D5\u05E0\u05D4"); // מצא את השונה
         titleTMP.fontSize = 36;
         titleTMP.fontStyle = FontStyles.Bold;
-        titleTMP.color = Color.white;
+        titleTMP.color = WoodTableBackground.TitleTextColor;
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.raycastTarget = false;
 
@@ -107,13 +107,17 @@ public class OddOneOutSetup : EditorWindow
         // ══════════════════════════════════════════
         //  PLAY AREA
         // ══════════════════════════════════════════
+
+        var boardContent = WoodTableBackground.CreateBoardPanel(safeGO.transform, roundedRect,
+            0.01f, 0.01f, 0.99f, 1f - (float)TopBarHeight / Ref.y - 0.01f);
+
         var playGO = new GameObject("PlayArea");
-        playGO.transform.SetParent(safeGO.transform, false);
+        playGO.transform.SetParent(boardContent, false);
         var playRT = playGO.AddComponent<RectTransform>();
         playRT.anchorMin = new Vector2(0, 0);
         playRT.anchorMax = new Vector2(1, 1);
-        playRT.offsetMin = new Vector2(30, 20);
-        playRT.offsetMax = new Vector2(-30, -TopBarHeight);
+        playRT.offsetMin = Vector2.zero;
+        playRT.offsetMax = Vector2.zero;
 
         // ── Row area: single horizontal strip, vertically centered, full width ──
         var rowGO = new GameObject("RowArea");

@@ -10,10 +10,10 @@ using TMPro;
 /// </summary>
 public class DrawingGallerySetup : EditorWindow
 {
-    private static readonly Vector2 Ref = new Vector2(1080, 1920);
+    private static readonly Vector2 Ref = new Vector2(1920, 1080);
     private static readonly Color BgColor = HexColor("#FFF8E8");
     private static readonly Color TopBarColor = HexColor("#F48FB1"); // pink, matches coloring game
-    private const int TopBarHeight = 130;
+    private static readonly int TopBarHeight = SetupConstants.HeaderHeight;
 
     public static void RunSetupSilent()
     {
@@ -62,7 +62,7 @@ public class DrawingGallerySetup : EditorWindow
         var scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = Ref;
-        scaler.matchWidthOrHeight = 0f;
+        scaler.matchWidthOrHeight = 0.5f;
         canvasGO.AddComponent<GraphicRaycaster>();
 
         // Background

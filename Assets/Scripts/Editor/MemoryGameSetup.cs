@@ -28,7 +28,7 @@ public class MemoryGameSetup : EditorWindow
     private static readonly Color CardFrameColor = HexColor("#FFF8F0");     // warm cream white
     private static readonly Color CardShadowColor = new Color(0.25f, 0.15f, 0.08f, 0.4f);
 
-    private const int TopBarHeight = 130;
+    private static readonly int TopBarHeight = SetupConstants.HeaderHeight;
     private const int CardFramePadding = 10;
 
     public static void RunSetupSilent()

@@ -70,6 +70,14 @@ public class NumberMazeController : BaseMiniGame
 
         // Build grid UI
         BuildGrid();
+
+        // Auto-complete the first cell (1) so the child starts tapping from 2
+        int startCI = _board.pathCellIndices[0];
+        _cellViews[startCI].SetCompleted();
+        var startBtn = _cellViews[startCI].GetComponent<Button>();
+        if (startBtn != null) startBtn.interactable = false;
+        _expectedNext = 2;
+
         UpdateProgress();
 
         _lastInteractionTime = Time.time;

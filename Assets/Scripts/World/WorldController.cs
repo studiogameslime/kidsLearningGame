@@ -186,14 +186,10 @@ public class WorldController : MonoBehaviour
         var jp = profile.journey;
 
         // Seed starters if world is visited before first journey
-        if (jp.unlockedAnimalIds.Count == 0 && jp.unlockedGameIds.Count == 0)
+        if (jp.unlockedAnimalIds.Count == 0 && jp.pendingWorldRewards.Count == 0)
         {
             string favAnimal = profile.favoriteAnimalId;
             if (string.IsNullOrEmpty(favAnimal)) favAnimal = "Cat";
-
-            // Unlock starter games (needed for world menu to work)
-            foreach (var id in DiscoveryCatalog.StarterGameIds)
-                if (!jp.unlockedGameIds.Contains(id)) jp.unlockedGameIds.Add(id);
 
             // Determine balloon color from onboarding selection
             string profileColorId = MapProfileColorToId(profile.avatarColorHex);
@@ -468,13 +464,13 @@ public class WorldController : MonoBehaviour
         shadowRT.anchorMax = new Vector2(0.5f, 0.5f);
         shadowRT.pivot = new Vector2(0.5f, 0.5f);
         shadowRT.sizeDelta = new Vector2(shelfSize * 0.75f, shelfSize * 0.18f);
-        shadowRT.anchoredPosition = new Vector2(165.44f, 139f - 5f);
+        shadowRT.anchoredPosition = new Vector2(250f, 134f);
         var shadowImg = shadowGO.AddComponent<Image>();
         if (circleSprite != null) shadowImg.sprite = circleSprite;
         shadowImg.color = new Color(0f, 0f, 0f, 0.12f);
         shadowImg.raycastTarget = false;
 
-        // Game shelf — anchored at center, matching Inspector values
+        // Game shelf — anchored at center, lower on the grass
         var go = new GameObject("GameShelf");
         go.transform.SetParent(grassArea, false);
         var rt = go.AddComponent<RectTransform>();
@@ -482,7 +478,7 @@ public class WorldController : MonoBehaviour
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0f);
         rt.sizeDelta = new Vector2(shelfSize, shelfSize);
-        rt.anchoredPosition = new Vector2(165.44f, 139f);
+        rt.anchoredPosition = new Vector2(250f, 139f);
 
         var img = go.AddComponent<Image>();
         img.sprite = gameShelfSprite;

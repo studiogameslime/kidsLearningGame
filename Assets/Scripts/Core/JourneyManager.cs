@@ -78,12 +78,9 @@ public class JourneyManager : MonoBehaviour
 
         var jp = profile.journey;
 
-        // Seed starters on first journey
-        if (jp.unlockedGameIds.Count == 0)
+        // Seed starter animals/colors on first journey
+        if (jp.discoveryQueue.Count == 0 && jp.unlockedAnimalIds.Count == 0)
         {
-            foreach (var id in DiscoveryCatalog.StarterGameIds)
-                if (!jp.unlockedGameIds.Contains(id)) jp.unlockedGameIds.Add(id);
-
             // Only unlock animal/colors if no pending starter gifts
             // (gifts will unlock them when opened)
             if (jp.pendingWorldRewards.Count == 0)
@@ -98,16 +95,6 @@ public class JourneyManager : MonoBehaviour
             }
 
             jp.gamesUntilNextDiscovery = 1;
-            ProfileManager.Instance.Save();
-        }
-
-        // Purge any game IDs that no longer exist in the database
-        var db = GetGameDb();
-        if (db != null)
-        {
-            var validIds = new System.Collections.Generic.HashSet<string>();
-            foreach (var g in db.games) validIds.Add(g.id);
-            jp.unlockedGameIds.RemoveAll(id => !validIds.Contains(id));
             ProfileManager.Instance.Save();
         }
 
@@ -126,9 +113,15 @@ public class JourneyManager : MonoBehaviour
         {
             string favAnimal = profile.favoriteAnimalId;
             if (string.IsNullOrEmpty(favAnimal)) favAnimal = "Cat";
-            string bestGame = FindGameWithAnimal(favAnimal, jp.unlockedGameIds);
+            var allGameIds = GetAllVisibleGameIds(profile);
+            string bestGame = FindGameWithAnimal(favAnimal, allGameIds);
+            if (bestGame == null && allGameIds.Count > 0)
+                bestGame = allGameIds[Random.Range(0, allGameIds.Count)];
             if (bestGame == null)
-                bestGame = jp.unlockedGameIds[Random.Range(0, jp.unlockedGameIds.Count)];
+            {
+                Debug.LogError("JourneyManager: No visible games.");
+                return;
+            }
             LoadGame(bestGame, favAnimal);
             return;
         }
@@ -227,22 +220,10 @@ public class JourneyManager : MonoBehaviour
         if (profile != null && ActiveDiscovery != null)
         {
             var jp = profile.journey;
-            switch (ActiveDiscovery.type)
+            if (ActiveDiscovery.type == "animal" || ActiveDiscovery.type == "color")
             {
-                case "animal":
-                case "color":
-                    jp.pendingWorldRewards.Add(new DiscoveryEntry
-                        { type = ActiveDiscovery.type, id = ActiveDiscovery.id });
-                    break;
-                case "game":
-                    if (!jp.unlockedGameIds.Contains(ActiveDiscovery.id))
-                        jp.unlockedGameIds.Add(ActiveDiscovery.id);
-                    // Play game name and transition to it
-                    ProfileManager.Instance.Save();
-                    string newGameId = ActiveDiscovery.id;
-                    ActiveDiscovery = null;
-                    StartCoroutine(PlayGameNameAndLoad(newGameId));
-                    return;  // Don't fall through to PickNextGame
+                jp.pendingWorldRewards.Add(new DiscoveryEntry
+                    { type = ActiveDiscovery.type, id = ActiveDiscovery.id });
             }
             ProfileManager.Instance.Save();
         }
@@ -271,67 +252,30 @@ public class JourneyManager : MonoBehaviour
         BubbleTransition.LoadScene(HomeScene);
     }
 
-    private IEnumerator PlayGameNameAndLoad(string gameId)
-    {
-        // Find the GameItemData to get the nameClip
-        var db = GetGameDb();
-        AudioClip nameClip = null;
-        if (db != null)
-        {
-            foreach (var g in db.games)
-            {
-                if (g.id == gameId && g.nameClip != null)
-                {
-                    nameClip = g.nameClip;
-                    break;
-                }
-            }
-        }
-
-        if (nameClip != null)
-        {
-            BackgroundMusicManager.PlayOneShot(nameClip);
-            yield return new WaitForSeconds(nameClip.length + 0.5f);
-        }
-        else
-        {
-            yield return new WaitForSeconds(1f);
-        }
-
-        LoadGame(gameId, null);
-    }
-
     private void PickNextGame()
     {
         var profile = ProfileManager.ActiveProfile;
         if (profile == null) return;
 
         var jp = profile.journey;
-        var unlocked = jp.unlockedGameIds;
+        var allGameIds = GetAllVisibleGameIds(profile);
 
-        if (unlocked.Count == 0)
+        if (allGameIds.Count == 0)
         {
-            Debug.LogError("JourneyManager: No unlocked games.");
+            Debug.LogError("JourneyManager: No visible games.");
             return;
         }
 
-        // Filter out recently played and games not in the database
-        var db = GetGameDb();
-        var validIds = new System.Collections.Generic.HashSet<string>();
-        if (db != null)
-            foreach (var g in db.games)
-                validIds.Add(g.id);
-
+        // Filter out recently played
         var candidates = new List<string>();
-        foreach (var id in unlocked)
+        foreach (var id in allGameIds)
         {
-            if (!validIds.Contains(id)) continue; // skip removed games
-            if (unlocked.Count >= 3 && (id == lastPlayedGameId || id == secondLastPlayedGameId))
+            if (allGameIds.Count >= 3 && (id == lastPlayedGameId || id == secondLastPlayedGameId))
                 continue;
             candidates.Add(id);
         }
         if (candidates.Count == 0)
-            candidates.AddRange(unlocked);
+            candidates.AddRange(allGameIds);
 
         // Weighted random: less-played games get higher weight
         int maxPlayed = 0;
@@ -367,6 +311,19 @@ public class JourneyManager : MonoBehaviour
         lastPlayedGameId = picked;
 
         LoadGame(picked, null);
+    }
+
+    /// <summary>Returns all game IDs visible to the profile (age-filtered from GameDatabase).</summary>
+    private List<string> GetAllVisibleGameIds(UserProfile profile)
+    {
+        var db = GetGameDb();
+        if (db == null) return new List<string>();
+
+        var visible = GameVisibilityService.GetVisibleGames(profile, db.games);
+        var ids = new List<string>();
+        foreach (var g in visible)
+            ids.Add(g.id);
+        return ids;
     }
 
     private string FindGameWithAnimal(string animalId, List<string> gameIds)

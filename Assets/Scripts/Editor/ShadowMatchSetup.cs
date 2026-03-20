@@ -20,7 +20,7 @@ using System.Collections.Generic;
 /// </summary>
 public class ShadowMatchSetup : EditorWindow
 {
-    private static readonly Vector2 Ref = new Vector2(1080, 1920);
+    private static readonly Vector2 Ref = new Vector2(1920, 1080);
 
     // Palette — calm sky, soft pastel ground
     private static readonly Color SkyColor      = HexColor("#D0E4FF");
@@ -29,7 +29,7 @@ public class ShadowMatchSetup : EditorWindow
     private static readonly Color GroundColor   = HexColor("#C8E6B0"); // soft pastel green, different from world
     private static readonly Color TopBarColor   = HexColor("#8BAAC8");
 
-    private const int TopBarHeight = 130;
+    private static readonly int TopBarHeight = SetupConstants.HeaderHeight;
 
     private static readonly Color[] AnimalColors = {
         HexColor("#EF9A9A"), HexColor("#F48FB1"), HexColor("#CE93D8"),
@@ -133,7 +133,7 @@ public class ShadowMatchSetup : EditorWindow
         var scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = Ref;
-        scaler.matchWidthOrHeight = 0f; // match width for portrait
+        scaler.matchWidthOrHeight = 0.5f;
         canvasGO.AddComponent<GraphicRaycaster>();
         var root = canvasGO.transform;
 
@@ -185,7 +185,7 @@ public class ShadowMatchSetup : EditorWindow
         titleRT.offsetMin = new Vector2(100, 0);
         titleRT.offsetMax = new Vector2(-100, 0);
         var tmp = titleGO.AddComponent<TextMeshProUGUI>();
-        HebrewText.SetText(tmp, "\u05D4\u05EA\u05D0\u05DE\u05EA \u05E6\u05DC\u05DC\u05D9\u05DD");
+        HebrewText.SetText(tmp, "\u05D7\u05D9\u05D4 \u05D5\u05E6\u05DC"); // חיה וצל
         tmp.fontSize = 36;
         tmp.fontStyle = FontStyles.Bold;
         tmp.color = Color.white;

@@ -744,6 +744,8 @@ public class FindTheAnimalController : BaseMiniGame
             if (targetsFound >= targetCount)
             {
                 isRoundActive = false;
+                if (hintCoroutine != null) { StopCoroutine(hintCoroutine); hintCoroutine = null; }
+                currentlyHintingIndex = -1;
                 CompleteRound();
             }
         }

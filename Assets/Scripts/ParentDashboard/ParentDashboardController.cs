@@ -742,7 +742,7 @@ public class ParentDashboardController : MonoBehaviour
         MakeStatCell(statsGrid.transform, H(_data.favoriteGameName), "\u05DE\u05E9\u05D7\u05E7 \u05D0\u05D4\u05D5\u05D1"); // משחק אהוב
         MakeStatCell(statsGrid.transform, $"{_data.discoveredAnimals}", "\u05D7\u05D9\u05D5\u05EA \u05E9\u05D2\u05D9\u05DC\u05D4"); // חיות שגילה
         MakeStatCell(statsGrid.transform, $"{_data.discoveredColors}", "\u05E6\u05D1\u05E2\u05D9\u05DD \u05E9\u05D2\u05D9\u05DC\u05D4"); // צבעים שגילה
-        MakeStatCell(statsGrid.transform, $"{_data.totalBubblesPopped}", "\u05D1\u05D5\u05E2\u05D5\u05EA \u05E9\u05E4\u05E7\u05E2\u05D5"); // בועות שפקעו
+        MakeStatCell(statsGrid.transform, $"{_data.totalBubblesPopped}", "\u05D1\u05D5\u05E2\u05D5\u05EA \u05E9\u05E4\u05D5\u05E6\u05E6\u05D5"); // בועות שפוצצו
         MakeStatCell(statsGrid.transform, H(_data.thisWeekPlayTimeDisplay), "\u05D6\u05DE\u05DF \u05DE\u05E9\u05D7\u05E7 \u05D4\u05E9\u05D1\u05D5\u05E2"); // זמן משחק השבוע
         // מעורבות removed
 

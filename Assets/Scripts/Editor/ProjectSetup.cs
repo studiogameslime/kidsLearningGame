@@ -33,7 +33,7 @@ public class ProjectSetup : EditorWindow
     private const int CardHeight = 520;
 
     // Header
-    private const int HeaderHeight = 130;
+    private const int HeaderHeight = SetupConstants.HeaderHeight;
 
     // Colors (warm, kid-friendly pastels)
     private static readonly Color BgColor = HexColor("#F5F0EB");
@@ -868,7 +868,7 @@ public class ProjectSetup : EditorWindow
         var safeArea = CreateSafeArea(canvasGO.transform);
 
         // Header
-        var header = CreateHeader(safeArea.transform, "\u05D1\u05D7\u05E8\u05D5 \u05DE\u05E9\u05D7\u05E7", showBack: false, roundedRect, circleSprite); // בחרו משחק
+        var header = CreateHeader(safeArea.transform, "\u05D1\u05D7\u05E8\u05D5 \u05DE\u05E9\u05D7\u05E7", showBack: true, roundedRect, circleSprite); // בחרו משחק
 
         // Scroll view with grid
         var scrollContent = CreateScrollGrid(safeArea.transform, HeaderHeight);
@@ -924,6 +924,15 @@ public class ProjectSetup : EditorWindow
         controller.profileButtonImage = profileBtnImg;
         controller.profileButtonPhoto = profilePhotoImg;
         controller.profileButtonInitial = profileInitTMP;
+
+        // Wire back button
+        var backButton = header.transform.Find("BackButton")?.GetComponent<Button>();
+        if (backButton != null)
+        {
+            controller.backToWorldButton = backButton;
+            UnityEditor.Events.UnityEventTools.AddPersistentListener(
+                backButton.onClick, controller.OnBackToWorldPressed);
+        }
 
         // Wire profile button
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
@@ -1099,7 +1108,7 @@ public class ProjectSetup : EditorWindow
         var scaler = go.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = ReferenceResolution;
-        scaler.matchWidthOrHeight = 0f; // Match width for portrait
+        scaler.matchWidthOrHeight = 0.5f;
         scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
 
         go.AddComponent<GraphicRaycaster>();

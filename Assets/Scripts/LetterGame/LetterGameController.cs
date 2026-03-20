@@ -123,12 +123,12 @@ public class LetterGameController : BaseMiniGame
             animalImage.sprite = null;
             animalImage.color = Color.white;
             animalImage.gameObject.SetActive(true);
-            // Reset to stretch mode (may have been set to fixed size for color swatches)
+            // Reset to original anchors matching the setup layout (right half: 0.52–0.99, 0.32–0.98)
             var imgRT = animalImage.GetComponent<RectTransform>();
             if (imgRT != null)
             {
-                imgRT.anchorMin = Vector2.zero;
-                imgRT.anchorMax = Vector2.one;
+                imgRT.anchorMin = new Vector2(0.52f, 0.32f);
+                imgRT.anchorMax = new Vector2(0.99f, 0.98f);
                 imgRT.offsetMin = Vector2.zero;
                 imgRT.offsetMax = Vector2.zero;
                 imgRT.sizeDelta = Vector2.zero;

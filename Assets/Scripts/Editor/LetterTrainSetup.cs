@@ -12,7 +12,7 @@ using TMPro;
 public class LetterTrainSetup : EditorWindow
 {
     private static readonly Vector2 Ref = new Vector2(1920, 1080);
-    private const int TopBarHeight = 100;
+    private static readonly int TopBarHeight = SetupConstants.HeaderHeight;
 
     private static readonly Color SkyColor   = HexColor("#8FD4F5");
     private static readonly Color GrassBack = HexColor("#8ED36B");

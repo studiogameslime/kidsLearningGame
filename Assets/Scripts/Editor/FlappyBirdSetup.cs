@@ -15,7 +15,7 @@ using System.Collections.Generic;
 public class FlappyBirdSetup : EditorWindow
 {
     private static readonly Vector2 Ref = new Vector2(1920, 1080);
-    private const int TopBarHeight = 130;
+    private static readonly int TopBarHeight = SetupConstants.HeaderHeight;
     private const string WorldArt = "Assets/Art/World/";
 
     // Colors matching TowerBuilder / World scene palette

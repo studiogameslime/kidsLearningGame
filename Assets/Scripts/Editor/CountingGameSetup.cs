@@ -21,7 +21,7 @@ public class CountingGameSetup : EditorWindow
     private static readonly Color GrassDarkColor = HexColor("#5DAA35");
     private static readonly Color HeaderColor = new Color(0.1f, 0.4f, 0.2f, 0.65f);
 
-    private const int TopBarHeight = 130;
+    private static readonly int TopBarHeight = SetupConstants.HeaderHeight;
 
     private static readonly Color[] AnimalColors = {
         HexColor("#EF9A9A"), HexColor("#F48FB1"), HexColor("#CE93D8"),
@@ -239,7 +239,7 @@ public class CountingGameSetup : EditorWindow
         questionRT.offsetMin = new Vector2(100, 0);
         questionRT.offsetMax = new Vector2(-100, 0);
         var questionTMP = questionGO.AddComponent<TextMeshProUGUI>();
-        HebrewText.SetText(questionTMP, "?\u05DB\u05DE\u05D4 \u05D9\u05E9");
+        HebrewText.SetText(questionTMP, "\u05DB\u05DE\u05D4 \u05D7\u05D9\u05D5\u05EA \u05D9\u05E9?"); // כמה חיות יש?
         questionTMP.fontSize = 36;
         questionTMP.fontStyle = FontStyles.Bold;
         questionTMP.color = Color.white;

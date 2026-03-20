@@ -15,7 +15,7 @@ public class FindTheAnimalSetup : EditorWindow
 {
     private static readonly Vector2 Ref = new Vector2(1920, 1080);
 
-    private const int TopBarHeight = 130;
+    private static readonly int TopBarHeight = SetupConstants.HeaderHeight;
     private const float GroundTop = 0.45f;
     private const float GroundFrontTop = 0.20f;
 

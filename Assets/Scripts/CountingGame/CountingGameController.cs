@@ -261,17 +261,8 @@ public class CountingGameController : BaseMiniGame
     {
         if (questionText == null) return;
 
-        string hebrewAnimal;
-        if (AnimalHebrew.TryGetValue(animalId, out hebrewAnimal))
-        {
-            // "?כמה {animal} יש" → "How many {animal}s are there?"
-            string q = "\u05DB\u05DE\u05D4 " + hebrewAnimal + " \u05D9\u05E9?";
-            HebrewText.SetText(questionText, q);
-        }
-        else
-        {
-            HebrewText.SetText(questionText, "?\u05DB\u05DE\u05D4 \u05D9\u05E9");
-        }
+        // Always show static title: "כמה חיות יש?"
+        HebrewText.SetText(questionText, "\u05DB\u05DE\u05D4 \u05D7\u05D9\u05D5\u05EA \u05D9\u05E9?");
     }
 
     // ── DIFFICULTY ──

@@ -467,12 +467,7 @@ public class QuantityMatchController : BaseMiniGame
         // Bounce correct tile
         StartCoroutine(CelebrateBounce(_tileObjects[correctTile].GetComponent<RectTransform>(), 0f));
 
-        yield return new WaitForSeconds(0.5f);
-
-        // Play animal name
-        SoundLibrary.PlayAnimalName(_tileAnimals[correctTile]);
-
-        yield return new WaitForSeconds(1.0f);
+        yield return new WaitForSeconds(1.5f);
 
         // All game-specific animations done — let base handle stats, confetti, round advance
         CompleteRound();

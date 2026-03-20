@@ -14,6 +14,9 @@ public class MainMenuController : MonoBehaviour
     public Transform cardContainer; // the Content object inside the ScrollRect
     public GameCardView cardPrefab;
 
+    [Header("Navigation")]
+    public Button backToWorldButton;
+
     [Header("Profile Button")]
     public Image profileButtonImage;
     public Image profileButtonPhoto;
@@ -33,6 +36,9 @@ public class MainMenuController : MonoBehaviour
             Debug.LogError("MainMenuController: No GameDatabase assigned!");
             return;
         }
+
+        if (backToWorldButton != null)
+            backToWorldButton.onClick.AddListener(OnBackToWorldPressed);
 
         PopulateGrid();
         UpdateProfileButton();
@@ -126,5 +132,11 @@ public class MainMenuController : MonoBehaviour
     public void OnSwitchProfilePressed()
     {
         NavigationManager.GoToProfileSelection();
+    }
+
+    /// <summary>Called by the back button to return to the World scene.</summary>
+    public void OnBackToWorldPressed()
+    {
+        NavigationManager.GoToWorld();
     }
 }
