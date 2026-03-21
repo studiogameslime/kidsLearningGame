@@ -804,65 +804,69 @@ public class ParentDashboardController : MonoBehaviour
             FitCard(focusCard.transform);
         }
 
-        // ── Section 3: Key Insights ──
-        if (story.insights.Count > 0)
+        // ── Section 3: Grouped Insights ──
+        BuildInsightGroup(parent, "\u05D7\u05D6\u05E7\u05D5\u05EA", story.strengthInsights, StrengthBg, AccentGreen);
+        BuildInsightGroup(parent, "\u05E6\u05E8\u05D9\u05DA \u05EA\u05E8\u05D2\u05D5\u05DC", story.practiceInsights, PracticeBg, AccentOrange);
+        BuildInsightGroup(parent, "\u05D3\u05E4\u05D5\u05E1\u05D9 \u05DE\u05E9\u05D7\u05E7", story.behaviorInsights, InsightBg, Primary);
+
+        // ── Section 4: Confusion + Letters + Difficulty + Metrics ──
+        if (story.confusionPairs.Count > 0)
         {
-            var insightCard = MakeCard(parent);
-            MakeSectionTitle(insightCard, "\u05EA\u05D5\u05D1\u05E0\u05D5\u05EA \u05DE\u05E8\u05DB\u05D6\u05D9\u05D5\u05EA"); // תובנות מרכזיות
-
-            // 2-column grid for insights in landscape
-            foreach (var card in story.insights)
-            {
-                var row = new GameObject("InsightCard");
-                row.transform.SetParent(insightCard, false);
-                var rowImg = row.AddComponent<Image>();
-                rowImg.sprite = roundedRect; rowImg.type = Image.Type.Sliced;
-                rowImg.color = InsightBg; rowImg.raycastTarget = false;
-
-                var rowLayout = row.AddComponent<VerticalLayoutGroup>();
-                rowLayout.spacing = 4;
-                rowLayout.padding = new RectOffset(20, 20, 14, 14);
-                rowLayout.childForceExpandWidth = true;
-                rowLayout.childForceExpandHeight = false;
-                rowLayout.childControlWidth = true;
-                rowLayout.childControlHeight = true;
-
-                var tTMP = AddChildTMP(row.transform, H(card.title), 24, Primary, TextAlignmentOptions.Right);
-                tTMP.fontStyle = FontStyles.Bold;
-                tTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
-
-                var bTMP = AddChildTMP(row.transform, H(card.body), 20, TextDark, TextAlignmentOptions.Right);
-                bTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
-
-                if (!string.IsNullOrEmpty(card.action))
-                {
-                    var aTMP = AddChildTMP(row.transform, H(card.action), 18, AccentGreen, TextAlignmentOptions.Right);
-                    aTMP.fontStyle = FontStyles.Italic;
-                    aTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 26;
-                }
-
-                row.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            }
-
-            FitCard(insightCard);
+            var confCard = MakeCard(parent);
+            MakeSectionTitle(confCard, "\u05DE\u05EA\u05D1\u05DC\u05D1\u05DC \u05DC\u05E2\u05D9\u05EA\u05D9\u05DD \u05D1\u05D9\u05DF");
+            foreach (var pair in story.confusionPairs)
+                AddChildTMP(confCard, $"\u2022 {pair}", 22, TextDark, TextAlignmentOptions.Right)
+                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+            FitCard(confCard);
         }
 
-        // ── Section 4: How the Child Plays ──
-        if (story.howChildPlays.Count > 0)
+        if (!string.IsNullOrEmpty(story.strongLetters) || !string.IsNullOrEmpty(story.weakLetters))
         {
-            var behaviorCard = MakeCard(parent);
-            MakeSectionTitle(behaviorCard, "\u05D0\u05D9\u05DA \u05D4\u05D9\u05DC\u05D3 \u05DE\u05E9\u05D7\u05E7"); // איך הילד משחק
+            var letterCard = MakeCard(parent);
+            MakeSectionTitle(letterCard, "\u05D0\u05D5\u05EA\u05D9\u05D5\u05EA");
+            if (!string.IsNullOrEmpty(story.strongLetters))
+                AddChildTMP(letterCard, $"\u05E9\u05D5\u05DC\u05D8 \u05D1: {story.strongLetters}", 22, AccentGreen, TextAlignmentOptions.Right)
+                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+            if (!string.IsNullOrEmpty(story.weakLetters))
+                AddChildTMP(letterCard, $"\u05E6\u05E8\u05D9\u05DA \u05EA\u05E8\u05D2\u05D5\u05DC: {story.weakLetters}", 22, AccentOrange, TextAlignmentOptions.Right)
+                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+            FitCard(letterCard);
+        }
 
-            foreach (var line in story.howChildPlays)
+        if (story.levelUpGames.Count > 0 || story.easierLevelGames.Count > 0)
+        {
+            var diffCard = MakeCard(parent);
+            MakeSectionTitle(diffCard, "\u05D4\u05DE\u05DC\u05E6\u05EA \u05E8\u05DE\u05EA \u05E7\u05D5\u05E9\u05D9");
+            if (story.levelUpGames.Count > 0)
             {
-                var row = MakeHRow(behaviorCard, 32, TextAnchor.MiddleRight);
-                AddChildTMP(row.transform, "\u2022", 20, TextMedium, TextAlignmentOptions.Center)
-                    .gameObject.AddComponent<LayoutElement>().preferredWidth = 24;
-                var lineTMP = AddChildTMP(row.transform, H(line), 22, TextDark, TextAlignmentOptions.Right);
-                lineTMP.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
+                var upTMP = AddChildTMP(diffCard, "\u05DE\u05D5\u05DB\u05DF \u05DC\u05D4\u05E2\u05DC\u05D5\u05EA \u05E8\u05DE\u05D4:", 20, AccentGreen, TextAlignmentOptions.Right);
+                upTMP.fontStyle = FontStyles.Bold;
+                upTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+                AddChildTMP(diffCard, H(string.Join(", ", story.levelUpGames)), 22, TextDark, TextAlignmentOptions.Right)
+                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
             }
+            if (story.easierLevelGames.Count > 0)
+            {
+                var dnTMP = AddChildTMP(diffCard, "\u05E6\u05E8\u05D9\u05DA \u05E8\u05DE\u05D4 \u05E7\u05DC\u05D4 \u05D9\u05D5\u05EA\u05E8:", 20, AccentOrange, TextAlignmentOptions.Right);
+                dnTMP.fontStyle = FontStyles.Bold;
+                dnTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+                AddChildTMP(diffCard, H(string.Join(", ", story.easierLevelGames)), 22, TextDark, TextAlignmentOptions.Right)
+                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+            }
+            FitCard(diffCard);
+        }
 
-            FitCard(behaviorCard);
+        // Compact metrics block
+        {
+            var metricsCard = MakeCard(parent);
+            bool hasMetrics = false;
+            if (!string.IsNullOrEmpty(story.improvementMetric1)) { AddBulletLine(metricsCard, story.improvementMetric1, AccentGreen); hasMetrics = true; }
+            if (!string.IsNullOrEmpty(story.improvementMetric2)) { AddBulletLine(metricsCard, story.improvementMetric2, AccentGreen); hasMetrics = true; }
+            if (!string.IsNullOrEmpty(story.learningSpeed)) { AddBulletLine(metricsCard, story.learningSpeed, Primary); hasMetrics = true; }
+            foreach (var m in story.masteryLines) { AddBulletLine(metricsCard, m, Primary); hasMetrics = true; }
+            if (!string.IsNullOrEmpty(story.coloringPrecision)) { AddBulletLine(metricsCard, story.coloringPrecision, TextMedium); hasMetrics = true; }
+            if (hasMetrics) FitCard(metricsCard);
+            else Object.DestroyImmediate(metricsCard.gameObject);
         }
 
         // ── Section 5: Strengths vs Practice Areas ──
@@ -2053,6 +2057,32 @@ public class ParentDashboardController : MonoBehaviour
             if (result.isVisible) visibleCount++;
         }
         return visibleCount == 0;
+    }
+
+    // ── Story helpers ──
+
+    private void BuildInsightGroup(Transform parent, string title, List<string> items, Color bg, Color titleColor)
+    {
+        if (items == null || items.Count == 0) return;
+        var card = MakeInlineCard(parent, bg);
+        card.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(20, 20, 14, 14);
+        card.GetComponent<VerticalLayoutGroup>().spacing = 6;
+        var tTMP = AddChildTMP(card.transform, H(title), 24, titleColor, TextAlignmentOptions.Right);
+        tTMP.fontStyle = FontStyles.Bold;
+        tTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
+        foreach (var item in items)
+            AddChildTMP(card.transform, H(item), 20, TextDark, TextAlignmentOptions.Right)
+                .gameObject.AddComponent<LayoutElement>().preferredHeight = 26;
+        FitCard(card.transform);
+    }
+
+    private void AddBulletLine(Transform parent, string text, Color color)
+    {
+        var row = MakeHRow(parent, 30, TextAnchor.MiddleRight);
+        AddChildTMP(row.transform, "\u2022", 20, color, TextAlignmentOptions.Center)
+            .gameObject.AddComponent<LayoutElement>().preferredWidth = 24;
+        AddChildTMP(row.transform, H(text), 22, TextDark, TextAlignmentOptions.Right)
+            .gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
     }
 
     // ═══════════════════════════════════════════════════════════════
