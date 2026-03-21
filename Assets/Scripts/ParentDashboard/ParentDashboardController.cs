@@ -780,8 +780,23 @@ public class ParentDashboardController : MonoBehaviour
         BuildStorySections(parent, story);
     }
 
+    private static readonly Color NeedDataColor = HC("#9E9E9E");
+    private static readonly string NeedDataText = "\u05E6\u05E8\u05D9\u05DA \u05DC\u05E9\u05D7\u05E7 \u05E2\u05D5\u05D3 \u05DB\u05D3\u05D9 \u05DC\u05E8\u05D0\u05D5\u05EA \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD";
+    // צריך לשחק עוד כדי לראות נתונים
+
     private void BuildStorySections(Transform parent, DashboardStoryBuilder.StoryData story)
     {
+        // ── 0. Child Intro (personal) ──
+        if (!string.IsNullOrEmpty(story.childIntro))
+        {
+            var introCard = MakeInlineCard(parent, HexColor("#E8EAF6")); // soft indigo
+            introCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(24, 24, 16, 16);
+            var introTMP = AddChildTMP(introCard.transform, H(story.childIntro), 28, TextDark, TextAlignmentOptions.Right);
+            introTMP.fontStyle = FontStyles.Bold;
+            introTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 40;
+            FitCard(introCard.transform);
+        }
+
         // ── 1. Weekly Summary (Hero) ──
         {
             var heroCard = MakeCard(parent);
@@ -805,11 +820,18 @@ public class ParentDashboardController : MonoBehaviour
         }
 
         // ── Section 3: Grouped Insights ──
-        BuildInsightGroup(parent, "\u05D7\u05D6\u05E7\u05D5\u05EA", story.strengthInsights, StrengthBg, AccentGreen);
-        BuildInsightGroup(parent, "\u05E6\u05E8\u05D9\u05DA \u05EA\u05E8\u05D2\u05D5\u05DC", story.practiceInsights, PracticeBg, AccentOrange);
-        BuildInsightGroup(parent, "\u05D3\u05E4\u05D5\u05E1\u05D9 \u05DE\u05E9\u05D7\u05E7", story.behaviorInsights, InsightBg, Primary);
+        if (story.strengthInsights.Count > 0)
+            BuildInsightGroup(parent, "\u05D7\u05D6\u05E7\u05D5\u05EA", story.strengthInsights, StrengthBg, AccentGreen);
+        else
+            ShowEmptySection(parent, "\u05D7\u05D6\u05E7\u05D5\u05EA", NeedDataText);
 
-        // ── Section 4: Confusion + Letters + Difficulty + Metrics ──
+        if (story.practiceInsights.Count > 0)
+            BuildInsightGroup(parent, "\u05E6\u05E8\u05D9\u05DA \u05EA\u05E8\u05D2\u05D5\u05DC", story.practiceInsights, PracticeBg, AccentOrange);
+
+        if (story.behaviorInsights.Count > 0)
+            BuildInsightGroup(parent, "\u05D3\u05E4\u05D5\u05E1\u05D9 \u05DE\u05E9\u05D7\u05E7", story.behaviorInsights, InsightBg, Primary);
+
+        // ── Section 4: Confusion ──
         if (story.confusionPairs.Count > 0)
         {
             var confCard = MakeCard(parent);
@@ -820,7 +842,12 @@ public class ParentDashboardController : MonoBehaviour
             FitCard(confCard);
         }
 
-        if (!string.IsNullOrEmpty(story.strongLetters) || !string.IsNullOrEmpty(story.weakLetters))
+        // ── Letters ──
+        if (string.IsNullOrEmpty(story.strongLetters) && string.IsNullOrEmpty(story.weakLetters))
+            ShowEmptySection(parent, "\u05D0\u05D5\u05EA\u05D9\u05D5\u05EA",
+                "\u05E6\u05E8\u05D9\u05DA \u05DC\u05E9\u05D7\u05E7 \u05D1\u05DE\u05E9\u05D7\u05E7 \u05D4\u05D0\u05D5\u05EA \u05D4\u05D7\u05E1\u05E8\u05D4 \u05DB\u05D3\u05D9 \u05DC\u05E8\u05D0\u05D5\u05EA \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD");
+            // צריך לשחק במשחק האות החסרה כדי לראות נתונים
+        else if (!string.IsNullOrEmpty(story.strongLetters) || !string.IsNullOrEmpty(story.weakLetters))
         {
             var letterCard = MakeCard(parent);
             MakeSectionTitle(letterCard, "\u05D0\u05D5\u05EA\u05D9\u05D5\u05EA");
@@ -910,7 +937,9 @@ public class ParentDashboardController : MonoBehaviour
         }
 
         // ── Development Overview (text bars) ──
-        if (story.categoryBars != null && story.categoryBars.Count > 0)
+        if (story.categoryBars == null || story.categoryBars.Count == 0)
+            ShowEmptySection(parent, "\u05E1\u05E7\u05D9\u05E8\u05EA \u05D4\u05EA\u05E4\u05EA\u05D7\u05D5\u05EA", NeedDataText);
+        else if (story.categoryBars.Count > 0)
         {
             var barCard = MakeCard(parent);
             MakeSectionTitle(barCard, "\u05E1\u05E7\u05D9\u05E8\u05EA \u05D4\u05EA\u05E4\u05EA\u05D7\u05D5\u05EA"); // סקירת התפתחות
@@ -933,7 +962,11 @@ public class ParentDashboardController : MonoBehaviour
         }
 
         // ── What Improved ──
-        if (story.improvements != null && story.improvements.Count > 0)
+        if (story.improvements == null || story.improvements.Count == 0)
+            ShowEmptySection(parent, "\u05DE\u05D4 \u05D4\u05E9\u05EA\u05E4\u05E8",
+                "\u05E6\u05E8\u05D9\u05DA \u05DC\u05E9\u05D7\u05E7 \u05E2\u05D5\u05D3 \u05DB\u05D3\u05D9 \u05DC\u05D6\u05D4\u05D5\u05EA \u05E9\u05D9\u05E4\u05D5\u05E8\u05D9\u05DD");
+            // צריך לשחק עוד כדי לזהות שיפורים
+        else if (story.improvements.Count > 0)
         {
             var impCard = MakeInlineCard(parent, HexColor("#E8F5E9"));
             impCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(20, 20, 14, 14);
@@ -949,7 +982,11 @@ public class ParentDashboardController : MonoBehaviour
         }
 
         // ── Recommended Games ──
-        if (story.recommendedGames != null && story.recommendedGames.Count > 0)
+        if (story.recommendedGames == null || story.recommendedGames.Count == 0)
+            ShowEmptySection(parent, "\u05DE\u05D4 \u05DC\u05E9\u05D7\u05E7 \u05D4\u05DC\u05D0\u05D4",
+                "\u05E9\u05D7\u05E7\u05D5 \u05E2\u05D5\u05D3 \u05DB\u05D3\u05D9 \u05E9\u05E0\u05D5\u05DB\u05DC \u05DC\u05D4\u05DE\u05DC\u05D9\u05E5");
+            // שחקו עוד כדי שנוכל להמליץ
+        else if (story.recommendedGames.Count > 0)
         {
             var recCard = MakeCard(parent);
             MakeSectionTitle(recCard, "\u05DE\u05D4 \u05DC\u05E9\u05D7\u05E7 \u05D4\u05DC\u05D0\u05D4"); // מה לשחק הלאה
@@ -2124,6 +2161,15 @@ public class ParentDashboardController : MonoBehaviour
     }
 
     // ── Story helpers ──
+
+    private void ShowEmptySection(Transform parent, string title, string detail)
+    {
+        var card = MakeCard(parent);
+        MakeSectionTitle(card, title);
+        AddChildTMP(card, H(detail), 20, NeedDataColor, TextAlignmentOptions.Right)
+            .gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+        FitCard(card);
+    }
 
     private void BuildInsightGroup(Transform parent, string title, List<string> items, Color bg, Color titleColor)
     {

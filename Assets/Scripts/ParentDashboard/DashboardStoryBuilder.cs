@@ -13,9 +13,15 @@ public static class DashboardStoryBuilder
 
     public struct StoryData
     {
+        // Child info
+        public string childIntro;           // personal text about the child
+
         // Hero
         public string weeklySummary;
         public string focusNow;
+
+        // Minimum data flags
+        public bool hasEnoughData;           // true if 2+ sessions
 
         // Grouped insights (max 2-3 per group)
         public List<string> strengthInsights;
@@ -80,14 +86,26 @@ public static class DashboardStoryBuilder
             recommendedGames = new List<string>()
         };
 
+        string name = data != null ? (data.profileName ?? "\u05D4\u05D9\u05DC\u05D3") : "\u05D4\u05D9\u05DC\u05D3";
+        int age = data != null ? data.chronologicalAge : 0;
+
+        // Child intro — always shown
+        string ageText = age > 0 ? $", \u05D1\u05DF {age}" : ""; // , בן X
+        int gamesCount = data != null ? data.gamesPlayedCount : 0;
+        int totalSessions = analytics != null ? analytics.totalSessions : 0;
+        story.childIntro = $"{name}{ageText}. \u05E9\u05D9\u05D7\u05E7 \u05D1{gamesCount} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05E9\u05D5\u05E0\u05D9\u05DD, {totalSessions} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05D1\u05E1\u05DA \u05D4\u05DB\u05DC.";
+        // X, בן Y. שיחק ב-Z משחקים שונים, N משחקים בסך הכל.
+
         if (data == null || analytics == null || analytics.totalSessions < 2)
         {
-            story.weeklySummary = "\u05E2\u05D3\u05D9\u05D9\u05DF \u05DC\u05D5\u05DE\u05D3\u05D9\u05DD \u05D0\u05EA \u05D3\u05E4\u05D5\u05E1\u05D9 \u05D4\u05DE\u05E9\u05D7\u05E7. \u05DB\u05E9\u05D9\u05E9\u05D7\u05E7 \u05E2\u05D5\u05D3 \u05E7\u05E6\u05EA \u05E0\u05D5\u05DB\u05DC \u05DC\u05E1\u05E4\u05E8 \u05D9\u05D5\u05EA\u05E8.";
+            story.hasEnoughData = false;
+            story.weeklySummary = $"{name} \u05E8\u05E7 \u05D4\u05EA\u05D7\u05D9\u05DC \u05DC\u05E9\u05D7\u05E7. \u05DB\u05E9\u05D9\u05E9\u05D7\u05E7 \u05E2\u05D5\u05D3 \u05E7\u05E6\u05EA \u05E0\u05D5\u05DB\u05DC \u05DC\u05E1\u05E4\u05E8 \u05D9\u05D5\u05EA\u05E8!";
+            // X רק התחיל לשחק. כשישחק עוד קצת נוכל לספר יותר!
             story.focusNow = "\u05D4\u05DE\u05E9\u05D9\u05DB\u05D5 \u05DC\u05E9\u05D7\u05E7 \u05D5\u05DC\u05D7\u05E7\u05D5\u05E8!";
             return story;
         }
 
-        string name = data.profileName ?? "\u05D4\u05D9\u05DC\u05D3";
+        story.hasEnoughData = true;
 
         // ── Strengths & Practice Areas ──
         foreach (var cat in data.categories)
