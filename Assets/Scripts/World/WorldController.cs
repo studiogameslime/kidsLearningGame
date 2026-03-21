@@ -20,6 +20,7 @@ public class WorldController : MonoBehaviour
     public Button homeButton;
     public Button gamesButton;
     public Button parentAreaButton;
+    public Button albumButton;
 
     [Header("Environment")]
     public WorldEnvironment environment;
@@ -58,6 +59,7 @@ public class WorldController : MonoBehaviour
         if (homeButton != null) homeButton.onClick.AddListener(OnHomePressed);
         if (gamesButton != null) gamesButton.onClick.AddListener(OnGamesPressed);
         if (parentAreaButton != null) parentAreaButton.onClick.AddListener(OnParentAreaPressed);
+        if (albumButton != null) albumButton.onClick.AddListener(OnAlbumPressed);
 
         // Hide header games button — game shelf in the world replaces it
         if (gamesButton != null)
@@ -831,6 +833,8 @@ public class WorldController : MonoBehaviour
             case "Cyan":   return new Color(0.02f, 0.71f, 0.83f);
             case "Brown":  return new Color(0.47f, 0.33f, 0.28f);
             case "Black":  return new Color(0.12f, 0.12f, 0.12f);
+            case "White":  return new Color(0.95f, 0.95f, 0.95f);
+            case "Grey":   return new Color(0.6f, 0.6f, 0.6f);
             default:       return Color.white;
         }
     }
@@ -848,5 +852,11 @@ public class WorldController : MonoBehaviour
     public void OnParentAreaPressed()
     {
         NavigationManager.GoToParentDashboard();
+    }
+
+    public void OnAlbumPressed()
+    {
+        var album = GetComponentInParent<Canvas>().GetComponent<CollectibleAlbumController>();
+        if (album != null) album.Open();
     }
 }

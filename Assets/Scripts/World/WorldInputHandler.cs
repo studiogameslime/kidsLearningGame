@@ -58,12 +58,13 @@ public class WorldInputHandler : MonoBehaviour
         };
         UnityEngine.EventSystems.EventSystem.current.RaycastAll(pointerData, results);
 
-        // Check if a blocking overlay (tutorial/spotlight) is active.
+        // Check if a blocking overlay (tutorial/spotlight/album/gallery) is active.
         // If so, only allow gift box taps (for spotlight cutout) and block everything else.
         bool overlayBlocking = false;
         foreach (var r in results)
         {
-            if (r.gameObject.name == "SpotlightOverlay")
+            string n = r.gameObject.name;
+            if (n == "SpotlightOverlay" || n == "AlbumOverlay" || n == "Dim" || n == "DimBackground")
             {
                 overlayBlocking = true;
                 break;
@@ -72,7 +73,7 @@ public class WorldInputHandler : MonoBehaviour
 
         if (overlayBlocking)
         {
-            // Only allow gift box tap through the overlay
+            // Only allow gift box tap through the spotlight overlay
             foreach (var r in results)
             {
                 var gift = r.gameObject.GetComponent<GiftBoxController>();

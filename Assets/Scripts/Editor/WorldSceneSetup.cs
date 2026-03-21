@@ -343,6 +343,12 @@ public class WorldSceneSetup : EditorWindow
             new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f),
             new Vector2(-100, 0), new Vector2(90, 90));
 
+        // Album button (top-right, before parent button)
+        var albumIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/star.png");
+        var albumBtn = CreateIconButton(topBar.transform, "AlbumButton", albumIcon,
+            new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f),
+            new Vector2(-100, 0), new Vector2(90, 90));
+
         // Parent dashboard button (top-right, multiplayer icon)
         var parentIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/multiplayer.png");
         var parentDashBtn = CreateIconButton(topBar.transform, "ParentDashboardButton", parentIcon,
@@ -772,6 +778,7 @@ public class WorldSceneSetup : EditorWindow
         controller.grassArea = grassAreaRT;
         controller.homeButton = homeGO.GetComponent<Button>();
         controller.gamesButton = gamesGO.GetComponent<Button>();
+        controller.albumButton = albumBtn.GetComponent<Button>();
         controller.parentAreaButton = parentDashBtn.GetComponent<Button>();
         controller.environment = envComponent;
         controller.cloudSystem = cloudSystemComp;
@@ -784,6 +791,29 @@ public class WorldSceneSetup : EditorWindow
         rewardReveal.circleSprite = circleSprite;
         rewardReveal.gameDatabase = controller.gameDatabase;
         controller.rewardReveal = rewardReveal;
+
+        // ── Collectible Album ──
+        var album = canvasGO.AddComponent<CollectibleAlbumController>();
+        album.circleSprite = circleSprite;
+        album.roundedRect = roundedRectSprite;
+        album.gameDatabase = controller.gameDatabase;
+
+        // Load sticker sprites from sprite sheet
+        var stickerList = new List<Sprite>();
+        var stickerAssets = AssetDatabase.LoadAllAssetsAtPath("Assets/Art/Stickers/Sticker.png");
+        if (stickerAssets != null)
+        {
+            foreach (var asset in stickerAssets)
+                if (asset is Sprite spr) stickerList.Add(spr);
+        }
+        stickerList.Sort((a, b) =>
+        {
+            int na = 0, nb = 0;
+            var pa = a.name.Split('_'); if (pa.Length > 1) int.TryParse(pa[pa.Length - 1], out na);
+            var pb = b.name.Split('_'); if (pb.Length > 1) int.TryParse(pb[pb.Length - 1], out nb);
+            return na.CompareTo(nb);
+        });
+        album.stickerSprites = stickerList.ToArray();
 
         // ── Input Handler ──
         var inputHandler = canvasGO.AddComponent<WorldInputHandler>();

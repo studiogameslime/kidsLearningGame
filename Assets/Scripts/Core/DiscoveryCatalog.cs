@@ -20,7 +20,7 @@ public static class DiscoveryCatalog
 
     private static readonly string[] ColorOrder =
     {
-        "Green", "Orange", "Purple", "Pink", "Cyan", "Brown", "Black"
+        "Green", "Orange", "Purple", "Pink", "Cyan", "Brown", "Black", "White", "Grey"
     };
 
     public static bool HasMore(JourneyProgress jp)
