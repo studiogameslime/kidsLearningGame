@@ -105,15 +105,12 @@ public class ConfettiController : MonoBehaviour
     public void Play()
     {
         if (isPlaying) return;
-        // Register analytics immediately at celebration start
-        GameCompletionBridge.Instance?.OnConfettiPlayed();
         StartCoroutine(PlayConfettiThenNotify(ParticleCount));
     }
 
     public void PlayBig()
     {
         if (isPlaying) return;
-        GameCompletionBridge.Instance?.OnConfettiPlayed();
         // Expand pool if needed for double confetti
         while (pool.Count < ParticleCount * 2)
         {

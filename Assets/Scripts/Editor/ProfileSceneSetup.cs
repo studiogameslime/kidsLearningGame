@@ -735,16 +735,6 @@ public class ProfileSceneSetup : EditorWindow
         // Mask for photo clipping
         colorPreviewGO.AddComponent<Mask>().showMaskGraphic = true;
 
-        // Photo preview (hidden by default, shown when photo is picked)
-        var colorPreviewPhotoGO = new GameObject("Photo");
-        colorPreviewPhotoGO.transform.SetParent(colorPreviewGO.transform, false);
-        var cpPhotoRT = colorPreviewPhotoGO.AddComponent<RectTransform>();
-        StretchFull(cpPhotoRT);
-        var cpPhotoImg = colorPreviewPhotoGO.AddComponent<Image>();
-        cpPhotoImg.preserveAspect = false;
-        cpPhotoImg.raycastTarget = false;
-        colorPreviewPhotoGO.SetActive(false);
-
         // Initial letter
         var colorPreviewInitialGO = new GameObject("Initial");
         colorPreviewInitialGO.transform.SetParent(colorPreviewGO.transform, false);
@@ -776,12 +766,6 @@ public class ProfileSceneSetup : EditorWindow
         cpNameTMP.enableWordWrapping = false;
         cpNameTMP.overflowMode = TextOverflowModes.Ellipsis;
         cpNameTMP.raycastTarget = false;
-
-        // Take Selfie button (below preview, above color grid)
-        var cameraIcon = LoadSprite("Assets/Art/Gallery.png");
-        var pickPhotoBtn = CreateIconLabelButton(stepColor.transform, "PickPhotoButton",
-            cameraIcon, "\u05E6\u05DC\u05DE\u05D5 \u05E1\u05DC\u05E4\u05D9", HexColor("#78909C"), // צלמו סלפי
-            new Vector2(0.30f, 0.72f), new Vector2(0.70f, 0.84f), roundedRect);
 
         // Color grid (right side in landscape)
         var colorGridGO = new GameObject("ColorGrid");
@@ -841,19 +825,6 @@ public class ProfileSceneSetup : EditorWindow
         doneAvatarImg.sprite = circle;
         doneAvatarImg.color = AccentColor;
 
-        // Mask for photo clipping
-        doneAvatarGO.AddComponent<Mask>().showMaskGraphic = true;
-
-        // Done avatar photo (hidden by default)
-        var doneAvatarPhotoGO = new GameObject("Photo");
-        doneAvatarPhotoGO.transform.SetParent(doneAvatarGO.transform, false);
-        var donePhotoRT = doneAvatarPhotoGO.AddComponent<RectTransform>();
-        StretchFull(donePhotoRT);
-        var donePhotoImg = doneAvatarPhotoGO.AddComponent<Image>();
-        donePhotoImg.preserveAspect = true;
-        donePhotoImg.raycastTarget = false;
-        doneAvatarPhotoGO.SetActive(false);
-
         var doneInitialGO = new GameObject("DoneInitial");
         doneInitialGO.transform.SetParent(doneAvatarGO.transform, false);
         var doneInitRT = doneInitialGO.AddComponent<RectTransform>();
@@ -885,63 +856,6 @@ public class ProfileSceneSetup : EditorWindow
         var doneBtn = CreateBigButton(stepDone.transform, "DoneButton",
             "\u05D9\u05D0\u05DC\u05DC\u05D4 \u05DC\u05E9\u05D7\u05E7!", AccentColor, // !יאללה לשחק
             new Vector2(0.20f, 0.05f), new Vector2(0.80f, 0.22f), roundedRect);
-
-        // ── Webcam Panel (Desktop camera preview overlay) ──
-        var webcamPanelGO = new GameObject("WebcamPanel");
-        webcamPanelGO.transform.SetParent(canvasGO.transform, false);
-        var webcamPanelRT = webcamPanelGO.AddComponent<RectTransform>();
-        StretchFull(webcamPanelRT);
-
-        // Dark overlay background
-        var webcamBgImg = webcamPanelGO.AddComponent<Image>();
-        webcamBgImg.color = new Color(0, 0, 0, 0.85f);
-        webcamBgImg.raycastTarget = true;
-
-        // Webcam preview (centered square)
-        var webcamPreviewGO = new GameObject("WebcamPreview");
-        webcamPreviewGO.transform.SetParent(webcamPanelGO.transform, false);
-        var webcamPreviewRT = webcamPreviewGO.AddComponent<RectTransform>();
-        webcamPreviewRT.anchorMin = new Vector2(0.5f, 0.5f);
-        webcamPreviewRT.anchorMax = new Vector2(0.5f, 0.5f);
-        webcamPreviewRT.sizeDelta = new Vector2(500, 500);
-        webcamPreviewRT.anchoredPosition = new Vector2(0, 60);
-        var webcamRawImage = webcamPreviewGO.AddComponent<RawImage>();
-        webcamRawImage.color = Color.white;
-
-        // Round mask on preview
-        var webcamMaskGO = new GameObject("WebcamMask");
-        webcamMaskGO.transform.SetParent(webcamPanelGO.transform, false);
-        var webcamMaskRT = webcamMaskGO.AddComponent<RectTransform>();
-        webcamMaskRT.anchorMin = webcamPreviewRT.anchorMin;
-        webcamMaskRT.anchorMax = webcamPreviewRT.anchorMax;
-        webcamMaskRT.sizeDelta = webcamPreviewRT.sizeDelta;
-        webcamMaskRT.anchoredPosition = webcamPreviewRT.anchoredPosition;
-        var webcamMaskImg = webcamMaskGO.AddComponent<Image>();
-        webcamMaskImg.sprite = circle;
-        webcamMaskImg.color = Color.white;
-        webcamMaskImg.raycastTarget = false;
-        webcamMaskGO.AddComponent<Mask>().showMaskGraphic = false;
-
-        // Re-parent preview inside mask
-        webcamPreviewGO.transform.SetParent(webcamMaskGO.transform, false);
-        webcamPreviewRT.anchorMin = Vector2.zero;
-        webcamPreviewRT.anchorMax = Vector2.one;
-        webcamPreviewRT.offsetMin = Vector2.zero;
-        webcamPreviewRT.offsetMax = Vector2.zero;
-        webcamPreviewRT.anchoredPosition = Vector2.zero;
-        webcamPreviewRT.sizeDelta = Vector2.zero;
-
-        // Capture button
-        var webcamCaptureBtn = CreateBigButton(webcamPanelGO.transform, "CaptureButton",
-            "\u05E6\u05DC\u05DE\u05D5!", AccentColor, // !צלמו
-            new Vector2(0.20f, 0.08f), new Vector2(0.80f, 0.18f), roundedRect);
-
-        // Cancel button
-        var webcamCancelBtn = CreateBigButton(webcamPanelGO.transform, "CancelButton",
-            "\u05D1\u05D9\u05D8\u05D5\u05DC", HexColor("#EF5350"), // ביטול
-            new Vector2(0.30f, 0.02f), new Vector2(0.70f, 0.08f), roundedRect);
-
-        webcamPanelGO.SetActive(false);
 
         // ── Alin Guide (talking character, bottom-right of safe area) ──
         var alinPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/UI/AlinGuide.prefab");
@@ -1003,25 +917,16 @@ public class ProfileSceneSetup : EditorWindow
 
         controller.colorButtons = colorButtons;
         controller.colorPreview = colorPreviewImg;
-        controller.colorPreviewPhoto = cpPhotoImg;
         controller.colorPreviewInitial = cpInitTMP;
         controller.colorPreviewName = cpNameTMP;
         controller.colorNextButton = colorNextBtn.GetComponent<Button>();
-        controller.pickPhotoButton = pickPhotoBtn.GetComponent<Button>();
 
         controller.doneNameText = doneNameTMP;
         controller.doneAvatar = doneAvatarImg;
-        controller.doneAvatarPhoto = donePhotoImg;
         controller.doneInitial = doneInitTMP;
         controller.doneButton = doneBtn.GetComponent<Button>();
 
         controller.backButton = backBtnGO.GetComponent<Button>();
-
-        // Webcam (desktop)
-        controller.webcamPanel = webcamPanelGO;
-        controller.webcamPreview = webcamRawImage;
-        controller.webcamCaptureButton = webcamCaptureBtn.GetComponent<Button>();
-        controller.webcamCancelButton = webcamCancelBtn.GetComponent<Button>();
 
         // Alin guide
         if (alinGO != null)

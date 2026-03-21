@@ -769,6 +769,12 @@ public class ParentDashboardController : MonoBehaviour
 
         FitCard(statsCard);
 
+        // ── Play Distribution Pie Chart ──
+        BuildPlayDistributionChart(parent);
+
+        // ── Play Time Distribution Pie Chart ──
+        BuildPlayTimeDistributionChart(parent);
+
         // ═══════════════════════════════════════════════════════════
         //  STORY-DRIVEN SECTIONS (below statistics)
         // ═══════════════════════════════════════════════════════════
@@ -778,6 +784,282 @@ public class ParentDashboardController : MonoBehaviour
 
         // ── Story sections ──
         BuildStorySections(parent, story);
+    }
+
+    // ── Pie chart colors (warm, kid-friendly palette) ──
+    private static readonly Color[] PieColors = {
+        HexColor("#3498DB"), HexColor("#E74C3C"), HexColor("#2ECC71"), HexColor("#F39C12"),
+        HexColor("#9B59B6"), HexColor("#1ABC9C"), HexColor("#E67E22"), HexColor("#34495E"),
+        HexColor("#E91E63"), HexColor("#00BCD4"), HexColor("#8BC34A"), HexColor("#FF5722"),
+        HexColor("#607D8B"), HexColor("#795548"), HexColor("#CDDC39"), HexColor("#FF9800"),
+    };
+
+    private void BuildPlayDistributionChart(Transform parent)
+    {
+        if (_data == null || _data.games == null) return;
+
+        // Collect games with sessions > 0, sorted by sessions descending
+        var played = new List<GameDashboardData>();
+        int totalSessions = 0;
+        foreach (var g in _data.games)
+        {
+            if (g.sessionsPlayed > 0)
+            {
+                played.Add(g);
+                totalSessions += g.sessionsPlayed;
+            }
+        }
+        if (played.Count == 0 || totalSessions == 0) return;
+
+        played.Sort((a, b) => b.sessionsPlayed.CompareTo(a.sessionsPlayed));
+
+        var card = MakeCard(parent);
+        MakeSectionTitle(card, "\u05D7\u05DC\u05D5\u05E7\u05EA \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD"); // חלוקת משחקים
+
+        var row = MakeHRow(card, 0, TextAnchor.MiddleCenter);
+        row.GetComponent<HorizontalLayoutGroup>().spacing = 24;
+        row.AddComponent<LayoutElement>().preferredHeight = 240;
+
+        // ── Pie chart (left side) ──
+        var pieContainer = new GameObject("PieContainer");
+        pieContainer.transform.SetParent(row.transform, false);
+        var pieContRT = pieContainer.GetComponent<RectTransform>();
+        if (pieContRT == null) pieContRT = pieContainer.AddComponent<RectTransform>();
+        pieContRT.sizeDelta = new Vector2(220, 220);
+        var pieContLE = pieContainer.AddComponent<LayoutElement>();
+        pieContLE.preferredWidth = 220;
+        pieContLE.preferredHeight = 220;
+
+        // Build slices as filled circle images (back to front, largest first)
+        // Each slice fills from 12 o'clock clockwise with cumulative fillAmount
+        float cumulativeFill = 0f;
+        // Draw in reverse order so the first (largest) slice is on top visually
+        for (int i = played.Count - 1; i >= 0; i--)
+        {
+            // Calculate this slice's cumulative end
+            float sliceEnd = 0f;
+            for (int j = 0; j <= i; j++)
+                sliceEnd += (float)played[j].sessionsPlayed / totalSessions;
+
+            var sliceGO = new GameObject($"Slice_{i}");
+            sliceGO.transform.SetParent(pieContainer.transform, false);
+            var sliceRT = sliceGO.AddComponent<RectTransform>();
+            sliceRT.anchorMin = Vector2.zero;
+            sliceRT.anchorMax = Vector2.one;
+            sliceRT.offsetMin = Vector2.zero;
+            sliceRT.offsetMax = Vector2.zero;
+
+            var sliceImg = sliceGO.AddComponent<Image>();
+            sliceImg.sprite = circleSprite;
+            sliceImg.type = Image.Type.Filled;
+            sliceImg.fillMethod = Image.FillMethod.Radial360;
+            sliceImg.fillOrigin = (int)Image.Origin360.Top;
+            sliceImg.fillClockwise = true;
+            sliceImg.fillAmount = sliceEnd;
+            sliceImg.color = PieColors[i % PieColors.Length];
+            sliceImg.raycastTarget = false;
+        }
+
+        // ── Legend (right side) ──
+        var legend = MakeVCol(row.transform);
+        legend.AddComponent<LayoutElement>().flexibleWidth = 1;
+        legend.GetComponent<VerticalLayoutGroup>().spacing = 6;
+        legend.GetComponent<VerticalLayoutGroup>().childAlignment = TextAnchor.UpperRight;
+
+        int maxLegendItems = played.Count < 8 ? played.Count : 8;
+        for (int i = 0; i < maxLegendItems; i++)
+        {
+            var g = played[i];
+            float pct = (float)g.sessionsPlayed / totalSessions * 100f;
+            Color sliceColor = PieColors[i % PieColors.Length];
+
+            var legendRow = MakeHRow(legend.transform, 26, TextAnchor.MiddleRight);
+            legendRow.GetComponent<HorizontalLayoutGroup>().spacing = 6;
+
+            // Percentage + count
+            var pctTMP = AddChildTMP(legendRow.transform, $"({g.sessionsPlayed}) %{pct:F0}",
+                20, TextMedium, TextAlignmentOptions.Left);
+            pctTMP.gameObject.AddComponent<LayoutElement>().preferredWidth = 100;
+
+            // Game name
+            var nameTMP = AddChildTMP(legendRow.transform, H(g.gameName),
+                20, TextDark, TextAlignmentOptions.Right);
+            nameTMP.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+            // Color dot
+            var dotGO = new GameObject("Dot");
+            dotGO.transform.SetParent(legendRow.transform, false);
+            var dotImg = dotGO.AddComponent<Image>();
+            dotImg.sprite = circleSprite;
+            dotImg.color = sliceColor;
+            dotImg.raycastTarget = false;
+            var dotLE = dotGO.AddComponent<LayoutElement>();
+            dotLE.preferredWidth = 16;
+            dotLE.preferredHeight = 16;
+        }
+
+        // Show "others" if more than 8
+        if (played.Count > 8)
+        {
+            int otherSessions = 0;
+            for (int i = 8; i < played.Count; i++)
+                otherSessions += played[i].sessionsPlayed;
+            float otherPct = (float)otherSessions / totalSessions * 100f;
+
+            var otherRow = MakeHRow(legend.transform, 26, TextAnchor.MiddleRight);
+            otherRow.GetComponent<HorizontalLayoutGroup>().spacing = 6;
+            AddChildTMP(otherRow.transform, $"%{otherPct:F0}",
+                20, TextMedium, TextAlignmentOptions.Left)
+                .gameObject.AddComponent<LayoutElement>().preferredWidth = 52;
+            AddChildTMP(otherRow.transform, H("\u05D0\u05D7\u05E8\u05D9\u05DD"), // אחרים
+                20, TextLight, TextAlignmentOptions.Right)
+                .gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+            var dotGO2 = new GameObject("Dot");
+            dotGO2.transform.SetParent(otherRow.transform, false);
+            var dotImg2 = dotGO2.AddComponent<Image>();
+            dotImg2.sprite = circleSprite;
+            dotImg2.color = HexColor("#BDBDBD");
+            dotImg2.raycastTarget = false;
+            var dotLE2 = dotGO2.AddComponent<LayoutElement>();
+            dotLE2.preferredWidth = 16;
+            dotLE2.preferredHeight = 16;
+        }
+
+        FitCard(card);
+    }
+
+    private void BuildPlayTimeDistributionChart(Transform parent)
+    {
+        if (_data == null || _data.games == null) return;
+
+        var played = new List<GameDashboardData>();
+        float totalTime = 0f;
+        foreach (var g in _data.games)
+        {
+            if (g.totalPlayTime > 0f)
+            {
+                played.Add(g);
+                totalTime += g.totalPlayTime;
+            }
+        }
+        if (played.Count == 0 || totalTime <= 0f) return;
+
+        played.Sort((a, b) => b.totalPlayTime.CompareTo(a.totalPlayTime));
+
+        var card = MakeCard(parent);
+        MakeSectionTitle(card, "\u05D6\u05DE\u05DF \u05DE\u05E9\u05D7\u05E7 \u05DC\u05E4\u05D9 \u05DE\u05E9\u05D7\u05E7"); // זמן משחק לפי משחק
+
+        var row = MakeHRow(card, 0, TextAnchor.MiddleCenter);
+        row.GetComponent<HorizontalLayoutGroup>().spacing = 24;
+        row.AddComponent<LayoutElement>().preferredHeight = 240;
+
+        // Pie chart
+        var pieContainer = new GameObject("TimePieContainer");
+        pieContainer.transform.SetParent(row.transform, false);
+        var pieContRT = pieContainer.GetComponent<RectTransform>();
+        if (pieContRT == null) pieContRT = pieContainer.AddComponent<RectTransform>();
+        pieContRT.sizeDelta = new Vector2(220, 220);
+        var pieContLE = pieContainer.AddComponent<LayoutElement>();
+        pieContLE.preferredWidth = 220;
+        pieContLE.preferredHeight = 220;
+
+        int maxSlices = played.Count < 8 ? played.Count : 8;
+        float otherTime = 0f;
+        for (int i = 8; i < played.Count; i++)
+            otherTime += played[i].totalPlayTime;
+        float chartTotal = totalTime; // includes all
+
+        // Draw slices (reverse order so largest on top)
+        int sliceCount = maxSlices + (otherTime > 0f ? 1 : 0);
+        for (int i = sliceCount - 1; i >= 0; i--)
+        {
+            float sliceEnd = 0f;
+            for (int j = 0; j <= i; j++)
+            {
+                if (j < maxSlices)
+                    sliceEnd += played[j].totalPlayTime / chartTotal;
+                else
+                    sliceEnd += otherTime / chartTotal;
+            }
+
+            var sliceGO = new GameObject($"TimeSlice_{i}");
+            sliceGO.transform.SetParent(pieContainer.transform, false);
+            var sliceRT = sliceGO.AddComponent<RectTransform>();
+            sliceRT.anchorMin = Vector2.zero;
+            sliceRT.anchorMax = Vector2.one;
+            sliceRT.offsetMin = Vector2.zero;
+            sliceRT.offsetMax = Vector2.zero;
+
+            var sliceImg = sliceGO.AddComponent<Image>();
+            sliceImg.sprite = circleSprite;
+            sliceImg.type = Image.Type.Filled;
+            sliceImg.fillMethod = Image.FillMethod.Radial360;
+            sliceImg.fillOrigin = (int)Image.Origin360.Top;
+            sliceImg.fillClockwise = true;
+            sliceImg.fillAmount = sliceEnd;
+            sliceImg.color = (i < maxSlices) ? PieColors[i % PieColors.Length] : HexColor("#BDBDBD");
+            sliceImg.raycastTarget = false;
+        }
+
+        // Legend
+        var legend = MakeVCol(row.transform);
+        legend.AddComponent<LayoutElement>().flexibleWidth = 1;
+        legend.GetComponent<VerticalLayoutGroup>().spacing = 6;
+        legend.GetComponent<VerticalLayoutGroup>().childAlignment = TextAnchor.UpperRight;
+
+        for (int i = 0; i < maxSlices; i++)
+        {
+            var g = played[i];
+            float pct = g.totalPlayTime / totalTime * 100f;
+            string timeStr = ParentDashboardViewModel.FormatPlayTime(g.totalPlayTime);
+
+            var legendRow = MakeHRow(legend.transform, 26, TextAnchor.MiddleRight);
+            legendRow.GetComponent<HorizontalLayoutGroup>().spacing = 6;
+
+            var timeTMP = AddChildTMP(legendRow.transform, timeStr,
+                18, TextMedium, TextAlignmentOptions.Left);
+            timeTMP.gameObject.AddComponent<LayoutElement>().preferredWidth = 120;
+
+            var nameTMP = AddChildTMP(legendRow.transform, H(g.gameName),
+                20, TextDark, TextAlignmentOptions.Right);
+            nameTMP.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+            var dotGO = new GameObject("Dot");
+            dotGO.transform.SetParent(legendRow.transform, false);
+            var dotImg = dotGO.AddComponent<Image>();
+            dotImg.sprite = circleSprite;
+            dotImg.color = PieColors[i % PieColors.Length];
+            dotImg.raycastTarget = false;
+            var dotLE = dotGO.AddComponent<LayoutElement>();
+            dotLE.preferredWidth = 16;
+            dotLE.preferredHeight = 16;
+        }
+
+        if (otherTime > 0f)
+        {
+            string otherTimeStr = ParentDashboardViewModel.FormatPlayTime(otherTime);
+            var otherRow = MakeHRow(legend.transform, 26, TextAnchor.MiddleRight);
+            otherRow.GetComponent<HorizontalLayoutGroup>().spacing = 6;
+            AddChildTMP(otherRow.transform, otherTimeStr,
+                18, TextMedium, TextAlignmentOptions.Left)
+                .gameObject.AddComponent<LayoutElement>().preferredWidth = 120;
+            AddChildTMP(otherRow.transform, H("\u05D0\u05D7\u05E8\u05D9\u05DD"), // אחרים
+                20, TextLight, TextAlignmentOptions.Right)
+                .gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+            var dotGO2 = new GameObject("Dot");
+            dotGO2.transform.SetParent(otherRow.transform, false);
+            var dotImg2 = dotGO2.AddComponent<Image>();
+            dotImg2.sprite = circleSprite;
+            dotImg2.color = HexColor("#BDBDBD");
+            dotImg2.raycastTarget = false;
+            var dotLE2 = dotGO2.AddComponent<LayoutElement>();
+            dotLE2.preferredWidth = 16;
+            dotLE2.preferredHeight = 16;
+        }
+
+        FitCard(card);
     }
 
     private static readonly Color NeedDataColor = HexColor("#9E9E9E");

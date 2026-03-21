@@ -195,6 +195,9 @@ public abstract class BaseMiniGame : MonoBehaviour
         OnBeforeComplete();
         Stats?.RecordRoundComplete();
 
+        // Register this round's session immediately (every round = 1 session)
+        Stats?.Finalize(completed: true);
+
         bool isFinalRound = !isEndless && (CurrentRound + 1 >= totalRounds);
         bool shouldPlayConfetti = isFinalRound ? playConfettiOnSessionWin : playConfettiOnRoundWin;
 
@@ -205,7 +208,7 @@ public abstract class BaseMiniGame : MonoBehaviour
         // Game-specific post-completion visuals
         yield return StartCoroutine(OnAfterComplete());
 
-        // Confetti (triggers GameCompletionBridge.OnConfettiPlayed → analytics)
+        // Confetti (visual celebration only — analytics already registered above)
         if (shouldPlayConfetti && ConfettiController.Instance != null)
             ConfettiController.Instance.Play();
 

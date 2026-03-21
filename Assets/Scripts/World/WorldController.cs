@@ -66,11 +66,27 @@ public class WorldController : MonoBehaviour
         BuildAnimalSpriteLookup();
         UpdateProfileAvatar();
         BuildWorld();
-        StartCoroutine(PlayWorldIntro());
+        StartCoroutine(PlayWorldIntroThenGifts());
+    }
 
-        // Check for pending gift box reward
-        if (rewardReveal != null)
-            rewardReveal.CheckForPendingReward();
+    private GameObject _spotlightOverlay;
+    private RawImage _spotlightImage;
+    private RectTransform _overlayRT;
+    private Texture2D _cutoutTexture;
+    private Transform _alinOriginalParent;
+    private int _alinOriginalSiblingIndex;
+
+    private IEnumerator PlayWorldIntroThenGifts()
+    {
+        yield return StartCoroutine(PlayWorldIntro());
+
+        // For returning visits (not first time), show gifts immediately
+        var profile = ProfileManager.ActiveProfile;
+        if (profile != null && profile.journey.hasPlayedWorldIntroSound)
+        {
+            if (rewardReveal != null)
+                rewardReveal.CheckForPendingReward();
+        }
     }
 
     private IEnumerator PlayWorldIntro()
@@ -82,7 +98,12 @@ public class WorldController : MonoBehaviour
 
         var alin = AlinGuide.Instance;
 
-        // "This is your world"
+        // Block all input during intro
+        EnsureSpotlightOverlay();
+        ShowOverlayDark();
+        LiftAlinAboveOverlay();
+
+        // ── Step 1: "This is your world" ──
         var introClip = SoundLibrary.WorldIntro();
         if (introClip != null)
         {
@@ -96,7 +117,7 @@ public class WorldController : MonoBehaviour
             yield return new WaitForSeconds(1f);
         }
 
-        // "Here all your discovered animals and colors"
+        // ── Step 2: "Here all your discovered animals and colors" ──
         var followUp = SoundLibrary.WorldAnimalsAndColors();
         if (followUp != null)
         {
@@ -106,12 +127,329 @@ public class WorldController : MonoBehaviour
             if (alin != null) alin.StopTalking();
         }
 
+        yield return new WaitForSeconds(0.3f);
+
+        // ── Step 3: Highlight Game Shelf — "Here all the games" ──
+        var shelf = FindObjectOfType<WorldGameShelf>();
+        yield return StartCoroutine(LiftObjectStep(
+            shelf != null ? shelf.gameObject : null,
+            SoundLibrary.WorldAllGames()));
+
+        // ── Step 4: Highlight ToyBox — "Here is your journey" ──
+        var toyBox = FindObjectOfType<WorldToyBox>();
+        yield return StartCoroutine(LiftObjectStep(
+            toyBox != null ? toyBox.gameObject : null,
+            SoundLibrary.WorldJourney()));
+
+        // ── Step 5: Highlight Easel — "Here your paintings" ──
+        var easel = FindObjectOfType<WorldEasel>();
+        yield return StartCoroutine(LiftObjectStep(
+            easel != null ? easel.gameObject : null,
+            SoundLibrary.WorldGallery()));
+
+        // ── Step 6: "Let's open your first gift!" ──
+        yield return StartCoroutine(DarkOverlayStep(SoundLibrary.WorldOpenFirstGift()));
+
+        // Spawn first gift, then spotlight it — only the gift is tappable
+        if (rewardReveal != null)
+        {
+            rewardReveal.CheckForPendingReward();
+            yield return new WaitForSeconds(1.0f);
+
+            var gift1 = FindObjectOfType<GiftBoxController>();
+            if (gift1 != null)
+            {
+                ShowSpotlightOnTarget(gift1.GetComponent<RectTransform>(), 180f);
+                while (FindObjectOfType<GiftBoxController>() != null)
+                    yield return null;
+            }
+            // Stay dark while reveal animation plays
+            ShowOverlayDark();
+        }
+
+        // Wait for reveal animation
+        yield return new WaitForSeconds(2.5f);
+
+        // ── Step 7: "You have another gift!" ──
+        // Overlay stays active — DarkOverlayStep won't hide it at the end
+        yield return StartCoroutine(DarkOverlayStepKeepActive(SoundLibrary.WorldAnotherGift()));
+
+        // Second gift is already spawned by RewardRevealController — spotlight it
+        yield return new WaitForSeconds(0.5f);
+        var gift2 = FindObjectOfType<GiftBoxController>();
+        if (gift2 != null)
+        {
+            ShowSpotlightOnTarget(gift2.GetComponent<RectTransform>(), 180f);
+            while (FindObjectOfType<GiftBoxController>() != null)
+                yield return null;
+        }
+
+        // Clean up
+        RestoreAlin();
+        if (_spotlightOverlay != null)
+            Destroy(_spotlightOverlay);
+        if (_cutoutTexture != null)
+            Destroy(_cutoutTexture);
+
         // Mark as played and save
         if (profile != null)
         {
             profile.journey.hasPlayedWorldIntroSound = true;
             ProfileManager.Instance.Save();
         }
+    }
+
+    /// <summary>Dark overlay + Alin talks. No cutout. Overlay stays active after.</summary>
+    private IEnumerator DarkOverlayStep(AudioClip clip)
+    {
+        yield return StartCoroutine(DarkOverlayStepKeepActive(clip));
+    }
+
+    /// <summary>Dark overlay + Alin talks. Overlay stays active (no hide).</summary>
+    private IEnumerator DarkOverlayStepKeepActive(AudioClip clip)
+    {
+        var alin = AlinGuide.Instance;
+        EnsureSpotlightOverlay();
+        ShowOverlayDark();
+
+        if (clip != null)
+        {
+            if (alin != null) alin.PlayTalking();
+            BackgroundMusicManager.PlayOneShot(clip);
+            yield return new WaitForSeconds(clip.length + 0.5f);
+            if (alin != null) alin.StopTalking();
+        }
+        else
+        {
+            yield return new WaitForSeconds(1.5f);
+        }
+
+        yield return new WaitForSeconds(0.2f);
+    }
+
+    /// <summary>
+    /// Lift an object above the overlay (fully visible), play a clip, then restore it.
+    /// Dark overlay stays active throughout.
+    /// </summary>
+    private IEnumerator LiftObjectStep(GameObject obj, AudioClip clip)
+    {
+        var alin = AlinGuide.Instance;
+        ShowOverlayDark();
+
+        Transform origParent = null;
+        int origSibling = 0;
+
+        Graphic objGraphic = null;
+        if (obj != null && _spotlightOverlay != null)
+        {
+            origParent = obj.transform.parent;
+            origSibling = obj.transform.GetSiblingIndex();
+            // Place above overlay but below Alin (Alin is last sibling)
+            obj.transform.SetParent(_spotlightOverlay.transform.parent, true);
+            int alinIdx = (alin != null) ? alin.transform.GetSiblingIndex() : -1;
+            if (alinIdx >= 0)
+                obj.transform.SetSiblingIndex(alinIdx); // just before Alin
+            else
+                obj.transform.SetAsLastSibling();
+
+            // Disable interaction — display only
+            objGraphic = obj.GetComponent<Graphic>();
+            if (objGraphic != null) objGraphic.raycastTarget = false;
+        }
+
+        if (clip != null)
+        {
+            if (alin != null) alin.PlayTalking();
+            BackgroundMusicManager.PlayOneShot(clip);
+            yield return new WaitForSeconds(clip.length + 0.5f);
+            if (alin != null) alin.StopTalking();
+        }
+        else
+        {
+            yield return new WaitForSeconds(1.5f);
+        }
+
+        // Restore object to original parent
+        if (obj != null && origParent != null)
+        {
+            if (objGraphic != null) objGraphic.raycastTarget = true;
+            obj.transform.SetParent(origParent, true);
+            obj.transform.SetSiblingIndex(origSibling);
+        }
+
+        yield return new WaitForSeconds(0.2f);
+    }
+
+    /// <summary>Show overlay with cutout centered on target.</summary>
+    private void ShowSpotlightOnTarget(RectTransform target, float radius)
+    {
+        Vector3 wp = target.TransformPoint(target.rect.center);
+        Vector2 sp = RectTransformUtility.WorldToScreenPoint(null, wp);
+        ShowOverlayWithCutout(sp, radius);
+    }
+
+    /// <summary>Reparent Alin above the overlay so she's never darkened.</summary>
+    private void LiftAlinAboveOverlay()
+    {
+        var alin = AlinGuide.Instance;
+        if (alin == null || _spotlightOverlay == null) return;
+
+        _alinOriginalParent = alin.transform.parent;
+        _alinOriginalSiblingIndex = alin.transform.GetSiblingIndex();
+
+        // Move to same parent as overlay, rendered after (on top of) it
+        alin.transform.SetParent(_spotlightOverlay.transform.parent, true);
+        alin.transform.SetAsLastSibling();
+    }
+
+    /// <summary>Restore Alin to her original parent.</summary>
+    private void RestoreAlin()
+    {
+        var alin = AlinGuide.Instance;
+        if (alin == null || _alinOriginalParent == null) return;
+
+        alin.transform.SetParent(_alinOriginalParent, true);
+        alin.transform.SetSiblingIndex(_alinOriginalSiblingIndex);
+        _alinOriginalParent = null;
+    }
+
+    private IEnumerator SpotlightStep(RectTransform target, AudioClip clip, float spotlightRadius)
+    {
+        var alin = AlinGuide.Instance;
+
+        if (target != null)
+        {
+            // Convert target center to screen position
+            Vector3 worldPos = target.TransformPoint(target.rect.center);
+            Vector2 screenPos = RectTransformUtility.WorldToScreenPoint(null, worldPos);
+            ShowOverlayWithCutout(screenPos, spotlightRadius);
+        }
+        else
+        {
+            ShowOverlayDark();
+        }
+
+        if (clip != null)
+        {
+            if (alin != null) alin.PlayTalking();
+            BackgroundMusicManager.PlayOneShot(clip);
+            yield return new WaitForSeconds(clip.length + 0.5f);
+            if (alin != null) alin.StopTalking();
+        }
+        else
+        {
+            yield return new WaitForSeconds(1.5f);
+        }
+
+        yield return new WaitForSeconds(0.2f);
+    }
+
+    /// <summary>Show overlay fully dark (no cutout). Blocks all input.</summary>
+    private void ShowOverlayDark()
+    {
+        EnsureSpotlightOverlay();
+        // Solid dark texture
+        int w = 64, h = 64;
+        EnsureCutoutTexture(w, h);
+        var pixels = _cutoutTexture.GetPixels32();
+        Color32 dark = new Color32(0, 0, 0, 180);
+        for (int i = 0; i < pixels.Length; i++)
+            pixels[i] = dark;
+        _cutoutTexture.SetPixels32(pixels);
+        _cutoutTexture.Apply();
+        _spotlightImage.texture = _cutoutTexture;
+        _spotlightOverlay.SetActive(true);
+    }
+
+    /// <summary>
+    /// Show overlay with a circular transparent cutout at screenPos.
+    /// Generates a texture with alpha=0.7 everywhere except a soft circle.
+    /// </summary>
+    private void ShowOverlayWithCutout(Vector2 screenPos, float radius)
+    {
+        EnsureSpotlightOverlay();
+
+        int texW = Screen.width / 4; // quarter-res for performance
+        int texH = Screen.height / 4;
+        float scale = texW / (float)Screen.width;
+
+        EnsureCutoutTexture(texW, texH);
+
+        float cx = screenPos.x * scale;
+        float cy = screenPos.y * scale;
+        float r = radius * scale;
+        float rSq = r * r;
+        // Soft edge: fully transparent inside (r*0.7), fade to dark at edge
+        float innerR = r * 0.7f;
+        float innerRSq = innerR * innerR;
+
+        var pixels = _cutoutTexture.GetPixels32();
+        Color32 dark = new Color32(0, 0, 0, 180);
+        Color32 clear = new Color32(0, 0, 0, 0);
+
+        for (int y = 0; y < texH; y++)
+        {
+            for (int x = 0; x < texW; x++)
+            {
+                float dx = x - cx;
+                float dy = y - cy;
+                float distSq = dx * dx + dy * dy;
+
+                if (distSq <= innerRSq)
+                {
+                    pixels[y * texW + x] = clear;
+                }
+                else if (distSq <= rSq)
+                {
+                    // Smooth fade from transparent to dark
+                    float dist = Mathf.Sqrt(distSq);
+                    float t = (dist - innerR) / (r - innerR);
+                    byte a = (byte)(180 * t);
+                    pixels[y * texW + x] = new Color32(0, 0, 0, a);
+                }
+                else
+                {
+                    pixels[y * texW + x] = dark;
+                }
+            }
+        }
+
+        _cutoutTexture.SetPixels32(pixels);
+        _cutoutTexture.Apply();
+        _spotlightImage.texture = _cutoutTexture;
+        _spotlightOverlay.SetActive(true);
+    }
+
+    private void EnsureCutoutTexture(int w, int h)
+    {
+        if (_cutoutTexture != null && _cutoutTexture.width == w && _cutoutTexture.height == h)
+            return;
+        if (_cutoutTexture != null)
+            Destroy(_cutoutTexture);
+        _cutoutTexture = new Texture2D(w, h, TextureFormat.RGBA32, false);
+        _cutoutTexture.filterMode = FilterMode.Bilinear;
+        _cutoutTexture.wrapMode = TextureWrapMode.Clamp;
+    }
+
+    private void EnsureSpotlightOverlay()
+    {
+        if (_spotlightOverlay != null) return;
+
+        var canvas = GetComponentInParent<Canvas>();
+        if (canvas == null) return;
+
+        _spotlightOverlay = new GameObject("SpotlightOverlay");
+        _spotlightOverlay.transform.SetParent(canvas.transform, false);
+        _spotlightOverlay.transform.SetAsLastSibling();
+        _overlayRT = _spotlightOverlay.AddComponent<RectTransform>();
+        _overlayRT.anchorMin = Vector2.zero;
+        _overlayRT.anchorMax = Vector2.one;
+        _overlayRT.offsetMin = Vector2.zero;
+        _overlayRT.offsetMax = Vector2.zero;
+
+        // RawImage stretches a generated texture across the full screen
+        _spotlightImage = _spotlightOverlay.AddComponent<RawImage>();
+        _spotlightImage.raycastTarget = true; // blocks input during tutorial
     }
 
     /// <summary>

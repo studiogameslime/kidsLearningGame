@@ -166,15 +166,22 @@ public class ParentDashboardSetup : EditorWindow
             answerLabels[i] = labelGO.GetComponent<TextMeshProUGUI>();
         }
 
-        // Gate back button
-        var gateBackGO = MakeTMP(gateGO.transform, "GateBack",
-            "\u05D7\u05D6\u05E8\u05D4", 28, new Color(1, 1, 1, 0.5f));
-        var gateBackRT = gateBackGO.GetComponent<RectTransform>();
-        gateBackRT.anchorMin = new Vector2(0.3f, 0.06f);
-        gateBackRT.anchorMax = new Vector2(0.7f, 0.14f);
-        gateBackRT.offsetMin = gateBackRT.offsetMax = Vector2.zero;
+        // Gate home button (top-left)
+        var homeIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/home.png");
+        var gateBackGO = new GameObject("GateHomeButton");
+        gateBackGO.transform.SetParent(gateGO.transform, false);
+        var gateBackRT = gateBackGO.AddComponent<RectTransform>();
+        gateBackRT.anchorMin = new Vector2(0, 1);
+        gateBackRT.anchorMax = new Vector2(0, 1);
+        gateBackRT.pivot = new Vector2(0, 1);
+        gateBackRT.anchoredPosition = new Vector2(16, -16);
+        gateBackRT.sizeDelta = new Vector2(76, 76);
+        var gateBackImg = gateBackGO.AddComponent<Image>();
+        gateBackImg.sprite = homeIcon;
+        gateBackImg.color = new Color(1, 1, 1, 0.7f);
+        gateBackImg.raycastTarget = true;
         var gateBackBtn = gateBackGO.AddComponent<Button>();
-        gateBackBtn.targetGraphic = gateBackGO.GetComponent<TextMeshProUGUI>();
+        gateBackBtn.targetGraphic = gateBackImg;
 
         // ═══════════════════════════════════════════════════════════
         //  DASHBOARD PANEL
@@ -378,7 +385,7 @@ public class ParentDashboardSetup : EditorWindow
 
             var contentLayout = contentGO.AddComponent<VerticalLayoutGroup>();
             contentLayout.spacing = 16;
-            contentLayout.padding = new RectOffset(20, 20, 16, 20);
+            contentLayout.padding = new RectOffset(20, 20, 16, 120); // extra bottom for banner ad
             contentLayout.childForceExpandWidth = true;
             contentLayout.childForceExpandHeight = false;
             contentLayout.childControlWidth = true;

@@ -88,4 +88,29 @@ public static class SoundLibrary
     {
         return Resources.Load<AudioClip>("Sounds/World/Here all your saved painting");
     }
+
+    public static AudioClip WorldAllGames()
+    {
+        return Resources.Load<AudioClip>("Sounds/World/Here all the games");
+    }
+
+    public static AudioClip WorldJourney()
+    {
+        return Resources.Load<AudioClip>("Sounds/World/Here is your journey");
+    }
+
+    public static AudioClip WorldGallery()
+    {
+        return Resources.Load<AudioClip>("Sounds/World/Here your paintings");
+    }
+
+    public static AudioClip WorldOpenFirstGift()
+    {
+        return Resources.Load<AudioClip>("Sounds/World/Lets open your first gift");
+    }
+
+    public static AudioClip WorldAnotherGift()
+    {
+        return Resources.Load<AudioClip>("Sounds/World/You have another gift");
+    }
 }

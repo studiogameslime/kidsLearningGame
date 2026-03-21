@@ -16,14 +16,13 @@ public class GameCompletionBridge : MonoBehaviour
 {
     public static GameCompletionBridge Instance { get; private set; }
 
-    private bool _analyticsRegistered;
     private bool _celebrationComplete;
     private bool _navigationLocked;
 
     /// <summary>
     /// Active stats collector for the current game session.
-    /// Games can set this to provide detailed metrics. If null, a minimal
-    /// session is registered automatically on confetti.
+    /// Games set this so the bridge can abandon it on scene change.
+    /// Analytics registration is handled directly by BaseMiniGame.
     /// </summary>
     public GameStatsCollector ActiveCollector { get; set; }
 
@@ -66,54 +65,18 @@ public class GameCompletionBridge : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        _analyticsRegistered = false;
         _celebrationComplete = false;
         _navigationLocked = false;
         ActiveCollector = null;
     }
 
     /// <summary>
-    /// Called by ConfettiController.Play() at the START of the celebration.
-    /// Registers analytics immediately (so data is captured) but does NOT trigger navigation.
+    /// Called when confetti plays. Analytics are now registered directly by
+    /// BaseMiniGame on each round completion, so this only manages navigation state.
     /// </summary>
     public void OnConfettiPlayed()
     {
-        if (_analyticsRegistered) return;
-
-        // Only fire from actual game scenes
-        string sceneName = SceneManager.GetActiveScene().name;
-        if (sceneName == "DiscoveryReveal" || sceneName == "HomeScene" ||
-            sceneName == "WorldScene" || sceneName == "DrawingGallery")
-            return;
-
-        _analyticsRegistered = true;
         _navigationLocked = true;
-
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : null;
-
-        // Register analytics immediately
-        if (ActiveCollector != null)
-        {
-            ActiveCollector.Finalize(completed: true);
-            ActiveCollector = null;
-        }
-        else if (!string.IsNullOrEmpty(gameId))
-        {
-            var minimal = new GameSessionData
-            {
-                gameId = gameId,
-                completed = true,
-                difficultyLevel = StatsManager.Instance != null
-                    ? StatsManager.Instance.GetGameDifficulty(gameId) : 1,
-                startTime = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                correctActions = 1,
-                totalActions = 1,
-                mistakes = 0,
-                hintsUsed = 0
-            };
-            Debug.Log($"[Analytics] Fallback minimal session for {gameId}");
-            StatsManager.Instance?.RegisterGameSession(minimal);
-        }
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// Custom input handler for the World scene. Routes touch/mouse to:
@@ -57,15 +58,42 @@ public class WorldInputHandler : MonoBehaviour
         };
         UnityEngine.EventSystems.EventSystem.current.RaycastAll(pointerData, results);
 
+        // Check if a blocking overlay (tutorial/spotlight) is active.
+        // If so, only allow gift box taps (for spotlight cutout) and block everything else.
+        bool overlayBlocking = false;
+        foreach (var r in results)
+        {
+            if (r.gameObject.name == "SpotlightOverlay")
+            {
+                overlayBlocking = true;
+                break;
+            }
+        }
+
+        if (overlayBlocking)
+        {
+            // Only allow gift box tap through the overlay
+            foreach (var r in results)
+            {
+                var gift = r.gameObject.GetComponent<GiftBoxController>();
+                if (gift != null)
+                {
+                    gift.OnTap();
+                    return;
+                }
+            }
+            return; // block everything else
+        }
+
         foreach (var result in results)
         {
             var go = result.gameObject;
 
-            // Check for gift box (highest priority interactive)
-            var gift = go.GetComponent<GiftBoxController>();
-            if (gift != null)
+            // Check for gift box
+            var gift2 = go.GetComponent<GiftBoxController>();
+            if (gift2 != null)
             {
-                gift.OnTap();
+                gift2.OnTap();
                 return;
             }
 

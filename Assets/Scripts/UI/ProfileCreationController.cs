@@ -49,22 +49,13 @@ public class ProfileCreationController : MonoBehaviour
     public Transform colorButtonContainer;
     public Button[] colorButtons;
     public Image colorPreview;
-    public Image colorPreviewPhoto; // shows picked photo inside preview circle
     public TextMeshProUGUI colorPreviewInitial;
     public TextMeshProUGUI colorPreviewName;
     public Button colorNextButton;
-    public Button pickPhotoButton;
-
-    [Header("Webcam Preview (Desktop)")]
-    public GameObject webcamPanel;
-    public RawImage webcamPreview;
-    public Button webcamCaptureButton;
-    public Button webcamCancelButton;
 
     [Header("Done Step")]
     public TextMeshProUGUI doneNameText;
     public Image doneAvatar;
-    public Image doneAvatarPhoto;
     public TextMeshProUGUI doneInitial;
     public Button doneButton;
 
@@ -87,10 +78,7 @@ public class ProfileCreationController : MonoBehaviour
     private string recordedAudioPath;
     private AudioClip recordedClip;
     private bool isRecording;
-    private Texture2D pickedPhoto;
-    private string pickedPhotoPath; // temp path of picked image
     private AudioSource audioSource;
-    private WebCamTexture webCamTexture;
 
     private static readonly string[] AvatarColors = {
         "#EF9A9A", "#F48FB1", "#CE93D8", "#B39DDB",
@@ -203,18 +191,6 @@ public class ProfileCreationController : MonoBehaviour
             }
         }
 
-        // Wire pick photo button
-        if (pickPhotoButton != null)
-            pickPhotoButton.onClick.AddListener(OnPickPhotoPressed);
-
-        // Wire webcam buttons (desktop)
-        if (webcamCaptureButton != null)
-            webcamCaptureButton.onClick.AddListener(OnWebcamCapture);
-        if (webcamCancelButton != null)
-            webcamCancelButton.onClick.AddListener(OnWebcamCancel);
-        if (webcamPanel != null)
-            webcamPanel.SetActive(false);
-
         // Wire done
         if (doneButton != null)
             doneButton.onClick.AddListener(OnDonePressed);
@@ -227,24 +203,6 @@ public class ProfileCreationController : MonoBehaviour
         GoToStep(0);
         UpdateRecordUI();
 
-        // Check if resuming after camera (app may have reloaded on mobile)
-        int resumeStep = PlayerPrefs.GetInt("OnboardingResumeStep", -1);
-        if (resumeStep >= 0)
-        {
-            recordedName = PlayerPrefs.GetString("OnboardingResumeName", "");
-            selectedAge = PlayerPrefs.GetInt("OnboardingResumeAge", 3);
-            selectedAnimalId = PlayerPrefs.GetString("OnboardingResumeAnimal", "Cat");
-            selectedColorHex = PlayerPrefs.GetString("OnboardingResumeColor", "#90CAF9");
-            if (nameInput != null && !string.IsNullOrEmpty(recordedName))
-                nameInput.text = recordedName;
-            PlayerPrefs.DeleteKey("OnboardingResumeStep");
-            PlayerPrefs.DeleteKey("OnboardingResumeName");
-            PlayerPrefs.DeleteKey("OnboardingResumeAge");
-            PlayerPrefs.DeleteKey("OnboardingResumeAnimal");
-            PlayerPrefs.DeleteKey("OnboardingResumeColor");
-            PlayerPrefs.Save();
-            GoToStep(resumeStep);
-        }
     }
 
     private void GoToStep(int step)
@@ -414,6 +372,7 @@ public class ProfileCreationController : MonoBehaviour
     private void OnAgeSelected(int age)
     {
         selectedAge = age;
+        SoundLibrary.PlayNumberName(age);
 
         // Highlight selected
         if (ageButtons != null)
@@ -495,22 +454,15 @@ public class ProfileCreationController : MonoBehaviour
         selectedColorHex = hex;
         ColorUtility.TryParseHtmlString(hex, out Color c);
 
-        // Always update the circle background color
+        // Update the circle background color
         if (colorPreview != null)
             colorPreview.color = c;
 
-        // Photo has priority — don't override it with color initial
-        if (pickedPhoto == null)
+        if (colorPreviewInitial != null)
         {
-            if (colorPreviewPhoto != null)
-                colorPreviewPhoto.gameObject.SetActive(false);
-
-            if (colorPreviewInitial != null)
-            {
-                colorPreviewInitial.gameObject.SetActive(true);
-                if (!string.IsNullOrWhiteSpace(recordedName))
-                    colorPreviewInitial.text = recordedName.Substring(0, 1).ToUpper();
-            }
+            colorPreviewInitial.gameObject.SetActive(true);
+            if (!string.IsNullOrWhiteSpace(recordedName))
+                colorPreviewInitial.text = recordedName.Substring(0, 1).ToUpper();
         }
 
         // Play Alin color sound
@@ -534,153 +486,22 @@ public class ProfileCreationController : MonoBehaviour
         if (colorNextButton != null) colorNextButton.interactable = true;
     }
 
-    private void OnPickPhotoPressed()
-    {
-#if UNITY_ANDROID || UNITY_IOS
-        // Save state before camera (app may pause/reload on mobile)
-        PlayerPrefs.SetInt("OnboardingResumeStep", currentStep);
-        PlayerPrefs.SetString("OnboardingResumeName", recordedName ?? "");
-        PlayerPrefs.SetInt("OnboardingResumeAge", selectedAge);
-        PlayerPrefs.SetString("OnboardingResumeAnimal", selectedAnimalId ?? "Cat");
-        PlayerPrefs.SetString("OnboardingResumeColor", selectedColorHex ?? "#90CAF9");
-        PlayerPrefs.Save();
-
-        NativeCamera.TakePicture((path) =>
-        {
-            if (string.IsNullOrEmpty(path)) return;
-            var tex = NativeCamera.LoadImageAtPath(path, 512, false);
-            if (tex == null) return;
-            ApplyPickedPhoto(tex, path);
-        }, 512, preferredCamera: NativeCamera.PreferredCamera.Front);
-#else
-        OpenWebcam();
-#endif
-    }
-
-    private void ApplyPickedPhoto(Texture2D tex, string path = null)
-    {
-        pickedPhoto = tex;
-        pickedPhotoPath = path;
-
-        var sprite = Sprite.Create(tex,
-            new Rect(0, 0, tex.width, tex.height),
-            new Vector2(0.5f, 0.5f));
-
-        if (colorPreviewPhoto != null)
-        {
-            colorPreviewPhoto.sprite = sprite;
-            colorPreviewPhoto.gameObject.SetActive(true);
-        }
-        if (colorPreviewInitial != null)
-            colorPreviewInitial.gameObject.SetActive(false);
-
-        if (colorButtons != null)
-        {
-            for (int i = 0; i < colorButtons.Length; i++)
-            {
-                var outline = colorButtons[i].GetComponent<Outline>();
-                if (outline != null) outline.enabled = false;
-            }
-        }
-
-        if (colorNextButton != null) colorNextButton.interactable = true;
-    }
-
-    // ── Webcam (Desktop) ──
-
-    private void OpenWebcam()
-    {
-        if (webcamPanel == null || webcamPreview == null) return;
-
-        // Prefer front-facing camera
-        string deviceName = null;
-        foreach (var device in WebCamTexture.devices)
-        {
-            if (device.isFrontFacing) { deviceName = device.name; break; }
-        }
-
-        webCamTexture = deviceName != null
-            ? new WebCamTexture(deviceName, 512, 512, 30)
-            : new WebCamTexture(512, 512, 30);
-
-        webcamPreview.texture = webCamTexture;
-        webCamTexture.Play();
-        webcamPanel.SetActive(true);
-    }
-
-    private void OnWebcamCapture()
-    {
-        if (webCamTexture == null || !webCamTexture.isPlaying) return;
-
-        // Snapshot current frame
-        var tex = new Texture2D(webCamTexture.width, webCamTexture.height, TextureFormat.RGB24, false);
-        tex.SetPixels(webCamTexture.GetPixels());
-        tex.Apply();
-
-        StopWebcam();
-        ApplyPickedPhoto(tex);
-    }
-
-    private void OnWebcamCancel()
-    {
-        StopWebcam();
-    }
-
-    private void StopWebcam()
-    {
-        if (webCamTexture != null)
-        {
-            webCamTexture.Stop();
-            Destroy(webCamTexture);
-            webCamTexture = null;
-        }
-        if (webcamPanel != null)
-            webcamPanel.SetActive(false);
-    }
-
-    private void OnDestroy()
-    {
-        StopWebcam();
-    }
-
     // ── Done ──
 
     private void UpdateDoneStep()
     {
         if (doneNameText != null)
-        {
             HebrewText.SetText(doneNameText, recordedName);
-        }
 
-        if (pickedPhoto != null)
+        ColorUtility.TryParseHtmlString(selectedColorHex, out Color c);
+        if (doneAvatar != null)
+            doneAvatar.color = c;
+
+        if (doneInitial != null)
         {
-            // Show photo in done avatar
-            var sprite = Sprite.Create(pickedPhoto,
-                new Rect(0, 0, pickedPhoto.width, pickedPhoto.height),
-                new Vector2(0.5f, 0.5f));
-
-            if (doneAvatarPhoto != null)
-            {
-                doneAvatarPhoto.sprite = sprite;
-                doneAvatarPhoto.gameObject.SetActive(true);
-            }
-            if (doneInitial != null)
-                doneInitial.gameObject.SetActive(false);
-        }
-        else
-        {
-            ColorUtility.TryParseHtmlString(selectedColorHex, out Color c);
-            if (doneAvatar != null)
-                doneAvatar.color = c;
-
-            if (doneAvatarPhoto != null)
-                doneAvatarPhoto.gameObject.SetActive(false);
-            if (doneInitial != null)
-            {
-                doneInitial.gameObject.SetActive(true);
-                if (!string.IsNullOrWhiteSpace(recordedName))
-                    doneInitial.text = recordedName.Substring(0, 1).ToUpper();
-            }
+            doneInitial.gameObject.SetActive(true);
+            if (!string.IsNullOrWhiteSpace(recordedName))
+                doneInitial.text = recordedName.Substring(0, 1).ToUpper();
         }
     }
 
@@ -688,15 +509,6 @@ public class ProfileCreationController : MonoBehaviour
     {
         // Create the profile
         var profile = ProfileManager.Instance.CreateProfile(recordedName, selectedAge, selectedColorHex);
-
-        // Save picked photo if any
-        if (pickedPhoto != null)
-        {
-            string folder = ProfileManager.Instance.GetProfileFolder(profile.id);
-            string imagePath = Path.Combine(folder, "avatar.png");
-            File.WriteAllBytes(imagePath, pickedPhoto.EncodeToPNG());
-            profile.avatarImagePath = Path.Combine("profiles", profile.id, "avatar.png");
-        }
 
         // Save recorded audio if any
         if (recordedClip != null)

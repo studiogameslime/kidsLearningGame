@@ -25,6 +25,7 @@ public class RewardedAdManager : MonoBehaviour
     private RewardedAd _rewardedAd;
     private Action _onAdClosed;
     private bool _shouldShow;
+    private bool _pendingCallback;
 
     private void Awake()
     {
@@ -34,6 +35,18 @@ public class RewardedAdManager : MonoBehaviour
     private void Start()
     {
         RollAndLoad();
+    }
+
+    private void Update()
+    {
+        if (_pendingCallback)
+        {
+            _pendingCallback = false;
+            var cb = _onAdClosed;
+            _onAdClosed = null;
+            cb?.Invoke();
+            RollAndLoad();
+        }
     }
 
     private void OnDestroy()
@@ -93,22 +106,19 @@ public class RewardedAdManager : MonoBehaviour
             _rewardedAd = ad;
             Debug.Log("[AdMob] Rewarded ad loaded");
 
-            // When ad is closed (watched or dismissed), fire callback and preload next
+            // When ad is closed (watched or dismissed), flag for main-thread callback.
+            // AdMob callbacks may fire on a background thread on Android,
+            // so we defer to Update() to safely touch Unity objects.
             _rewardedAd.OnAdFullScreenContentClosed += () =>
             {
                 Debug.Log("[AdMob] Rewarded ad closed");
-                _onAdClosed?.Invoke();
-                _onAdClosed = null;
-                // Roll again for next time
-                RollAndLoad();
+                _pendingCallback = true;
             };
 
             _rewardedAd.OnAdFullScreenContentFailed += (AdError adError) =>
             {
                 Debug.LogWarning($"[AdMob] Rewarded show failed: {adError.GetMessage()}");
-                _onAdClosed?.Invoke();
-                _onAdClosed = null;
-                RollAndLoad();
+                _pendingCallback = true;
             };
         });
     }
