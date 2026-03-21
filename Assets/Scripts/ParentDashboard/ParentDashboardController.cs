@@ -776,7 +776,13 @@ public class ParentDashboardController : MonoBehaviour
         var profile = ProfileManager.ActiveProfile;
         var story = DashboardStoryBuilder.Build(_data, profile != null ? profile.analytics : null);
 
-        // ── Section 1: Weekly Summary (Hero) ──
+        // ── Story sections ──
+        BuildStorySections(parent, story);
+    }
+
+    private void BuildStorySections(Transform parent, DashboardStoryBuilder.StoryData story)
+    {
+        // ── 1. Weekly Summary (Hero) ──
         {
             var heroCard = MakeCard(parent);
             var heroTMP = AddChildTMP(heroCard, H(story.weeklySummary), 26, TextDark, TextAlignmentOptions.Right);
