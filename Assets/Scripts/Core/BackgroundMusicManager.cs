@@ -9,6 +9,8 @@ public class BackgroundMusicManager : MonoBehaviour
 {
     private static BackgroundMusicManager _instance;
     private AudioSource sfxSource;
+    private AudioClip _lastClip;
+    private float _lastClipTime;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void AutoCreate()
@@ -66,6 +68,13 @@ public class BackgroundMusicManager : MonoBehaviour
     public static void PlayOneShot(AudioClip clip, float volume = 1f)
     {
         if (clip == null || _instance == null) return;
+
+        // Prevent playing the same clip while it's still playing
+        if (_instance._lastClip == clip && Time.time - _instance._lastClipTime < clip.length * 0.5f)
+            return;
+
+        _instance._lastClip = clip;
+        _instance._lastClipTime = Time.time;
         _instance.GetSfxSource().PlayOneShot(clip, volume);
     }
 

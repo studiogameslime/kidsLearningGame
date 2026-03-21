@@ -238,8 +238,8 @@ public class ShadowMatchSetup : EditorWindow
         ctrl.animalsRow = animalsRT;
         ctrl.circleSprite = circleSprite;
         ctrl.animalCount = 4;
-        ctrl.shadowSize = 200f;
-        ctrl.animalSize = 200f;
+        ctrl.shadowSize = 400f;
+        ctrl.animalSize = 400f;
 
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
             homeGO.GetComponent<Button>().onClick, ctrl.OnHomePressed);

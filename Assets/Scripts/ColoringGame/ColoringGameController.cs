@@ -124,21 +124,11 @@ public class ColoringGameController : BaseMiniGame
         if (undoButton != null) undoButton.onClick.AddListener(OnUndo);
         if (clearButton != null) clearButton.onClick.AddListener(OnClear);
 
-        // Show Done button only during journey
+        // Done button hidden — save button handles completion during journey
         if (doneButton != null)
-        {
-            if (JourneyManager.IsJourneyActive)
-            {
-                doneButton.gameObject.SetActive(true);
-                doneButton.onClick.AddListener(OnDonePressed);
-            }
-            else
-            {
-                doneButton.gameObject.SetActive(false);
-            }
-        }
+            doneButton.gameObject.SetActive(false);
 
-        // Wire save drawing button
+        // Wire save drawing button (also advances journey if active)
         if (saveDrawingButton != null)
             saveDrawingButton.onClick.AddListener(OnSaveDrawing);
     }
@@ -461,7 +451,15 @@ public class ColoringGameController : BaseMiniGame
 
         SoundLibrary.PlayGreatPainting();
 
-        // Brief visual feedback — disable button momentarily
+        // During journey: save and advance to next game/discovery
+        if (JourneyManager.IsJourneyActive)
+        {
+            Stats?.RecordCorrect();
+            CompleteRound();
+            return;
+        }
+
+        // Free play: brief visual feedback — disable button momentarily
         if (saveDrawingButton != null)
         {
             saveDrawingButton.interactable = false;

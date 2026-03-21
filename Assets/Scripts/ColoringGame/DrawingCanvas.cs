@@ -34,6 +34,7 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
     // Tracks previous draw position for smooth line interpolation
     private Vector2? lastDrawPos;
     private bool isDrawing;
+    private int activePointerId = -1;
 
     // Sticker stamp mode
     private Sprite activeSticker;
@@ -128,6 +129,10 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
 
     public void OnPointerDown(PointerEventData eventData)
     {
+        // Only track the first finger — ignore additional touches
+        if (isDrawing) return;
+        activePointerId = eventData.pointerId;
+
         // Save snapshot for undo before starting a new stroke
         SaveUndoSnapshot();
 
@@ -151,6 +156,7 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
     public void OnDrag(PointerEventData eventData)
     {
         if (!isDrawing || activeSticker != null) return;
+        if (eventData.pointerId != activePointerId) return;
 
         Vector2 localPos;
         if (ScreenToTexturePos(eventData.position, out localPos))
@@ -167,8 +173,10 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
 
     public void OnPointerUp(PointerEventData eventData)
     {
+        if (eventData.pointerId != activePointerId) return;
         isDrawing = false;
         lastDrawPos = null;
+        activePointerId = -1;
     }
 
     // ── Drawing Methods ──

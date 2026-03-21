@@ -100,16 +100,39 @@ public class ParentDashboardController : MonoBehaviour
 
     private void GenerateQuestion()
     {
-        int a = Random.Range(3, 9);
-        int b = Random.Range(2, 8);
-        _correctAnswer = a + b;
+        // Harder question: multiplication or larger addition
+        int op = Random.Range(0, 3); // 0=add, 1=subtract, 2=multiply
+        int a, b;
+        string question;
 
-        HebrewText.SetText(questionText, $"? = {b} + {a}");
+        switch (op)
+        {
+            case 0: // addition with larger numbers
+                a = Random.Range(12, 30);
+                b = Random.Range(8, 25);
+                _correctAnswer = a + b;
+                question = $"? = {b} + {a}";
+                break;
+            case 1: // subtraction
+                a = Random.Range(20, 50);
+                b = Random.Range(5, a - 3);
+                _correctAnswer = a - b;
+                question = $"? = {b} - {a}";
+                break;
+            default: // multiplication
+                a = Random.Range(3, 10);
+                b = Random.Range(3, 10);
+                _correctAnswer = a * b;
+                question = $"? = {b} × {a}";
+                break;
+        }
+
+        HebrewText.SetText(questionText, question);
 
         var answers = new List<int> { _correctAnswer };
         while (answers.Count < 4)
         {
-            int wrong = _correctAnswer + Random.Range(-3, 4);
+            int wrong = _correctAnswer + Random.Range(-5, 6);
             if (wrong != _correctAnswer && wrong > 0 && !answers.Contains(wrong))
                 answers.Add(wrong);
         }
@@ -681,7 +704,7 @@ public class ParentDashboardController : MonoBehaviour
 
         // ── Overall Score Card ──
         var scoreCard = MakeCard(parent);
-        var scoreRow = MakeHRow(scoreCard, 120, TextAnchor.MiddleCenter);
+        var scoreRow = MakeHRow(scoreCard, 150, TextAnchor.MiddleCenter);
 
         // Large circular score
         var scoreBadgeGO = new GameObject("ScoreBadge");
@@ -700,21 +723,21 @@ public class ParentDashboardController : MonoBehaviour
         var scoreInfoGO = MakeVCol(scoreRow.transform);
         var scoreInfoLE = scoreInfoGO.AddComponent<LayoutElement>();
         scoreInfoLE.flexibleWidth = 1;
-        scoreInfoLE.preferredHeight = 100;
+        scoreInfoLE.preferredHeight = 140;
 
         var scoreTitleTMP = AddChildTMP(scoreInfoGO.transform, H("\u05E6\u05D9\u05D5\u05DF \u05DB\u05DC\u05DC\u05D9"), // ציון כללי
-            28, TextDark, TextAlignmentOptions.Right);
+            36, TextDark, TextAlignmentOptions.Right);
         scoreTitleTMP.fontStyle = FontStyles.Bold;
-        scoreTitleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 36;
+        scoreTitleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 44;
 
         var statusTMP = AddChildTMP(scoreInfoGO.transform, H(_data.overallScoreLabel),
-            22, TextMedium, TextAlignmentOptions.Right);
-        statusTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+            28, TextMedium, TextAlignmentOptions.Right);
+        statusTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 36;
 
         var trendTMP2 = AddChildTMP(scoreInfoGO.transform,
             H($"{ParentDashboardViewModel.TrendArrow(_data.overallTrend)} {_data.overallTrendLabel}"),
-            18, TextMedium, TextAlignmentOptions.Right);
-        trendTMP2.gameObject.AddComponent<LayoutElement>().preferredHeight = 26;
+            24, TextMedium, TextAlignmentOptions.Right);
+        trendTMP2.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
 
         FitCard(scoreCard);
 
@@ -727,12 +750,12 @@ public class ParentDashboardController : MonoBehaviour
         var gridLayout = statsGrid.AddComponent<GridLayoutGroup>();
         gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         gridLayout.constraintCount = 4;
-        gridLayout.cellSize = new Vector2(400, 90);
+        gridLayout.cellSize = new Vector2(400, 120);
         gridLayout.spacing = new Vector2(16, 12);
         gridLayout.childAlignment = TextAnchor.UpperCenter;
         gridLayout.startCorner = GridLayoutGroup.Corner.UpperRight;
         var gridLE = statsGrid.AddComponent<LayoutElement>();
-        gridLE.preferredHeight = 200;
+        gridLE.preferredHeight = 260;
 
         MakeStatCell(statsGrid.transform, $"{_data.totalSessions}", "\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD"); // משחקים
         MakeStatCell(statsGrid.transform, H(_data.totalPlayTimeDisplay), "\u05D6\u05DE\u05DF \u05DE\u05E9\u05D7\u05E7 \u05DB\u05D5\u05DC\u05DC"); // זמן משחק כולל
@@ -758,7 +781,7 @@ public class ParentDashboardController : MonoBehaviour
             var insightGridLayout = insightGrid.AddComponent<GridLayoutGroup>();
             insightGridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             insightGridLayout.constraintCount = 2;
-            insightGridLayout.cellSize = new Vector2(800, 80);
+            insightGridLayout.cellSize = new Vector2(800, 100);
             insightGridLayout.spacing = new Vector2(16, 12);
             insightGridLayout.childAlignment = TextAnchor.UpperCenter;
             insightGridLayout.startCorner = GridLayoutGroup.Corner.UpperRight;
@@ -784,13 +807,13 @@ public class ParentDashboardController : MonoBehaviour
                 insightLayout.childControlHeight = true;
 
                 var titleTMP = AddChildTMP(insightRow.transform,
-                    H(insight.titleHebrew), 20, Primary, TextAlignmentOptions.Right);
+                    H(insight.titleHebrew), 28, Primary, TextAlignmentOptions.Right);
                 titleTMP.fontStyle = FontStyles.Bold;
-                titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+                titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 36;
 
                 var descTMP = AddChildTMP(insightRow.transform,
-                    H(insight.descriptionHebrew), 17, TextDark, TextAlignmentOptions.Right);
-                descTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 26;
+                    H(insight.descriptionHebrew), 24, TextDark, TextAlignmentOptions.Right);
+                descTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
             }
 
             FitCard(insightCard);
@@ -807,7 +830,7 @@ public class ParentDashboardController : MonoBehaviour
             var bGridLayout = badgeGrid.AddComponent<GridLayoutGroup>();
             bGridLayout.constraint = GridLayoutGroup.Constraint.FixedRowCount;
             bGridLayout.constraintCount = 1;
-            bGridLayout.cellSize = new Vector2(400, 90);
+            bGridLayout.cellSize = new Vector2(400, 110);
             bGridLayout.spacing = new Vector2(16, 8);
             bGridLayout.childAlignment = TextAnchor.MiddleCenter;
             bGridLayout.startCorner = GridLayoutGroup.Corner.UpperRight;
@@ -834,17 +857,20 @@ public class ParentDashboardController : MonoBehaviour
                 bLayout.childControlHeight = true;
 
                 var bTitle = AddChildTMP(badgeGO.transform, H(badge.titleHebrew),
-                    20, TextDark, TextAlignmentOptions.Center);
+                    28, TextDark, TextAlignmentOptions.Center);
                 bTitle.fontStyle = FontStyles.Bold;
-                bTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+                bTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 36;
 
                 var bSub = AddChildTMP(badgeGO.transform, H(badge.subtitleHebrew),
-                    16, TextMedium, TextAlignmentOptions.Center);
-                bSub.gameObject.AddComponent<LayoutElement>().preferredHeight = 22;
+                    22, TextMedium, TextAlignmentOptions.Center);
+                bSub.gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
             }
 
             FitCard(badgeCard);
         }
+
+        // ── Spacer before strengths ──
+        MakeSpacer(parent, 16f);
 
         // ── Strengths + Practice Areas (side by side) ──
         if (_data.strongestCategories.Count > 0 || _data.weakestCategories.Count > 0)
@@ -860,14 +886,16 @@ public class ParentDashboardController : MonoBehaviour
             {
                 var strengthGO = MakeInlineCard(dualRow.transform, StrengthBg);
                 var strengthLayout = strengthGO.GetComponent<VerticalLayoutGroup>();
-                strengthLayout.padding = new RectOffset(16, 16, 12, 12);
-                strengthLayout.spacing = 6;
+                strengthLayout.padding = new RectOffset(20, 20, 16, 16);
+                strengthLayout.spacing = 8;
 
                 var stTitle = AddChildTMP(strengthGO.transform,
                     H("\u05D7\u05D6\u05E7\u05D5\u05EA"), // חזקות
-                    24, AccentGreen, TextAlignmentOptions.Right);
+                    30, AccentGreen, TextAlignmentOptions.Right);
                 stTitle.fontStyle = FontStyles.Bold;
-                stTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 34;
+                stTitle.enableWordWrapping = false;
+                stTitle.overflowMode = TMPro.TextOverflowModes.Overflow;
+                stTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 40;
 
                 foreach (var cat in _data.strongestCategories)
                     MakeMiniChip(strengthGO.transform, cat, AccentGreen);
@@ -877,19 +905,24 @@ public class ParentDashboardController : MonoBehaviour
             {
                 var practiceGO = MakeInlineCard(dualRow.transform, PracticeBg);
                 var practiceLayout = practiceGO.GetComponent<VerticalLayoutGroup>();
-                practiceLayout.padding = new RectOffset(16, 16, 12, 12);
-                practiceLayout.spacing = 6;
+                practiceLayout.padding = new RectOffset(20, 20, 16, 16);
+                practiceLayout.spacing = 8;
 
                 var prTitle = AddChildTMP(practiceGO.transform,
                     H("\u05EA\u05D7\u05D5\u05DE\u05D9 \u05EA\u05E8\u05D2\u05D5\u05DC"), // תחומי תרגול
-                    24, AccentOrange, TextAlignmentOptions.Right);
+                    30, AccentOrange, TextAlignmentOptions.Right);
                 prTitle.fontStyle = FontStyles.Bold;
-                prTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 34;
+                prTitle.enableWordWrapping = false;
+                prTitle.overflowMode = TMPro.TextOverflowModes.Overflow;
+                prTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 40;
 
                 foreach (var cat in _data.weakestCategories)
                     MakeMiniChip(practiceGO.transform, cat, AccentOrange);
             }
         }
+
+        // ── Spacer before categories ──
+        MakeSpacer(parent, 16f);
 
         // ── Development Categories (4 per row for landscape) ──
         var catCard = MakeCard(parent);
@@ -899,15 +932,16 @@ public class ParentDashboardController : MonoBehaviour
         catGrid.transform.SetParent(catCard, false);
         var catGridLayout = catGrid.AddComponent<GridLayoutGroup>();
         catGridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        catGridLayout.constraintCount = 4;
-        catGridLayout.cellSize = new Vector2(400, 44);
-        catGridLayout.spacing = new Vector2(12, 8);
+        catGridLayout.constraint = GridLayoutGroup.Constraint.FixedRowCount;
+        catGridLayout.constraintCount = 1;
+        catGridLayout.cellSize = new Vector2(180, 120);
+        catGridLayout.spacing = new Vector2(10, 10);
         catGridLayout.childAlignment = TextAnchor.UpperCenter;
         catGridLayout.startCorner = GridLayoutGroup.Corner.UpperRight;
         var activeCats = 0;
         foreach (var cat in _data.categories)
             if (cat.contributingGamesCount > 0) activeCats++;
-        catGrid.AddComponent<LayoutElement>().preferredHeight = Mathf.CeilToInt(activeCats / 4f) * 56;
+        catGrid.AddComponent<LayoutElement>().preferredHeight = 130;
 
         foreach (var cat in _data.categories)
         {
@@ -2136,7 +2170,7 @@ public class ParentDashboardController : MonoBehaviour
         tmp.color = color;
         tmp.alignment = align;
         tmp.raycastTarget = false;
-        tmp.overflowMode = TextOverflowModes.Ellipsis;
+        tmp.overflowMode = TextOverflowModes.Overflow;
         return tmp;
     }
 
@@ -2157,16 +2191,16 @@ public class ParentDashboardController : MonoBehaviour
     private void MakeSectionDivider(Transform parent, string rawHebrew)
     {
         MakeSpacer(parent, 8f);
-        var tmp = AddChildTMP(parent, H(rawHebrew), 28, TextDark, TextAlignmentOptions.Right);
+        var tmp = AddChildTMP(parent, H(rawHebrew), 38, TextDark, TextAlignmentOptions.Right);
         tmp.fontStyle = FontStyles.Bold;
-        tmp.gameObject.AddComponent<LayoutElement>().preferredHeight = 40;
+        tmp.gameObject.AddComponent<LayoutElement>().preferredHeight = 50;
     }
 
     private void MakeSectionTitle(Transform parent, string rawHebrew)
     {
-        var tmp = AddChildTMP(parent, H(rawHebrew), 26, TextDark, TextAlignmentOptions.Right);
+        var tmp = AddChildTMP(parent, H(rawHebrew), 36, TextDark, TextAlignmentOptions.Right);
         tmp.fontStyle = FontStyles.Bold;
-        tmp.gameObject.AddComponent<LayoutElement>().preferredHeight = 36;
+        tmp.gameObject.AddComponent<LayoutElement>().preferredHeight = 48;
     }
 
     private void MakeStatRow(Transform parent, string rawLabel, string value)
@@ -2204,12 +2238,12 @@ public class ParentDashboardController : MonoBehaviour
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
 
-        var valTMP = AddChildTMP(go.transform, value, 28, TextDark, TextAlignmentOptions.Center);
+        var valTMP = AddChildTMP(go.transform, value, 38, TextDark, TextAlignmentOptions.Center);
         valTMP.fontStyle = FontStyles.Bold;
-        valTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 36;
+        valTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 48;
 
-        var lblTMP = AddChildTMP(go.transform, H(rawLabel), 18, TextMedium, TextAlignmentOptions.Center);
-        lblTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 26;
+        var lblTMP = AddChildTMP(go.transform, H(rawLabel), 24, TextMedium, TextAlignmentOptions.Center);
+        lblTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 34;
     }
 
     private void MakeProgressBar(Transform parent, float fill, Color barColor, float height)
@@ -2240,77 +2274,58 @@ public class ParentDashboardController : MonoBehaviour
 
     private void MakeCategoryRow(Transform parent, CategoryDashboardData cat)
     {
-        var go = new GameObject("CatRow");
+        var go = new GameObject("CatCard");
         go.transform.SetParent(parent, false);
-        var layout = go.AddComponent<HorizontalLayoutGroup>();
-        layout.spacing = 10;
-        layout.childAlignment = TextAnchor.MiddleRight;
-        layout.childForceExpandWidth = false;
-        layout.childControlWidth = true;
-        layout.childControlHeight = true;
-        go.AddComponent<LayoutElement>().preferredHeight = 40;
 
-        // Score pill (rounded rect badge with category color)
-        var pillGO = new GameObject("ScorePill");
-        pillGO.transform.SetParent(go.transform, false);
-        var pillLE = pillGO.AddComponent<LayoutElement>();
-        pillLE.preferredWidth = 44;
-        pillLE.preferredHeight = 26;
-        var pillImg = pillGO.AddComponent<Image>();
-        if (roundedRect != null) pillImg.sprite = roundedRect;
-        pillImg.type = Image.Type.Sliced;
-        pillImg.color = cat.color;
-        pillImg.raycastTarget = false;
-        var pillTMP = AddChildTMP(pillGO.transform, $"{cat.score:F0}", 14, Color.white, TextAlignmentOptions.Center);
-        pillTMP.fontStyle = FontStyles.Bold;
+        // Card background
+        var cardImg = go.AddComponent<Image>();
+        if (roundedRect != null) { cardImg.sprite = roundedRect; cardImg.type = Image.Type.Sliced; }
+        cardImg.color = HexColor("#F8F9FA");
+        cardImg.raycastTarget = false;
 
-        // Progress bar
-        var barContainer = new GameObject("BarContainer");
-        barContainer.transform.SetParent(go.transform, false);
-        var barLE = barContainer.AddComponent<LayoutElement>();
-        barLE.preferredWidth = 100;
-        barLE.preferredHeight = 8;
-        barLE.flexibleWidth = 0;
+        var layout = go.AddComponent<VerticalLayoutGroup>();
+        layout.spacing = 6;
+        layout.childAlignment = TextAnchor.MiddleCenter;
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = false;
+        layout.padding = new RectOffset(8, 8, 10, 10);
 
-        var barBgImg = barContainer.AddComponent<Image>();
-        barBgImg.sprite = roundedRect;
-        barBgImg.type = Image.Type.Sliced;
-        barBgImg.color = BarBg;
-        barBgImg.raycastTarget = false;
+        // Category name on top
+        var nmTMP = AddChildTMP(go.transform, H(cat.categoryName), 20, TextDark, TextAlignmentOptions.Center);
+        nmTMP.fontStyle = FontStyles.Bold;
+        nmTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
 
-        var fillGO = new GameObject("Fill");
-        fillGO.transform.SetParent(barContainer.transform, false);
-        var fillRT = fillGO.AddComponent<RectTransform>();
-        fillRT.anchorMin = Vector2.zero;
-        fillRT.anchorMax = new Vector2(Mathf.Clamp01(cat.score / 100f), 1);
-        fillRT.offsetMin = Vector2.zero;
-        fillRT.offsetMax = Vector2.zero;
-        var fillImg = fillGO.AddComponent<Image>();
-        fillImg.sprite = roundedRect;
-        fillImg.type = Image.Type.Sliced;
-        fillImg.color = cat.color;
-        fillImg.raycastTarget = false;
+        // Score circle below (fixed 50x50 inside a centered container)
+        var circContainer = new GameObject("CircleContainer");
+        circContainer.transform.SetParent(go.transform, false);
+        circContainer.AddComponent<LayoutElement>().preferredHeight = 54;
 
-        // Trend arrow
-        var arrTMP = AddChildTMP(go.transform, ParentDashboardViewModel.TrendArrow(cat.trend),
-            13, TextMedium, TextAlignmentOptions.Center);
-        arrTMP.gameObject.AddComponent<LayoutElement>().preferredWidth = 20;
-
-        // Name
-        var nmTMP = AddChildTMP(go.transform, H(cat.categoryName), 15, TextDark, TextAlignmentOptions.Right);
-        nmTMP.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
+        var circGO = new GameObject("ScoreCircle");
+        circGO.transform.SetParent(circContainer.transform, false);
+        var circRT = circGO.AddComponent<RectTransform>();
+        circRT.anchorMin = new Vector2(0.5f, 0.5f);
+        circRT.anchorMax = new Vector2(0.5f, 0.5f);
+        circRT.pivot = new Vector2(0.5f, 0.5f);
+        circRT.sizeDelta = new Vector2(50, 50);
+        var circImg = circGO.AddComponent<Image>();
+        if (circleSprite != null) circImg.sprite = circleSprite;
+        circImg.color = cat.color;
+        circImg.raycastTarget = false;
+        circImg.preserveAspect = true;
+        var circTMP = AddChildTMP(circGO.transform, $"{cat.score:F0}", 20, Color.white, TextAlignmentOptions.Center);
+        circTMP.fontStyle = FontStyles.Bold;
     }
 
     private void MakeMiniChip(Transform parent, CategoryDashboardData cat, Color accentColor)
     {
-        var row = MakeHRow(parent, 34, TextAnchor.MiddleRight);
-        row.GetComponent<HorizontalLayoutGroup>().spacing = 8;
+        var row = MakeHRow(parent, 42, TextAnchor.MiddleRight);
+        row.GetComponent<HorizontalLayoutGroup>().spacing = 10;
 
-        var scTMP = AddChildTMP(row.transform, $"{cat.score:F0}", 20, accentColor, TextAlignmentOptions.Center);
+        var scTMP = AddChildTMP(row.transform, $"{cat.score:F0}", 28, accentColor, TextAlignmentOptions.Center);
         scTMP.fontStyle = FontStyles.Bold;
-        scTMP.gameObject.AddComponent<LayoutElement>().preferredWidth = 40;
+        scTMP.gameObject.AddComponent<LayoutElement>().preferredWidth = 50;
 
-        var nmTMP = AddChildTMP(row.transform, H(cat.categoryName), 20, TextDark, TextAlignmentOptions.Right);
+        var nmTMP = AddChildTMP(row.transform, H(cat.categoryName), 28, TextDark, TextAlignmentOptions.Right);
         nmTMP.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
     }
 

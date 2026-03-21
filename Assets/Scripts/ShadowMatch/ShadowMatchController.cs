@@ -22,8 +22,8 @@ public class ShadowMatchController : BaseMiniGame
 
     [Header("Settings")]
     public int animalCount = 4;
-    public float shadowSize = 240f;
-    public float animalSize = 260f;
+    public float shadowSize = 400f;
+    public float animalSize = 400f;
 
     private static readonly Color SilhouetteColor = new Color(0.15f, 0.15f, 0.18f, 0.90f);
 

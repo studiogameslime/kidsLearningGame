@@ -27,6 +27,8 @@ public class DiscoveryRevealController : MonoBehaviour
     private int clearedPixels;
     private bool isRevealed;
     private bool isComplete;
+    private int lastTexX = -1;
+    private int lastTexY = -1;
 
     private void Start()
     {
@@ -172,7 +174,6 @@ public class DiscoveryRevealController : MonoBehaviour
             if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
                 rt, Input.mousePosition, null, out localPoint))
             {
-                // Convert local point to texture coordinates
                 Rect rect = rt.rect;
                 float normX = (localPoint.x - rect.x) / rect.width;
                 float normY = (localPoint.y - rect.y) / rect.height;
@@ -180,8 +181,35 @@ public class DiscoveryRevealController : MonoBehaviour
                 int texX = Mathf.RoundToInt(normX * textureWidth);
                 int texY = Mathf.RoundToInt(normY * textureHeight);
 
-                ScratchAt(texX, texY);
+                // Interpolate between last position and current for smooth smear
+                if (lastTexX >= 0 && lastTexY >= 0)
+                {
+                    int dx = texX - lastTexX;
+                    int dy = texY - lastTexY;
+                    float dist = Mathf.Sqrt(dx * dx + dy * dy);
+                    int steps = Mathf.Max(1, Mathf.RoundToInt(dist / (brushRadius * 0.3f)));
+                    for (int i = 0; i <= steps; i++)
+                    {
+                        float t = (float)i / steps;
+                        int ix = Mathf.RoundToInt(Mathf.Lerp(lastTexX, texX, t));
+                        int iy = Mathf.RoundToInt(Mathf.Lerp(lastTexY, texY, t));
+                        ScratchAt(ix, iy);
+                    }
+                }
+                else
+                {
+                    ScratchAt(texX, texY);
+                }
+
+                lastTexX = texX;
+                lastTexY = texY;
             }
+        }
+        else
+        {
+            // Reset last position when finger is lifted
+            lastTexX = -1;
+            lastTexY = -1;
         }
     }
 

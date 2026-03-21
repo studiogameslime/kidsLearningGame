@@ -20,8 +20,6 @@ public class WorldController : MonoBehaviour
     public Button homeButton;
     public Button gamesButton;
     public Button parentAreaButton;
-    public Image profileAvatar;
-    public TMPro.TextMeshProUGUI profileInitial;
 
     [Header("Environment")]
     public WorldEnvironment environment;
@@ -168,13 +166,7 @@ public class WorldController : MonoBehaviour
 
     private void UpdateProfileAvatar()
     {
-        var profile = ProfileManager.ActiveProfile;
-        if (profile == null) return;
-
-        if (profileAvatar != null)
-            profileAvatar.color = profile.AvatarColor;
-        if (profileInitial != null)
-            profileInitial.text = profile.Initial;
+        // Profile avatar removed from header — parent dashboard icon replaces it
     }
 
     private void BuildWorld()

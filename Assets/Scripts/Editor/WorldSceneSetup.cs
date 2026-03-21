@@ -299,7 +299,7 @@ public class WorldSceneSetup : EditorWindow
         scaler.matchWidthOrHeight = 0.5f;
         canvasGO.AddComponent<GraphicRaycaster>();
 
-        // Safe area
+        // Safe area — only for the top bar (buttons/text must avoid cutout)
         var safeArea = new GameObject("SafeArea");
         safeArea.transform.SetParent(canvasGO.transform, false);
         var safeRT = safeArea.AddComponent<RectTransform>();
@@ -343,34 +343,16 @@ public class WorldSceneSetup : EditorWindow
             new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f),
             new Vector2(-100, 0), new Vector2(90, 90));
 
-        // Profile avatar
-        var profileBtn = new GameObject("ProfileButton");
-        profileBtn.transform.SetParent(topBar.transform, false);
-        var profileBtnRT = profileBtn.AddComponent<RectTransform>();
-        profileBtnRT.anchorMin = new Vector2(1, 0.5f);
-        profileBtnRT.anchorMax = new Vector2(1, 0.5f);
-        profileBtnRT.pivot = new Vector2(1, 0.5f);
-        profileBtnRT.anchoredPosition = new Vector2(-16, 0);
-        profileBtnRT.sizeDelta = new Vector2(90, 90);
-        var profileBtnImg = profileBtn.AddComponent<Image>();
-        if (circleSprite != null) profileBtnImg.sprite = circleSprite;
-        profileBtnImg.color = HexColor("#90CAF9");
+        // Parent dashboard button (top-right, multiplayer icon)
+        var parentIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/multiplayer.png");
+        var parentDashBtn = CreateIconButton(topBar.transform, "ParentDashboardButton", parentIcon,
+            new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f),
+            new Vector2(-16, 0), new Vector2(90, 90));
 
-        var profileInitialGO = new GameObject("Initial");
-        profileInitialGO.transform.SetParent(profileBtn.transform, false);
-        var profileInitialRT = profileInitialGO.AddComponent<RectTransform>();
-        StretchFull(profileInitialRT);
-        var profileInitialTMP = profileInitialGO.AddComponent<TextMeshProUGUI>();
-        profileInitialTMP.text = "?";
-        profileInitialTMP.fontSize = 24;
-        profileInitialTMP.fontStyle = FontStyles.Bold;
-        profileInitialTMP.color = Color.white;
-        profileInitialTMP.alignment = TextAlignmentOptions.Center;
-        profileInitialTMP.raycastTarget = false;
-
-        // ── Viewport ──
+        // ── Viewport (full screen — sky/grass fill everything including cutout area) ──
         var viewport = new GameObject("Viewport");
-        viewport.transform.SetParent(safeArea.transform, false);
+        viewport.transform.SetParent(canvasGO.transform, false);
+        viewport.transform.SetSiblingIndex(0); // behind safe area
         var viewportRT = viewport.AddComponent<RectTransform>();
         StretchFull(viewportRT);
         viewportRT.offsetMax = new Vector2(0, -TopBarHeight);
@@ -779,23 +761,7 @@ public class WorldSceneSetup : EditorWindow
         var cloudSystemComp = canvasGO.AddComponent<WorldCloudSystem>();
         cloudSystemComp.skyArea = skyAreaRT;
 
-        // ── Parent Area Button (bottom-left, subtle) ──
-        var parentBtn = new GameObject("ParentAreaButton");
-        parentBtn.transform.SetParent(safeArea.transform, false);
-        var parentBtnRT = parentBtn.AddComponent<RectTransform>();
-        parentBtnRT.anchorMin = new Vector2(0, 0);
-        parentBtnRT.anchorMax = new Vector2(0, 0);
-        parentBtnRT.pivot = new Vector2(0, 0);
-        parentBtnRT.anchoredPosition = new Vector2(20, 20);
-        parentBtnRT.sizeDelta = new Vector2(200, 40);
-        var parentBtnTMP = parentBtn.AddComponent<TextMeshProUGUI>();
-        HebrewText.SetText(parentBtnTMP, "\u05D0\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD");
-        parentBtnTMP.fontSize = 18;
-        parentBtnTMP.color = new Color(0.6f, 0.6f, 0.6f, 0.5f);
-        parentBtnTMP.alignment = TextAlignmentOptions.Left;
-        parentBtnTMP.raycastTarget = true;
-        var parentAreaButton = parentBtn.AddComponent<Button>();
-        parentAreaButton.targetGraphic = parentBtnTMP;
+        // Parent area button now in header (parentDashBtn above)
 
         // ── World Controller ──
         var controller = canvasGO.AddComponent<WorldController>();
@@ -806,9 +772,7 @@ public class WorldSceneSetup : EditorWindow
         controller.grassArea = grassAreaRT;
         controller.homeButton = homeGO.GetComponent<Button>();
         controller.gamesButton = gamesGO.GetComponent<Button>();
-        controller.parentAreaButton = parentAreaButton;
-        controller.profileAvatar = profileBtnImg;
-        controller.profileInitial = profileInitialTMP;
+        controller.parentAreaButton = parentDashBtn.GetComponent<Button>();
         controller.environment = envComponent;
         controller.cloudSystem = cloudSystemComp;
 
