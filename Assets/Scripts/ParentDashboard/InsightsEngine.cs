@@ -393,10 +393,70 @@ public static class InsightsEngine
             }
         }
 
-        // Sort by priority descending and return top 5
+        // Add behavioral pattern insights from recent sessions
+        var seenPatterns = new HashSet<string>();
+        foreach (var game in analytics.games)
+        {
+            if (game.recentSessions == null || game.recentSessions.Count < 2) continue;
+
+            var behavioral = BehavioralPatternAnalyzer.AnalyzeGameHistory(game);
+            foreach (var bi in behavioral)
+            {
+                // Deduplicate by patternKey across games
+                if (seenPatterns.Contains(bi.patternKey)) continue;
+                seenPatterns.Add(bi.patternKey);
+
+                // Prefer recent high-confidence insights
+                if (bi.confidence == BehavioralPatternAnalyzer.ConfidenceLevel.Low) continue;
+
+                string icon;
+                switch (bi.type)
+                {
+                    case BehavioralPatternAnalyzer.InsightType.Strength:     icon = "star"; break;
+                    case BehavioralPatternAnalyzer.InsightType.Improvement:  icon = "trending_up"; break;
+                    case BehavioralPatternAnalyzer.InsightType.PracticeArea: icon = "growth"; break;
+                    default:                                                  icon = "info"; break;
+                }
+
+                // Use patternKey as title, full insight as description
+                string title;
+                switch (bi.patternKey)
+                {
+                    case "learning_curve":      title = "\u05E2\u05E7\u05D5\u05DE\u05EA \u05DC\u05DE\u05D9\u05D3\u05D4"; break; // עקומת למידה
+                    case "focus_drop":          title = "\u05D9\u05E8\u05D9\u05D3\u05EA \u05E8\u05D9\u05DB\u05D5\u05D6"; break; // ירידת ריכוז
+                    case "thinks_first":        title = "\u05D7\u05D5\u05E9\u05D1 \u05DC\u05E4\u05E0\u05D9 \u05E9\u05E4\u05D5\u05E2\u05DC"; break; // חושב לפני שפועל
+                    case "hesitation":          title = "\u05D4\u05D9\u05E1\u05D5\u05E1"; break; // היסוס
+                    case "mastery":             title = "\u05E9\u05DC\u05D9\u05D8\u05D4"; break; // שליטה
+                    case "too_easy":            title = "\u05E7\u05DC \u05DE\u05D3\u05D9?"; break; // קל מדי?
+                    case "persistence":         title = "\u05D4\u05EA\u05DE\u05D3\u05D4"; break; // התמדה
+                    case "impulsive":           title = "\u05EA\u05D2\u05D5\u05D1\u05D4 \u05DE\u05D4\u05D9\u05E8\u05D4"; break; // תגובה מהירה
+                    case "repeated_confusion":  title = "\u05D1\u05DC\u05D1\u05D5\u05DC \u05D7\u05D5\u05D6\u05E8"; break; // בלבול חוזר
+                    case "recurring_confusion": title = "\u05D1\u05DC\u05D1\u05D5\u05DC \u05DE\u05EA\u05DE\u05E9\u05DA"; break; // בלבול מתמשך
+                    case "hint_dependence":     title = "\u05EA\u05DC\u05D5\u05EA \u05D1\u05E8\u05DE\u05D6\u05D9\u05DD"; break; // תלות ברמזים
+                    case "trend_improvement":   title = "\u05DE\u05D2\u05DE\u05EA \u05E9\u05D9\u05E4\u05D5\u05E8"; break; // מגמת שיפור
+                    case "trend_decline":       title = "\u05DE\u05D2\u05DE\u05EA \u05D9\u05E8\u05D9\u05D3\u05D4"; break; // מגמת ירידה
+                    case "quit_without_help":   title = "\u05E2\u05E6\u05E8 \u05DE\u05D5\u05E7\u05D3\u05DD"; break; // עצר מוקדם
+                    default:                    title = bi.patternKey; break;
+                }
+
+                insights.Add(new ParentInsight
+                {
+                    type = $"behavioral_{bi.patternKey}",
+                    titleHebrew = title,
+                    descriptionHebrew = bi.insight,
+                    iconId = icon,
+                    priority = (int)bi.priority
+                });
+
+                if (insights.Count >= 10) break;
+            }
+            if (insights.Count >= 10) break;
+        }
+
+        // Sort by priority descending, return top 6
         insights.Sort((a, b) => b.priority.CompareTo(a.priority));
-        if (insights.Count > 5)
-            insights.RemoveRange(5, insights.Count - 5);
+        if (insights.Count > 6)
+            insights.RemoveRange(6, insights.Count - 6);
 
         return insights;
     }

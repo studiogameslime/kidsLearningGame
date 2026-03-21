@@ -769,187 +769,161 @@ public class ParentDashboardController : MonoBehaviour
 
         FitCard(statsCard);
 
-        // ── Insights Card ──
-        if (_data.insights.Count > 0)
+        // ═══════════════════════════════════════════════════════════
+        //  STORY-DRIVEN SECTIONS (below statistics)
+        // ═══════════════════════════════════════════════════════════
+
+        var profile = ProfileManager.ActiveProfile;
+        var story = DashboardStoryBuilder.Build(_data, profile != null ? profile.analytics : null);
+
+        // ── Section 1: Weekly Summary (Hero) ──
+        {
+            var heroCard = MakeCard(parent);
+            var heroTMP = AddChildTMP(heroCard, H(story.weeklySummary), 26, TextDark, TextAlignmentOptions.Right);
+            heroTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 70;
+            heroTMP.lineSpacing = 8;
+            FitCard(heroCard);
+        }
+
+        // ── Section 2: Focus Right Now ──
+        if (!string.IsNullOrEmpty(story.focusNow))
+        {
+            var focusCard = MakeInlineCard(parent, HexColor("#FFF3E0")); // warm orange bg
+            var focusLayout = focusCard.GetComponent<VerticalLayoutGroup>();
+            focusLayout.padding = new RectOffset(24, 24, 16, 16);
+
+            var focusTMP = AddChildTMP(focusCard.transform, H(story.focusNow), 24, HexColor("#E65100"), TextAlignmentOptions.Right);
+            focusTMP.fontStyle = FontStyles.Bold;
+            focusTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 36;
+            FitCard(focusCard.transform);
+        }
+
+        // ── Section 3: Key Insights ──
+        if (story.insights.Count > 0)
         {
             var insightCard = MakeCard(parent);
-            MakeSectionTitle(insightCard, "\u05EA\u05D5\u05D1\u05E0\u05D5\u05EA \u05E2\u05DC \u05D4\u05D9\u05DC\u05D3"); // תובנות על הילד
+            MakeSectionTitle(insightCard, "\u05EA\u05D5\u05D1\u05E0\u05D5\u05EA \u05DE\u05E8\u05DB\u05D6\u05D9\u05D5\u05EA"); // תובנות מרכזיות
 
             // 2-column grid for insights in landscape
-            var insightGrid = new GameObject("InsightGrid");
-            insightGrid.transform.SetParent(insightCard, false);
-            var insightGridLayout = insightGrid.AddComponent<GridLayoutGroup>();
-            insightGridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            insightGridLayout.constraintCount = 2;
-            insightGridLayout.cellSize = new Vector2(800, 100);
-            insightGridLayout.spacing = new Vector2(16, 12);
-            insightGridLayout.childAlignment = TextAnchor.UpperCenter;
-            insightGridLayout.startCorner = GridLayoutGroup.Corner.UpperRight;
-            var insightGridLE = insightGrid.AddComponent<LayoutElement>();
-            insightGridLE.preferredHeight = Mathf.CeilToInt(_data.insights.Count / 2f) * 92;
-
-            foreach (var insight in _data.insights)
+            foreach (var card in story.insights)
             {
-                var insightRow = new GameObject("InsightRow");
-                insightRow.transform.SetParent(insightGrid.transform, false);
-                var insightImg = insightRow.AddComponent<Image>();
-                insightImg.sprite = roundedRect;
-                insightImg.type = Image.Type.Sliced;
-                insightImg.color = InsightBg;
-                insightImg.raycastTarget = false;
+                var row = new GameObject("InsightCard");
+                row.transform.SetParent(insightCard, false);
+                var rowImg = row.AddComponent<Image>();
+                rowImg.sprite = roundedRect; rowImg.type = Image.Type.Sliced;
+                rowImg.color = InsightBg; rowImg.raycastTarget = false;
 
-                var insightLayout = insightRow.AddComponent<VerticalLayoutGroup>();
-                insightLayout.spacing = 4;
-                insightLayout.padding = new RectOffset(20, 20, 12, 12);
-                insightLayout.childForceExpandWidth = true;
-                insightLayout.childForceExpandHeight = false;
-                insightLayout.childControlWidth = true;
-                insightLayout.childControlHeight = true;
+                var rowLayout = row.AddComponent<VerticalLayoutGroup>();
+                rowLayout.spacing = 4;
+                rowLayout.padding = new RectOffset(20, 20, 14, 14);
+                rowLayout.childForceExpandWidth = true;
+                rowLayout.childForceExpandHeight = false;
+                rowLayout.childControlWidth = true;
+                rowLayout.childControlHeight = true;
 
-                var titleTMP = AddChildTMP(insightRow.transform,
-                    H(insight.titleHebrew), 28, Primary, TextAlignmentOptions.Right);
-                titleTMP.fontStyle = FontStyles.Bold;
-                titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 36;
+                var tTMP = AddChildTMP(row.transform, H(card.title), 24, Primary, TextAlignmentOptions.Right);
+                tTMP.fontStyle = FontStyles.Bold;
+                tTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
 
-                var descTMP = AddChildTMP(insightRow.transform,
-                    H(insight.descriptionHebrew), 24, TextDark, TextAlignmentOptions.Right);
-                descTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
+                var bTMP = AddChildTMP(row.transform, H(card.body), 20, TextDark, TextAlignmentOptions.Right);
+                bTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+
+                if (!string.IsNullOrEmpty(card.action))
+                {
+                    var aTMP = AddChildTMP(row.transform, H(card.action), 18, AccentGreen, TextAlignmentOptions.Right);
+                    aTMP.fontStyle = FontStyles.Italic;
+                    aTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 26;
+                }
+
+                row.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             }
 
             FitCard(insightCard);
         }
 
-        // ── Badges ──
-        if (_data.badges.Count > 0)
+        // ── Section 4: How the Child Plays ──
+        if (story.howChildPlays.Count > 0)
         {
-            var badgeCard = MakeCard(parent);
-            MakeSectionTitle(badgeCard, "\u05D4\u05D9\u05E9\u05D2\u05D9\u05DD"); // הישגים
+            var behaviorCard = MakeCard(parent);
+            MakeSectionTitle(behaviorCard, "\u05D0\u05D9\u05DA \u05D4\u05D9\u05DC\u05D3 \u05DE\u05E9\u05D7\u05E7"); // איך הילד משחק
 
-            var badgeGrid = new GameObject("BadgeGrid");
-            badgeGrid.transform.SetParent(badgeCard, false);
-            var bGridLayout = badgeGrid.AddComponent<GridLayoutGroup>();
-            bGridLayout.constraint = GridLayoutGroup.Constraint.FixedRowCount;
-            bGridLayout.constraintCount = 1;
-            bGridLayout.cellSize = new Vector2(400, 110);
-            bGridLayout.spacing = new Vector2(16, 8);
-            bGridLayout.childAlignment = TextAnchor.MiddleCenter;
-            bGridLayout.startCorner = GridLayoutGroup.Corner.UpperRight;
-
-            badgeGrid.AddComponent<LayoutElement>().preferredHeight = 100;
-
-            foreach (var badge in _data.badges)
+            foreach (var line in story.howChildPlays)
             {
-                var badgeGO = new GameObject("Badge");
-                badgeGO.transform.SetParent(badgeGrid.transform, false);
-                var bImg = badgeGO.AddComponent<Image>();
-                bImg.sprite = roundedRect;
-                bImg.type = Image.Type.Sliced;
-                bImg.color = BadgeBg;
-                bImg.raycastTarget = false;
-
-                var bLayout = badgeGO.AddComponent<VerticalLayoutGroup>();
-                bLayout.spacing = 2;
-                bLayout.padding = new RectOffset(10, 10, 8, 8);
-                bLayout.childAlignment = TextAnchor.MiddleCenter;
-                bLayout.childForceExpandWidth = true;
-                bLayout.childForceExpandHeight = false;
-                bLayout.childControlWidth = true;
-                bLayout.childControlHeight = true;
-
-                var bTitle = AddChildTMP(badgeGO.transform, H(badge.titleHebrew),
-                    28, TextDark, TextAlignmentOptions.Center);
-                bTitle.fontStyle = FontStyles.Bold;
-                bTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 36;
-
-                var bSub = AddChildTMP(badgeGO.transform, H(badge.subtitleHebrew),
-                    22, TextMedium, TextAlignmentOptions.Center);
-                bSub.gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+                var row = MakeHRow(behaviorCard, 32, TextAnchor.MiddleRight);
+                AddChildTMP(row.transform, "\u2022", 20, TextMedium, TextAlignmentOptions.Center)
+                    .gameObject.AddComponent<LayoutElement>().preferredWidth = 24;
+                var lineTMP = AddChildTMP(row.transform, H(line), 22, TextDark, TextAlignmentOptions.Right);
+                lineTMP.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
             }
 
-            FitCard(badgeCard);
+            FitCard(behaviorCard);
         }
 
-        // ── Spacer before strengths ──
-        MakeSpacer(parent, 16f);
-
-        // ── Strengths + Practice Areas (side by side) ──
-        if (_data.strongestCategories.Count > 0 || _data.weakestCategories.Count > 0)
+        // ── Section 5: Strengths vs Practice Areas ──
+        if (story.strengths.Count > 0 || story.practiceAreas.Count > 0)
         {
             var dualRow = MakeHRow(parent, 0, TextAnchor.UpperCenter);
             dualRow.GetComponent<HorizontalLayoutGroup>().spacing = 12;
             dualRow.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
             dualRow.GetComponent<HorizontalLayoutGroup>().childForceExpandHeight = true;
-            var dualFit = dualRow.AddComponent<ContentSizeFitter>();
-            dualFit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            dualRow.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            if (_data.strongestCategories.Count > 0)
+            if (story.strengths.Count > 0)
             {
-                var strengthGO = MakeInlineCard(dualRow.transform, StrengthBg);
-                var strengthLayout = strengthGO.GetComponent<VerticalLayoutGroup>();
-                strengthLayout.padding = new RectOffset(20, 20, 16, 16);
-                strengthLayout.spacing = 8;
-
-                var stTitle = AddChildTMP(strengthGO.transform,
-                    H("\u05D7\u05D6\u05E7\u05D5\u05EA"), // חזקות
-                    30, AccentGreen, TextAlignmentOptions.Right);
-                stTitle.fontStyle = FontStyles.Bold;
-                stTitle.enableWordWrapping = false;
-                stTitle.overflowMode = TMPro.TextOverflowModes.Overflow;
-                stTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 40;
-
-                foreach (var cat in _data.strongestCategories)
-                    MakeMiniChip(strengthGO.transform, cat, AccentGreen);
+                var sCard = MakeInlineCard(dualRow.transform, StrengthBg);
+                sCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(20, 20, 16, 16);
+                sCard.GetComponent<VerticalLayoutGroup>().spacing = 6;
+                var sTitle = AddChildTMP(sCard.transform, H("\u05D7\u05D6\u05E7\u05D5\u05EA"), 28, AccentGreen, TextAlignmentOptions.Right);
+                sTitle.fontStyle = FontStyles.Bold;
+                sTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 36;
+                foreach (var s in story.strengths)
+                {
+                    var sTMP = AddChildTMP(sCard.transform, H(s), 22, TextDark, TextAlignmentOptions.Right);
+                    sTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+                }
             }
 
-            if (_data.weakestCategories.Count > 0)
+            if (story.practiceAreas.Count > 0)
             {
-                var practiceGO = MakeInlineCard(dualRow.transform, PracticeBg);
-                var practiceLayout = practiceGO.GetComponent<VerticalLayoutGroup>();
-                practiceLayout.padding = new RectOffset(20, 20, 16, 16);
-                practiceLayout.spacing = 8;
-
-                var prTitle = AddChildTMP(practiceGO.transform,
-                    H("\u05EA\u05D7\u05D5\u05DE\u05D9 \u05EA\u05E8\u05D2\u05D5\u05DC"), // תחומי תרגול
-                    30, AccentOrange, TextAlignmentOptions.Right);
-                prTitle.fontStyle = FontStyles.Bold;
-                prTitle.enableWordWrapping = false;
-                prTitle.overflowMode = TMPro.TextOverflowModes.Overflow;
-                prTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 40;
-
-                foreach (var cat in _data.weakestCategories)
-                    MakeMiniChip(practiceGO.transform, cat, AccentOrange);
+                var pCard = MakeInlineCard(dualRow.transform, PracticeBg);
+                pCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(20, 20, 16, 16);
+                pCard.GetComponent<VerticalLayoutGroup>().spacing = 6;
+                var pTitle = AddChildTMP(pCard.transform, H("\u05E6\u05E8\u05D9\u05DA \u05EA\u05E8\u05D2\u05D5\u05DC"), 28, AccentOrange, TextAlignmentOptions.Right);
+                pTitle.fontStyle = FontStyles.Bold;
+                pTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 36;
+                foreach (var p in story.practiceAreas)
+                {
+                    var pTMP = AddChildTMP(pCard.transform, H(p), 22, TextDark, TextAlignmentOptions.Right);
+                    pTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+                }
             }
         }
 
-        // ── Spacer before categories ──
-        MakeSpacer(parent, 16f);
-
-        // ── Development Categories (4 per row for landscape) ──
-        var catCard = MakeCard(parent);
-        MakeSectionTitle(catCard, "\u05E7\u05D8\u05D2\u05D5\u05E8\u05D9\u05D5\u05EA \u05D4\u05EA\u05E4\u05EA\u05D7\u05D5\u05EA"); // קטגוריות התפתחות
-
-        var catGrid = new GameObject("CatGrid");
-        catGrid.transform.SetParent(catCard, false);
-        var catGridLayout = catGrid.AddComponent<GridLayoutGroup>();
-        catGridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        catGridLayout.constraint = GridLayoutGroup.Constraint.FixedRowCount;
-        catGridLayout.constraintCount = 1;
-        catGridLayout.cellSize = new Vector2(180, 120);
-        catGridLayout.spacing = new Vector2(10, 10);
-        catGridLayout.childAlignment = TextAnchor.UpperCenter;
-        catGridLayout.startCorner = GridLayoutGroup.Corner.UpperRight;
-        var activeCats = 0;
-        foreach (var cat in _data.categories)
-            if (cat.contributingGamesCount > 0) activeCats++;
-        catGrid.AddComponent<LayoutElement>().preferredHeight = 130;
-
-        foreach (var cat in _data.categories)
+        // ── Section 6: Progress Highlight ──
+        if (!string.IsNullOrEmpty(story.progressHighlight))
         {
-            if (cat.contributingGamesCount == 0) continue;
-            MakeCategoryRow(catGrid.transform, cat);
+            var progressCard = MakeInlineCard(parent, HexColor("#E8F5E9"));
+            progressCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(24, 24, 14, 14);
+            var progTMP = AddChildTMP(progressCard.transform, H(story.progressHighlight), 22, AccentGreen, TextAlignmentOptions.Right);
+            progTMP.fontStyle = FontStyles.Bold;
+            progTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
+            FitCard(progressCard.transform);
         }
 
-        FitCard(catCard);
+        // ── Section 7: Suggested Next Step ──
+        if (!string.IsNullOrEmpty(story.suggestedNextStep))
+        {
+            var nextCard = MakeInlineCard(parent, HexColor("#E3F2FD"));
+            nextCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(24, 24, 14, 14);
+            var nextTitle = AddChildTMP(nextCard.transform, H("\u05D4\u05E6\u05E2\u05D3 \u05D4\u05D1\u05D0"), 20, TextMedium, TextAlignmentOptions.Right);
+            // הצעד הבא
+            nextTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+            var nextTMP = AddChildTMP(nextCard.transform, H(story.suggestedNextStep), 24, Primary, TextAlignmentOptions.Right);
+            nextTMP.fontStyle = FontStyles.Bold;
+            nextTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 34;
+            FitCard(nextCard.transform);
+        }
+
         MakeSpacer(parent, 40f);
     }
 
