@@ -177,7 +177,6 @@ public static class ParentDashboardViewModel
         { "findtheobject", "\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05D7\u05D9\u05D4" },
         { "shadows",       "\u05D7\u05D9\u05D4 \u05D5\u05E6\u05DC" },
         { "colormixing",   "\u05E2\u05E8\u05D1\u05D5\u05D1 \u05E6\u05D1\u05E2\u05D9\u05DD" },
-        { "colorvoice",    "\u05D3\u05D9\u05D1\u05D5\u05E8 \u05E6\u05D1\u05E2\u05D9\u05DD" },
         { "ballmaze",      "\u05DE\u05D1\u05D5\u05DA \u05D4\u05DB\u05D3\u05D5\u05E8" },
         { "towerbuilder",  "\u05D1\u05E0\u05D4 \u05DE\u05D2\u05D3\u05DC" },
         { "towerstack",    "\u05DE\u05D2\u05D3\u05DC \u05E7\u05D5\u05D1\u05D9\u05D5\u05EA" },
@@ -194,6 +193,7 @@ public static class ParentDashboardViewModel
         { "connectmatch",  "\u05D7\u05D1\u05E8 \u05D5\u05E6\u05D9\u05D9\u05E8" },
         { "numbertrain",   "\u05E8\u05DB\u05D1\u05EA \u05D4\u05DE\u05E1\u05E4\u05E8\u05D9\u05DD" },
         { "lettertrain",   "\u05E8\u05DB\u05D1\u05EA \u05D4\u05D0\u05D5\u05EA\u05D9\u05D5\u05EA" },
+        { "laundrysorting","\u05DE\u05D9\u05D9\u05DF \u05D1\u05D2\u05D3\u05D9\u05DD" },
     };
 
     // ── Hebrew category names + colors ──

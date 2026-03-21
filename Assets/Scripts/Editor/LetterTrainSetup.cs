@@ -157,6 +157,10 @@ public class LetterTrainSetup : EditorWindow
         ctrl.titleText = titleTMP;
         ctrl.cellSprite = roundedRect;
         ctrl.circleSprite = circleSprite;
+        Sprite locoSprite = null;
+        var locoAssets = AssetDatabase.LoadAllAssetsAtPath("Assets/Art/TrainDriver.png");
+        if (locoAssets != null) foreach (var a in locoAssets) if (a is Sprite s) { locoSprite = s; break; }
+        ctrl.locomotiveSprite = locoSprite;
 
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
             homeGO.GetComponent<Button>().onClick, ctrl.OnHomePressed);

@@ -87,11 +87,11 @@ public class AnalyticsSetup : EditorWindow
             W(SkillCategory.ProblemSolving, 0.30f),
             W(SkillCategory.FineMotor, 0.20f)));
 
-        // ── Color Voice ──
-        mapping.entries.Add(Entry("colorvoice",
-            W(SkillCategory.ColorsAndShapes, 0.50f),
-            W(SkillCategory.InstructionFollowing, 0.30f),
-            W(SkillCategory.Memory, 0.20f)));
+        // ── Laundry Sorting ──
+        mapping.entries.Add(Entry("laundrysorting",
+            W(SkillCategory.VisualMatching, 0.40f),
+            W(SkillCategory.Attention, 0.30f),
+            W(SkillCategory.FineMotor, 0.30f)));
 
         // ── Ball Maze ──
         mapping.entries.Add(Entry("ballmaze",
@@ -194,11 +194,11 @@ public class AnalyticsSetup : EditorWindow
         // All game IDs
         string[] allGames = {
             "memory", "puzzle", "coloring", "fillthedots", "findthecount",
-            "findtheobject", "shadows", "colormixing", "colorvoice",
+            "findtheobject", "shadows", "colormixing",
             "ballmaze", "towerbuilder", "towerstack", "sharedsticker",
             "flappybird", "simonsays", "patterncopy", "letters", "numbermaze",
             "oddoneout", "quantitymatch", "connectmatch", "numbertrain",
-            "lettertrain"
+            "lettertrain", "laundrysorting"
         };
 
         // ── Age 2–2.5 years (24–30 months) ──

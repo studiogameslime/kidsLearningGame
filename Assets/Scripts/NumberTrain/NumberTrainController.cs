@@ -23,6 +23,7 @@ public class NumberTrainController : BaseMiniGame
     [Header("Sprites")]
     public Sprite cellSprite;    // RoundedRect
     public Sprite circleSprite;  // Circle
+    public Sprite locomotiveSprite; // TrainDriver image
 
     // Colors
     private static readonly Color WagonBg       = HexColor("#BBDEFB");
@@ -208,14 +209,14 @@ public class NumberTrainController : BaseMiniGame
         float areaW = trainArea.rect.width;
         float areaH = trainArea.rect.height;
 
-        float wagonW = Mathf.Min(220f, (areaW - (_wagonCount - 1) * 20f - 20f) / _wagonCount);
+        float wagonW = Mathf.Min(200f, (areaW - (_wagonCount - 1) * 20f - 100f) / (_wagonCount + 1));
         _wagonW = wagonW;
         float wagonH = wagonW * 0.85f;
         float connW = 20f;
-        float totalW = _wagonCount * wagonW + (_wagonCount - 1) * connW;
+        float locoGap = 40f; // extra gap between last wagon and locomotive
+        float locoW = wagonW * 1.6f;
+        float totalW = _wagonCount * wagonW + (_wagonCount - 1) * connW + locoGap + locoW;
         float startX = -totalW / 2f + wagonW / 2f;
-
-        startX = -totalW / 2f + wagonW / 2f;
 
         for (int i = 0; i < _wagonCount; i++)
         {
@@ -244,6 +245,9 @@ public class NumberTrainController : BaseMiniGame
             _wagonObjects.Add(wagonGO);
         }
 
+        // Locomotive at the end (right side, with extra gap)
+        float locoX = startX + _wagonCount * (wagonW + connW) - connW + locoGap;
+        CreateLocomotive(_trainGroupRT, locoX, 0, wagonW, wagonH);
     }
 
     private GameObject CreateWagon(RectTransform parent, float x, float y,
@@ -314,72 +318,34 @@ public class NumberTrainController : BaseMiniGame
 
     private void CreateLocomotive(RectTransform parent, float x, float y, float w, float h)
     {
+        // Locomotive uses TrainDriver sprite — proportional sizing
+        float locoH = h * 1.6f; // taller than wagons
+        float locoW = locoH; // square aspect for the sprite
+
         var go = new GameObject("Locomotive");
         go.transform.SetParent(parent, false);
         var rt = go.AddComponent<RectTransform>();
         rt.anchorMin = new Vector2(0.5f, 0f);
         rt.anchorMax = new Vector2(0.5f, 0f);
         rt.pivot = new Vector2(0.5f, 0f);
-        rt.sizeDelta = new Vector2(w, h);
-        rt.anchoredPosition = new Vector2(x, y);
+        rt.sizeDelta = new Vector2(locoW, locoH);
+        rt.anchoredPosition = new Vector2(x, y - h * 0.1f);
+        rt.localScale = new Vector3(-1, 1, 1); // flip horizontally — face left (pulling wagons)
 
-        // Body
         var bgImg = go.AddComponent<Image>();
-        if (cellSprite != null) { bgImg.sprite = cellSprite; bgImg.type = Image.Type.Sliced; }
-        bgImg.color = HexColor("#E53935"); // red locomotive
+        if (locomotiveSprite != null)
+        {
+            bgImg.sprite = locomotiveSprite;
+            bgImg.preserveAspect = true;
+            bgImg.color = Color.white;
+        }
+        else
+        {
+            // Fallback if sprite not assigned
+            if (cellSprite != null) { bgImg.sprite = cellSprite; bgImg.type = Image.Type.Sliced; }
+            bgImg.color = HexColor("#E53935");
+        }
         bgImg.raycastTarget = false;
-
-        // Border
-        var borderGO = new GameObject("Border");
-        borderGO.transform.SetParent(go.transform, false);
-        var brt = borderGO.AddComponent<RectTransform>();
-        brt.anchorMin = Vector2.zero;
-        brt.anchorMax = Vector2.one;
-        brt.offsetMin = new Vector2(-4, -4);
-        brt.offsetMax = new Vector2(4, 4);
-        borderGO.transform.SetAsFirstSibling();
-        var bimg = borderGO.AddComponent<Image>();
-        if (cellSprite != null) { bimg.sprite = cellSprite; bimg.type = Image.Type.Sliced; }
-        bimg.color = HexColor("#C62828");
-        bimg.raycastTarget = false;
-
-        // Chimney (smokestack)
-        var chimneyGO = new GameObject("Chimney");
-        chimneyGO.transform.SetParent(go.transform, false);
-        var chimneyRT = chimneyGO.AddComponent<RectTransform>();
-        chimneyRT.anchorMin = new Vector2(0.5f, 1f);
-        chimneyRT.anchorMax = new Vector2(0.5f, 1f);
-        chimneyRT.pivot = new Vector2(0.5f, 0f);
-        chimneyRT.sizeDelta = new Vector2(w * 0.25f, h * 0.4f);
-        chimneyRT.anchoredPosition = new Vector2(0, 2);
-        var chimneyImg = chimneyGO.AddComponent<Image>();
-        if (cellSprite != null) { chimneyImg.sprite = cellSprite; chimneyImg.type = Image.Type.Sliced; }
-        chimneyImg.color = HexColor("#424242");
-        chimneyImg.raycastTarget = false;
-
-        // Chimney cap (wider top)
-        var capGO = new GameObject("ChimneyCap");
-        capGO.transform.SetParent(chimneyGO.transform, false);
-        var capRT = capGO.AddComponent<RectTransform>();
-        capRT.anchorMin = new Vector2(0.5f, 1f);
-        capRT.anchorMax = new Vector2(0.5f, 1f);
-        capRT.pivot = new Vector2(0.5f, 0f);
-        capRT.sizeDelta = new Vector2(w * 0.38f, h * 0.08f);
-        capRT.anchoredPosition = Vector2.zero;
-        var capImg = capGO.AddComponent<Image>();
-        if (cellSprite != null) { capImg.sprite = cellSprite; capImg.type = Image.Type.Sliced; }
-        capImg.color = HexColor("#616161");
-        capImg.raycastTarget = false;
-
-        // Animated smoke system
-        var smokeEmitter = chimneyGO.AddComponent<TrainSmokeEmitter>();
-        smokeEmitter.circleSprite = circleSprite;
-        smokeEmitter.driftX = -1f; // drift left (train moves right)
-
-        // Wheels
-        float wheelSize = Mathf.Min(50f, w * 0.30f);
-        CreateWheel(go.transform, -w * 0.22f, -25f, wheelSize);
-        CreateWheel(go.transform, w * 0.22f, -25f, wheelSize);
 
         // Connector line to last wagon
         var connGO = new GameObject("LocoConnector");
@@ -389,7 +355,7 @@ public class NumberTrainController : BaseMiniGame
         connRT.anchorMax = new Vector2(0.5f, 0f);
         connRT.pivot = new Vector2(0.5f, 0.5f);
         connRT.sizeDelta = new Vector2(24f, 8f);
-        connRT.anchoredPosition = new Vector2(x - (w + 20f) / 2f, h * 0.45f);
+        connRT.anchoredPosition = new Vector2(x - (locoW + 20f) / 2f, h * 0.45f);
         var connImg = connGO.AddComponent<Image>();
         connImg.color = ConnectorColor;
         connImg.raycastTarget = false;

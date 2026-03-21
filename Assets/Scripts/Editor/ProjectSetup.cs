@@ -160,8 +160,8 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Counting Game…", 0.96f);
             CountingGameSetup.RunSetupSilent();
 
-            EditorUtility.DisplayProgressBar("Setting up project…", "Building Color Voice Game…", 0.965f);
-            ColorVoiceGameSetup.RunSetupSilent();
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Laundry Sorting…", 0.966f);
+            LaundrySortingSetup.RunSetupSilent();
 
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Tower Builder…", 0.968f);
             TowerBuilderSetup.RunSetupSilent();
@@ -670,16 +670,6 @@ public class ProjectSetup : EditorWindow
         ballMaze.nameClip = LoadAudioClip("Assets/Sounds/Games Names/Maze.mp3");
         EditorUtility.SetDirty(ballMaze);
 
-        // ── Color Voice (Say the Color) ──
-        var colorVoice = CreateSO<GameItemData>($"{DataPath}/ColorVoice.asset");
-        colorVoice.id = "colorvoice";
-        colorVoice.title = "Say the Color";
-        colorVoice.cardColor = HexColor("#FF8A65");
-        colorVoice.targetSceneName = "ColorVoice";
-        colorVoice.hasSubItems = false;
-        colorVoice.thumbnail = LoadSprite($"{previewPath}/ColorsRecognize.png");
-        EditorUtility.SetDirty(colorVoice);
-
         // ── Tower Builder ──
         var tower = CreateSO<GameItemData>($"{DataPath}/TowerBuilder.asset");
         tower.id = "towerbuilder";
@@ -810,9 +800,19 @@ public class ProjectSetup : EditorWindow
         connectMatch.hasSubItems = false;
         EditorUtility.SetDirty(connectMatch);
 
+        // ── Laundry Sorting ──
+        var laundrySorting = CreateSO<GameItemData>($"{DataPath}/LaundrySorting.asset");
+        laundrySorting.id = "laundrysorting";
+        laundrySorting.title = "Laundry Sorting";
+        laundrySorting.cardColor = HexColor("#42A5F5");
+        laundrySorting.targetSceneName = "LaundrySorting";
+        laundrySorting.thumbnail = LoadSprite("Assets/Art/Washing Machine.png");
+        laundrySorting.hasSubItems = false;
+        EditorUtility.SetDirty(laundrySorting);
+
         // ── Game Database ──
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, colorVoice, tower, towerStack, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, connectMatch };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, towerStack, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, connectMatch, laundrySorting };
         EditorUtility.SetDirty(db);
 
         // Validate age baseline configuration
@@ -1408,7 +1408,6 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/ShadowMatch.unity",
             $"{ScenesPath}/FindTheAnimal.unity",
             $"{ScenesPath}/CountingGame.unity",
-            $"{ScenesPath}/ColorVoice.unity",
             $"{ScenesPath}/TowerBuilder.unity",
             $"{ScenesPath}/BallMaze.unity",
             $"{ScenesPath}/TowerStack.unity",
@@ -1424,6 +1423,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/LetterTrain.unity",
             $"{ScenesPath}/ImageGallery.unity",
             $"{ScenesPath}/ConnectMatch.unity",
+            $"{ScenesPath}/LaundrySorting.unity",
             $"{ScenesPath}/DiscoveryReveal.unity",
             $"{ScenesPath}/DrawingGallery.unity",
             $"{ScenesPath}/WorldScene.unity",
