@@ -909,6 +909,70 @@ public class ParentDashboardController : MonoBehaviour
             }
         }
 
+        // ── Development Overview (text bars) ──
+        if (story.categoryBars != null && story.categoryBars.Count > 0)
+        {
+            var barCard = MakeCard(parent);
+            MakeSectionTitle(barCard, "\u05E1\u05E7\u05D9\u05E8\u05EA \u05D4\u05EA\u05E4\u05EA\u05D7\u05D5\u05EA"); // סקירת התפתחות
+            foreach (var (catName, score) in story.categoryBars)
+            {
+                var row = MakeHRow(barCard, 28, TextAnchor.MiddleRight);
+                row.GetComponent<HorizontalLayoutGroup>().spacing = 8;
+                // Score number
+                var scoreTMP = AddChildTMP(row.transform, $"{score}", 20, Primary, TextAlignmentOptions.Center);
+                scoreTMP.fontStyle = FontStyles.Bold;
+                scoreTMP.gameObject.AddComponent<LayoutElement>().preferredWidth = 40;
+                // Bar
+                MakeProgressBar(row.transform, score / 100f, ParentDashboardViewModel.ScoreColor(score), 14f);
+                row.transform.GetChild(row.transform.childCount - 1).gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
+                // Name
+                AddChildTMP(row.transform, H(catName), 20, TextDark, TextAlignmentOptions.Right)
+                    .gameObject.AddComponent<LayoutElement>().preferredWidth = 200;
+            }
+            FitCard(barCard);
+        }
+
+        // ── What Improved ──
+        if (story.improvements != null && story.improvements.Count > 0)
+        {
+            var impCard = MakeInlineCard(parent, HexColor("#E8F5E9"));
+            impCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(20, 20, 14, 14);
+            impCard.GetComponent<VerticalLayoutGroup>().spacing = 4;
+            var impTitle = AddChildTMP(impCard.transform, H("\u05DE\u05D4 \u05D4\u05E9\u05EA\u05E4\u05E8"), 24, AccentGreen, TextAlignmentOptions.Right);
+            // מה השתפר
+            impTitle.fontStyle = FontStyles.Bold;
+            impTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
+            foreach (var imp in story.improvements)
+                AddChildTMP(impCard.transform, $"\u2022 {H(imp)}", 20, TextDark, TextAlignmentOptions.Right)
+                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 26;
+            FitCard(impCard.transform);
+        }
+
+        // ── Recommended Games ──
+        if (story.recommendedGames != null && story.recommendedGames.Count > 0)
+        {
+            var recCard = MakeCard(parent);
+            MakeSectionTitle(recCard, "\u05DE\u05D4 \u05DC\u05E9\u05D7\u05E7 \u05D4\u05DC\u05D0\u05D4"); // מה לשחק הלאה
+            foreach (var g in story.recommendedGames)
+                AddChildTMP(recCard, $"\u2022 {H(g)}", 22, TextDark, TextAlignmentOptions.Right)
+                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+            FitCard(recCard);
+        }
+
+        // ── Progress Snapshot ──
+        if (!string.IsNullOrEmpty(story.accuracyTrend) || !string.IsNullOrEmpty(story.lastScores))
+        {
+            var snapCard = MakeCard(parent);
+            MakeSectionTitle(snapCard, "\u05DE\u05D2\u05DE\u05EA \u05D4\u05EA\u05E7\u05D3\u05DE\u05D5\u05EA"); // מגמת התקדמות
+            if (!string.IsNullOrEmpty(story.accuracyTrend))
+                AddChildTMP(snapCard, $"\u05D3\u05D9\u05D5\u05E7: {story.accuracyTrend}", 22, Primary, TextAlignmentOptions.Right)
+                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+            if (!string.IsNullOrEmpty(story.lastScores))
+                AddChildTMP(snapCard, $"\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05D0\u05D7\u05E8\u05D5\u05E0\u05D9\u05DD: {story.lastScores}", 20, TextMedium, TextAlignmentOptions.Right)
+                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 26;
+            FitCard(snapCard);
+        }
+
         // ── Section 6: Progress Highlight ──
         if (!string.IsNullOrEmpty(story.progressHighlight))
         {

@@ -39,6 +39,19 @@ public static class DashboardStoryBuilder
         public List<string> masteryLines;           // 1-2 lines
         public string coloringPrecision;            // one sentence
 
+        // Development overview (sorted strongest to weakest)
+        public List<(string name, int score)> categoryBars;
+
+        // Improvements (2-3 short lines)
+        public List<string> improvements;
+
+        // Recommendations
+        public List<string> recommendedGames;     // "name (reason)"
+
+        // Progress snapshot
+        public string accuracyTrend;               // "↑ improving" / "→ stable"
+        public string lastScores;                   // "62 → 68 → 74"
+
         // Bottom
         public string progressHighlight;
         public string suggestedNextStep;
@@ -61,7 +74,10 @@ public static class DashboardStoryBuilder
             levelUpGames = new List<string>(),
             keepLevelGames = new List<string>(),
             easierLevelGames = new List<string>(),
-            masteryLines = new List<string>()
+            masteryLines = new List<string>(),
+            categoryBars = new List<(string, int)>(),
+            improvements = new List<string>(),
+            recommendedGames = new List<string>()
         };
 
         if (data == null || analytics == null || analytics.totalSessions < 2)
@@ -112,6 +128,18 @@ public static class DashboardStoryBuilder
 
         // ── Coloring Precision ──
         story.coloringPrecision = BuildColoringPrecision(analytics);
+
+        // ── Category Bars ──
+        BuildCategoryBars(data, story);
+
+        // ── Improvements ──
+        BuildImprovements(data, analytics, story);
+
+        // ── Recommended Games ──
+        BuildRecommendedGames(data, story);
+
+        // ── Progress Snapshot ──
+        BuildProgressSnapshot(data, analytics, story);
 
         // ── Progress & Next Step ──
         story.progressHighlight = BuildProgressHighlight(data);
@@ -448,5 +476,74 @@ public static class DashboardStoryBuilder
         if (strengths.Count > 0 && data.overallScore > 65f)
             return "\u05E0\u05E1\u05D5 \u05DC\u05D4\u05E2\u05DC\u05D5\u05EA \u05D0\u05EA \u05E8\u05DE\u05EA \u05D4\u05E7\u05D5\u05E9\u05D9.";
         return "\u05D4\u05DE\u05E9\u05D9\u05DB\u05D5 \u05DC\u05E9\u05D7\u05E7 \u05DE\u05D2\u05D5\u05D5\u05DF \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD!";
+    }
+
+    private static void BuildCategoryBars(ParentDashboardData data, StoryData story)
+    {
+        var list = new List<(string name, int score)>();
+        foreach (var cat in data.categories)
+        {
+            if (cat.contributingGamesCount == 0) continue;
+            list.Add((cat.categoryName, Mathf.RoundToInt(cat.score)));
+        }
+        list.Sort((a, b) => b.score.CompareTo(a.score));
+        if (list.Count > 6) list.RemoveRange(6, list.Count - 6);
+        story.categoryBars = list;
+    }
+
+    private static void BuildImprovements(ParentDashboardData data, ChildAnalyticsProfile analytics, StoryData story)
+    {
+        if (!string.IsNullOrEmpty(story.improvementMetric1))
+            story.improvements.Add(story.improvementMetric1);
+        if (!string.IsNullOrEmpty(story.improvementMetric2))
+            story.improvements.Add(story.improvementMetric2);
+
+        // Check for speed improvement
+        foreach (var g in data.games)
+        {
+            if (g.sessionsPlayed < 4 || g.trend <= 2f) continue;
+            story.improvements.Add($"\u05DE\u05E9\u05EA\u05E4\u05E8 \u05D1{g.gameName}");
+            // משתפר ב...
+            break;
+        }
+
+        if (story.improvements.Count > 3) story.improvements.RemoveRange(3, story.improvements.Count - 3);
+    }
+
+    private static void BuildRecommendedGames(ParentDashboardData data, StoryData story)
+    {
+        foreach (var g in story.easierLevelGames)
+            story.recommendedGames.Add($"{g} (\u05E8\u05DE\u05D4 \u05E7\u05DC\u05D4)");
+            // (רמה קלה)
+
+        // Already sorted by score in levelUpGames
+        foreach (var g in story.levelUpGames)
+            story.recommendedGames.Add($"{g} \u2014 \u05DE\u05D5\u05DB\u05DF \u05DC\u05D4\u05E2\u05DC\u05D5\u05EA \u05E8\u05DE\u05D4");
+            // — מוכן להעלות רמה
+
+        if (story.recommendedGames.Count > 4) story.recommendedGames.RemoveRange(4, story.recommendedGames.Count - 4);
+    }
+
+    private static void BuildProgressSnapshot(ParentDashboardData data, ChildAnalyticsProfile analytics, StoryData story)
+    {
+        // Accuracy trend
+        if (data.overallTrend > 2f)
+            story.accuracyTrend = "\u2191 \u05D1\u05DE\u05D2\u05DE\u05EA \u05E9\u05D9\u05E4\u05D5\u05E8"; // ↑ במגמת שיפור
+        else if (data.overallTrend < -2f)
+            story.accuracyTrend = "\u2193 \u05D3\u05D5\u05E8\u05E9 \u05E2\u05D5\u05D3 \u05EA\u05E8\u05D2\u05D5\u05DC"; // ↓ דורש עוד תרגול
+        else
+            story.accuracyTrend = "\u2192 \u05D9\u05E6\u05D9\u05D1"; // → יציב
+
+        // Last 3 session scores
+        var recentScores = new List<int>();
+        foreach (var g in analytics.games)
+        {
+            for (int i = Mathf.Max(0, g.recentSessions.Count - 3); i < g.recentSessions.Count; i++)
+                recentScores.Add(Mathf.RoundToInt(g.recentSessions[i].sessionScore));
+        }
+        // Take last 3 overall
+        if (recentScores.Count > 3) recentScores.RemoveRange(0, recentScores.Count - 3);
+        if (recentScores.Count >= 2)
+            story.lastScores = string.Join(" \u2192 ", recentScores); // → separator
     }
 }
