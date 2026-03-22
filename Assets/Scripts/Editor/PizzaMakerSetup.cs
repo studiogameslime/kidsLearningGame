@@ -36,6 +36,7 @@ public class PizzaMakerSetup : EditorWindow
         cam.clearFlags = CameraClearFlags.SolidColor;
         cam.backgroundColor = TableColor;
         camGO.tag = "MainCamera";
+        camGO.AddComponent<AudioListener>();
         var urp = System.Type.GetType("UnityEngine.Rendering.Universal.UniversalAdditionalCameraData, Unity.RenderPipelines.Universal.Runtime");
         if (urp != null) camGO.AddComponent(urp);
 
@@ -174,9 +175,9 @@ public class PizzaMakerSetup : EditorWindow
         // Mask to keep sauce/cheese inside circle
         var maskImg = innerGO.AddComponent<Image>();
         if (circleSprite != null) maskImg.sprite = circleSprite;
-        maskImg.color = new Color(1, 1, 1, 0); // invisible
+        maskImg.color = Color.white; // full alpha needed for stencil mask to work
         maskImg.raycastTarget = false;
-        innerGO.AddComponent<Mask>().showMaskGraphic = false;
+        innerGO.AddComponent<Mask>().showMaskGraphic = false; // hides visually but mask still clips
 
         // ── Tool Bar (bottom) ──
         var toolBarGO = new GameObject("ToolBar");
@@ -209,7 +210,7 @@ public class PizzaMakerSetup : EditorWindow
         previewRT.anchorMax = new Vector2(0, 1);
         previewRT.pivot = new Vector2(0, 1);
         previewRT.anchoredPosition = new Vector2(20, -10);
-        previewRT.sizeDelta = new Vector2(140, 140);
+        previewRT.sizeDelta = new Vector2(200, 200);
         var previewBg = previewGO.AddComponent<Image>();
         if (roundedRect != null) { previewBg.sprite = roundedRect; previewBg.type = Image.Type.Sliced; }
         previewBg.color = new Color(1, 1, 1, 0.15f);
@@ -236,12 +237,6 @@ public class PizzaMakerSetup : EditorWindow
         var homeBtn = homeGO.GetComponent<Button>();
         ctrl.GetType().GetField("homeButton",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
-        // ── GameCompletionBridge confetti ──
-        // (handled automatically by BaseMiniGame)
-
-        // ── GlyphAdjustmentRuntimeCleaner ──
-        canvasGO.AddComponent<GlyphAdjustmentRuntimeCleaner>();
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/PizzaMaker.unity");
         Debug.Log("Pizza Maker scene created.");

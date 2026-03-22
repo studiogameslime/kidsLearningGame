@@ -55,8 +55,8 @@ public class PizzaMakerController : BaseMiniGame
     private List<Button> _toppingButtons = new List<Button>();
 
     // Coverage tracking
-    private const float SauceCoverageTarget = 0.55f;
-    private const float CheeseCoverageTarget = 0.50f;
+    private const float MinCoverageToAdvance = 0.30f;
+    private Button _nextStepButton;
     private const int CoverageGridSize = 16; // 16x16 grid for coverage detection
     private bool[,] _sauceGrid;
     private bool[,] _cheeseGrid;
@@ -106,25 +106,54 @@ public class PizzaMakerController : BaseMiniGame
     {
         if (_currentStep == Step.Done) return;
 
-        // Handle touch/mouse input
-        if (Input.GetMouseButtonDown(0))
+        // Lazy geometry update (rect may not be ready on first frame)
+        if (_innerRadius <= 0 && pizzaInner != null)
+            UpdatePizzaGeometry();
+
+        // Unified input: touch or mouse
+        Vector2 screenPos = Vector2.zero;
+        bool pointerDown = false;
+        bool pointerHeld = false;
+        bool pointerUp = false;
+
+        if (Input.touchCount > 0)
         {
-            Vector2 pos = Input.mousePosition;
+            var touch = Input.GetTouch(0);
+            screenPos = touch.position;
+            pointerDown = touch.phase == TouchPhase.Began;
+            pointerHeld = touch.phase == TouchPhase.Moved || touch.phase == TouchPhase.Stationary;
+            pointerUp = touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled;
+        }
+        else
+        {
+            screenPos = Input.mousePosition;
+            pointerDown = Input.GetMouseButtonDown(0);
+            pointerHeld = Input.GetMouseButton(0) && !pointerDown;
+            pointerUp = Input.GetMouseButtonUp(0);
+        }
+
+        if (pointerDown)
+        {
             if (_currentStep == Step.Toppings)
-                TryPlaceTopping(pos);
-            else if (IsInsidePizza(pos))
             {
-                _isDragging = true;
-                ApplyBrush(pos);
+                TryPlaceTopping(screenPos);
+            }
+            else
+            {
+                bool inside = IsInsidePizza(screenPos);
+                if (inside)
+                {
+                    _isDragging = true;
+                    ApplyBrush(screenPos);
+                }
             }
         }
-        else if (Input.GetMouseButton(0) && _isDragging)
+        else if (pointerHeld && _isDragging)
         {
-            Vector2 pos = Input.mousePosition;
-            if (IsInsidePizza(pos))
-                ApplyBrush(pos);
+            if (IsInsidePizza(screenPos))
+                ApplyBrush(screenPos);
         }
-        else if (Input.GetMouseButtonUp(0))
+        else if (pointerUp)
         {
             _isDragging = false;
         }
@@ -239,76 +268,67 @@ public class PizzaMakerController : BaseMiniGame
         if (stepLabel != null)
             HebrewText.SetText(stepLabel, "\u05E9\u05D9\u05DE\u05D5 \u05EA\u05D5\u05E1\u05E4\u05D5\u05EA!"); // !שימו תוספות
 
-        // Create topping selection buttons using group sprites
+        // Show ALL 6 toppings for free placement
         var gridGO = new GameObject("ToppingGrid");
         gridGO.transform.SetParent(toolBar, false);
         var gridRT = gridGO.AddComponent<RectTransform>();
-        gridRT.anchorMin = Vector2.zero;
-        gridRT.anchorMax = Vector2.one;
+        gridRT.anchorMin = new Vector2(0, 0);
+        gridRT.anchorMax = new Vector2(0.85f, 1);
         gridRT.offsetMin = new Vector2(10, 5);
         gridRT.offsetMax = new Vector2(-10, -5);
         var gridLayout = gridGO.AddComponent<HorizontalLayoutGroup>();
-        gridLayout.spacing = 16;
+        gridLayout.spacing = 10;
         gridLayout.childAlignment = TextAnchor.MiddleCenter;
         gridLayout.childForceExpandWidth = false;
         gridLayout.childForceExpandHeight = false;
         gridLayout.childControlWidth = true;
         gridLayout.childControlHeight = true;
 
-        for (int i = 0; i < _requiredToppingIndices.Length; i++)
+        for (int i = 0; i < ToppingNames.Length; i++)
         {
-            int tIdx = _requiredToppingIndices[i];
-            int needed = _requiredToppingCounts[i];
-
-            var btnGO = new GameObject($"Topping_{ToppingNames[tIdx]}");
+            var btnGO = new GameObject($"Topping_{ToppingNames[i]}");
             btnGO.transform.SetParent(gridGO.transform, false);
 
-            var btnLayout = btnGO.AddComponent<VerticalLayoutGroup>();
-            btnLayout.spacing = 2;
-            btnLayout.childAlignment = TextAnchor.MiddleCenter;
-            btnLayout.childForceExpandWidth = false;
-            btnLayout.childForceExpandHeight = false;
-            btnLayout.childControlWidth = true;
-            btnLayout.childControlHeight = true;
-
             var le = btnGO.AddComponent<LayoutElement>();
-            le.preferredWidth = 140;
-            le.preferredHeight = 120;
+            le.preferredWidth = 110;
+            le.preferredHeight = 100;
 
             // Topping image (group sprite)
             var imgGO = new GameObject("Img");
             imgGO.transform.SetParent(btnGO.transform, false);
+            var imgRT = imgGO.AddComponent<RectTransform>();
+            imgRT.anchorMin = Vector2.zero;
+            imgRT.anchorMax = Vector2.one;
+            imgRT.offsetMin = new Vector2(8, 8);
+            imgRT.offsetMax = new Vector2(-8, -8);
             var img = imgGO.AddComponent<Image>();
-            if (toppingGroups != null && tIdx < toppingGroups.Length)
-                img.sprite = toppingGroups[tIdx];
+            if (toppingGroups != null && i < toppingGroups.Length)
+                img.sprite = toppingGroups[i];
             img.preserveAspect = true;
             img.raycastTarget = false;
-            imgGO.AddComponent<LayoutElement>().preferredHeight = 80;
-
-            // Count badge
-            var countGO = new GameObject("Count");
-            countGO.transform.SetParent(btnGO.transform, false);
-            var countTMP = countGO.AddComponent<TextMeshProUGUI>();
-            countTMP.text = $"{needed}";
-            countTMP.fontSize = 24;
-            countTMP.color = new Color(0.3f, 0.3f, 0.3f);
-            countTMP.alignment = TextAlignmentOptions.Center;
-            countTMP.raycastTarget = false;
-            countGO.AddComponent<LayoutElement>().preferredHeight = 28;
 
             // Button
             var bgImg = btnGO.AddComponent<Image>();
-            bgImg.color = new Color(1, 1, 1, 0.01f); // near-invisible for click
+            bgImg.color = new Color(1, 1, 1, 0.01f);
             var btn = btnGO.AddComponent<Button>();
             btn.targetGraphic = bgImg;
-            int capturedIdx = tIdx;
+            int capturedIdx = i;
             btn.onClick.AddListener(() => SelectTopping(capturedIdx));
             _toppingButtons.Add(btn);
         }
 
+        // Finish button (right side of toolbar)
+        ShowNextStepButton(() =>
+        {
+            _currentStep = Step.Done;
+            ClearToolBar();
+            if (stepLabel != null) stepLabel.text = "";
+            RecordCorrect("toppings_done");
+            CompleteRound();
+        });
+
         // Auto-select first topping
-        if (_requiredToppingIndices.Length > 0)
-            SelectTopping(_requiredToppingIndices[0]);
+        SelectTopping(0);
     }
 
     private void SelectTopping(int toppingIndex)
@@ -316,15 +336,12 @@ public class PizzaMakerController : BaseMiniGame
         _selectedTopping = toppingIndex;
 
         // Highlight selected button
-        for (int i = 0; i < _requiredToppingIndices.Length; i++)
+        for (int i = 0; i < _toppingButtons.Count; i++)
         {
-            if (i < _toppingButtons.Count)
-            {
-                var img = _toppingButtons[i].GetComponent<Image>();
-                img.color = (_requiredToppingIndices[i] == toppingIndex)
-                    ? new Color(1f, 0.95f, 0.7f, 0.8f)
-                    : new Color(1, 1, 1, 0.01f);
-            }
+            var img = _toppingButtons[i].GetComponent<Image>();
+            img.color = (i == toppingIndex)
+                ? new Color(1f, 0.95f, 0.7f, 0.8f)
+                : new Color(1, 1, 1, 0.01f);
         }
     }
 
@@ -334,27 +351,22 @@ public class PizzaMakerController : BaseMiniGame
     {
         Vector2 localPos;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            pizzaInner, screenPos, null, out localPos);
+            pizzaInner, screenPos, GetCanvasCamera(), out localPos);
 
         if (_currentStep == Step.Sauce)
         {
             SpawnSauceBlob(localPos);
             UpdateCoverage(_sauceGrid, localPos, ref _sauceCoverage);
-            if (_sauceCoverage >= SauceCoverageTarget)
-            {
-                RecordCorrect("sauce_done");
-                ShowCheeseStep();
-            }
+            // Show next button once minimum coverage reached
+            if (_sauceCoverage >= MinCoverageToAdvance && _nextStepButton == null)
+                ShowNextStepButton(() => { RecordCorrect("sauce_done"); ShowCheeseStep(); });
         }
         else if (_currentStep == Step.Cheese)
         {
             SpawnCheeseBlob(localPos);
             UpdateCoverage(_cheeseGrid, localPos, ref _cheeseCoverage);
-            if (_cheeseCoverage >= CheeseCoverageTarget)
-            {
-                RecordCorrect("cheese_done");
-                ShowToppingsStep();
-            }
+            if (_cheeseCoverage >= MinCoverageToAdvance && _nextStepButton == null)
+                ShowNextStepButton(() => { RecordCorrect("cheese_done"); ShowToppingsStep(); });
         }
     }
 
@@ -403,19 +415,14 @@ public class PizzaMakerController : BaseMiniGame
 
     private void TryPlaceTopping(Vector2 screenPos)
     {
-        if (_selectedTopping < 0) return;
+        if (_selectedTopping < 0 || _selectedTopping >= ToppingNames.Length) return;
         if (!IsInsidePizza(screenPos)) return;
 
         Vector2 localPos;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            pizzaInner, screenPos, null, out localPos);
+            pizzaInner, screenPos, GetCanvasCamera(), out localPos);
 
-        // Check if this topping type still needed
-        if (!_placedCounts.ContainsKey(_selectedTopping)) return;
-        int needed = GetNeededCount(_selectedTopping);
-        if (_placedCounts[_selectedTopping] >= needed) return;
-
-        // Place single topping sprite
+        // Free placement — no count limits
         var go = new GameObject($"Topping_{ToppingNames[_selectedTopping]}");
         go.transform.SetParent(pizzaInner, false);
         var rt = go.AddComponent<RectTransform>();
@@ -431,23 +438,10 @@ public class PizzaMakerController : BaseMiniGame
         img.raycastTarget = false;
 
         _placedToppings.Add(go);
-        _placedCounts[_selectedTopping]++;
         RecordCorrect("topping_placed", ToppingNames[_selectedTopping]);
 
         // Pop-in animation
         StartCoroutine(PopIn(rt, scale));
-
-        // Update count display
-        UpdateToppingCounts();
-
-        // Check if all toppings placed
-        if (AllToppingsPlaced())
-        {
-            _currentStep = Step.Done;
-            ClearToolBar();
-            if (stepLabel != null) stepLabel.text = "";
-            CompleteRound();
-        }
     }
 
     private IEnumerator PopIn(RectTransform rt, float targetScale)
@@ -519,21 +513,34 @@ public class PizzaMakerController : BaseMiniGame
     private void UpdatePizzaGeometry()
     {
         if (pizzaInner == null) return;
-        var corners = new Vector3[4];
-        pizzaInner.GetWorldCorners(corners);
-        float width = Vector3.Distance(corners[0], corners[3]);
-        float height = Vector3.Distance(corners[0], corners[1]);
-        _innerRadius = Mathf.Min(width, height) * 0.5f;
-        _pizzaCenter = (corners[0] + corners[2]) * 0.5f;
+        // Use rect (local space) for coverage grid — more reliable than world corners on first frame
+        float w = pizzaInner.rect.width;
+        float h = pizzaInner.rect.height;
+        _innerRadius = Mathf.Min(w, h) * 0.5f;
+        if (_innerRadius <= 0) _innerRadius = 200f; // fallback
+    }
+
+    private Canvas _canvas;
+
+    private Camera GetCanvasCamera()
+    {
+        if (_canvas == null) _canvas = GetComponentInParent<Canvas>();
+        if (_canvas == null) return null;
+        return _canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : _canvas.worldCamera;
     }
 
     private bool IsInsidePizza(Vector2 screenPos)
     {
         if (pizzaInner == null) return false;
         Vector2 localPos;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            pizzaInner, screenPos, null, out localPos);
-        float halfSize = pizzaInner.rect.width * 0.5f;
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            pizzaInner, screenPos, GetCanvasCamera(), out localPos))
+            return false;
+
+        float w = pizzaInner.rect.width;
+        float h = pizzaInner.rect.height;
+        if (w <= 0 || h <= 0) return false;
+        float halfSize = Mathf.Min(w, h) * 0.5f;
         return (localPos.x * localPos.x + localPos.y * localPos.y) <= halfSize * halfSize;
     }
 
@@ -686,8 +693,68 @@ public class PizzaMakerController : BaseMiniGame
         _placedToppings.Clear();
     }
 
+    private void ShowNextStepButton(UnityEngine.Events.UnityAction onClick)
+    {
+        if (_nextStepButton != null) return;
+
+        // Big green checkmark button
+        var btnGO = new GameObject("NextStepButton");
+        btnGO.transform.SetParent(toolBar, false);
+        var btnRT = btnGO.AddComponent<RectTransform>();
+        btnRT.anchorMin = new Vector2(1, 0.5f);
+        btnRT.anchorMax = new Vector2(1, 0.5f);
+        btnRT.pivot = new Vector2(1, 0.5f);
+        btnRT.anchoredPosition = new Vector2(-16, 0);
+        btnRT.sizeDelta = new Vector2(90, 90);
+
+        var btnImg = btnGO.AddComponent<Image>();
+        if (circleSprite != null) btnImg.sprite = circleSprite;
+        btnImg.color = new Color(0.2f, 0.78f, 0.35f); // green
+        btnImg.raycastTarget = true;
+
+        var btn = btnGO.AddComponent<Button>();
+        btn.targetGraphic = btnImg;
+        btn.onClick.AddListener(() =>
+        {
+            _nextStepButton = null;
+            onClick.Invoke();
+        });
+
+        // Checkmark text
+        var checkGO = new GameObject("Check");
+        checkGO.transform.SetParent(btnGO.transform, false);
+        var checkRT = checkGO.AddComponent<RectTransform>();
+        checkRT.anchorMin = Vector2.zero;
+        checkRT.anchorMax = Vector2.one;
+        checkRT.offsetMin = Vector2.zero;
+        checkRT.offsetMax = Vector2.zero;
+        var checkTMP = checkGO.AddComponent<TextMeshProUGUI>();
+        checkTMP.text = "\u2714"; // ✔
+        checkTMP.fontSize = 48;
+        checkTMP.color = Color.white;
+        checkTMP.alignment = TextAlignmentOptions.Center;
+        checkTMP.raycastTarget = false;
+
+        _nextStepButton = btn;
+
+        // Pulse animation
+        StartCoroutine(PulseButton(btnRT));
+    }
+
+    private IEnumerator PulseButton(RectTransform rt)
+    {
+        while (rt != null)
+        {
+            float t = Time.time * 2f;
+            float s = 1f + Mathf.Sin(t) * 0.08f;
+            rt.localScale = Vector3.one * s;
+            yield return null;
+        }
+    }
+
     private void ClearToolBar()
     {
+        _nextStepButton = null;
         if (toolBar == null) return;
         for (int i = toolBar.childCount - 1; i >= 0; i--)
         {
