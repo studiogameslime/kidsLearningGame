@@ -731,6 +731,23 @@ public class ConnectTheDotsController : BaseMiniGame
 
         if (pointerUp)
         {
+            // Before stopping, check if finger landed on the closing dot (dot 0)
+            if (isDrawing && currentDotIndex >= totalDots)
+            {
+                float closingRadius = currentDotSize * hitRadius * 2f;
+                var firstRT = dots[0].GetComponent<RectTransform>();
+                float d = Vector2.Distance(localPoint, firstRT.anchoredPosition);
+                if (d < closingRadius)
+                {
+                    DrawLine(dots[totalDots - 1], dots[0]);
+                    dots[0].Activate();
+                    roundComplete = true;
+                    HideLiveLines();
+                    isDrawing = false;
+                    CompleteRound();
+                    return;
+                }
+            }
             isDrawing = false;
             HideLiveLines();
             return;
@@ -749,11 +766,30 @@ public class ConnectTheDotsController : BaseMiniGame
             var startDot = dots[targetIdx];
             var startRT = startDot.GetComponent<RectTransform>();
             float dist = Vector2.Distance(localPoint, startRT.anchoredPosition);
+            float radius = (currentDotIndex >= totalDots)
+                ? currentDotSize * hitRadius * 2f  // generous for closing
+                : detectRadius;
 
-            if (dist < detectRadius)
+            if (dist < radius)
             {
+                // If all dots done and touching dot 0 — close the shape
+                if (currentDotIndex >= totalDots)
+                {
+                    DrawLine(dots[totalDots - 1], dots[0]);
+                    dots[0].Activate();
+                    roundComplete = true;
+                    HideLiveLines();
+                    CompleteRound();
+                    return;
+                }
+
                 if (currentDotIndex == 0)
                     ActivateDot(startDot);
+                isDrawing = true;
+            }
+            // All dots done — allow dragging from anywhere to show live line to dot 0
+            else if (currentDotIndex >= totalDots)
+            {
                 isDrawing = true;
             }
             return;
@@ -779,14 +815,15 @@ public class ConnectTheDotsController : BaseMiniGame
                 ActivateDot(nextDot);
             }
         }
-        // All dots done — check if finger reached dot 0 to close
+        // All dots done — check if finger reached dot 0 to close (generous radius)
         else
         {
             var firstDot = dots[0];
             var firstRT = firstDot.GetComponent<RectTransform>();
             float dist = Vector2.Distance(localPoint, firstRT.anchoredPosition);
+            float closingDetectRadius = currentDotSize * hitRadius * 2f;
 
-            if (dist < detectRadius)
+            if (dist < closingDetectRadius)
             {
                 DrawLine(dots[totalDots - 1], dots[0]);
                 dots[0].Activate();

@@ -437,45 +437,52 @@ public class DotShapeGeneratorWindow : EditorWindow
     private static Vector2[] ResamplePolygon(Vector2[] polygon, int targetCount)
     {
         if (polygon.Length >= targetCount)
-        {
-            // Already enough or too many — just return canonical for simple shapes
-            // For shapes with fewer canonical pts than target, interpolate along edges
-        }
+            return polygon;
 
-        // Calculate perimeter
         int n = polygon.Length;
-        float[] cumLen = new float[n + 1];
-        cumLen[0] = 0;
+
+        // For geometric shapes: keep all original vertices, distribute extra points
+        // evenly along edges proportional to edge length.
+        int extraPoints = targetCount - n;
+        float[] edgeLengths = new float[n];
+        float totalLen = 0f;
         for (int i = 0; i < n; i++)
         {
-            int next = (i + 1) % n;
-            cumLen[i + 1] = cumLen[i] + Vector2.Distance(polygon[i], polygon[next]);
+            edgeLengths[i] = Vector2.Distance(polygon[i], polygon[(i + 1) % n]);
+            totalLen += edgeLengths[i];
         }
-        float totalLen = cumLen[n];
         if (totalLen < 0.001f) return polygon;
 
-        // Place targetCount points evenly along perimeter
-        var result = new Vector2[targetCount];
-        for (int i = 0; i < targetCount; i++)
+        // Distribute extra points per edge proportional to length
+        int[] pointsPerEdge = new int[n];
+        int assigned = 0;
+        for (int i = 0; i < n; i++)
         {
-            float targetDist = (float)i / targetCount * totalLen;
-
-            // Find which edge this falls on
-            int edge = 0;
-            for (int e = 0; e < n; e++)
-            {
-                if (cumLen[e + 1] >= targetDist) { edge = e; break; }
-            }
-
-            float edgeStart = cumLen[edge];
-            float edgeLen = cumLen[edge + 1] - edgeStart;
-            float t = edgeLen > 0.0001f ? (targetDist - edgeStart) / edgeLen : 0f;
-
-            int nextIdx = (edge + 1) % n;
-            result[i] = Vector2.Lerp(polygon[edge], polygon[nextIdx], t);
+            pointsPerEdge[i] = Mathf.RoundToInt(extraPoints * (edgeLengths[i] / totalLen));
+            assigned += pointsPerEdge[i];
+        }
+        // Fix rounding errors
+        int diff = extraPoints - assigned;
+        for (int i = 0; diff != 0; i = (i + 1) % n)
+        {
+            if (diff > 0) { pointsPerEdge[i]++; diff--; }
+            else { if (pointsPerEdge[i] > 0) { pointsPerEdge[i]--; diff++; } }
         }
 
-        return result;
+        var result = new System.Collections.Generic.List<Vector2>();
+        for (int i = 0; i < n; i++)
+        {
+            result.Add(polygon[i]); // always include the vertex
+            int subdivs = pointsPerEdge[i];
+            int nextIdx = (i + 1) % n;
+            for (int s = 1; s <= subdivs; s++)
+            {
+                float t = (float)s / (subdivs + 1);
+                result.Add(Vector2.Lerp(polygon[i], polygon[nextIdx], t));
+            }
+        }
+
+        return result.ToArray();
     }
 
     /// <summary>Scale and center points to fit 0.15–0.85 range.</summary>

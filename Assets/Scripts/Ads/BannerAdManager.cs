@@ -10,7 +10,9 @@ using GoogleMobileAds.Api;
 /// </summary>
 public class BannerAdManager : MonoBehaviour
 {
-#if UNITY_ANDROID
+#if UNITY_EDITOR
+    private const string BannerAdUnitId = "ca-app-pub-3940256099942544/6300978111"; // Google test banner
+#elif UNITY_ANDROID
     private const string BannerAdUnitId = "ca-app-pub-4452511612073107/4780012630";
 #elif UNITY_IOS
     private const string BannerAdUnitId = "ca-app-pub-4452511612073107/4780012630";
@@ -51,6 +53,12 @@ public class BannerAdManager : MonoBehaviour
 
     private void LoadBanner()
     {
+        if (!ConsentManager.CanShowAds)
+        {
+            Debug.Log("[AdMob] Banner skipped — consent not granted");
+            return;
+        }
+
         // Clean up any existing banner
         DestroyBanner();
 

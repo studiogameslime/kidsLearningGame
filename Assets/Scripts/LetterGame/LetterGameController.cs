@@ -238,11 +238,13 @@ public class LetterGameController : BaseMiniGame
             var imgRT = animalImage.GetComponent<RectTransform>();
             if (imgRT != null)
             {
-                // Center anchors + fixed size instead of stretching
-                imgRT.anchorMin = new Vector2(0.5f, 0.5f);
-                imgRT.anchorMax = new Vector2(0.5f, 0.5f);
-                imgRT.sizeDelta = new Vector2(150f, 150f);
-                imgRT.anchoredPosition = Vector2.zero;
+                // Keep the right-half anchors from reset, center the circle within that area
+                // Anchors are already set to imageArea (0.52–0.99, 0.32–0.98) by OnRoundCleanup
+                // Use pivot center and fixed size
+                imgRT.anchorMin = new Vector2(0.52f, 0.32f);
+                imgRT.anchorMax = new Vector2(0.99f, 0.98f);
+                imgRT.offsetMin = Vector2.zero;
+                imgRT.offsetMax = Vector2.zero;
             }
         }
     }

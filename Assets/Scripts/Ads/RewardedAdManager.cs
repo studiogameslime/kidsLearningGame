@@ -10,7 +10,9 @@ using GoogleMobileAds.Api;
 /// </summary>
 public class RewardedAdManager : MonoBehaviour
 {
-#if UNITY_ANDROID
+#if UNITY_EDITOR
+    private const string AdUnitId = "ca-app-pub-3940256099942544/5224354917"; // Google test rewarded
+#elif UNITY_ANDROID
     private const string AdUnitId = "ca-app-pub-4452511612073107/3466930965";
 #elif UNITY_IOS
     private const string AdUnitId = "ca-app-pub-4452511612073107/3466930965";
@@ -92,6 +94,12 @@ public class RewardedAdManager : MonoBehaviour
 
     private void LoadAd()
     {
+        if (!ConsentManager.CanShowAds)
+        {
+            Debug.Log("[AdMob] Rewarded ad skipped — consent not granted");
+            return;
+        }
+
         DestroyAd();
 
         var request = new AdRequest();
