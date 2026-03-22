@@ -95,7 +95,7 @@ public class ProfileCreationController : MonoBehaviour
 
     // Maps new step index → stepSounds array index (recording step removed).
     // Steps: 0=Greeting, 1=TypeName, 2=Age, 3=Animal, 4=Color, 5=Done
-    private static readonly int[] StepSoundMap = { 0, 1, 3, 4, 5, -1 };
+    private static readonly int[] StepSoundMap = { 0, 1, 3, 4, 5, 6 };
 
     private void Start()
     {

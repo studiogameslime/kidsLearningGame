@@ -163,6 +163,9 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Laundry Sorting…", 0.966f);
             LaundrySortingSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Pizza Maker…", 0.967f);
+            PizzaMakerSetup.RunSetupSilent();
+
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Tower Builder…", 0.968f);
             TowerBuilderSetup.RunSetupSilent();
 
@@ -810,9 +813,18 @@ public class ProjectSetup : EditorWindow
         laundrySorting.hasSubItems = false;
         EditorUtility.SetDirty(laundrySorting);
 
+        // ── Pizza Maker ──
+        var pizzaMaker = CreateSO<GameItemData>($"{DataPath}/PizzaMaker.asset");
+        pizzaMaker.id = "pizzamaker";
+        pizzaMaker.title = "Pizza Maker";
+        pizzaMaker.cardColor = HexColor("#FF7043");
+        pizzaMaker.targetSceneName = "PizzaMaker";
+        pizzaMaker.hasSubItems = false;
+        EditorUtility.SetDirty(pizzaMaker);
+
         // ── Game Database ──
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, towerStack, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, connectMatch, laundrySorting };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, /* towerStack hidden for v1 */ sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, connectMatch, laundrySorting, pizzaMaker };
         EditorUtility.SetDirty(db);
 
         // Validate age baseline configuration
@@ -1424,6 +1436,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/ImageGallery.unity",
             $"{ScenesPath}/ConnectMatch.unity",
             $"{ScenesPath}/LaundrySorting.unity",
+            $"{ScenesPath}/PizzaMaker.unity",
             $"{ScenesPath}/DiscoveryReveal.unity",
             $"{ScenesPath}/DrawingGallery.unity",
             $"{ScenesPath}/WorldScene.unity",

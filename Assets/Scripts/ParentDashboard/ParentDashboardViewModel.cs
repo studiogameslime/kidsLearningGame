@@ -194,6 +194,7 @@ public static class ParentDashboardViewModel
         { "numbertrain",   "\u05E8\u05DB\u05D1\u05EA \u05D4\u05DE\u05E1\u05E4\u05E8\u05D9\u05DD" },
         { "lettertrain",   "\u05E8\u05DB\u05D1\u05EA \u05D4\u05D0\u05D5\u05EA\u05D9\u05D5\u05EA" },
         { "laundrysorting","\u05DE\u05D9\u05D9\u05DF \u05D1\u05D2\u05D3\u05D9\u05DD" },
+        { "pizzamaker",    "\u05D4\u05E4\u05D9\u05E6\u05E8\u05D9\u05D9\u05D4" },
     };
 
     // ── Hebrew category names + colors ──

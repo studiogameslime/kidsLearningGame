@@ -147,21 +147,33 @@ public class WorldController : MonoBehaviour
         var easel = FindObjectOfType<WorldEasel>();
         yield return StartCoroutine(LiftObjectStep(
             easel != null ? easel.gameObject : null,
-            SoundLibrary.WorldGallery()));
+            SoundLibrary.WorldSavedPaintings()));
 
-        // ── Step 6: "Let's open your first gift!" ──
-        yield return StartCoroutine(DarkOverlayStep(SoundLibrary.WorldOpenFirstGift()));
-
-        // Spawn first gift, then spotlight it — only the gift is tappable
+        // ── Step 6: Spawn first gift, then "Let's open your first gift!" ──
         if (rewardReveal != null)
         {
+            // Spawn gift first (behind dark overlay)
             rewardReveal.CheckForPendingReward();
             yield return new WaitForSeconds(1.0f);
 
+            // Now play the audio with spotlight on the gift
             var gift1 = FindObjectOfType<GiftBoxController>();
             if (gift1 != null)
             {
                 ShowSpotlightOnTarget(gift1.GetComponent<RectTransform>(), 180f);
+
+                // Play "let's open your first gift" while gift is visible
+                var openClip = SoundLibrary.WorldOpenFirstGift();
+                var alinRef = AlinGuide.Instance;
+                if (openClip != null)
+                {
+                    if (alinRef != null) alinRef.PlayTalking();
+                    BackgroundMusicManager.PlayOneShot(openClip);
+                    yield return new WaitForSeconds(openClip.length + 0.3f);
+                    if (alinRef != null) alinRef.StopTalking();
+                }
+
+                // Wait for gift to be opened
                 while (FindObjectOfType<GiftBoxController>() != null)
                     yield return null;
             }

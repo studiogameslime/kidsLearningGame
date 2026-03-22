@@ -35,9 +35,7 @@ public class DrawingGalleryController : MonoBehaviour
 
         LoadDrawings();
 
-        // Play gallery intro voice
-        var clip = SoundLibrary.WorldSavedPaintings();
-        if (clip != null) BackgroundMusicManager.PlayOneShot(clip);
+        // Gallery intro voice removed — plays during world tutorial instead
     }
 
     private void LoadDrawings()

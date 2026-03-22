@@ -93,6 +93,12 @@ public class AnalyticsSetup : EditorWindow
             W(SkillCategory.Attention, 0.30f),
             W(SkillCategory.FineMotor, 0.30f)));
 
+        // ── Pizza Maker ──
+        mapping.entries.Add(Entry("pizzamaker",
+            W(SkillCategory.FineMotor, 0.40f),
+            W(SkillCategory.VisualMatching, 0.30f),
+            W(SkillCategory.Attention, 0.30f)));
+
         // ── Ball Maze ──
         mapping.entries.Add(Entry("ballmaze",
             W(SkillCategory.SpatialReasoning, 0.45f),
@@ -198,7 +204,7 @@ public class AnalyticsSetup : EditorWindow
             "ballmaze", "towerbuilder", "towerstack", "sharedsticker",
             "flappybird", "simonsays", "patterncopy", "letters", "numbermaze",
             "oddoneout", "quantitymatch", "connectmatch", "numbertrain",
-            "lettertrain", "laundrysorting"
+            "lettertrain", "laundrysorting", "pizzamaker"
         };
 
         // ── Age 2–2.5 years (24–30 months) ──
