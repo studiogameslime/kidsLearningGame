@@ -100,6 +100,22 @@ public class PizzaMakerController : BaseMiniGame
 
         // Show sauce tool
         ShowSauceStep();
+
+        // Position tutorial hand at center of pizza
+        PositionTutorialHand();
+    }
+
+    private void PositionTutorialHand()
+    {
+        if (TutorialHand == null || pizzaInner == null) return;
+
+        // Show spreading motion across the pizza
+        Vector2 center = TutorialHand.GetLocalCenter(pizzaInner);
+
+        float radius = pizzaInner.rect.width * 0.25f;
+        Vector2 from = center + new Vector2(-radius, radius);
+        Vector2 to = center + new Vector2(radius, -radius);
+        TutorialHand.SetMovePath(from, to, 1.2f);
     }
 
     protected override void OnGameplayUpdate()
@@ -134,6 +150,8 @@ public class PizzaMakerController : BaseMiniGame
 
         if (pointerDown)
         {
+            DismissTutorial();
+
             if (_currentStep == Step.Toppings)
             {
                 TryPlaceTopping(screenPos);
@@ -543,6 +561,10 @@ public class PizzaMakerController : BaseMiniGame
         float halfSize = Mathf.Min(w, h) * 0.5f;
         return (localPos.x * localPos.x + localPos.y * localPos.y) <= halfSize * halfSize;
     }
+
+    // ── Navigation ──
+
+    public void OnHomePressed() => ExitGame();
 
     // ── Helpers ──
 

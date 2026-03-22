@@ -257,7 +257,37 @@ public class BallMazeController : BaseMiniGame
 
         fingerTarget = startPos;
         StartCoroutine(BallIdlePulse());
+
+        // Position tutorial hand: show dragging ball toward the hole
+        PositionTutorialHand(startPos, holePos);
+
         _levelLoading = false;
+    }
+
+    private void PositionTutorialHand(Vector2 ballStartLocal, Vector2 holeLocal)
+    {
+        if (TutorialHand == null || boardRT == null) return;
+
+        var handParent = TutorialHand.transform.parent as RectTransform;
+
+        // Convert ball start position from boardRT local space to hand parent space
+        Vector3 worldFrom = boardRT.TransformPoint(ballStartLocal);
+        Vector2 screenFrom = RectTransformUtility.WorldToScreenPoint(null, worldFrom);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            handParent, screenFrom, null, out Vector2 fromPos);
+
+        // Convert hole position from boardRT local space to hand parent space
+        Vector3 worldTo = boardRT.TransformPoint(holeLocal);
+        Vector2 screenTo = RectTransformUtility.WorldToScreenPoint(null, worldTo);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            handParent, screenTo, null, out Vector2 toPos);
+
+        // Show path from ball to partway toward hole (not all the way — just hint the direction)
+        Vector2 direction = (toPos - fromPos).normalized;
+        float hintDist = Mathf.Min(Vector2.Distance(fromPos, toPos) * 0.5f, 200f);
+        Vector2 hintTo = fromPos + direction * hintDist;
+
+        TutorialHand.SetMovePath(fromPos, hintTo, 1.2f);
     }
 
     private void CreateBoardShadow(float offset, float alpha, float expand)
@@ -403,7 +433,10 @@ public class BallMazeController : BaseMiniGame
             if (touch.phase == TouchPhase.Began)
             {
                 if (IsTouchOnBall(touch.position))
+                {
                     isDragging = true;
+                    DismissTutorial();
+                }
             }
             else if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
             {
@@ -416,7 +449,10 @@ public class BallMazeController : BaseMiniGame
         else
         {
             if (Input.GetMouseButtonDown(0) && IsTouchOnBall(Input.mousePosition))
+            {
                 isDragging = true;
+                DismissTutorial();
+            }
             else if (Input.GetMouseButtonUp(0))
                 isDragging = false;
 
@@ -607,6 +643,8 @@ public class BallMazeController : BaseMiniGame
     {
         Stats?.RecordCorrect();
         Stats?.SetCustom("levelCompleted", currentLevelIndex);
+        SoundLibrary.PlayRandomFeedback();
+
         // Phase 1: Pull ball into hole
         Vector2 ballStart = ballRT.anchoredPosition;
         Vector2 holePos = holeRT.anchoredPosition;

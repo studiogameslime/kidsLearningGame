@@ -251,6 +251,10 @@ public class ConnectTheDotsSetup : EditorWindow
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "fillthedots";
 
+        // Tutorial hand
+        TutorialHandHelper.Create(safeArea.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(-50, 50), new Vector2(450, 450), "fillthedots");
+
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/ConnectTheDots.unity");
     }
 

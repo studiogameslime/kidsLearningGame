@@ -139,6 +139,23 @@ public class MemoryGameController : BaseMiniGame
                 cardIndex++;
             }
         }
+
+        // Position tutorial hand on the first card
+        StartCoroutine(PositionTutorialHandOnFirstCard());
+    }
+
+    private IEnumerator PositionTutorialHandOnFirstCard()
+    {
+        // Wait a frame for the grid layout to calculate positions
+        yield return null;
+        Canvas.ForceUpdateCanvases();
+
+        if (TutorialHand != null && allCards.Count > 0)
+        {
+            var firstCardRT = allCards[0].GetComponent<RectTransform>();
+            Vector2 localPos = TutorialHand.GetLocalCenter(firstCardRT);
+            TutorialHand.SetPosition(localPos);
+        }
     }
 
     protected override void OnRoundCleanup()
@@ -220,6 +237,8 @@ public class MemoryGameController : BaseMiniGame
     private void OnCardClicked(MemoryCard card)
     {
         if (IsInputLocked || isProcessing || card.IsFaceUp || card.IsMatched) return;
+
+        DismissTutorial();
 
         if (firstFlipped == null)
         {

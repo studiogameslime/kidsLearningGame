@@ -74,6 +74,9 @@ public class OddOneOutController : BaseMiniGame
         _lastInteractionTime = Time.time;
         _inactivityCoroutine = StartCoroutine(InactivityMonitor());
 
+        // Position tutorial hand on one of the items (not the odd one — don't reveal the answer)
+        PositionTutorialHand();
+
         Stats.SetCustom("difficulty", (float)Difficulty);
 
         Debug.Log($"[OddOneOut] Round {CurrentRound + 1}: major={_majorAnimal}, odd={_oddAnimal} at slot {_oddIndex}, difficulty={Difficulty}");
@@ -257,6 +260,7 @@ public class OddOneOutController : BaseMiniGame
     private void OnSlotTapped(int slotIndex)
     {
         if (IsInputLocked) return;
+        DismissTutorial();
         _lastInteractionTime = Time.time;
         _attemptsThisRound++;
 
@@ -386,6 +390,19 @@ public class OddOneOutController : BaseMiniGame
                 _lastInteractionTime = Time.time;
             }
         }
+    }
+
+    // ── TUTORIAL HAND ──
+
+    private void PositionTutorialHand()
+    {
+        if (TutorialHand == null || _slotObjects.Count < 4) return;
+
+        // Pick a non-odd slot so we don't reveal the answer
+        int hintSlot = (_oddIndex + 1) % _slotObjects.Count;
+        var slotRT = _slotObjects[hintSlot].GetComponent<RectTransform>();
+        Vector2 localPos = TutorialHand.GetLocalCenter(slotRT);
+        TutorialHand.SetPosition(localPos);
     }
 
     // ── NAVIGATION ──

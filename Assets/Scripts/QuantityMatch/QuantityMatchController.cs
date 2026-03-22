@@ -79,6 +79,9 @@ public class QuantityMatchController : BaseMiniGame
 
         Stats.SetCustom("targetNumber", (float)_targetNumber);
 
+        // Position tutorial hand on one of the answer tiles (the correct one)
+        PositionTutorialHand();
+
         Debug.Log($"[QuantityMatch] Round {CurrentRound + 1}: target={_targetNumber}, correct at slot {_correctTileIndex}, quantities=[{_tileQuantities[0]},{_tileQuantities[1]},{_tileQuantities[2]},{_tileQuantities[3]}], difficulty={Difficulty}");
     }
 
@@ -419,6 +422,7 @@ public class QuantityMatchController : BaseMiniGame
     private void OnTileTapped(int tileIndex)
     {
         if (IsInputLocked) return;
+        DismissTutorial();
         _lastInteractionTime = Time.time;
         _attemptsThisRound++;
 
@@ -561,6 +565,18 @@ public class QuantityMatchController : BaseMiniGame
                 _lastInteractionTime = Time.time;
             }
         }
+    }
+
+    // ── TUTORIAL HAND ──
+
+    private void PositionTutorialHand()
+    {
+        if (TutorialHand == null || _tileObjects.Count == 0) return;
+
+        // Point at the correct tile so the child learns what to do
+        var tileRT = _tileObjects[_correctTileIndex].GetComponent<RectTransform>();
+        Vector2 localPos = TutorialHand.GetLocalCenter(tileRT);
+        TutorialHand.SetPosition(localPos);
     }
 
     // ── NAVIGATION ──

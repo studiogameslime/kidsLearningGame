@@ -233,10 +233,13 @@ public class PizzaMakerSetup : EditorWindow
         ctrl.toppingSingles = singleSprites;
         ctrl.toppingGroups = groupSprites;
 
-        // Home button wiring
-        var homeBtn = homeGO.GetComponent<Button>();
-        ctrl.GetType().GetField("homeButton",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        // Wire home button
+        UnityEditor.Events.UnityEventTools.AddPersistentListener(
+            homeGO.GetComponent<Button>().onClick, ctrl.OnHomePressed);
+
+        // Tutorial hand
+        TutorialHandHelper.Create(safeGO.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(0, -30), new Vector2(450, 450), "pizzamaker");
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/PizzaMaker.unity");
         Debug.Log("Pizza Maker scene created.");

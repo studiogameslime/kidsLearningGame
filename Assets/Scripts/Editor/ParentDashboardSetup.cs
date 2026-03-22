@@ -205,48 +205,24 @@ public class ParentDashboardSetup : EditorWindow
         headerRT.sizeDelta = new Vector2(0, HeaderHeight);
         headerGO.AddComponent<Image>().color = HeaderBg;
 
-        // Header uses HorizontalLayoutGroup for clean alignment
-        var headerLayout = headerGO.AddComponent<HorizontalLayoutGroup>();
-        headerLayout.spacing = 0;
-        headerLayout.padding = new RectOffset(16, 16, 0, 0);
-        headerLayout.childAlignment = TextAnchor.MiddleRight;
-        headerLayout.childForceExpandWidth = false;
-        headerLayout.childForceExpandHeight = true;
-        headerLayout.childControlWidth = true;
-        headerLayout.childControlHeight = false;
-
-        // Back button — pill-shaped with "← חזרה" label
+        // Back button — standard icon button (matches MainMenu/SelectionMenu pattern)
         var backGO = new GameObject("BackButton");
         backGO.transform.SetParent(headerGO.transform, false);
-        var backLE = backGO.AddComponent<LayoutElement>();
-        backLE.preferredWidth = 100;
-        backLE.preferredHeight = 40;
+        var backRT = backGO.AddComponent<RectTransform>();
+        backRT.anchorMin = new Vector2(0, 0.5f);
+        backRT.anchorMax = new Vector2(0, 0.5f);
+        backRT.pivot = new Vector2(0, 0.5f);
+        backRT.anchoredPosition = new Vector2(24, 0);
+        backRT.sizeDelta = new Vector2(90, 90);
+
         var backImg = backGO.AddComponent<Image>();
-        if (roundedRect != null) backImg.sprite = roundedRect;
-        backImg.type = Image.Type.Sliced;
-        backImg.color = new Color(1, 1, 1, 0.15f);
+        backImg.sprite = homeIcon;
+        backImg.preserveAspect = true;
+        backImg.color = Color.white;
+        backImg.raycastTarget = true;
+
         var backBtn = backGO.AddComponent<Button>();
         backBtn.targetGraphic = backImg;
-        var backColors = backBtn.colors;
-        backColors.highlightedColor = new Color(1, 1, 1, 0.25f);
-        backColors.pressedColor = new Color(1, 1, 1, 0.35f);
-        backBtn.colors = backColors;
-
-        // Back button label
-        var backLabelGO = new GameObject("Label");
-        backLabelGO.transform.SetParent(backGO.transform, false);
-        var backLabelRT = backLabelGO.AddComponent<RectTransform>();
-        backLabelRT.anchorMin = Vector2.zero;
-        backLabelRT.anchorMax = Vector2.one;
-        backLabelRT.offsetMin = Vector2.zero;
-        backLabelRT.offsetMax = Vector2.zero;
-        var backTMP = backLabelGO.AddComponent<TextMeshProUGUI>();
-        HebrewText.SetText(backTMP, "\u05D7\u05D6\u05E8\u05D4 \u2190"); // חזרה ←
-        backTMP.fontSize = 16;
-        backTMP.color = Color.white;
-        backTMP.alignment = TextAlignmentOptions.Center;
-        backTMP.enableWordWrapping = false;
-        backTMP.raycastTarget = false;
 
         // Center info column (title + name/age row)
         var infoCenterGO = new GameObject("InfoCenter");
@@ -297,58 +273,7 @@ public class ParentDashboardSetup : EditorWindow
         MakeHeaderSeparator(subRowGO.transform);
         var sessionsGO = MakeHeaderSubText(subRowGO.transform, "Sessions", "");
 
-        // Trophy button (right side, balances back button)
-        var trophyGO = new GameObject("TrophyButton");
-        trophyGO.transform.SetParent(headerGO.transform, false);
-        var trophyLE = trophyGO.AddComponent<LayoutElement>();
-        trophyLE.preferredWidth = 100;
-        trophyLE.preferredHeight = 40;
-        var trophyBgImg = trophyGO.AddComponent<Image>();
-        if (roundedRect != null) trophyBgImg.sprite = roundedRect;
-        trophyBgImg.type = Image.Type.Sliced;
-        trophyBgImg.color = new Color(1, 1, 1, 0.15f);
-        var trophyBtn = trophyGO.AddComponent<Button>();
-        trophyBtn.targetGraphic = trophyBgImg;
-        var trophyColors = trophyBtn.colors;
-        trophyColors.highlightedColor = new Color(1, 1, 1, 0.25f);
-        trophyColors.pressedColor = new Color(1, 1, 1, 0.35f);
-        trophyBtn.colors = trophyColors;
-
-        // Trophy button inner layout (icon + text)
-        var trophyInnerLayout = trophyGO.AddComponent<HorizontalLayoutGroup>();
-        trophyInnerLayout.spacing = 6;
-        trophyInnerLayout.padding = new RectOffset(10, 10, 6, 6);
-        trophyInnerLayout.childAlignment = TextAnchor.MiddleCenter;
-        trophyInnerLayout.childForceExpandWidth = false;
-        trophyInnerLayout.childForceExpandHeight = false;
-        trophyInnerLayout.childControlWidth = false;
-        trophyInnerLayout.childControlHeight = false;
-
-        // Trophy icon
-        if (trophySprite != null)
-        {
-            var iconGO = new GameObject("Icon");
-            iconGO.transform.SetParent(trophyGO.transform, false);
-            var iconRT = iconGO.AddComponent<RectTransform>();
-            iconRT.sizeDelta = new Vector2(24, 24);
-            var iconImg = iconGO.AddComponent<Image>();
-            iconImg.sprite = trophySprite;
-            iconImg.preserveAspect = true;
-            iconImg.raycastTarget = false;
-        }
-
-        // Trophy label
-        var trophyLabelGO = new GameObject("Label");
-        trophyLabelGO.transform.SetParent(trophyGO.transform, false);
-        var trophyLabelRT = trophyLabelGO.AddComponent<RectTransform>();
-        trophyLabelRT.sizeDelta = new Vector2(50, 28);
-        var trophyLabelTMP = trophyLabelGO.AddComponent<TextMeshProUGUI>();
-        HebrewText.SetText(trophyLabelTMP, "\u05D2\u05D1\u05D9\u05E2"); // גביע
-        trophyLabelTMP.fontSize = 14;
-        trophyLabelTMP.color = Color.white;
-        trophyLabelTMP.alignment = TextAlignmentOptions.Center;
-        trophyLabelTMP.enableWordWrapping = false;
-        trophyLabelTMP.raycastTarget = false;
+        // (Trophy button removed)
 
         // ── Tab Content ScrollViews ──
         float contentTop = HeaderHeight;
@@ -412,7 +337,7 @@ public class ParentDashboardSetup : EditorWindow
         ctrl.headerAgeText = ageGO2.GetComponent<TextMeshProUGUI>();
         ctrl.headerSessionsText = sessionsGO.GetComponent<TextMeshProUGUI>();
         ctrl.backButton = backBtn;
-        ctrl.trophyButton = trophyBtn;
+        ctrl.trophyButton = null;
         ctrl.trophySprite = trophySprite;
         ctrl.tabButtons = new Button[0];
         ctrl.tabIndicators = new Image[0];

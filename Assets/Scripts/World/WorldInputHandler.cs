@@ -26,20 +26,101 @@ public class WorldInputHandler : MonoBehaviour
     [Header("Settings")]
     public float dragThreshold = 20f;
 
+    [Header("Inactivity Hint")]
+    public float inactivityDelay = 5f;
+    public Sprite[] hintHandFrames;
+
     private bool isDragging;
     private bool isWorldPan;
     private Vector2 touchStartPos;
     private Vector2 contentStartPos;
     private WorldAnimal draggedAnimal;
 
+    // Inactivity tutorial hand
+    private float _lastInputTime;
+    private TutorialHand _hintHand;
+    private bool _hintShown;
+
+    private void Start()
+    {
+        _lastInputTime = Time.time;
+    }
+
     private void Update()
     {
         if (Input.GetMouseButtonDown(0))
+        {
+            _lastInputTime = Time.time;
+            DismissHint();
             OnTouchStart(Input.mousePosition);
+        }
         else if (Input.GetMouseButton(0))
+        {
             OnTouchMove(Input.mousePosition);
+        }
         else if (Input.GetMouseButtonUp(0))
+        {
             OnTouchEnd(Input.mousePosition);
+        }
+
+        // Show hint hand on game shelf after inactivity
+        if (!_hintShown && Time.time - _lastInputTime >= inactivityDelay)
+        {
+            ShowShelfHint();
+        }
+    }
+
+    private void ShowShelfHint()
+    {
+        _hintShown = true;
+
+        var toyBox = FindObjectOfType<WorldToyBox>();
+        if (toyBox == null) return;
+
+        var toyBoxRT = toyBox.GetComponent<RectTransform>();
+        if (toyBoxRT == null) return;
+
+        // Create hand as child of toy box so it follows its position
+        var go = new GameObject("TutorialHand");
+        go.transform.SetParent(toyBoxRT, false);
+
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = new Vector2(30, -40);
+        rt.sizeDelta = new Vector2(450, 450);
+
+        var img = go.AddComponent<UnityEngine.UI.Image>();
+        img.preserveAspect = true;
+        img.raycastTarget = false;
+
+        var cg = go.AddComponent<CanvasGroup>();
+        cg.blocksRaycasts = false;
+        cg.interactable = false;
+
+        var hand = go.AddComponent<TutorialHand>();
+        hand.tutorialKey = ""; // always show on inactivity, no per-profile memory
+        hand.fps = 20f;
+
+        if (hintHandFrames == null || hintHandFrames.Length == 0)
+        {
+            Destroy(go);
+            return;
+        }
+
+        img.sprite = hintHandFrames[0];
+        hand.frames = hintHandFrames;
+
+        _hintHand = hand;
+    }
+
+    private void DismissHint()
+    {
+        if (_hintHand != null)
+        {
+            _hintHand.Dismiss();
+            _hintHand = null;
+        }
+        _hintShown = false;
     }
 
     private void OnTouchStart(Vector2 screenPos)
@@ -120,6 +201,14 @@ public class WorldInputHandler : MonoBehaviour
             if (cloud != null)
             {
                 cloud.OnTap();
+                return;
+            }
+
+            // Check for sticker tree
+            var stickerTree = go.GetComponent<StickerTreeController>();
+            if (stickerTree != null)
+            {
+                stickerTree.OnTap();
                 return;
             }
 

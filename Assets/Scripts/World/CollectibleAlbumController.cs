@@ -523,8 +523,15 @@ public class CollectibleAlbumController : MonoBehaviour
         if (stickerSprites == null || stickerSprites.Length == 0)
             Debug.LogWarning("[Album] No sticker sprites loaded — run Setup World Scene");
 
+        // Get collected stickers from profile
+        var profile = ProfileManager.ActiveProfile;
+        var collected = profile?.journey?.collectedStickerIds ?? new List<string>();
+
         for (int i = start; i < start + count && i < stickerCount; i++)
         {
+            string stickerId = $"sticker_{i}";
+            bool isCollected = collected.Contains(stickerId);
+
             var cell = new GameObject($"S_{i}");
             cell.transform.SetParent(gridGO.transform, false);
             var layout = cell.AddComponent<VerticalLayoutGroup>();
@@ -538,11 +545,10 @@ public class CollectibleAlbumController : MonoBehaviour
             img.preserveAspect = true; img.raycastTarget = false;
             imgGO.AddComponent<LayoutElement>().preferredHeight = 150;
 
-            // Show actual sticker shape in grey (all locked for now)
             if (stickerSprites != null && i < stickerSprites.Length && stickerSprites[i] != null)
             {
                 img.sprite = stickerSprites[i];
-                img.color = SilhouetteColor;
+                img.color = isCollected ? Color.white : SilhouetteColor;
             }
             else
             {
@@ -550,7 +556,8 @@ public class CollectibleAlbumController : MonoBehaviour
                 img.color = SilhouetteColor;
             }
 
-            var tmp = AddTMP(cell.transform, "?", 18, SilhouetteColor);
+            var tmp = AddTMP(cell.transform, isCollected ? "" : "?", 18,
+                isCollected ? TitleColor : SilhouetteColor);
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
         }

@@ -112,7 +112,29 @@ public class ConnectMatchController : BaseMiniGame
         Stats.SetCustom("gridSize", (float)(_level.gridCols * _level.gridRows));
         Stats.SetCustom("pathLength", (float)_level.targetPath.Length);
 
+        // Position tutorial hand: drag from first to second dot on the path
+        PositionTutorialHand();
+
         Debug.Log($"[ConnectMatch] Round {CurrentRound + 1}: {_level.gridCols}x{_level.gridRows}, path={_level.targetPath.Length}, difficulty={Difficulty}");
+    }
+
+    private void PositionTutorialHand()
+    {
+        if (TutorialHand == null) return;
+        if (_level.targetPath == null || _level.targetPath.Length < 2) return;
+
+        var startCoord = _level.targetPath[0];
+        var nextCoord = _level.targetPath[1];
+
+        if (!_playDots.ContainsKey(startCoord) || !_playDots.ContainsKey(nextCoord)) return;
+
+        var fromRT = _playDots[startCoord].GetComponent<RectTransform>();
+        var toRT = _playDots[nextCoord].GetComponent<RectTransform>();
+
+        Vector2 fromLocal = TutorialHand.GetLocalCenter(fromRT);
+        Vector2 toLocal = TutorialHand.GetLocalCenter(toRT);
+
+        TutorialHand.SetMovePath(fromLocal, toLocal, 1.0f);
     }
 
     protected override void OnRoundCleanup()
@@ -167,6 +189,7 @@ public class ConnectMatchController : BaseMiniGame
 
         if (justPressed)
         {
+            DismissTutorial();
             _isDragging = true;
         }
 

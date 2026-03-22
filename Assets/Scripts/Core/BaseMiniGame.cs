@@ -45,6 +45,9 @@ public abstract class BaseMiniGame : MonoBehaviour
     protected bool IsInputLocked => CurrentState == GameState.Completing
                                  || CurrentState == GameState.WaitingForTransition;
 
+    // Tutorial hand (auto-found if present in scene)
+    private TutorialHand _tutorialHand;
+
     // ── Unity Lifecycle ────────────────────────────────────────────
 
     protected virtual void Start()
@@ -54,6 +57,9 @@ public abstract class BaseMiniGame : MonoBehaviour
 
         // Load difficulty
         Difficulty = GameDifficultyConfig.GetLevel(GameId);
+
+        // Find tutorial hand if present
+        _tutorialHand = FindObjectOfType<TutorialHand>();
 
         // Let derived class configure
         OnGameInit();
@@ -160,6 +166,15 @@ public abstract class BaseMiniGame : MonoBehaviour
     {
         Stats?.RecordHint();
     }
+
+    /// <summary>Dismiss the tutorial hand overlay (call on first player interaction).</summary>
+    protected void DismissTutorial()
+    {
+        if (_tutorialHand != null) _tutorialHand.Dismiss();
+    }
+
+    /// <summary>Access the tutorial hand to position it on real game elements.</summary>
+    protected TutorialHand TutorialHand => _tutorialHand;
 
     /// <summary>Navigate home / main menu. Abandons stats if still playing.</summary>
     protected void ExitGame()

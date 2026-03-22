@@ -536,6 +536,10 @@ public class ColoringGameSetup : EditorWindow
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "coloring";
 
+        // Tutorial hand
+        TutorialHandHelper.Create(safeGO.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(0, -50), new Vector2(450, 450), "coloring");
+
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/ColoringGame.unity");
     }
 

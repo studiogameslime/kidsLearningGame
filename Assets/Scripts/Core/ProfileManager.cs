@@ -69,6 +69,7 @@ public class ProfileManager : MonoBehaviour
                 if (p.savedDrawings == null) p.savedDrawings = new List<SavedDrawing>();
                 if (p.parentImages == null) p.parentImages = new List<ParentImage>();
                 if (p.gameAccessOverrides == null) p.gameAccessOverrides = new List<GameAccessOverrideData>();
+                if (p.journey != null && p.journey.collectedStickerIds == null) p.journey.collectedStickerIds = new List<string>();
             }
         }
 

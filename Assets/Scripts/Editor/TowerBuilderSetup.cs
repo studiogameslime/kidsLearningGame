@@ -179,6 +179,10 @@ public class TowerBuilderSetup : EditorWindow
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "towerbuilder";
 
+        // Tutorial hand
+        TutorialHandHelper.Create(safeArea.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(-100, 0), new Vector2(450, 450), "towerbuilder");
+
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/TowerBuilder.unity");
     }
 

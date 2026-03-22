@@ -81,7 +81,7 @@ public class SimonSaysSetup : EditorWindow
         var scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = Ref;
-        scaler.matchWidthOrHeight = 1f;
+        scaler.matchWidthOrHeight = 0.5f;
         canvasGO.AddComponent<GraphicRaycaster>();
         var root = canvasGO.transform;
 
@@ -329,6 +329,10 @@ public class SimonSaysSetup : EditorWindow
         leaderboard.trophySprite = trophyIcon;
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "simonsays";
+
+        // Tutorial hand
+        TutorialHandHelper.Create(safeGO.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(0, -80), new Vector2(450, 450), "simonsays");
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/SimonSays.unity");
     }

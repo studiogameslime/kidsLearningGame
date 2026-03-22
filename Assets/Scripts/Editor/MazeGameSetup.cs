@@ -198,6 +198,10 @@ public class MazeGameSetup : EditorWindow
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
             homeGO.GetComponent<Button>().onClick, controller.OnHomePressed);
 
+        // Tutorial hand
+        TutorialHandHelper.Create(safeArea.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(0, 0), new Vector2(450, 450), "mazegame");
+
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/MazeGame.unity");
     }
 

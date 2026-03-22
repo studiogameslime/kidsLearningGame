@@ -142,6 +142,9 @@ public class CountingGameController : BaseMiniGame
         // Create answer buttons
         CreateAnswerButtons();
 
+        // Position tutorial hand on the first animal
+        StartCoroutine(PositionTutorialHandOnFirstAnimal());
+
         // Start occasional idle animations
         idleAnimCoroutine = StartCoroutine(RandomIdleAnimations());
     }
@@ -259,6 +262,19 @@ public class CountingGameController : BaseMiniGame
         yield return StartCoroutine(ExitAnimals());
 
         yield return new WaitForSeconds(0.2f);
+    }
+
+    private IEnumerator PositionTutorialHandOnFirstAnimal()
+    {
+        // Wait for pop-in animations to start, then position on first animal
+        yield return null;
+
+        if (TutorialHand != null && spawnedAnimals.Count > 0)
+        {
+            var firstAnimalRT = spawnedAnimals[0].GetComponent<RectTransform>();
+            Vector2 localPos = TutorialHand.GetLocalCenter(firstAnimalRT);
+            TutorialHand.SetPosition(localPos);
+        }
     }
 
     // ── QUESTION TEXT ──
@@ -505,6 +521,8 @@ public class CountingGameController : BaseMiniGame
     private void OnNumberTapped(int number, GameObject btnGO)
     {
         if (IsInputLocked) return;
+
+        DismissTutorial();
 
         if (number == correctAnswer)
         {

@@ -171,6 +171,10 @@ public class LetterTrainSetup : EditorWindow
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "lettertrain";
 
+        // Tutorial hand
+        TutorialHandHelper.Create(safeGO.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(0, -150), new Vector2(450, 450), "lettertrain");
+
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/LetterTrain.unity");
     }
 

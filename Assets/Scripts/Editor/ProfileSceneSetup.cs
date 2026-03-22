@@ -388,10 +388,10 @@ public class ProfileSceneSetup : EditorWindow
         StretchFull(safeRT);
         safeArea.AddComponent<SafeAreaHandler>();
 
-        // Back button (top-left, home icon)
+        // Back button (left-center, home icon)
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
         var backBtnGO = CreateIconButton(safeArea.transform, "BackButton", homeIcon,
-            new Vector2(16, -20), new Vector2(0, 1), new Vector2(0, 1), new Vector2(90, 90));
+            new Vector2(24, 0), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(90, 90));
 
         // ── Content area (landscape — wider, shorter) ──
         var contentArea = new GameObject("ContentArea");

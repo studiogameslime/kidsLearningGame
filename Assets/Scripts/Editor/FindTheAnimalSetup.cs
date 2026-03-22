@@ -371,6 +371,10 @@ public class FindTheAnimalSetup : EditorWindow
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "findtheobject";
 
+        // Tutorial hand
+        TutorialHandHelper.Create(safeGO.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(0, -50), new Vector2(450, 450), "findtheanimal");
+
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/FindTheAnimal.unity");
     }
 

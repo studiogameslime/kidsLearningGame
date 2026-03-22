@@ -141,6 +141,10 @@ public class TowerStackSetup : EditorWindow
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "towerstack";
 
+        // Tutorial hand
+        TutorialHandHelper.Create(safeArea.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(0, 0), new Vector2(450, 450), "towerstack");
+
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/TowerStack.unity");
     }
 

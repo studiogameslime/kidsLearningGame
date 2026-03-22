@@ -85,7 +85,7 @@ public class FlappyBirdSetup : EditorWindow
         var scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = Ref;
-        scaler.matchWidthOrHeight = 1f;
+        scaler.matchWidthOrHeight = 0.5f;
         canvasGO.AddComponent<GraphicRaycaster>();
         var root = canvasGO.transform;
 
@@ -269,6 +269,10 @@ public class FlappyBirdSetup : EditorWindow
         leaderboard.trophySprite = trophyIcon;
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "flappybird";
+
+        // Tutorial hand
+        TutorialHandHelper.Create(safeGO.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(0, 0), new Vector2(450, 450), "flappybird");
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/FlappyBird.unity");
     }

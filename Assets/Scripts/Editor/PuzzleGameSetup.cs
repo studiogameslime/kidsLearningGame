@@ -310,6 +310,10 @@ public class PuzzleGameSetup : EditorWindow
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "puzzle";
 
+        // Tutorial hand
+        TutorialHandHelper.Create(safeGO.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(-100, 0), new Vector2(450, 450), "puzzle");
+
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/PuzzleGame.unity");
     }
 

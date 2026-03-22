@@ -92,6 +92,9 @@ public class LetterGameController : BaseMiniGame
         // Start inactivity monitor
         _inactivityCoroutine = StartCoroutine(InactivityMonitor());
 
+        // Position tutorial hand on one of the answer buttons
+        PositionTutorialHand();
+
         Stats.SetCustom("wordLength", (float)_currentWord.wordLength);
 
         Debug.Log($"[LetterGame] Round {CurrentRound + 1}: {_currentWord.id} ({_currentWord.hebrewWord}), first letter: {_correctLetter}, difficulty: {Difficulty}");
@@ -576,6 +579,18 @@ public class LetterGameController : BaseMiniGame
     {
         if (scoreText != null)
             scoreText.text = $"{_score}/{totalRounds}";
+    }
+
+    // ── TUTORIAL HAND ──
+
+    private void PositionTutorialHand()
+    {
+        if (TutorialHand == null || _buttonObjects.Count == 0) return;
+
+        // Point at the first answer button (don't specifically highlight the correct one)
+        var btnRT = _buttonObjects[0].GetComponent<RectTransform>();
+        Vector2 localPos = TutorialHand.GetLocalCenter(btnRT);
+        TutorialHand.SetPosition(localPos);
     }
 
     // ── NAVIGATION ──

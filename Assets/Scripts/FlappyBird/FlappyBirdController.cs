@@ -101,6 +101,13 @@ public class FlappyBirdController : BaseMiniGame
         // Pre-spawn pipes so they're visible before first tap
         PreSpawnPipes();
 
+        // Position tutorial hand on the bird
+        if (TutorialHand != null && birdRT != null)
+        {
+            Vector2 localPos = TutorialHand.GetLocalCenter(birdRT);
+            TutorialHand.SetPosition(localPos);
+        }
+
         // Show tap prompt
         StartCoroutine(TapPrompt());
     }
@@ -145,6 +152,7 @@ public class FlappyBirdController : BaseMiniGame
 
             if (Input.GetMouseButtonDown(0))
             {
+                DismissTutorial();
                 isPlaying = true;
                 velocity = flapStrength;
             }
@@ -320,6 +328,7 @@ public class FlappyBirdController : BaseMiniGame
                 pipes[i] = pair;
                 score++;
                 Stats?.RecordCorrect();
+                SoundLibrary.PlayRandomFeedback();
             }
 
             // Collision check (AABB) — tight to visible pipe

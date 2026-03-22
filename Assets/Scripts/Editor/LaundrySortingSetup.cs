@@ -250,6 +250,10 @@ public class LaundrySortingSetup : EditorWindow
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
             homeGO.GetComponent<Button>().onClick, ctrl.OnHomePressed);
 
+        // Tutorial hand
+        TutorialHandHelper.Create(safeGO.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(0, 100), new Vector2(450, 450), "laundrysorting");
+
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/LaundrySorting.unity");
     }
 

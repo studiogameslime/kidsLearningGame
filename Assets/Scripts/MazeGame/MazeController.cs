@@ -7,8 +7,11 @@ using UnityEngine.UI;
 /// Maze mini-game with predefined layouts.
 /// Child drags an animal through the maze to reach a star goal.
 /// Features: thick rounded walls, glowing trail, success sparkles, 8 levels.
+///
+/// Inherits BaseMiniGame for analytics tracking, round lifecycle,
+/// confetti/feedback, and journey integration.
 /// </summary>
-public class MazeController : MonoBehaviour
+public class MazeController : BaseMiniGame
 {
     [Header("UI References")]
     public RectTransform mazeContainer;
@@ -258,23 +261,38 @@ public class MazeController : MonoBehaviour
     private float goalBobTime;
     private Coroutine idleBounceRoutine;
     private bool isDragging;
+    private int moveCount;
+    private float levelStartTime;
 
-    // ── lifecycle ────────────────────────────────────────────────────
-    private void Start()
+    // ── BaseMiniGame hooks ──────────────────────────────────────────
+
+    protected override string GetFallbackGameId() => "maze";
+
+    protected override void OnGameInit()
     {
+        isEndless = true;
+        totalRounds = 1;
+        playConfettiOnRoundWin = false;
+        playConfettiOnSessionWin = true;
+        delayBeforeNextRound = 1.0f;
+
         canvas = GetComponentInParent<Canvas>();
         currentLevel = 0;
-        // Wait one frame for layout to calculate RectTransform sizes
-        StartCoroutine(DelayedStart());
     }
 
-    private IEnumerator DelayedStart()
+    protected override void OnRoundSetup()
+    {
+        // Wait one frame for layout to calculate RectTransform sizes
+        StartCoroutine(DelayedLoadLevel());
+    }
+
+    private IEnumerator DelayedLoadLevel()
     {
         yield return null; // wait one frame for layout
         LoadLevel();
     }
 
-    private void Update()
+    protected override void OnGameplayUpdate()
     {
         // Goal bobbing animation
         if (goalRT != null && !isComplete)
@@ -290,6 +308,31 @@ public class MazeController : MonoBehaviour
         HandleInput();
     }
 
+    protected override void OnBeforeComplete()
+    {
+        // Record maze-specific metrics before stats finalize
+        float duration = Time.time - levelStartTime;
+        Stats?.SetCustom("mazeLevel", currentLevel);
+        Stats?.SetCustom("mazeWidth", mazeWidth);
+        Stats?.SetCustom("mazeHeight", mazeHeight);
+        Stats?.SetCustom("moveCount", moveCount);
+        Stats?.SetCustom("duration", Mathf.RoundToInt(duration));
+    }
+
+    protected override IEnumerator OnAfterComplete()
+    {
+        // The success animations (jump, sparkles, trail flash) already played
+        // before CompleteRound() was called, so nothing extra needed here.
+        yield break;
+    }
+
+    protected override void OnRoundCleanup()
+    {
+        currentLevel++;
+    }
+
+    // ── input handling ──────────────────────────────────────────────
+
     private void HandleInput()
     {
         if (Input.touchCount > 0)
@@ -298,7 +341,10 @@ public class MazeController : MonoBehaviour
             if (touch.phase == TouchPhase.Began)
             {
                 if (IsTouchOnPlayer(touch.position))
+                {
                     isDragging = true;
+                    DismissTutorial();
+                }
             }
             else if ((touch.phase == TouchPhase.Moved || touch.phase == TouchPhase.Stationary) && isDragging)
             {
@@ -314,7 +360,10 @@ public class MazeController : MonoBehaviour
             if (Input.GetMouseButtonDown(0))
             {
                 if (IsTouchOnPlayer(Input.mousePosition))
+                {
                     isDragging = true;
+                    DismissTutorial();
+                }
             }
             else if (Input.GetMouseButton(0) && isDragging)
             {
@@ -380,6 +429,7 @@ public class MazeController : MonoBehaviour
             {
                 AddTrailSegment(playerCell, next);
                 playerCell = next;
+                moveCount++;
             }
             else
             {
@@ -390,6 +440,7 @@ public class MazeController : MonoBehaviour
                 {
                     AddTrailSegment(playerCell, next);
                     playerCell = next;
+                    moveCount++;
                 }
                 else
                 {
@@ -406,6 +457,7 @@ public class MazeController : MonoBehaviour
         {
             isComplete = true;
             if (idleBounceRoutine != null) StopCoroutine(idleBounceRoutine);
+            RecordCorrect("reachedGoal");
             StartCoroutine(OnReachedGoal());
         }
     }
@@ -416,6 +468,8 @@ public class MazeController : MonoBehaviour
         ClearMaze();
         isComplete = false;
         goalBobTime = 0f;
+        moveCount = 0;
+        levelStartTime = Time.time;
 
         var def = Mazes[currentLevel % Mazes.Length];
         mazeWidth = def.w;
@@ -446,6 +500,44 @@ public class MazeController : MonoBehaviour
         // Start idle bounce
         if (idleBounceRoutine != null) StopCoroutine(idleBounceRoutine);
         idleBounceRoutine = StartCoroutine(IdleBounce());
+
+        // Position tutorial hand: swipe from player toward first valid move
+        PositionTutorialHand();
+    }
+
+    private void PositionTutorialHand()
+    {
+        if (TutorialHand == null || mazeContainer == null) return;
+
+        // Find first valid move direction from player start
+        Vector2Int[] dirs = { Vector2Int.right, Vector2Int.down, Vector2Int.up, Vector2Int.left };
+        Vector2Int firstMove = playerCell;
+        foreach (var d in dirs)
+        {
+            var n = playerCell + d;
+            if (n.x >= 0 && n.x < mazeWidth && n.y >= 0 && n.y < mazeHeight && CanMove(playerCell, n))
+            {
+                firstMove = n;
+                break;
+            }
+        }
+
+        // Convert maze-local positions to hand's parent coordinate space
+        Vector2 fromLocal = CellToLocal(playerCell);
+        Vector2 toLocal = CellToLocal(firstMove);
+
+        // mazeContainer-local → world → screen → hand parent local
+        Vector3 fromWorld = mazeContainer.TransformPoint(fromLocal);
+        Vector3 toWorld = mazeContainer.TransformPoint(toLocal);
+
+        Vector2 fromScreen = RectTransformUtility.WorldToScreenPoint(null, fromWorld);
+        Vector2 toScreen = RectTransformUtility.WorldToScreenPoint(null, toWorld);
+
+        RectTransform handParent = TutorialHand.transform.parent as RectTransform;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(handParent, fromScreen, null, out Vector2 fromHandLocal);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(handParent, toScreen, null, out Vector2 toHandLocal);
+
+        TutorialHand.SetMovePath(fromHandLocal, toHandLocal, 1f);
     }
 
     private void ParseMaze(MazeDef def)
@@ -809,7 +901,10 @@ public class MazeController : MonoBehaviour
     // ── success ──────────────────────────────────────────────────────
     private IEnumerator OnReachedGoal()
     {
+        // Play confetti immediately for visual feedback (BaseMiniGame may also
+        // trigger confetti on session win, but ConfettiController handles overlap)
         ConfettiController.Instance.Play();
+
         // Jump animation
         yield return JumpAnimation(playerRT);
 
@@ -819,14 +914,10 @@ public class MazeController : MonoBehaviour
         // Flash trail
         yield return FlashTrail();
 
-        yield return new WaitForSeconds(0.8f);
+        yield return new WaitForSeconds(0.5f);
 
-        // Next level
-        if (!GameCompletionBridge.WillJourneyNavigate)
-        {
-            currentLevel++;
-            LoadLevel();
-        }
+        // Let BaseMiniGame handle stats finalization, journey navigation, and round advance
+        CompleteRound();
     }
 
     private IEnumerator JumpAnimation(RectTransform rt)
@@ -967,6 +1058,6 @@ public class MazeController : MonoBehaviour
         return null;
     }
 
-    public void OnHomePressed() => NavigationManager.GoToMainMenu();
+    public void OnHomePressed() => ExitGame();
     public void OnRestartPressed() => LoadLevel();
 }

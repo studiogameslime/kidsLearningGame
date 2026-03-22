@@ -249,6 +249,10 @@ public class PatternCopySetup : EditorWindow
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "patterncopy";
 
+        // Tutorial hand
+        TutorialHandHelper.Create(safeGO.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(150, -50), new Vector2(450, 450), "patterncopy");
+
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/PatternCopy.unity");
     }
 

@@ -212,6 +212,10 @@ public class ConnectMatchSetup : EditorWindow
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "connectmatch";
 
+        // Tutorial hand
+        TutorialHandHelper.Create(safeGO.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(-100, 0), new Vector2(450, 450), "connectmatch");
+
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/ConnectMatch.unity");
     }
 

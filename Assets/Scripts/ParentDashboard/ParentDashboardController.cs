@@ -763,7 +763,7 @@ public class ParentDashboardController : MonoBehaviour
         MakeStatCell(statsGrid.transform, H(_data.favoriteGameName), "\u05DE\u05E9\u05D7\u05E7 \u05D0\u05D4\u05D5\u05D1"); // משחק אהוב
         MakeStatCell(statsGrid.transform, $"{_data.discoveredAnimals}", "\u05D7\u05D9\u05D5\u05EA \u05E9\u05D2\u05D9\u05DC\u05D4"); // חיות שגילה
         MakeStatCell(statsGrid.transform, $"{_data.discoveredColors}", "\u05E6\u05D1\u05E2\u05D9\u05DD \u05E9\u05D2\u05D9\u05DC\u05D4"); // צבעים שגילה
-        MakeStatCell(statsGrid.transform, $"{_data.totalBubblesPopped}", "\u05D1\u05D5\u05E2\u05D5\u05EA \u05E9\u05E4\u05D5\u05E6\u05E6\u05D5"); // בועות שפוצצו
+        MakeStatCell(statsGrid.transform, $"{_data.collectedStickers}", "\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA \u05E9\u05E0\u05D0\u05E1\u05E4\u05D5"); // מדבקות שנאספו
         MakeStatCell(statsGrid.transform, H(_data.thisWeekPlayTimeDisplay), "\u05D6\u05DE\u05DF \u05DE\u05E9\u05D7\u05E7 \u05D4\u05E9\u05D1\u05D5\u05E2"); // זמן משחק השבוע
         // מעורבות removed
 
@@ -1317,7 +1317,165 @@ public class ParentDashboardController : MonoBehaviour
             FitCard(nextCard.transform);
         }
 
+        MakeSpacer(parent, 20f);
+
+        // ── Share App Card ──
+        BuildShareCard(parent);
+
         MakeSpacer(parent, 40f);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  SHARE
+    // ═══════════════════════════════════════════════════════════════
+
+    private void BuildShareCard(Transform parent)
+    {
+        var card = MakeCard(parent);
+        var cardLayout = card.GetComponent<VerticalLayoutGroup>();
+        cardLayout.padding = new RectOffset(28, 28, 24, 24);
+        cardLayout.spacing = 12;
+        cardLayout.childAlignment = TextAnchor.MiddleCenter;
+
+        // Card background — soft gradient feel
+        card.GetComponent<Image>().color = HexColor("#EBF5FB");
+
+        // Title
+        var titleTMP = AddChildTMP(card, H("\u05D0\u05D4\u05D1\u05EA\u05DD \u05D0\u05EA \u05D4\u05D0\u05E4\u05DC\u05D9\u05E7\u05E6\u05D9\u05D4? \u05E1\u05E4\u05E8\u05D5 \u05DC\u05D7\u05D1\u05E8\u05D9\u05DD!"),
+            // אהבתם את האפליקציה? ספרו לחברים!
+            24, Primary, TextAlignmentOptions.Center);
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 34;
+
+        // Subtitle with child stats
+        string statsLine = BuildShareStatsLine();
+        var subtitleTMP = AddChildTMP(card, H(statsLine),
+            20, TextMedium, TextAlignmentOptions.Center);
+        subtitleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+
+        // Share button
+        var btnGO = new GameObject("ShareButton");
+        btnGO.transform.SetParent(card, false);
+        var btnLE = btnGO.AddComponent<LayoutElement>();
+        btnLE.preferredHeight = 56;
+        btnLE.preferredWidth = 280;
+
+        var btnImg = btnGO.AddComponent<Image>();
+        if (roundedRect != null) { btnImg.sprite = roundedRect; btnImg.type = Image.Type.Sliced; }
+        btnImg.color = Primary;
+
+        var btn = btnGO.AddComponent<Button>();
+        btn.targetGraphic = btnImg;
+        var colors = btn.colors;
+        colors.highlightedColor = HexColor("#2980B9");
+        colors.pressedColor = HexColor("#1F6DA0");
+        btn.colors = colors;
+        btn.onClick.AddListener(OnSharePressed);
+
+        // Button label
+        var labelGO = new GameObject("Label");
+        labelGO.transform.SetParent(btnGO.transform, false);
+        var labelRT = labelGO.AddComponent<RectTransform>();
+        labelRT.anchorMin = Vector2.zero;
+        labelRT.anchorMax = Vector2.one;
+        labelRT.offsetMin = Vector2.zero;
+        labelRT.offsetMax = Vector2.zero;
+        var labelTMP = labelGO.AddComponent<TextMeshProUGUI>();
+        HebrewText.SetText(labelTMP, "\u05E9\u05EA\u05E4\u05D5 \u05E2\u05DD \u05D7\u05D1\u05E8\u05D9\u05DD"); // שתפו עם חברים
+        labelTMP.fontSize = 24;
+        labelTMP.color = Color.white;
+        labelTMP.alignment = TextAlignmentOptions.Center;
+        labelTMP.enableWordWrapping = false;
+        labelTMP.fontStyle = FontStyles.Bold;
+        labelTMP.raycastTarget = false;
+    }
+
+    private string BuildShareStatsLine()
+    {
+        if (_data == null) return "";
+
+        // מתן כבר שיחק ב-X משחקים וגילה Y חיות, Z צבעים ו-W מדבקות!
+        string name = _data.profileName;
+        int sessions = _data.totalSessions;
+        int animals = _data.discoveredAnimals;
+        int colors = _data.discoveredColors;
+        int stickers = _data.collectedStickers;
+
+        return $"{name} \u05DB\u05D1\u05E8 \u05E9\u05D9\u05D7\u05E7 \u05D1-{sessions} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05D5\u05D2\u05D9\u05DC\u05D4 {animals} \u05D7\u05D9\u05D5\u05EA, {colors} \u05E6\u05D1\u05E2\u05D9\u05DD \u05D5-{stickers} \u05DE\u05D3\u05D1\u05E7\u05D5\u05EA!";
+    }
+
+    private void OnSharePressed()
+    {
+        string message = BuildShareMessage();
+
+        #if UNITY_ANDROID && !UNITY_EDITOR
+        ShareAndroid(message);
+        #elif UNITY_IOS && !UNITY_EDITOR
+        ShareIOS(message);
+        #else
+        GUIUtility.systemCopyBuffer = message;
+        Debug.Log($"[Share] Copied to clipboard:\n{message}");
+        StartCoroutine(ShowCopiedFeedback());
+        #endif
+    }
+
+    private string BuildShareMessage()
+    {
+        string name = _data != null ? _data.profileName : "";
+        int sessions = _data != null ? _data.totalSessions : 0;
+        int animals = _data != null ? _data.discoveredAnimals : 0;
+        int colors = _data != null ? _data.discoveredColors : 0;
+        int stickers = _data != null ? _data.collectedStickers : 0;
+
+        string appName = Application.productName;
+
+        // הילד שלי X לומד ומשחק עם Y!
+        // כבר שיחק ב-X משחקים וגילה Y חיות, Z צבעים ו-W מדבקות!
+        // הורידו בחינם:
+        return $"\u05D4\u05D9\u05DC\u05D3 \u05E9\u05DC\u05D9 {name} \u05DC\u05D5\u05DE\u05D3 \u05D5\u05DE\u05E9\u05D7\u05E7 \u05E2\u05DD {appName}!\n" +
+               $"\u05DB\u05D1\u05E8 \u05E9\u05D9\u05D7\u05E7 \u05D1-{sessions} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05D5\u05D2\u05D9\u05DC\u05D4 {animals} \u05D7\u05D9\u05D5\u05EA, {colors} \u05E6\u05D1\u05E2\u05D9\u05DD \u05D5-{stickers} \u05DE\u05D3\u05D1\u05E7\u05D5\u05EA!\n" +
+               $"\u05D4\u05D5\u05E8\u05D9\u05D3\u05D5 \u05D1\u05D7\u05D9\u05E0\u05DD:\n" +
+               $"https://play.google.com/store/apps/details?id={Application.identifier}";
+    }
+
+    #if UNITY_ANDROID && !UNITY_EDITOR
+    private void ShareAndroid(string message)
+    {
+        using (var intentClass = new AndroidJavaClass("android.content.Intent"))
+        using (var intent = new AndroidJavaObject("android.content.Intent"))
+        {
+            intent.Call<AndroidJavaObject>("setAction", intentClass.GetStatic<string>("ACTION_SEND"));
+            intent.Call<AndroidJavaObject>("setType", "text/plain");
+            intent.Call<AndroidJavaObject>("putExtra", intentClass.GetStatic<string>("EXTRA_TEXT"), message);
+
+            using (var chooser = intentClass.CallStatic<AndroidJavaObject>("createChooser",
+                intent, "\u05E9\u05EA\u05E4\u05D5 \u05E2\u05DD \u05D7\u05D1\u05E8\u05D9\u05DD")) // שתפו עם חברים
+            {
+                using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+                using (var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
+                {
+                    activity.Call("startActivity", chooser);
+                }
+            }
+        }
+    }
+    #endif
+
+    #if UNITY_IOS && !UNITY_EDITOR
+    [System.Runtime.InteropServices.DllImport("__Internal")]
+    private static extern void _ShareText(string text);
+
+    private void ShareIOS(string message)
+    {
+        _ShareText(message);
+    }
+    #endif
+
+    private IEnumerator ShowCopiedFeedback()
+    {
+        // Brief visual feedback in Editor - find the share button and flash it
+        var shareBtn = dashboardPanel.GetComponentInChildren<Button>();
+        yield return new WaitForSeconds(1f);
     }
 
     // ═══════════════════════════════════════════════════════════════

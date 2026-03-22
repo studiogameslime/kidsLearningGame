@@ -186,7 +186,44 @@ public class ShadowMatchController : BaseMiniGame
         // Pulse first unmatched animal to encourage interaction
         UpdateGuidedPulse();
 
+        // Position tutorial hand on first animal → its matching shadow
+        PositionTutorialHand();
+
         // Animal names are announced when matched, not on round start
+    }
+
+    private void PositionTutorialHand()
+    {
+        if (TutorialHand == null) return;
+        if (animals.Count == 0 || shadows.Count == 0) return;
+
+        // Find first unmatched animal and its matching shadow
+        DraggableAnimal firstAnimal = null;
+        ShadowSlot matchingShadow = null;
+        foreach (var a in animals)
+        {
+            if (a.isPlaced) continue;
+            foreach (var s in shadows)
+            {
+                if (!s.isMatched && s.animalId == a.animalId)
+                {
+                    firstAnimal = a;
+                    matchingShadow = s;
+                    break;
+                }
+            }
+            if (firstAnimal != null) break;
+        }
+
+        if (firstAnimal == null || matchingShadow == null) return;
+
+        var animalRT = firstAnimal.GetComponent<RectTransform>();
+        var shadowRT = matchingShadow.GetComponent<RectTransform>();
+
+        Vector2 fromLocal = TutorialHand.GetLocalCenter(animalRT);
+        Vector2 toLocal = TutorialHand.GetLocalCenter(shadowRT);
+
+        TutorialHand.SetMovePath(fromLocal, toLocal, 1.2f);
     }
 
     protected override void OnRoundCleanup()
@@ -201,6 +238,8 @@ public class ShadowMatchController : BaseMiniGame
     /// <summary>Called by DraggableAnimal during drag to check proximity hints.</summary>
     public void CheckProximity(DraggableAnimal animal)
     {
+        DismissTutorial();
+
         var animalPos = animal.GetComponent<RectTransform>().position;
         float hintDist = shadowSize * 1.5f;
 

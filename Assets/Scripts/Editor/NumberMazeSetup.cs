@@ -148,6 +148,10 @@ public class NumberMazeSetup : EditorWindow
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "numbermaze";
 
+        // Tutorial hand
+        TutorialHandHelper.Create(safeGO.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(-100, 50), new Vector2(450, 450), "numbermaze");
+
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/NumberMaze.unity");
     }
 

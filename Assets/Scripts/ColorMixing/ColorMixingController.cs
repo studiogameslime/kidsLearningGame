@@ -242,6 +242,35 @@ public class ColorMixingController : BaseMiniGame
 
         SetPaletteInteractable(true);
         isAnimating = false;
+
+        // Position tutorial hand: show dragging from a needed color to the left container
+        PositionTutorialHandOnPalette();
+    }
+
+    private void PositionTutorialHandOnPalette()
+    {
+        if (TutorialHand == null || paletteButtons.Count == 0) return;
+
+        // Find the palette button matching the first needed primary color
+        string neededColor = currentTarget.primaryA;
+        RectTransform sourceRT = null;
+        for (int i = 0; i < Primaries.Length && i < paletteButtons.Count; i++)
+        {
+            if (Primaries[i].id == neededColor)
+            {
+                sourceRT = paletteButtons[i].GetComponent<RectTransform>();
+                break;
+            }
+        }
+        if (sourceRT == null) sourceRT = paletteButtons[0].GetComponent<RectTransform>();
+
+        // Convert source button and container positions to hand parent space
+        var containerRT = containerLeftBody.GetComponent<RectTransform>();
+
+        Vector2 fromPos = TutorialHand.GetLocalCenter(sourceRT);
+        Vector2 toPos = TutorialHand.GetLocalCenter(containerRT);
+
+        TutorialHand.SetMovePath(fromPos, toPos, 0.8f);
     }
 
     private void ResetContainerFill(Image fill)
@@ -280,6 +309,8 @@ public class ColorMixingController : BaseMiniGame
     private void OnColorTapped(string colorId, Color color, RectTransform btnRT)
     {
         if (IsInputLocked || isAnimating) return;
+
+        DismissTutorial();
 
         // Prevent picking the same color twice
         if (containerLeftColorId == colorId) return;

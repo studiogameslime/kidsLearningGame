@@ -73,6 +73,17 @@ public class SharedStickerGameController : BaseMiniGame
     private int StickersPerCard =>
         DifficultyStickers[Mathf.Min(internalRound, DifficultyStickers.Length - 1)];
 
+    private void PositionTutorialHand()
+    {
+        if (TutorialHand == null || spawnedStickers.Count == 0) return;
+
+        // From: first sticker on the left card
+        var stickerRT = spawnedStickers[0].GetComponent<RectTransform>();
+        // For a tap game, just position the hand on one of the stickers
+        Vector2 localPos = TutorialHand.GetLocalCenter(stickerRT);
+        TutorialHand.SetPosition(localPos);
+    }
+
     private void GenerateRound()
     {
         ClearStickers();
@@ -111,6 +122,9 @@ public class SharedStickerGameController : BaseMiniGame
         // Spawn
         SpawnCardStickers(leftCardArea, leftCardBg, cardA);
         SpawnCardStickers(rightCardArea, rightCardBg, cardB);
+
+        // Position tutorial hand on one of the stickers
+        PositionTutorialHand();
     }
 
     private void SpawnCardStickers(RectTransform cardArea, Image cardBg, List<int> indices)
@@ -225,6 +239,7 @@ public class SharedStickerGameController : BaseMiniGame
     private void OnStickerTapped(int stickerIndex, GameObject tappedGO)
     {
         if (IsInputLocked || !acceptingInput) return;
+        DismissTutorial();
 
         if (stickerIndex == sharedStickerIndex)
         {

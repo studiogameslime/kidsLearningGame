@@ -47,6 +47,13 @@ public class PuzzlePiece : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
     public void SetFullScale(Vector3 scale) => fullScale = scale;
     public void SetStartPosition(Vector2 pos) => startPosition = pos;
 
+    /// <summary>Get the correct position in board-area local space.</summary>
+    public Vector2 GetCorrectBoardPos() => correctBoardPos;
+    /// <summary>Get the piece's scattered start position in canvas space.</summary>
+    public Vector2 GetStartPosition() => startPosition;
+    /// <summary>Get the correct snap position in canvas space.</summary>
+    public Vector2 GetCorrectCanvasPos() => correctCanvasPos;
+
     public void OnPointerDown(PointerEventData eventData)
     {
         if (isPlaced) return;
@@ -60,6 +67,8 @@ public class PuzzlePiece : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
         canvasGroup.alpha = 0.85f;
         // Scale up to full size when dragging
         rectTransform.localScale = fullScale;
+        if (controller != null)
+            controller.OnPiecePickedUp();
     }
 
     public void OnDrag(PointerEventData eventData)

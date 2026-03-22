@@ -65,6 +65,7 @@ public class JourneyProgress
 
     public List<DiscoveryEntry> discoveryQueue = new List<DiscoveryEntry>();
     public List<GameJourneyStat> gameStats = new List<GameJourneyStat>();
+    public List<string> collectedStickerIds = new List<string>();
 
     // Pending rewards to show as gift boxes in WorldScene (empty = none)
     public List<DiscoveryEntry> pendingWorldRewards = new List<DiscoveryEntry>();

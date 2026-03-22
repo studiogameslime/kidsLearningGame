@@ -87,6 +87,9 @@ public class ColoringGameController : BaseMiniGame
         drawingCanvas.SetColor(PaletteColors[selectedColorIndex]);
         drawingCanvas.SetBrushSize(BrushSizes[selectedBrushIndex]);
 
+        // Dismiss tutorial hand on first draw
+        drawingCanvas.onFirstDraw = () => DismissTutorial();
+
         // Determine mode from context
         Texture2D customTex = GameContext.CustomTexture;
 
@@ -131,6 +134,18 @@ public class ColoringGameController : BaseMiniGame
         // Wire save drawing button (also advances journey if active)
         if (saveDrawingButton != null)
             saveDrawingButton.onClick.AddListener(OnSaveDrawing);
+
+        // Position tutorial hand at center of the drawing canvas
+        PositionTutorialHand();
+    }
+
+    private void PositionTutorialHand()
+    {
+        if (TutorialHand == null || drawingCanvas == null) return;
+
+        // Center of the drawing canvas
+        Vector2 localPos = TutorialHand.GetLocalCenter(drawingCanvas.GetComponent<RectTransform>());
+        TutorialHand.SetPosition(localPos);
     }
 
     private void SetupOutline()

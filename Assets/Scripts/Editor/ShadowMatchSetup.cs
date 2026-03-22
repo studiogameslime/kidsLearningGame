@@ -250,6 +250,10 @@ public class ShadowMatchSetup : EditorWindow
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "shadows";
 
+        // Tutorial hand
+        TutorialHandHelper.Create(safeGO.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(-100, 0), new Vector2(450, 450), "shadows");
+
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/ShadowMatch.unity");
     }
 

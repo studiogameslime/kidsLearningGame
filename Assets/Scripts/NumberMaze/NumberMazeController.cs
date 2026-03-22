@@ -83,6 +83,9 @@ public class NumberMazeController : BaseMiniGame
         _lastInteractionTime = Time.time;
         _inactivityCoroutine = StartCoroutine(InactivityMonitor());
 
+        // Position tutorial hand on the next number cell the player should tap
+        PositionTutorialHand();
+
         Debug.Log($"[NumberMaze] Grid {cols}x{rows}, path {_board.pathLength}, difficulty {Difficulty}");
     }
 
@@ -288,6 +291,7 @@ public class NumberMazeController : BaseMiniGame
     private void OnCellTapped(int cellIndex)
     {
         if (IsInputLocked) return;
+        DismissTutorial();
         _lastInteractionTime = Time.time;
 
         var cell = _board.cells[cellIndex];
@@ -398,6 +402,22 @@ public class NumberMazeController : BaseMiniGame
                 HintNextCell();
                 _lastInteractionTime = Time.time;
             }
+        }
+    }
+
+    // ── TUTORIAL HAND ──
+
+    private void PositionTutorialHand()
+    {
+        if (TutorialHand == null || _cellViews == null) return;
+
+        // Point at the next cell the player needs to tap (number 2, index 1 in path)
+        if (_board.pathLength >= 2)
+        {
+            int nextCellIndex = _board.pathCellIndices[1]; // second cell = number 2
+            var cellRT = _cellViews[nextCellIndex].GetComponent<RectTransform>();
+            Vector2 localPos = TutorialHand.GetLocalCenter(cellRT);
+            TutorialHand.SetPosition(localPos);
         }
     }
 

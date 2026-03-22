@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
 using System.Collections.Generic;
+using System.Linq;
 
 /// <summary>
 /// Builds the WorldScene with layered parallax backgrounds, sun/moon,
@@ -508,6 +509,39 @@ public class WorldSceneSetup : EditorWindow
 
         var worldToyBox = toyBoxGO.AddComponent<WorldToyBox>();
 
+        // ── Sticker Tree — between Tree Left and ToyBox ──
+        var stickerTreeAssets = AssetDatabase.LoadAllAssetsAtPath("Assets/Art/Sticker Tree/StikerTree.png");
+        var treeStageList = new List<Sprite>();
+        if (stickerTreeAssets != null)
+        {
+            foreach (var asset in stickerTreeAssets)
+                if (asset is Sprite spr) treeStageList.Add(spr);
+        }
+        treeStageList.Sort((a, b) =>
+        {
+            int na = 0, nb = 0;
+            var pa = a.name.Split('_'); if (pa.Length > 1) int.TryParse(pa[pa.Length - 1], out na);
+            var pb = b.name.Split('_'); if (pb.Length > 1) int.TryParse(pb[pb.Length - 1], out nb);
+            return na.CompareTo(nb);
+        });
+
+        var stickerTreeGO = new GameObject("StickerTree");
+        stickerTreeGO.transform.SetParent(grassAreaGO.transform, false);
+        var stickerTreeRT = stickerTreeGO.AddComponent<RectTransform>();
+        stickerTreeRT.anchorMin = new Vector2(0.35f, 0);
+        stickerTreeRT.anchorMax = new Vector2(0.35f, 0);
+        stickerTreeRT.pivot = new Vector2(0.5f, 0);
+        stickerTreeRT.sizeDelta = new Vector2(60, 80); // starts as seedling
+        stickerTreeRT.anchoredPosition = new Vector2(0, 180);
+
+        var stickerTreeImg = stickerTreeGO.AddComponent<Image>();
+        if (treeStageList.Count > 0) stickerTreeImg.sprite = treeStageList[0];
+        stickerTreeImg.preserveAspect = true;
+        stickerTreeImg.raycastTarget = true;
+
+        var stickerTreeCtrl = stickerTreeGO.AddComponent<StickerTreeController>();
+        stickerTreeCtrl.treeStages = treeStageList.ToArray();
+
         // ── Painting Easel — far left, lower grass ──
         var easelSprite = LoadSprite("Assets/Art/Easel.png");
         var easelGO = new GameObject("PaintingEasel");
@@ -815,6 +849,10 @@ public class WorldSceneSetup : EditorWindow
         });
         album.stickerSprites = stickerList.ToArray();
 
+        // Wire sticker sprites to sticker tree too
+        var stCtrl = stickerTreeGO.GetComponent<StickerTreeController>();
+        if (stCtrl != null) stCtrl.stickerSprites = stickerList.ToArray();
+
         // ── Input Handler ──
         var inputHandler = canvasGO.AddComponent<WorldInputHandler>();
         inputHandler.worldContent = worldContentRT;
@@ -822,6 +860,17 @@ public class WorldSceneSetup : EditorWindow
         inputHandler.environment = envComponent;
         inputHandler.sunRT = sunRT;
         inputHandler.moonRT = moonRT;
+
+        // Load tutorial hand Tap sprites for inactivity hint
+        var tapGuids = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Art/Tutorial Hand/Tap" });
+        var tapSprites = tapGuids
+            .Select(g => AssetDatabase.GUIDToAssetPath(g))
+            .Distinct()
+            .OrderBy(p => p)
+            .Select(p => AssetDatabase.LoadAssetAtPath<Sprite>(p))
+            .Where(s => s != null)
+            .ToArray();
+        inputHandler.hintHandFrames = tapSprites;
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/WorldScene.unity");
     }

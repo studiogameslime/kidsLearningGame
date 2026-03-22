@@ -333,6 +333,10 @@ public class CountingGameSetup : EditorWindow
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "findthecount";
 
+        // Tutorial hand
+        TutorialHandHelper.Create(safeArea.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(0, -50), new Vector2(450, 450), "findthecount");
+
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/CountingGame.unity");
     }
 

@@ -252,6 +252,19 @@ public class TowerStackController : BaseMiniGame
         // Spawn first moving block
         SpawnActiveBlock(INITIAL_W);
         isStarted = true;
+
+        PositionTutorialHand();
+    }
+
+    private void PositionTutorialHand()
+    {
+        if (TutorialHand == null || playArea == null) return;
+
+        // Position hand at center-top of play area where blocks move
+        Vector2 localPos = TutorialHand.GetLocalCenter(playArea);
+        // Offset upward to where the active block is
+        localPos.y += playArea.rect.height * 0.3f;
+        TutorialHand.SetPosition(localPos);
     }
 
     // ── active block ─────────────────────────────────────────────
@@ -322,7 +335,10 @@ public class TowerStackController : BaseMiniGame
         }
 
         if (tapped && IsTapInPlayArea(tapPos))
+        {
+            DismissTutorial();
             StartCoroutine(DropBlock());
+        }
     }
 
     private bool IsTapInPlayArea(Vector2 screenPos)
@@ -438,6 +454,7 @@ public class TowerStackController : BaseMiniGame
         towerTopY += BLOCK_H;
         score++;
         Stats?.RecordCorrect();
+        SoundLibrary.PlayRandomFeedback();
         if (score > bestScore) bestScore = score;
 
         StackPiece placed = stack[stack.Count - 1];

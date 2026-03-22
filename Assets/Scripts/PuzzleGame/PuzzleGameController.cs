@@ -342,6 +342,31 @@ public class PuzzleGameController : BaseMiniGame
 
         if (source != sourceSprite.texture)
             Object.Destroy(source);
+
+        // Position tutorial hand: show dragging first piece to its slot
+        PositionTutorialHandOnFirstPiece();
+    }
+
+    private void PositionTutorialHandOnFirstPiece()
+    {
+        if (TutorialHand == null || pieces.Count == 0) return;
+
+        var firstPiece = pieces[0];
+        var handParent = TutorialHand.transform.parent as RectTransform;
+
+        // Piece start position is in canvas local space — convert to hand parent space
+        Vector3 worldFrom = canvas.GetComponent<RectTransform>().TransformPoint(firstPiece.GetStartPosition());
+        Vector2 screenFrom = RectTransformUtility.WorldToScreenPoint(null, worldFrom);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            handParent, screenFrom, null, out Vector2 fromPos);
+
+        // Piece correct position is also in canvas local space
+        Vector3 worldTo = canvas.GetComponent<RectTransform>().TransformPoint(firstPiece.GetCorrectCanvasPos());
+        Vector2 screenTo = RectTransformUtility.WorldToScreenPoint(null, worldTo);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            handParent, screenTo, null, out Vector2 toPos);
+
+        TutorialHand.SetMovePath(fromPos, toPos);
     }
 
     private void CreateGridOverlay(float refW, float refH, float pieceW, float pieceH, Vector2 refCenter)
@@ -373,10 +398,16 @@ public class PuzzleGameController : BaseMiniGame
         }
     }
 
+    public void OnPiecePickedUp()
+    {
+        DismissTutorial();
+    }
+
     public void OnPiecePlaced()
     {
         Stats?.RecordCorrect();
         Stats?.SetCustom("piecesPlaced", placedCount + 1);
+        SoundLibrary.PlayRandomFeedback();
         placedCount++;
         if (placedCount >= totalPieces)
         {

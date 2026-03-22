@@ -486,6 +486,7 @@ public class LetterTrainController : BaseMiniGame
     public void OnOptionDragBegin(GameObject option, char letter, PointerEventData eventData)
     {
         if (!_trainReady || IsInputLocked) return;
+        DismissTutorial();
         _lastInteractionTime = Time.time;
         _draggedOption = option;
         _draggedRT = option.GetComponent<RectTransform>();
@@ -633,6 +634,9 @@ public class LetterTrainController : BaseMiniGame
         _trainReady = true;
         _lastInteractionTime = Time.time;
         _inactivityCoroutine = StartCoroutine(InactivityMonitor());
+
+        // Position tutorial hand: drag from first option letter to its target wagon
+        PositionTutorialHand();
     }
 
     private IEnumerator TrainExit()
@@ -741,6 +745,30 @@ public class LetterTrainController : BaseMiniGame
             if (img != null) img.color = EmptyWagonBg;
             yield return new WaitForSeconds(0.1f);
         }
+    }
+
+    // ── TUTORIAL HAND ──
+
+    private void PositionTutorialHand()
+    {
+        if (TutorialHand == null || _optionObjects.Count == 0 || _emptySlots.Count == 0) return;
+
+        // From: first option letter
+        var optionRT = _optionObjects[0].GetComponent<RectTransform>();
+
+        // To: first empty wagon slot
+        RectTransform targetWagonRT = null;
+        foreach (var kvp in _emptySlots)
+        {
+            targetWagonRT = kvp.Value;
+            break;
+        }
+        if (targetWagonRT == null) return;
+
+        Vector2 fromLocal = TutorialHand.GetLocalCenter(optionRT);
+        Vector2 toLocal = TutorialHand.GetLocalCenter(targetWagonRT);
+
+        TutorialHand.SetMovePath(fromLocal, toLocal, 1.2f);
     }
 
     // ── NAVIGATION ──

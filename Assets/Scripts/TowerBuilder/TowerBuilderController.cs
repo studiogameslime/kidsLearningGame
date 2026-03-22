@@ -114,6 +114,38 @@ public class TowerBuilderController : BaseMiniGame
 
         PickLevel();
         LoadLevel();
+        PositionTutorialHand();
+    }
+
+    private void PositionTutorialHand()
+    {
+        if (TutorialHand == null) return;
+        if (paletteBricks.Count == 0 || buildSlots.Count == 0) return;
+
+        // Find the first valid slot (lowest, leftmost unfilled slot whose supports are met)
+        var validSlots = GetNextValidSlots();
+        if (validSlots.Count == 0) return;
+
+        var targetSlot = buildSlots[validSlots[0]];
+
+        // Find a palette brick matching this slot's type/color
+        DraggableBrick matchingBrick = null;
+        foreach (var brick in paletteBricks)
+        {
+            if (brick.brickType == targetSlot.brickType && brick.brickColor == targetSlot.color)
+            {
+                matchingBrick = brick;
+                break;
+            }
+        }
+        if (matchingBrick == null) return;
+
+        var brickRT = matchingBrick.GetComponent<RectTransform>();
+
+        Vector2 fromLocal = TutorialHand.GetLocalCenter(brickRT);
+        Vector2 toLocal = TutorialHand.GetLocalCenter(targetSlot.slotRT);
+
+        TutorialHand.SetMovePath(fromLocal, toLocal, 1.2f);
     }
 
     private void PickLevel()
@@ -496,6 +528,8 @@ public class TowerBuilderController : BaseMiniGame
     // ── drag-drop handling ───────────────────────────────────────
     private void OnBrickDropped(DraggableBrick brick)
     {
+        DismissTutorial();
+
         if (isComplete) return;
 
         var brickRT = brick.GetComponent<RectTransform>();
@@ -563,6 +597,7 @@ public class TowerBuilderController : BaseMiniGame
             // Snap: copy the exact transform from the slot
             brick.SnapToSlot(slot.slotRT, this);
             Stats?.RecordCorrect();
+            SoundLibrary.PlayRandomFeedback();
             placedCount++;
 
             if (placedCount >= currentLevel.bricks.Length)

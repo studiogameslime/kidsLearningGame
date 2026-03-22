@@ -144,6 +144,10 @@ public class BallMazeSetup : EditorWindow
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "ballmaze";
 
+        // Tutorial hand
+        TutorialHandHelper.Create(safeArea.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(0, 0), new Vector2(450, 450), "ballmaze");
+
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/BallMaze.unity");
     }
 

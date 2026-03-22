@@ -146,6 +146,10 @@ public class OddOneOutSetup : EditorWindow
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "oddoneout";
 
+        // Tutorial hand
+        TutorialHandHelper.Create(safeGO.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(0, -50), new Vector2(450, 450), "oddoneout");
+
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/OddOneOut.unity");
     }
 

@@ -111,6 +111,15 @@ public class SimonGameController : BaseMiniGame
     private IEnumerator StartGameDelayed()
     {
         yield return new WaitForSeconds(0.8f);
+
+        // Position tutorial hand on the first color button
+        if (TutorialHand != null && colorButtons.Length > 0)
+        {
+            var btnRT = colorButtons[0].GetComponent<RectTransform>();
+            Vector2 localPos = TutorialHand.GetLocalCenter(btnRT);
+            TutorialHand.SetPosition(localPos);
+        }
+
         StartNewGame();
     }
 
@@ -227,6 +236,8 @@ public class SimonGameController : BaseMiniGame
     private void OnColorPressed(int idx)
     {
         if (!isAcceptingInput || isAnimating) return;
+
+        DismissTutorial();
 
         if (idx == sequence[inputIndex])
         {

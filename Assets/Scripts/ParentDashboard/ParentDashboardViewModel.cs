@@ -136,6 +136,7 @@ public class ParentDashboardData
     // Discoveries
     public int discoveredAnimals;
     public int discoveredColors;
+    public int collectedStickers;
 
     // This week
     public int thisWeekSessions;
@@ -330,6 +331,7 @@ public static class ParentDashboardViewModel
         var journey = profile.journey;
         data.discoveredAnimals = journey.unlockedAnimalIds != null ? journey.unlockedAnimalIds.Count : 0;
         data.discoveredColors = journey.unlockedColorIds != null ? journey.unlockedColorIds.Count : 0;
+        data.collectedStickers = journey.collectedStickerIds != null ? journey.collectedStickerIds.Count : 0;
 
         // This week
         data.thisWeekSessions = InsightsEngine.GetThisWeekSessions(analytics);

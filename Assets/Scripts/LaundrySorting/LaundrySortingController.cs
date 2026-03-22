@@ -65,6 +65,37 @@ public class LaundrySortingController : BaseMiniGame
         BuildBasketSlots();
         BuildMachineSlots();
         SpawnItems();
+        PositionTutorialHand();
+    }
+
+    private void PositionTutorialHand()
+    {
+        if (TutorialHand == null) return;
+        if (spawnedItems.Count == 0) return;
+
+        // Find first spawned item and its correct target
+        GameObject firstItem = null;
+        RectTransform targetRT = null;
+
+        foreach (var go in spawnedItems)
+        {
+            if (go == null) continue;
+            var dragger = go.GetComponent<LaundryItemDragger>();
+            if (dragger == null) continue;
+
+            firstItem = go;
+            targetRT = dragger.isClothes ? washingMachineRT : basketRT;
+            break;
+        }
+
+        if (firstItem == null || targetRT == null) return;
+
+        var itemRT = firstItem.GetComponent<RectTransform>();
+
+        Vector2 fromLocal = TutorialHand.GetLocalCenter(itemRT);
+        Vector2 toLocal = TutorialHand.GetLocalCenter(targetRT);
+
+        TutorialHand.SetMovePath(fromLocal, toLocal, 1.2f);
     }
 
     protected override void OnRoundCleanup()
@@ -247,6 +278,8 @@ public class LaundrySortingController : BaseMiniGame
 
     public void OnItemDropped(LaundryItemDragger item)
     {
+        DismissTutorial();
+
         if (IsInputLocked) return;
 
         var itemRT = item.GetComponent<RectTransform>();

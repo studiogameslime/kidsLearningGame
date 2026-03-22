@@ -217,6 +217,10 @@ public class FindTheAnimalController : BaseMiniGame
             SoundLibrary.PlayAnimalName(char.ToUpper(key[0]) + key.Substring(1));
 
         hintCoroutine = StartCoroutine(HintLoop());
+
+        // Position tutorial hand on one of the target animals
+        PositionTutorialHand();
+
         roundNumber++;
     }
 
@@ -727,6 +731,7 @@ public class FindTheAnimalController : BaseMiniGame
     {
         if (!isRoundActive || IsInputLocked) return;
 
+        DismissTutorial();
         lastInteractionTime = Time.time;
 
         if (animalId == targetAnimal.id)
@@ -854,6 +859,21 @@ public class FindTheAnimalController : BaseMiniGame
     {
         if (remainingText != null)
             remainingText.text = (targetCount - targetsFound).ToString();
+    }
+
+    // ── TUTORIAL HAND ──
+
+    private void PositionTutorialHand()
+    {
+        if (TutorialHand == null || targetIndices.Count == 0 || spawnedAnimals.Count == 0) return;
+
+        // Point at the first target animal
+        int idx = targetIndices[0];
+        if (idx >= spawnedAnimals.Count || spawnedAnimals[idx] == null) return;
+
+        var animalRT = spawnedAnimals[idx].GetComponent<RectTransform>();
+        Vector2 localPos = TutorialHand.GetLocalCenter(animalRT);
+        TutorialHand.SetPosition(localPos);
     }
 
     public void OnHomePressed() => ExitGame();

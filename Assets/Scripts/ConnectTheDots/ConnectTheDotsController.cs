@@ -343,6 +343,18 @@ public class ConnectTheDotsController : BaseMiniGame
         CreateGuideLines();
         dots[0].SetAsNext();
 
+        // Position tutorial hand: show connecting dot 1 to dot 2
+        if (TutorialHand != null && dots.Count >= 2)
+        {
+            var dot1RT = dots[0].GetComponent<RectTransform>();
+            var dot2RT = dots[1].GetComponent<RectTransform>();
+
+            Vector2 fromPos = TutorialHand.GetLocalCenter(dot1RT);
+            Vector2 toPos = TutorialHand.GetLocalCenter(dot2RT);
+
+            TutorialHand.SetMovePath(fromPos, toPos);
+        }
+
         roundNumber++;
     }
 
@@ -784,7 +796,10 @@ public class ConnectTheDotsController : BaseMiniGame
                 }
 
                 if (currentDotIndex == 0)
+                {
                     ActivateDot(startDot);
+                    DismissTutorial();
+                }
                 isDrawing = true;
             }
             // All dots done — allow dragging from anywhere to show live line to dot 0

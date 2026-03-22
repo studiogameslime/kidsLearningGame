@@ -373,6 +373,10 @@ public class ColorMixingSetup : EditorWindow
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "colormixing";
 
+        // Tutorial hand
+        TutorialHandHelper.Create(safeArea.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(-100, 100), new Vector2(450, 450), "colormixing");
+
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/ColorMixing.unity");
     }
 

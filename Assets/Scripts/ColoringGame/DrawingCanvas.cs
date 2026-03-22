@@ -22,6 +22,9 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
     [Header("Sticker")]
     public int stickerStampSize = 80;
 
+    /// <summary>Invoked once on the very first pointer-down (draw or sticker stamp).</summary>
+    public System.Action onFirstDraw;
+
     // The drawable texture and its UI display
     private Texture2D drawTexture;
     private RawImage rawImage;
@@ -132,6 +135,13 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
         // Only track the first finger — ignore additional touches
         if (isDrawing) return;
         activePointerId = eventData.pointerId;
+
+        // Fire first-draw callback once
+        if (onFirstDraw != null)
+        {
+            onFirstDraw.Invoke();
+            onFirstDraw = null;
+        }
 
         // Save snapshot for undo before starting a new stroke
         SaveUndoSnapshot();

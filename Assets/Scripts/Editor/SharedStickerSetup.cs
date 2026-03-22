@@ -128,7 +128,7 @@ public class SharedStickerSetup : EditorWindow
         var scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = Ref;
-        scaler.matchWidthOrHeight = 1f; // match height for landscape
+        scaler.matchWidthOrHeight = 0.5f;
         canvasGO.AddComponent<GraphicRaycaster>();
         var root = canvasGO.transform;
 
@@ -217,6 +217,10 @@ public class SharedStickerSetup : EditorWindow
         leaderboard.trophySprite = trophyIcon;
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "sharedsticker";
+
+        // Tutorial hand
+        TutorialHandHelper.Create(safeGO.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(-200, 0), new Vector2(450, 450), "sharedsticker");
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/SharedSticker.unity");
     }

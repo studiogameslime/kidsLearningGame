@@ -99,6 +99,28 @@ public class PatternCopyController : BaseMiniGame
         BuildGrid(playerGridParent, _playerGrid, false, ref _playerCellImages);
         UpdateScoreText();
         StartCoroutine(AnimateGridsIn());
+
+        // Position tutorial hand on first cell that needs to be filled
+        PositionTutorialHand();
+    }
+
+    private void PositionTutorialHand()
+    {
+        if (TutorialHand == null) return;
+
+        // Find first cell in player grid that should be ON
+        for (int r = 0; r < _gridSize; r++)
+        {
+            for (int c = 0; c < _gridSize; c++)
+            {
+                if (_sourcePattern[r, c] && !_playerGrid[r, c] && _playerCellImages[r, c] != null)
+                {
+                    Vector2 localPos = TutorialHand.GetLocalCenter(_playerCellImages[r, c].GetComponent<RectTransform>());
+                    TutorialHand.SetPosition(localPos);
+                    return;
+                }
+            }
+        }
     }
 
     protected override void OnRoundCleanup()
@@ -206,6 +228,8 @@ public class PatternCopyController : BaseMiniGame
     private void OnPlayerCellTapped(int row, int col)
     {
         if (IsInputLocked) return;
+
+        DismissTutorial();
 
         // Cancel any active hint
         if (_hintCoroutine != null)
