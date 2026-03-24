@@ -8,18 +8,23 @@ using System.Collections;
 /// </summary>
 public class ButtonPressEffect : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
-    private Vector3 _originalScale;
     private Coroutine _anim;
 
-    void Awake()
+    private Vector3 OriginalScale
     {
-        _originalScale = transform.localScale;
+        get
+        {
+            // Always use current scale (or Vector3.one if mid-animation/zero)
+            // Never cache — other animations may modify scale
+            Vector3 s = transform.localScale;
+            return s.x < 0.5f ? Vector3.one : s;
+        }
     }
 
     public void OnPointerDown(PointerEventData eventData)
     {
         if (_anim != null) StopCoroutine(_anim);
-        _anim = StartCoroutine(ScaleTo(_originalScale * 0.9f, 0.08f));
+        _anim = StartCoroutine(ScaleTo(OriginalScale * 0.9f, 0.08f));
     }
 
     public void OnPointerUp(PointerEventData eventData)
@@ -45,6 +50,7 @@ public class ButtonPressEffect : MonoBehaviour, IPointerDownHandler, IPointerUpH
 
     private IEnumerator BounceBack()
     {
+        Vector3 target = OriginalScale;
         Vector3 start = transform.localScale;
         float duration = 0.15f;
         float elapsed = 0f;
@@ -52,23 +58,21 @@ public class ButtonPressEffect : MonoBehaviour, IPointerDownHandler, IPointerUpH
         {
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
-            // Overshoot to 1.05 then settle to 1.0
             float bounce = 1f + 0.05f * Mathf.Sin(t * Mathf.PI);
-            transform.localScale = _originalScale * bounce;
+            transform.localScale = target * bounce;
             yield return null;
         }
-        transform.localScale = _originalScale;
+        transform.localScale = target;
         _anim = null;
     }
 
     void OnDisable()
     {
-        // Reset scale if disabled mid-animation
         if (_anim != null)
         {
             StopCoroutine(_anim);
             _anim = null;
         }
-        transform.localScale = _originalScale;
+        // Don't force scale — other animations may be managing it
     }
 }

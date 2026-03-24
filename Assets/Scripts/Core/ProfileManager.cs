@@ -70,6 +70,7 @@ public class ProfileManager : MonoBehaviour
                 if (p.parentImages == null) p.parentImages = new List<ParentImage>();
                 if (p.gameAccessOverrides == null) p.gameAccessOverrides = new List<GameAccessOverrideData>();
                 if (p.journey != null && p.journey.collectedStickerIds == null) p.journey.collectedStickerIds = new List<string>();
+                if (p.everVisibleGameIds == null) p.everVisibleGameIds = new List<string>();
             }
         }
 

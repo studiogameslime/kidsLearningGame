@@ -88,8 +88,9 @@ public class JourneyManager : MonoBehaviour
             if (!jp.unlockedAnimalIds.Contains(favAnimal))
                 jp.unlockedAnimalIds.Add(favAnimal);
 
-            foreach (var id in DiscoveryCatalog.StarterColors)
-                if (!jp.unlockedColorIds.Contains(id)) jp.unlockedColorIds.Add(id);
+            string starterColor = AvatarHexToColorId(profile.avatarColorHex);
+            if (!jp.unlockedColorIds.Contains(starterColor))
+                jp.unlockedColorIds.Add(starterColor);
 
             jp.gamesUntilNextDiscovery = 1;
             ProfileManager.Instance.Save();
@@ -110,22 +111,12 @@ public class JourneyManager : MonoBehaviour
 
         IsJourneyActive = true;
 
-        // First game uses the favorite animal — pick a game that actually has it as sub-item
+        // First game: puzzle with favorite animal → chains automatically to coloring
         if (sessionGamesPlayed == 0)
         {
             string favAnimal = profile.favoriteAnimalId;
             if (string.IsNullOrEmpty(favAnimal)) favAnimal = "Cat";
-            var allGameIds = GetAllVisibleGameIds(profile);
-            string bestGame = FindGameWithAnimal(favAnimal, allGameIds);
-            if (bestGame == null && allGameIds.Count > 0)
-                bestGame = allGameIds[Random.Range(0, allGameIds.Count)];
-            if (bestGame == null)
-            {
-                Debug.LogError("JourneyManager: No visible games. Ending journey.");
-                EndJourney();
-                return;
-            }
-            LoadGame(bestGame, favAnimal);
+            LoadGame("puzzle", favAnimal);
             return;
         }
 
@@ -151,8 +142,8 @@ public class JourneyManager : MonoBehaviour
         if (DiscoveryCatalog.HasMore(jp))
             jp.gamesUntilNextDiscovery--;
 
-        // Check for puzzle → coloring chain
-        if (completedGameId == "puzzle" && GameContext.CurrentSelection != null)
+        // Chain: puzzle → coloring (only on first journey game — the intro sequence)
+        if (completedGameId == "puzzle" && sessionGamesPlayed <= 1 && GameContext.CurrentSelection != null)
         {
             pendingChainGameId = "coloring";
             pendingChainAnimalId = GameContext.CurrentSelection.categoryKey;
@@ -377,6 +368,28 @@ public class JourneyManager : MonoBehaviour
         pendingChainAnimalId = null;
 
         LoadGame(gameId, animalId);
+    }
+
+    /// <summary>Maps avatar color hex to a discovery color ID.</summary>
+    private static string AvatarHexToColorId(string hex)
+    {
+        if (string.IsNullOrEmpty(hex)) return "Red";
+        switch (hex.ToUpper())
+        {
+            case "#EF9A9A": return "Red";
+            case "#F48FB1": return "Pink";
+            case "#CE93D8": return "Purple";
+            case "#B39DDB": return "Purple";
+            case "#90CAF9": return "Blue";
+            case "#80DEEA": return "Cyan";
+            case "#80CBC4": return "Green";
+            case "#A5D6A7": return "Green";
+            case "#FFF59D": return "Yellow";
+            case "#FFCC80": return "Orange";
+            case "#FFAB91": return "Orange";
+            case "#BCAAA4": return "Brown";
+            default:        return "Red";
+        }
     }
 
     private void LoadGame(string gameId, string animalCategoryKey)

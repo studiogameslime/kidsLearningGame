@@ -1666,6 +1666,16 @@ public class ParentDashboardController : MonoBehaviour
             thumbLE.flexibleWidth = 0;
             thumbLE.preferredHeight = 42;
         }
+
+        // ── "Too hard" recommendation if game is visible but above age bucket ──
+        if (!game.isInBaselineBucket && game.sessionsPlayed > 0)
+        {
+            var warnTMP = AddChildTMP(card,
+                H("\u26A0 \u05DE\u05E9\u05D7\u05E7 \u05D6\u05D4 \u05E7\u05E6\u05EA \u05E7\u05E9\u05D4 \u05DC\u05D9\u05DC\u05D3. \u05DE\u05D5\u05DE\u05DC\u05E5 \u05DC\u05D4\u05E1\u05EA\u05D9\u05E8."),
+                // ⚠ משחק זה קצת קשה לילד. מומלץ להסתיר.
+                11, AccentOrange, TextAlignmentOptions.Right);
+            warnTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 18;
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════

@@ -33,44 +33,46 @@ public static class UIEffects
         Canvas rootCanvas = target.GetComponentInParent<Canvas>();
         if (rootCanvas == null) return;
 
-        // We need a coroutine runner — use a temporary hidden object
+        // Create sparkles on the root canvas — NOT as siblings of the target
+        // This prevents layout groups (Grid/Vertical/Horizontal) from recalculating
         var runner = new GameObject("_SparkleRunner").AddComponent<SparkleRunner>();
         runner.transform.SetParent(rootCanvas.transform, false);
 
+        // Convert target center to root canvas space
+        Vector3[] corners = new Vector3[4];
+        target.GetWorldCorners(corners);
+        Vector3 worldCenter = (corners[0] + corners[2]) * 0.5f;
+        Vector2 screenPos = RectTransformUtility.WorldToScreenPoint(null, worldCenter);
+        RectTransform canvasRT = rootCanvas.GetComponent<RectTransform>();
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            canvasRT, screenPos, null, out Vector2 localCenter);
+
         for (int i = 0; i < count; i++)
         {
-            GameObject star = CreateStarObject(target, i, count);
+            GameObject star = CreateStarObject(runner.transform, localCenter, i);
             runner.StartCoroutine(AnimateSparkle(star.GetComponent<RectTransform>(),
-                                                  star.GetComponent<CanvasGroup>(),
-                                                  target));
+                                                  star.GetComponent<CanvasGroup>()));
         }
 
-        // Self-destruct runner after all animations finish
         Object.Destroy(runner.gameObject, 1f);
     }
 
-    private static GameObject CreateStarObject(RectTransform target, int index, int total)
+    private static GameObject CreateStarObject(Transform parent, Vector2 center, int index)
     {
-        Transform parent = target.parent != null ? target.parent : target;
-
         var go = new GameObject($"Sparkle_{index}");
         go.transform.SetParent(parent, false);
 
-        // RectTransform — start at target center
         var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = target.anchorMin;
-        rt.anchorMax = target.anchorMax;
-        rt.anchoredPosition = target.anchoredPosition;
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = center;
         rt.sizeDelta = new Vector2(30f, 30f);
         rt.localScale = Vector3.one * Random.Range(0.6f, 1.2f);
         rt.localRotation = Quaternion.Euler(0, 0, Random.Range(0f, 360f));
 
-        // CanvasGroup for fading
         var cg = go.AddComponent<CanvasGroup>();
         cg.interactable = false;
         cg.blocksRaycasts = false;
 
-        // Star text
         var tmp = go.AddComponent<TextMeshProUGUI>();
         tmp.text = "\u2605"; // ★
         tmp.fontSize = 36;
@@ -83,7 +85,7 @@ public static class UIEffects
         return go;
     }
 
-    private static IEnumerator AnimateSparkle(RectTransform rt, CanvasGroup cg, RectTransform target)
+    private static IEnumerator AnimateSparkle(RectTransform rt, CanvasGroup cg)
     {
         float duration = Random.Range(0.45f, 0.7f);
         float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
@@ -133,7 +135,7 @@ public static class UIEffects
     /// <param name="intensity">Max pixel offset (default 10).</param>
     /// <param name="duration">Total shake time in seconds (default 0.3).</param>
     public static void Shake(MonoBehaviour host, RectTransform target,
-                             float intensity = 10f, float duration = 0.3f)
+                             float intensity = 10f, float duration = 0.4f)
     {
         if (host == null || target == null) return;
 
@@ -141,34 +143,53 @@ public static class UIEffects
         Handheld.Vibrate();
         #endif
 
-        host.StartCoroutine(ShakeCoroutine(target, intensity, duration));
+        host.StartCoroutine(ShakeCoroutine(host, target, intensity, duration));
     }
 
-    private static IEnumerator ShakeCoroutine(RectTransform target, float intensity, float duration)
+    /// <summary>
+    /// Cute "no-no" animation: gentle wobble rotation + brief red tint + slight shrink,
+    /// then bounces back. Friendly, not scary for kids.
+    /// </summary>
+    private static IEnumerator ShakeCoroutine(MonoBehaviour host, RectTransform target,
+        float intensity, float duration)
     {
         Vector2 originalPos = target.anchoredPosition;
+        Quaternion originalRot = target.localRotation;
+
+        // Try to tint the element briefly
+        var img = target.GetComponent<Image>();
+        Color originalColor = img != null ? img.color : Color.white;
+
         float elapsed = 0f;
-        float shakeInterval = 0.03f; // time between position changes
-        float timer = 0f;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            timer += Time.deltaTime;
+            float t = elapsed / duration;
+            float decay = 1f - t;
 
-            if (timer >= shakeInterval)
+            // Gentle wobble rotation (like shaking head "no-no")
+            float wobble = Mathf.Sin(t * Mathf.PI * 6f) * 8f * decay;
+            target.localRotation = originalRot * Quaternion.Euler(0, 0, wobble);
+
+            // Soft horizontal sway
+            float sway = Mathf.Sin(t * Mathf.PI * 6f) * intensity * 0.5f * decay;
+            target.anchoredPosition = originalPos + new Vector2(sway, 0);
+
+            // Brief rosy tint in first half
+            if (img != null)
             {
-                timer = 0f;
-                float decay = 1f - (elapsed / duration); // decays from 1 → 0
-                float offsetX = Random.Range(-1f, 1f) * intensity * decay;
-                float offsetY = Random.Range(-0.3f, 0.3f) * intensity * decay; // mostly horizontal
-                target.anchoredPosition = originalPos + new Vector2(offsetX, offsetY);
+                float tintStrength = t < 0.5f ? (1f - t * 2f) * 0.3f : 0f;
+                img.color = Color.Lerp(originalColor,
+                    new Color(1f, 0.6f, 0.6f, originalColor.a), tintStrength);
             }
 
             yield return null;
         }
 
-        // Snap back to original position
+        // Restore everything
         target.anchoredPosition = originalPos;
+        target.localRotation = originalRot;
+        if (img != null) img.color = originalColor;
     }
 }

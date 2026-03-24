@@ -42,12 +42,39 @@ public class ButtonEffectsInstaller : MonoBehaviour
         AttachToAllButtons();
     }
 
+    static readonly string[] NavButtonNames = {
+        "HomeButton", "BackButton", "HomeBtn", "BackBtn",
+        "GamesButton", "AlbumButton", "ParentDashboardButton",
+        "TrophyButton", "GameCard", "ProfileCard"
+    };
+
     static void AttachToAllButtons()
     {
         var buttons = FindObjectsByType<Button>(FindObjectsSortMode.None);
         foreach (var btn in buttons)
         {
-            if (btn.GetComponent<ButtonPressEffect>() == null)
+            if (btn.GetComponent<ButtonPressEffect>() != null) continue;
+
+            // Only attach to navigation/menu buttons, not gameplay answer buttons
+            string name = btn.gameObject.name;
+            bool isNavButton = false;
+            foreach (var nav in NavButtonNames)
+            {
+                if (name.Contains(nav))
+                {
+                    isNavButton = true;
+                    break;
+                }
+            }
+
+            // Also attach to all buttons in menu/selection scenes
+            string scene = SceneManager.GetActiveScene().name;
+            if (scene == "MainMenu" || scene == "SelectionMenu"
+                || scene == "ProfileSelection" || scene == "ProfileCreation"
+                || scene == "HomeScene" || scene == "WorldScene")
+                isNavButton = true;
+
+            if (isNavButton)
                 btn.gameObject.AddComponent<ButtonPressEffect>();
         }
     }

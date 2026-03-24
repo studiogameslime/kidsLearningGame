@@ -73,6 +73,12 @@ public class PopInAnimator : MonoBehaviour
 
     static void InstallPopInEffects()
     {
+        // Only apply to MainMenu and SelectionMenu — game scenes manage their own pop-in
+        string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        if (sceneName != "MainMenu" && sceneName != "SelectionMenu"
+            && sceneName != "ProfileSelection" && sceneName != "HomeScene")
+            return;
+
         // Process GridLayoutGroups
         var grids = FindObjectsByType<GridLayoutGroup>(FindObjectsSortMode.None);
         foreach (var grid in grids)

@@ -28,8 +28,8 @@ public abstract class BaseMiniGame : MonoBehaviour
     protected string contentCategory = "";            // SessionContent.Animals, etc.
 
     // Timing
-    protected float delayBeforeNextRound = 1.2f;
-    protected float delayAfterFinalRound = 2.5f;
+    protected float delayBeforeNextRound = 0.3f;
+    protected float delayAfterFinalRound = 1.0f;
 
     // ── State (read-only for derived classes) ──────────────────────
 
@@ -242,16 +242,16 @@ public abstract class BaseMiniGame : MonoBehaviour
         bool isFinalRound = !isEndless && (CurrentRound + 1 >= totalRounds);
         bool shouldPlayConfetti = isFinalRound ? playConfettiOnSessionWin : playConfettiOnRoundWin;
 
-        // Feedback sound (single source — ConfettiController no longer plays its own)
+        // Feedback sound
         if (playWinSound)
             SoundLibrary.PlayRandomFeedback();
 
-        // Game-specific post-completion visuals
-        yield return StartCoroutine(OnAfterComplete());
-
-        // Confetti (visual celebration only — analytics already registered above)
+        // Confetti BEFORE exit animations so player sees it with the game content still visible
         if (shouldPlayConfetti && ConfettiController.Instance != null)
             ConfettiController.Instance.Play();
+
+        // Game-specific post-completion visuals (exit animations, cleanup)
+        yield return StartCoroutine(OnAfterComplete());
 
         // Determine next step
         CurrentRound++;

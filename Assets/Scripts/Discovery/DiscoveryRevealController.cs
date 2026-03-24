@@ -21,8 +21,8 @@ public class DiscoveryRevealController : MonoBehaviour
     [Header("Settings")]
     public int textureWidth = 960;
     public int textureHeight = 540;
-    public int brushRadius = 120;
-    public float revealThreshold = 0.60f;
+    public int brushRadius = 96;
+    public float revealThreshold = 0.70f;
 
     private Texture2D scratchTex;
     private Color32[] pixels;

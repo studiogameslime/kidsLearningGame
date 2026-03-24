@@ -8,7 +8,7 @@ using System.Collections.Generic;
 public static class DiscoveryCatalog
 {
     // Starter content (seeded on first journey)
-    public static readonly string[] StarterColors = { "Red", "Blue", "Yellow" };
+    public static readonly string[] StarterColors = { "Red" };
 
     // Discovery order (includes Cat/Dog/Bear since only the favorite is seeded)
     private static readonly string[] AnimalOrder =

@@ -36,7 +36,11 @@ public static class GameVisibilityService
         if (overrideMode == ParentGameAccessMode.ForcedEnabled)
             return new GameVisibilityResult(true, VisibilityReasonCode.Visible_ParentForceEnabled, VisibilitySource.ParentOverride);
 
-        // Layer 4: Age bucket baseline check
+        // Layer 4: "Once seen, never auto-hidden" — if the game was ever visible, keep it
+        if (profile.everVisibleGameIds != null && profile.everVisibleGameIds.Contains(game.id))
+            return new GameVisibilityResult(true, VisibilityReasonCode.Visible_WithinAgeRange, VisibilitySource.AgeFilter);
+
+        // Layer 5: Age bucket baseline check
         int ageBucket = EstimatedAgeCalculator.GetResolvedAgeBucket(profile);
         bool inBaseline = AgeBaselineConfig.IsGameInBaseline(ageBucket, game.id);
 
@@ -55,12 +59,27 @@ public static class GameVisibilityService
         var result = new List<GameItemData>();
         if (allGames == null) return result;
 
+        bool dirty = false;
         foreach (var game in allGames)
         {
             var eval = Evaluate(profile, game);
             if (eval.isVisible)
+            {
                 result.Add(game);
+
+                // Track: once visible, always visible
+                if (profile != null && profile.everVisibleGameIds != null
+                    && !profile.everVisibleGameIds.Contains(game.id))
+                {
+                    profile.everVisibleGameIds.Add(game.id);
+                    dirty = true;
+                }
+            }
         }
+
+        if (dirty)
+            ProfileManager.Instance?.Save();
+
         return result;
     }
 

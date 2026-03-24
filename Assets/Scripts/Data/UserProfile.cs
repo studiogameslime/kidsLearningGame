@@ -27,6 +27,7 @@ public class UserProfile
     // Adaptive visibility system (defaults safe for old JSON)
     public float estimatedGlobalAge;  // 0 = not yet computed, use chronological age
     public List<GameAccessOverrideData> gameAccessOverrides = new List<GameAccessOverrideData>();
+    public List<string> everVisibleGameIds = new List<string>(); // once seen, never auto-hidden
 
     // Store review
     public bool hasShownStoreReview;

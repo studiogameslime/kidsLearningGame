@@ -544,7 +544,6 @@ public class CountingGameController : BaseMiniGame
         {
             RecordMistake();
             PlayWrongEffect(btnGO.GetComponent<RectTransform>());
-            StartCoroutine(WrongFeedback(btnGO));
         }
     }
 
