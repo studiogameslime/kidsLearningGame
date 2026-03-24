@@ -643,6 +643,7 @@ public class BallMazeController : BaseMiniGame
     {
         Stats?.RecordCorrect();
         Stats?.SetCustom("levelCompleted", currentLevelIndex);
+        if (holeRT != null) PlayCorrectEffect(holeRT);
         SoundLibrary.PlayRandomFeedback();
 
         // Phase 1: Pull ball into hole

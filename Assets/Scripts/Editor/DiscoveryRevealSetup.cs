@@ -80,7 +80,7 @@ public class DiscoveryRevealSetup : EditorWindow
         var revealRT = revealGO.AddComponent<RectTransform>();
         revealRT.anchorMin = new Vector2(0.5f, 0.5f);
         revealRT.anchorMax = new Vector2(0.5f, 0.5f);
-        revealRT.sizeDelta = new Vector2(420, 420);
+        revealRT.sizeDelta = new Vector2(600, 600);
         revealRT.anchoredPosition = Vector2.zero;
         var revealImg = revealGO.AddComponent<Image>();
         revealImg.preserveAspect = true;
@@ -93,7 +93,7 @@ public class DiscoveryRevealSetup : EditorWindow
         var overlayRT = overlayGO.AddComponent<RectTransform>();
         overlayRT.anchorMin = new Vector2(0.5f, 0.5f);
         overlayRT.anchorMax = new Vector2(0.5f, 0.5f);
-        overlayRT.sizeDelta = new Vector2(960, 540);
+        overlayRT.sizeDelta = new Vector2(1400, 800);
         overlayRT.anchoredPosition = Vector2.zero;
         var overlayRawImg = overlayGO.AddComponent<RawImage>();
         overlayRawImg.color = Color.white;
@@ -106,7 +106,7 @@ public class DiscoveryRevealSetup : EditorWindow
         nameRT.anchorMin = new Vector2(0.5f, 0.5f);
         nameRT.anchorMax = new Vector2(0.5f, 0.5f);
         nameRT.sizeDelta = new Vector2(800, 100);
-        nameRT.anchoredPosition = new Vector2(0, -300);
+        nameRT.anchoredPosition = new Vector2(0, -450);
         var nameTMP = nameGO.AddComponent<TextMeshProUGUI>();
         nameTMP.text = "";
         nameTMP.fontSize = 52;

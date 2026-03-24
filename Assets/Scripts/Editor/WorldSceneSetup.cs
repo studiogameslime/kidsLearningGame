@@ -335,8 +335,8 @@ public class WorldSceneSetup : EditorWindow
         // Home button
         var homeIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/home.png");
         var homeGO = CreateIconButton(topBar.transform, "HomeButton", homeIcon,
-            new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1),
-            new Vector2(16, -20), new Vector2(90, 90));
+            new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f),
+            new Vector2(24, 0), new Vector2(90, 90));
 
         // Games collection button (top-right, before profile avatar)
         var gamesIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/menuGrid.png");

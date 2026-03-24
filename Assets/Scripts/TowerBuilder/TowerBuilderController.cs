@@ -597,6 +597,7 @@ public class TowerBuilderController : BaseMiniGame
             // Snap: copy the exact transform from the slot
             brick.SnapToSlot(slot.slotRT, this);
             Stats?.RecordCorrect();
+            PlayCorrectEffect(brickRT);
             SoundLibrary.PlayRandomFeedback();
             placedCount++;
 
@@ -607,6 +608,7 @@ public class TowerBuilderController : BaseMiniGame
         {
             // Wrong placement
             Stats?.RecordMistake();
+            PlayWrongEffect(brickRT);
             wrongAttemptCount++;
             brick.ReturnToStart(this);
 

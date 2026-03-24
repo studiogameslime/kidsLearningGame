@@ -99,7 +99,7 @@ public class NumberMazeSetup : EditorWindow
 
         // Home button
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
-        var homeGO = Btn(bar.transform, "HomeButton", homeIcon, 16, -20, 90);
+        var homeGO = Btn(bar.transform, "HomeButton", homeIcon, 24, 0, 90);
 
         // Trophy button
         var trophyIcon = LoadSprite("Assets/Art/Icons/trophy.png");
@@ -196,8 +196,8 @@ public class NumberMazeSetup : EditorWindow
         var go = new GameObject(name);
         go.transform.SetParent(p, false);
         var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = rt.anchorMax = new Vector2(0, 1);
-        rt.pivot = new Vector2(0, 1);
+        rt.anchorMin = rt.anchorMax = new Vector2(0, 0.5f);
+        rt.pivot = new Vector2(0, 0.5f);
         rt.anchoredPosition = new Vector2(x, y);
         rt.sizeDelta = new Vector2(sz, sz);
         var img = go.AddComponent<Image>();

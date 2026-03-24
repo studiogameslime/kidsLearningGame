@@ -94,7 +94,7 @@ public class PuzzlePiece : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
             canvasGroup.blocksRaycasts = false;
 
             if (controller != null)
-                controller.OnPiecePlaced();
+                controller.OnPiecePlaced(rectTransform);
         }
         else
         {

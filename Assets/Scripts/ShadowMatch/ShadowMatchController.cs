@@ -275,6 +275,7 @@ public class ShadowMatchController : BaseMiniGame
                 if (img != null) img.color = new Color(1, 1, 1, 0);
 
                 animal.PlayMatchCelebration();
+                PlayCorrectEffect(animal.GetComponent<RectTransform>());
                 // Play the matched animal's name sound
                 if (!string.IsNullOrEmpty(animal.soundName))
                     SoundLibrary.PlayAnimalName(animal.soundName);

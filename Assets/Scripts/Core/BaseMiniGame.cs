@@ -176,6 +176,32 @@ public abstract class BaseMiniGame : MonoBehaviour
     /// <summary>Access the tutorial hand to position it on real game elements.</summary>
     protected TutorialHand TutorialHand => _tutorialHand;
 
+    /// <summary>
+    /// Play a sparkle/stars effect on a UI element (use after correct answers).
+    /// Also shows a floating "+1" score popup.
+    /// </summary>
+    protected void PlayCorrectEffect(RectTransform target)
+    {
+        UIEffects.SpawnSparkles(target);
+        FloatingScore.Show(target);
+    }
+
+    /// <summary>
+    /// Show a floating score popup near a UI element (e.g. "+1", "+5", "Great!").
+    /// </summary>
+    protected void ShowFloatingScore(RectTransform target, string text = "+1")
+    {
+        FloatingScore.Show(target, text);
+    }
+
+    /// <summary>
+    /// Shake a UI element briefly (use after wrong answers).
+    /// </summary>
+    protected void PlayWrongEffect(RectTransform target)
+    {
+        UIEffects.Shake(this, target);
+    }
+
     /// <summary>Navigate home / main menu. Abandons stats if still playing.</summary>
     protected void ExitGame()
     {

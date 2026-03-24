@@ -266,14 +266,22 @@ public class CountingGameController : BaseMiniGame
 
     private IEnumerator PositionTutorialHandOnFirstAnimal()
     {
-        // Wait for pop-in animations to start, then position on first animal
+        // Wait for pop-in animations and button creation
         yield return null;
 
-        if (TutorialHand != null && spawnedAnimals.Count > 0)
+        if (TutorialHand == null || answerButtons.Count == 0) yield break;
+
+        // Point at the correct answer button — show the child exactly what to tap
+        foreach (var btnGO in answerButtons)
         {
-            var firstAnimalRT = spawnedAnimals[0].GetComponent<RectTransform>();
-            Vector2 localPos = TutorialHand.GetLocalCenter(firstAnimalRT);
-            TutorialHand.SetPosition(localPos);
+            var tmp = btnGO.GetComponentInChildren<TextMeshProUGUI>();
+            if (tmp != null && tmp.text == correctAnswer.ToString())
+            {
+                var btnRT = btnGO.GetComponent<RectTransform>();
+                Vector2 localPos = TutorialHand.GetLocalCenter(btnRT);
+                TutorialHand.SetPosition(localPos);
+                yield break;
+            }
         }
     }
 
@@ -527,6 +535,7 @@ public class CountingGameController : BaseMiniGame
         if (number == correctAnswer)
         {
             RecordCorrect();
+            PlayCorrectEffect(btnGO.GetComponent<RectTransform>());
             btnGO.GetComponent<Image>().color = CorrectColor;
             // Don't CompleteRound yet — start counting animation first
             StartCoroutine(CountThenComplete());
@@ -534,6 +543,7 @@ public class CountingGameController : BaseMiniGame
         else
         {
             RecordMistake();
+            PlayWrongEffect(btnGO.GetComponent<RectTransform>());
             StartCoroutine(WrongFeedback(btnGO));
         }
     }

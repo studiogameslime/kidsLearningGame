@@ -264,13 +264,8 @@ public class ColorMixingController : BaseMiniGame
         }
         if (sourceRT == null) sourceRT = paletteButtons[0].GetComponent<RectTransform>();
 
-        // Convert source button and container positions to hand parent space
-        var containerRT = containerLeftBody.GetComponent<RectTransform>();
-
-        Vector2 fromPos = TutorialHand.GetLocalCenter(sourceRT);
-        Vector2 toPos = TutorialHand.GetLocalCenter(containerRT);
-
-        TutorialHand.SetMovePath(fromPos, toPos, 0.8f);
+        Vector2 pos = TutorialHand.GetLocalCenter(sourceRT);
+        TutorialHand.SetPosition(pos);
     }
 
     private void ResetContainerFill(Image fill)
@@ -596,11 +591,13 @@ public class ColorMixingController : BaseMiniGame
         if (correct)
         {
             Stats?.RecordCorrect();
+            PlayCorrectEffect(mixContainerBody.rectTransform);
             yield return SuccessSequence(resultColor);
         }
         else
         {
             Stats?.RecordMistake();
+            PlayWrongEffect(mixContainerBody.rectTransform);
             yield return WrongSequence();
         }
     }

@@ -31,11 +31,7 @@ public class AndroidSpeechRecognizer : MonoBehaviour, ISpeechRecognizer
         using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
             activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
 
-        // Request RECORD_AUDIO permission
-        if (!UnityEngine.Android.Permission.HasUserAuthorizedPermission(UnityEngine.Android.Permission.Microphone))
-        {
-            UnityEngine.Android.Permission.RequestUserPermission(UnityEngine.Android.Permission.Microphone);
-        }
+        // Microphone permission disabled for store compliance
 
         activity.Call("runOnUiThread", new AndroidJavaRunnable(() =>
         {

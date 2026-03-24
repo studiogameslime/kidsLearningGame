@@ -114,8 +114,8 @@ public class ColorVoiceGameSetup : EditorWindow
         // Home button (top-left)
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
         var homeGO = CreateIconButton(topBar.transform, "HomeButton", homeIcon,
-            new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1),
-            new Vector2(16, -20), new Vector2(90, 90));
+            new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f),
+            new Vector2(24, 0), new Vector2(90, 90));
 
         var trophyIcon = LoadSprite("Assets/Art/Icons/trophy.png");
         var trophyGO = CreateIconButton(topBar.transform, "TrophyButton", trophyIcon,
@@ -277,6 +277,10 @@ public class ColorVoiceGameSetup : EditorWindow
         leaderboard.trophySprite = trophyIcon;
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "colorvoice";
+
+        // Tutorial hand
+        TutorialHandHelper.Create(safeArea.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(0, 0), new Vector2(450, 450), "colorvoice");
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/ColorVoice.unity");
     }

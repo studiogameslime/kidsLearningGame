@@ -403,10 +403,11 @@ public class PuzzleGameController : BaseMiniGame
         DismissTutorial();
     }
 
-    public void OnPiecePlaced()
+    public void OnPiecePlaced(RectTransform pieceRT = null)
     {
         Stats?.RecordCorrect();
         Stats?.SetCustom("piecesPlaced", placedCount + 1);
+        if (pieceRT != null) PlayCorrectEffect(pieceRT);
         SoundLibrary.PlayRandomFeedback();
         placedCount++;
         if (placedCount >= totalPieces)

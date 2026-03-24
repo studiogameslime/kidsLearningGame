@@ -273,24 +273,13 @@ public class ProfileCreationController : MonoBehaviour
 
     private void StartRecording()
     {
-        if (Microphone.devices.Length == 0)
-        {
-            Debug.LogWarning("No microphone found!");
-            return;
-        }
-
-        isRecording = true;
-        BackgroundMusicManager.SetMuted(true);
-        recordedClip = Microphone.Start(null, false, 5, 44100); // max 5 seconds
-        UpdateRecordUI();
-        StartCoroutine(AutoStopRecording(5f));
+        // Microphone disabled — feature removed for store compliance
+        Debug.Log("[Profile] Recording disabled — microphone not required.");
     }
 
     private IEnumerator AutoStopRecording(float maxDuration)
     {
-        yield return new WaitForSeconds(maxDuration);
-        if (isRecording)
-            StopRecording();
+        yield return null;
     }
 
     private void StopRecording()
@@ -299,8 +288,7 @@ public class ProfileCreationController : MonoBehaviour
         isRecording = false;
         BackgroundMusicManager.SetMuted(false);
 
-        int pos = Microphone.GetPosition(null);
-        Microphone.End(null);
+        int pos = 0;
 
         if (pos > 0 && recordedClip != null)
         {

@@ -302,6 +302,7 @@ public class NumberMazeController : BaseMiniGame
         {
             // Correct!
             RecordCorrect("number_tap", _expectedNext.ToString());
+            PlayCorrectEffect(view.GetComponent<RectTransform>());
             view.SetCompleted();
 
             // Draw path line from previous cell
@@ -333,6 +334,7 @@ public class NumberMazeController : BaseMiniGame
             // Wrong tap
             _mistakesThisRound++;
             RecordMistake("wrong_cell", cell.displayNumber.ToString());
+            PlayWrongEffect(view.GetComponent<RectTransform>());
             view.ShowError();
 
             // After 3 mistakes on this round, hint

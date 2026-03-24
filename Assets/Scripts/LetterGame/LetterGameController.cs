@@ -439,17 +439,20 @@ public class LetterGameController : BaseMiniGame
     private void OnAnswerTapped(char letter, GameObject btnGO)
     {
         if (IsInputLocked) return;
+        DismissTutorial();
         _lastInteractionTime = Time.time;
         _attemptsThisRound++;
 
         if (letter == _correctLetter)
         {
             RecordCorrect("first_letter", _currentWord.id);
+            PlayCorrectEffect(btnGO.GetComponent<RectTransform>());
             StartCoroutine(OnCorrectSequence(btnGO));
         }
         else
         {
             RecordMistake("wrong_letter", letter.ToString());
+            PlayWrongEffect(btnGO.GetComponent<RectTransform>());
             StartCoroutine(ShakeButton(btnGO));
 
             // After 2 wrong attempts, hint
@@ -585,10 +588,10 @@ public class LetterGameController : BaseMiniGame
 
     private void PositionTutorialHand()
     {
-        if (TutorialHand == null || _buttonObjects.Count == 0) return;
+        if (TutorialHand == null || _correctButton == null) return;
 
-        // Point at the first answer button (don't specifically highlight the correct one)
-        var btnRT = _buttonObjects[0].GetComponent<RectTransform>();
+        // Point at the correct answer button
+        var btnRT = _correctButton.GetComponent<RectTransform>();
         Vector2 localPos = TutorialHand.GetLocalCenter(btnRT);
         TutorialHand.SetPosition(localPos);
     }

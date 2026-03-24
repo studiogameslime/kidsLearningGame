@@ -252,22 +252,31 @@ public class PatternCopyController : BaseMiniGame
         // Record analytics
         bool shouldBeOn = _sourcePattern[row, col];
 
+        var cellRT = _playerCellImages[row, col].rectTransform;
         if (!wasOn && _playerGrid[row, col])
         {
             if (shouldBeOn)
+            {
+                PlayCorrectEffect(cellRT);
                 RecordCorrect("fill", $"{row},{col}");
+            }
             else
+            {
+                PlayWrongEffect(cellRT);
                 RecordMistake("fill_wrong", $"{row},{col}");
+            }
         }
         else if (wasOn && !_playerGrid[row, col])
         {
             if (shouldBeOn)
             {
                 _undoCount++;
+                PlayWrongEffect(cellRT);
                 RecordMistake("undo_correct", $"{row},{col}");
             }
             else
             {
+                PlayCorrectEffect(cellRT);
                 RecordCorrect("undo_wrong", $"{row},{col}");
             }
         }

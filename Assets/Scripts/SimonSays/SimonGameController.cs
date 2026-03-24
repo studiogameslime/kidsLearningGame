@@ -112,15 +112,15 @@ public class SimonGameController : BaseMiniGame
     {
         yield return new WaitForSeconds(0.8f);
 
-        // Position tutorial hand on the first color button
-        if (TutorialHand != null && colorButtons.Length > 0)
+        StartNewGame();
+
+        // Position tutorial hand on the first button in the sequence
+        if (TutorialHand != null && sequence.Count > 0 && sequence[0] < colorButtons.Length)
         {
-            var btnRT = colorButtons[0].GetComponent<RectTransform>();
+            var btnRT = colorButtons[sequence[0]].GetComponent<RectTransform>();
             Vector2 localPos = TutorialHand.GetLocalCenter(btnRT);
             TutorialHand.SetPosition(localPos);
         }
-
-        StartNewGame();
     }
 
     private void StartNewGame()
@@ -243,12 +243,14 @@ public class SimonGameController : BaseMiniGame
         {
             // Correct
             Stats?.RecordCorrect();
+            PlayCorrectEffect(colorButtons[idx].rectTransform);
             StartCoroutine(CorrectInput(idx));
         }
         else
         {
             // Wrong
             Stats?.RecordMistake();
+            PlayWrongEffect(colorButtons[idx].rectTransform);
             Stats?.SetCustom("roundReached", currentRound);
             StartCoroutine(WrongInput());
         }

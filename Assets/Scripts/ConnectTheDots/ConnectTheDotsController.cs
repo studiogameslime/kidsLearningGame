@@ -883,6 +883,7 @@ public class ConnectTheDotsController : BaseMiniGame
             DrawLine(dots[currentDotIndex - 1], dot);
 
         currentDotIndex++;
+        PlayCorrectEffect(dot.GetComponent<RectTransform>());
         RecordCorrect();
 
         if (currentDotIndex < totalDots)

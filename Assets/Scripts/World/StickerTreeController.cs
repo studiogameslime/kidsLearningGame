@@ -109,10 +109,11 @@ public class StickerTreeController : MonoBehaviour
 
     private void BloomSticker(UserProfile profile)
     {
-        _hasStickerReady = true;
-
-        // Determine which sticker to give (next uncollected)
+        // Determine which sticker to give (random uncollected)
         int stickerIndex = GetNextStickerIndex(profile);
+        if (stickerIndex < 0) return; // all stickers collected — nothing to bloom
+
+        _hasStickerReady = true;
 
         // Create sticker floating above tree
         if (_stickerGO != null) Destroy(_stickerGO);
@@ -358,6 +359,19 @@ public class StickerTreeController : MonoBehaviour
     private int GetNextStickerIndex(UserProfile profile)
     {
         var collected = profile.journey.collectedStickerIds ?? new List<string>();
-        return collected.Count; // next sequential sticker
+        int total = (stickerSprites != null && stickerSprites.Length > 0) ? stickerSprites.Length : 12;
+
+        // Build list of uncollected sticker indices
+        var available = new List<int>();
+        for (int i = 0; i < total; i++)
+        {
+            if (!collected.Contains($"sticker_{i}"))
+                available.Add(i);
+        }
+
+        if (available.Count == 0)
+            return -1; // all collected — no more stickers
+
+        return available[Random.Range(0, available.Count)];
     }
 }

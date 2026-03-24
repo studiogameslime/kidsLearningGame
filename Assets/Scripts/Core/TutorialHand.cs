@@ -50,19 +50,27 @@ public class TutorialHand : MonoBehaviour
         if (overrideCanvas == null) overrideCanvas = gameObject.AddComponent<Canvas>();
         overrideCanvas.overrideSorting = true;
         overrideCanvas.sortingOrder = 999;
-        // GraphicRaycaster not needed — hand is non-interactive
+
+        // Ensure no GraphicRaycaster — prevents blocking input to game elements below
+        var raycaster = GetComponent<UnityEngine.UI.GraphicRaycaster>();
+        if (raycaster != null) Destroy(raycaster);
+
+        // Image must not intercept raycasts
+        _image.raycastTarget = false;
     }
 
     void Start()
     {
         if (WasShown())
         {
+            _dismissed = true;
             gameObject.SetActive(false);
             return;
         }
-        // Don't auto-show — wait for game controller to position and call Show()
-        // If no controller calls SetPosition/SetMovePath, show in default position
-        Show();
+        // If Show() was already called (by game controller before our Start),
+        // don't hide. Otherwise hide until SetPosition/SetMovePath triggers Show.
+        if (_animCoroutine == null)
+            _group.alpha = 0f;
     }
 
     /// <summary>Convert a RectTransform's visual center to this hand's parent local space.</summary>
@@ -84,7 +92,7 @@ public class TutorialHand : MonoBehaviour
     {
         _hasMovePath = false;
         _rt.anchoredPosition = anchoredPos;
-        if (gameObject.activeInHierarchy && !_dismissed) Show();
+        if (!_dismissed) Show();
     }
 
     /// <summary>Set a move path so the hand animates from A to B (for drag demos). Restarts animation.</summary>
@@ -95,7 +103,7 @@ public class TutorialHand : MonoBehaviour
         _moveTo = to;
         _moveDuration = duration;
         _rt.anchoredPosition = from;
-        if (gameObject.activeInHierarchy && !_dismissed) Show();
+        if (!_dismissed) Show();
     }
 
     public void Show()

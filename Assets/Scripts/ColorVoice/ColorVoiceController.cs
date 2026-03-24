@@ -164,6 +164,9 @@ public class ColorVoiceController : BaseMiniGame
         // Animate color circle entrance
         yield return AnimateColorEntrance();
 
+        // Position tutorial hand on the color circle
+        PositionTutorialHand();
+
         // Play instruction audio if available
         if (instructionClip != null)
         {
@@ -186,9 +189,19 @@ public class ColorVoiceController : BaseMiniGame
         BeginListening();
     }
 
+    private void PositionTutorialHand()
+    {
+        if (TutorialHand == null || colorCircle == null) return;
+
+        var circleRT = colorCircle.GetComponent<RectTransform>();
+        Vector2 localPos = TutorialHand.GetLocalCenter(circleRT);
+        TutorialHand.SetPosition(localPos);
+    }
+
     private void BeginListening()
     {
         isRoundActive = true;
+        DismissTutorial();
 
         // Start mic pulse animation
         if (micIcon != null)
@@ -334,6 +347,7 @@ public class ColorVoiceController : BaseMiniGame
     private IEnumerator OnCorrectAnswer()
     {
         Stats?.RecordCorrect();
+        PlayCorrectEffect(colorCircle.rectTransform);
         // Happy feedback
         if (feedbackText != null)
         {
@@ -359,6 +373,7 @@ public class ColorVoiceController : BaseMiniGame
     private IEnumerator OnWrongColor(ColorPrompt spokenColor)
     {
         Stats?.RecordMistake();
+        PlayWrongEffect(colorCircle.rectTransform);
         retryCount++;
 
         if (feedbackText != null)

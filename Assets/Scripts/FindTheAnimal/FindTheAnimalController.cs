@@ -737,6 +737,7 @@ public class FindTheAnimalController : BaseMiniGame
         if (animalId == targetAnimal.id)
         {
             RecordCorrect();
+            PlayCorrectEffect(go.GetComponent<RectTransform>());
             targetsFound++;
             foundIndices.Add(index);
             UpdateRemainingText();
@@ -757,6 +758,7 @@ public class FindTheAnimalController : BaseMiniGame
         else
         {
             RecordMistake();
+            PlayWrongEffect(go.GetComponent<RectTransform>());
             StartCoroutine(WrongTapAnimation(go));
         }
     }
@@ -867,7 +869,7 @@ public class FindTheAnimalController : BaseMiniGame
     {
         if (TutorialHand == null || targetIndices.Count == 0 || spawnedAnimals.Count == 0) return;
 
-        // Point at the first target animal
+        // Point at the target animal — show the child exactly where to tap
         int idx = targetIndices[0];
         if (idx >= spawnedAnimals.Count || spawnedAnimals[idx] == null) return;
 

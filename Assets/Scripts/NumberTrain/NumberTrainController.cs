@@ -386,25 +386,35 @@ public class NumberTrainController : BaseMiniGame
     {
         if (optionsArea == null) return;
 
-        // Shuffle missing values for display
-        var shuffled = new List<int>(_missingValues);
-        for (int i = shuffled.Count - 1; i > 0; i--)
+        // Build option list: missing values + distractors (minimum 2 options)
+        var options = new List<int>(_missingValues);
+
+        // Add distractors if fewer than 2 options
+        int safety = 0;
+        while (options.Count < 2 && safety++ < 20)
         {
-            int j = Random.Range(0, i + 1);
-            var tmp = shuffled[i]; shuffled[i] = shuffled[j]; shuffled[j] = tmp;
+            int distractor = Random.Range(Mathf.Max(1, _startNumber - 2), _startNumber + _wagonCount + 3);
+            if (!options.Contains(distractor))
+                options.Add(distractor);
         }
 
-        float areaW = optionsArea.rect.width;
+        // Shuffle
+        for (int i = options.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            var tmp = options[i]; options[i] = options[j]; options[j] = tmp;
+        }
+
         float areaH = optionsArea.rect.height;
         float optSize = Mathf.Min(_wagonW, areaH * 0.95f);
         float spacing = 30f;
-        float totalW = shuffled.Count * optSize + (shuffled.Count - 1) * spacing;
+        float totalW = options.Count * optSize + (options.Count - 1) * spacing;
         float startX = -totalW / 2f + optSize / 2f;
 
-        for (int i = 0; i < shuffled.Count; i++)
+        for (int i = 0; i < options.Count; i++)
         {
             float x = startX + i * (optSize + spacing);
-            var optGO = CreateOption(optionsArea, x, 0, optSize, shuffled[i]);
+            var optGO = CreateOption(optionsArea, x, 0, optSize, options[i]);
             _optionObjects.Add(optGO);
         }
     }
@@ -467,6 +477,7 @@ public class NumberTrainController : BaseMiniGame
     {
         if (!_trainReady || IsInputLocked) return;
         _lastInteractionTime = Time.time;
+        DismissTutorial();
 
         _draggedOption = option;
         _draggedRT = option.GetComponent<RectTransform>();
@@ -511,6 +522,8 @@ public class NumberTrainController : BaseMiniGame
             // Wrong wagon — return to original
             _mistakesThisRound++;
             RecordMistake("wrong_wagon", $"{_draggedValue}→slot{targetWagon}");
+            if (_wagonObjects[targetWagon] != null)
+                PlayWrongEffect(_wagonObjects[targetWagon].GetComponent<RectTransform>());
             StartCoroutine(ReturnToOriginal(_draggedRT, _dragOriginalPos));
             StartCoroutine(ShakeWagon(targetWagon));
         }
@@ -528,6 +541,8 @@ public class NumberTrainController : BaseMiniGame
     private void PlaceNumberInWagon(int wagonIndex, int value, GameObject option)
     {
         RecordCorrect("number_placed", value.ToString());
+        if (_wagonObjects[wagonIndex] != null)
+            PlayCorrectEffect(_wagonObjects[wagonIndex].GetComponent<RectTransform>());
         SoundLibrary.PlayNumberName(value);
         _placedCount++;
 
@@ -760,18 +775,33 @@ public class NumberTrainController : BaseMiniGame
     {
         if (TutorialHand == null || _optionObjects.Count == 0 || _emptySlots.Count == 0) return;
 
-        // From: first option number
-        var optionRT = _optionObjects[0].GetComponent<RectTransform>();
-
-        // To: first empty wagon slot
+        // Find first empty wagon and its expected number
+        int firstEmptyWagonIdx = -1;
         RectTransform targetWagonRT = null;
         foreach (var kvp in _emptySlots)
         {
+            firstEmptyWagonIdx = kvp.Key;
             targetWagonRT = kvp.Value;
             break;
         }
-        if (targetWagonRT == null) return;
+        if (targetWagonRT == null || firstEmptyWagonIdx < 0 || firstEmptyWagonIdx >= _sequence.Length) return;
 
+        int expectedNumber = _sequence[firstEmptyWagonIdx];
+
+        // Find the option that matches the first empty wagon's number
+        GameObject correctOption = null;
+        foreach (var optGO in _optionObjects)
+        {
+            var tmp = optGO.GetComponentInChildren<TextMeshProUGUI>();
+            if (tmp != null && tmp.text == expectedNumber.ToString())
+            {
+                correctOption = optGO;
+                break;
+            }
+        }
+        if (correctOption == null) correctOption = _optionObjects[0];
+
+        var optionRT = correctOption.GetComponent<RectTransform>();
         Vector2 fromLocal = TutorialHand.GetLocalCenter(optionRT);
         Vector2 toLocal = TutorialHand.GetLocalCenter(targetWagonRT);
 

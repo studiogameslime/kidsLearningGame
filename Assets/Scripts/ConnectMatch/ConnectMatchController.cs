@@ -409,6 +409,8 @@ public class ConnectMatchController : BaseMiniGame
             {
                 _mistakesThisRound++;
                 RecordMistake("wrong_start", $"{coord.x},{coord.y}");
+                if (_playDots.ContainsKey(coord))
+                    PlayWrongEffect(_playDots[coord].GetComponent<RectTransform>());
                 ShakeDot(coord);
             }
             return;
@@ -443,6 +445,8 @@ public class ConnectMatchController : BaseMiniGame
             // Wrong dot — soft feedback only, no immediate hint
             _mistakesThisRound++;
             RecordMistake("wrong_dot", $"{coord.x},{coord.y}");
+            if (_playDots.ContainsKey(coord))
+                PlayWrongEffect(_playDots[coord].GetComponent<RectTransform>());
             ShakeDot(coord);
         }
     }
@@ -450,6 +454,8 @@ public class ConnectMatchController : BaseMiniGame
     private void AcceptDot(Vector2Int coord)
     {
         _playerPath.Add(coord);
+        if (_playDots.ContainsKey(coord))
+            PlayCorrectEffect(_playDots[coord].GetComponent<RectTransform>());
         RecordCorrect("dot_connect", $"{coord.x},{coord.y}");
 
         // Brighten this dot

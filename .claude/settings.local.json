@@ -47,7 +47,21 @@
       "Bash(grep -E \"\\\\.\\(cs|asset\\)$\")",
       "Bash(grep -i \"\\\\.cs$\")",
       "Bash(/tmp/tutorial_summary.txt:*)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "WebSearch",
+      "Bash(grep -l \"new Vector2\\(0, 1\\), new Vector2\\(0, 1\\), new Vector2\\(16, -20\\)\" Assets/Scripts/Editor/*Setup.cs)",
+      "Bash(grep -rl \"anchorMin = rt.anchorMax = new Vector2\\(0, 1\\)\" Assets/Scripts/Editor/*Setup.cs)",
+      "Bash(for f:*)",
+      "Bash(do if:*)",
+      "Bash(then sed:*)",
+      "Bash(sed -i \"s/anchorMin = rt.anchorMax = new Vector2\\(0, 1\\);\\\\n\\\\s*rt.pivot = new Vector2\\(0, 1\\);\\\\n\\\\s*rt.anchoredPosition = new Vector2\\(16, -20\\)/anchorMin = rt.anchorMax = new Vector2\\(0, 0.5f\\);\\\\n        rt.pivot = new Vector2\\(0, 0.5f\\);\\\\n        rt.anchoredPosition = new Vector2\\(24, 0\\)/g\" \"$f\")",
+      "Bash(fi)",
+      "Bash(grep -rn \"rt.anchorMin = rt.anchorMax = new Vector2\\(0, 1\\);\" Assets/Scripts/Editor/*Setup.cs)",
+      "Bash(sed -i 's/homeIcon, 16, -20, 90/homeIcon, 24, 0, 90/g' Assets/Scripts/Editor/*Setup.cs)",
+      "Bash(sed -i 's/\"\"\"\"HomeButton\"\"\"\", homeIcon,$/&/' Assets/Scripts/Editor/*Setup.cs)",
+      "Bash(grep -c \"16, -20\" Assets/Scripts/Editor/*Setup.cs)",
+      "Bash(grep -rn \"anchorMin = rt.anchorMax = new Vector2\\(0, 1\\);\" Assets/Scripts/Editor/*Setup.cs)",
+      "Bash(node -e \":*)"
     ]
   }
 }

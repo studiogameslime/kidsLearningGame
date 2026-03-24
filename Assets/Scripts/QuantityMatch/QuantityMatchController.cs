@@ -429,11 +429,13 @@ public class QuantityMatchController : BaseMiniGame
         if (tileIndex == _correctTileIndex)
         {
             RecordCorrect("quantity_match", _targetNumber.ToString());
+            PlayCorrectEffect(_tileObjects[tileIndex].GetComponent<RectTransform>());
             StartCoroutine(OnCorrectSequence(tileIndex));
         }
         else
         {
             RecordMistake("wrong_quantity", _tileQuantities[tileIndex].ToString());
+            PlayWrongEffect(_tileObjects[tileIndex].GetComponent<RectTransform>());
             StartCoroutine(ShakeTile(_tileObjects[tileIndex]));
 
             // After 2 wrong taps, hint
@@ -573,7 +575,7 @@ public class QuantityMatchController : BaseMiniGame
     {
         if (TutorialHand == null || _tileObjects.Count == 0) return;
 
-        // Point at the correct tile so the child learns what to do
+        // Point at the correct tile — show the child exactly what to tap
         var tileRT = _tileObjects[_correctTileIndex].GetComponent<RectTransform>();
         Vector2 localPos = TutorialHand.GetLocalCenter(tileRT);
         TutorialHand.SetPosition(localPos);

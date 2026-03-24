@@ -261,6 +261,8 @@ public class MemoryGameController : BaseMiniGame
         if (firstFlipped.PairId == secondFlipped.PairId)
         {
             Stats?.RecordCorrect("match");
+            PlayCorrectEffect(firstFlipped.GetComponent<RectTransform>());
+            PlayCorrectEffect(secondFlipped.GetComponent<RectTransform>());
             yield return new WaitForSeconds(0.2f);
             firstFlipped.IsMatched = true;
             secondFlipped.IsMatched = true;
@@ -280,6 +282,7 @@ public class MemoryGameController : BaseMiniGame
         {
             Stats?.RecordMistake("mismatch");
             Stats?.IncrementCustom("mismatchCount");
+            PlayWrongEffect(secondFlipped.GetComponent<RectTransform>());
             yield return new WaitForSeconds(mismatchDelay);
             firstFlipped.FlipToBack();
             secondFlipped.FlipToBack();

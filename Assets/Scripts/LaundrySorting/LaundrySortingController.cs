@@ -290,11 +290,13 @@ public class LaundrySortingController : BaseMiniGame
         {
             if (item.isClothes)
             {
+                PlayCorrectEffect(itemRT);
                 RecordCorrect("clothes", item.GetComponent<Image>().sprite.name);
                 StartCoroutine(AcceptIntoTarget(item.gameObject, washingMachineRT, true));
             }
             else
             {
+                PlayWrongEffect(itemRT);
                 RecordMistake("fruit_to_machine", item.GetComponent<Image>().sprite.name);
                 StartCoroutine(RejectItem(item));
             }
@@ -303,11 +305,13 @@ public class LaundrySortingController : BaseMiniGame
         {
             if (!item.isClothes)
             {
+                PlayCorrectEffect(itemRT);
                 RecordCorrect("fruit", item.GetComponent<Image>().sprite.name);
                 StartCoroutine(AcceptIntoTarget(item.gameObject, basketRT, false));
             }
             else
             {
+                PlayWrongEffect(itemRT);
                 RecordMistake("clothes_to_basket", item.GetComponent<Image>().sprite.name);
                 StartCoroutine(RejectItem(item));
             }

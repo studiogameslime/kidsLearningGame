@@ -521,6 +521,8 @@ public class LetterTrainController : BaseMiniGame
         {
             _mistakesThisRound++;
             RecordMistake("wrong_wagon", $"{_draggedLetter}→slot{targetWagon}");
+            if (_wagonObjects[targetWagon] != null)
+                PlayWrongEffect(_wagonObjects[targetWagon].GetComponent<RectTransform>());
             StartCoroutine(ReturnToOriginal(_draggedRT, _dragOriginalPos));
             StartCoroutine(ShakeWagon(targetWagon));
         }
@@ -536,6 +538,8 @@ public class LetterTrainController : BaseMiniGame
     private void PlaceLetterInWagon(int wagonIndex, char letter, GameObject option)
     {
         RecordCorrect("letter_placed", letter.ToString());
+        if (_wagonObjects[wagonIndex] != null)
+            PlayCorrectEffect(_wagonObjects[wagonIndex].GetComponent<RectTransform>());
         _placedCount++;
 
         if (_emptyTexts.ContainsKey(wagonIndex))
@@ -753,18 +757,33 @@ public class LetterTrainController : BaseMiniGame
     {
         if (TutorialHand == null || _optionObjects.Count == 0 || _emptySlots.Count == 0) return;
 
-        // From: first option letter
-        var optionRT = _optionObjects[0].GetComponent<RectTransform>();
-
-        // To: first empty wagon slot
+        // Find first empty wagon and its expected letter
+        int firstEmptyWagonIdx = -1;
         RectTransform targetWagonRT = null;
         foreach (var kvp in _emptySlots)
         {
+            firstEmptyWagonIdx = kvp.Key;
             targetWagonRT = kvp.Value;
             break;
         }
-        if (targetWagonRT == null) return;
+        if (targetWagonRT == null || firstEmptyWagonIdx < 0 || firstEmptyWagonIdx >= _sequence.Length) return;
 
+        char expectedLetter = _sequence[firstEmptyWagonIdx];
+
+        // Find the option that matches the first empty wagon's letter
+        GameObject correctOption = null;
+        foreach (var optGO in _optionObjects)
+        {
+            var tmp = optGO.GetComponentInChildren<TextMeshProUGUI>();
+            if (tmp != null && tmp.text.Length > 0 && tmp.text[0] == expectedLetter)
+            {
+                correctOption = optGO;
+                break;
+            }
+        }
+        if (correctOption == null) correctOption = _optionObjects[0];
+
+        var optionRT = correctOption.GetComponent<RectTransform>();
         Vector2 fromLocal = TutorialHand.GetLocalCenter(optionRT);
         Vector2 toLocal = TutorialHand.GetLocalCenter(targetWagonRT);
 

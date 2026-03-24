@@ -268,12 +268,14 @@ public class OddOneOutController : BaseMiniGame
         {
             // Correct!
             RecordCorrect("odd_found", _oddAnimal);
+            PlayCorrectEffect(_slotObjects[slotIndex].GetComponent<RectTransform>());
             StartCoroutine(OnCorrectSequence(slotIndex));
         }
         else
         {
             // Wrong — soft feedback, keep round active
             RecordMistake("wrong_slot", _majorAnimal);
+            PlayWrongEffect(_slotObjects[slotIndex].GetComponent<RectTransform>());
             StartCoroutine(ShakeSlot(_slotObjects[slotIndex]));
 
             // After 2 wrong taps, hint
@@ -398,9 +400,8 @@ public class OddOneOutController : BaseMiniGame
     {
         if (TutorialHand == null || _slotObjects.Count < 4) return;
 
-        // Pick a non-odd slot so we don't reveal the answer
-        int hintSlot = (_oddIndex + 1) % _slotObjects.Count;
-        var slotRT = _slotObjects[hintSlot].GetComponent<RectTransform>();
+        // Point at the odd one — show the correct answer
+        var slotRT = _slotObjects[_oddIndex].GetComponent<RectTransform>();
         Vector2 localPos = TutorialHand.GetLocalCenter(slotRT);
         TutorialHand.SetPosition(localPos);
     }

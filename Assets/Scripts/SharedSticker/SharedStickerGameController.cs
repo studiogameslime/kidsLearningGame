@@ -75,13 +75,15 @@ public class SharedStickerGameController : BaseMiniGame
 
     private void PositionTutorialHand()
     {
-        if (TutorialHand == null || spawnedStickers.Count == 0) return;
+        if (TutorialHand == null) return;
 
-        // From: first sticker on the left card
-        var stickerRT = spawnedStickers[0].GetComponent<RectTransform>();
-        // For a tap game, just position the hand on one of the stickers
-        Vector2 localPos = TutorialHand.GetLocalCenter(stickerRT);
-        TutorialHand.SetPosition(localPos);
+        // Point at the shared sticker — show the child exactly what to tap
+        if (sharedStickerImages.Count > 0 && sharedStickerImages[0] != null)
+        {
+            var stickerRT = sharedStickerImages[0].GetComponent<RectTransform>();
+            Vector2 localPos = TutorialHand.GetLocalCenter(stickerRT);
+            TutorialHand.SetPosition(localPos);
+        }
     }
 
     private void GenerateRound()
@@ -244,11 +246,13 @@ public class SharedStickerGameController : BaseMiniGame
         if (stickerIndex == sharedStickerIndex)
         {
             Stats?.RecordCorrect();
+            PlayCorrectEffect(tappedGO.GetComponent<RectTransform>());
             StartCoroutine(CorrectSequence(tappedGO));
         }
         else
         {
             Stats?.RecordMistake();
+            PlayWrongEffect(tappedGO.GetComponent<RectTransform>());
             StartCoroutine(WrongSequence(tappedGO));
         }
     }

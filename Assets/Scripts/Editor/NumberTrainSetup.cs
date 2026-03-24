@@ -185,6 +185,10 @@ public class NumberTrainSetup : EditorWindow
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "numbertrain";
 
+        // Tutorial hand
+        TutorialHandHelper.Create(safeGO.transform, TutorialHandHelper.Anim.Tap,
+            new Vector2(0, 0), new Vector2(450, 450), "numbertrain");
+
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/NumberTrain.unity");
     }
 
@@ -286,8 +290,8 @@ public class NumberTrainSetup : EditorWindow
         var go = new GameObject(name);
         go.transform.SetParent(p, false);
         var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = rt.anchorMax = new Vector2(0, 1);
-        rt.pivot = new Vector2(0, 1);
+        rt.anchorMin = rt.anchorMax = new Vector2(0, 0.5f);
+        rt.pivot = new Vector2(0, 0.5f);
         rt.anchoredPosition = new Vector2(x, y);
         rt.sizeDelta = new Vector2(sz, sz);
         var img = go.AddComponent<Image>();

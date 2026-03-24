@@ -454,6 +454,7 @@ public class TowerStackController : BaseMiniGame
         towerTopY += BLOCK_H;
         score++;
         Stats?.RecordCorrect();
+        PlayCorrectEffect(stack[stack.Count - 1].rt);
         SoundLibrary.PlayRandomFeedback();
         if (score > bestScore) bestScore = score;
 

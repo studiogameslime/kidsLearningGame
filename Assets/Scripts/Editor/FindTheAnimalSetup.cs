@@ -197,7 +197,7 @@ public class FindTheAnimalSetup : EditorWindow
 
         var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
         var homeGO = IconBtn(topBar.transform, "HomeButton", homeIcon,
-            new Vector2(0, 1), new Vector2(0, 1), new Vector2(16, -20), new Vector2(90, 90));
+            new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(24, 0), new Vector2(90, 90));
 
         // Trophy button (top-right)
         var trophyIcon = LoadSprite("Assets/Art/Icons/trophy.png");
