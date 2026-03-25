@@ -49,6 +49,7 @@ public class BackgroundMusicManager : MonoBehaviour
         source.loop = true;
         source.volume = 0.1f;
         source.playOnAwake = false;
+        source.mute = !AppSettings.MusicEnabled;
         source.Play();
     }
 
@@ -64,10 +65,12 @@ public class BackgroundMusicManager : MonoBehaviour
 
     /// <summary>
     /// Play a one-shot audio clip that survives scene transitions.
+    /// Respects AppSettings.VoiceEnabled — if voice is muted, does nothing.
     /// </summary>
     public static void PlayOneShot(AudioClip clip, float volume = 1f)
     {
         if (clip == null || _instance == null) return;
+        if (!AppSettings.VoiceEnabled) return;
 
         // Prevent playing the same clip while it's still playing
         if (_instance._lastClip == clip && Time.time - _instance._lastClipTime < clip.length * 0.5f)
@@ -87,5 +90,16 @@ public class BackgroundMusicManager : MonoBehaviour
         var bgSource = _instance.GetComponent<AudioSource>();
         if (bgSource != null)
             bgSource.mute = muted;
+    }
+
+    /// <summary>
+    /// Mute/unmute voice/SFX audio source.
+    /// </summary>
+    public static void SetSfxMuted(bool muted)
+    {
+        if (_instance == null) return;
+        var src = _instance.sfxSource;
+        if (src != null)
+            src.mute = muted;
     }
 }

@@ -33,6 +33,10 @@ public class ParentDashboardController : MonoBehaviour
     public Button trophyButton;
     public Sprite trophySprite;
 
+    [Header("Settings")]
+    public Button settingsButton;
+    public Sprite gearSprite;
+
     [Header("Assets")]
     public Sprite roundedRect;
     public Sprite circleSprite;
@@ -60,6 +64,7 @@ public class ParentDashboardController : MonoBehaviour
     private ParentDashboardData _data;
     private int _correctAnswer;
     private GameObject _leaderboardModal;
+    private GameObject _settingsModal;
 
     // Dynamic content tab state
     private const int TabStatistics = 0;
@@ -92,6 +97,8 @@ public class ParentDashboardController : MonoBehaviour
             backButton.onClick.AddListener(OnBackPressed);
         if (trophyButton != null)
             trophyButton.onClick.AddListener(ShowLeaderboard);
+        if (settingsButton != null)
+            settingsButton.onClick.AddListener(ShowSettings);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -190,8 +197,11 @@ public class ParentDashboardController : MonoBehaviour
         LoadData();
         BuildAllTabs();
 
-        // Request store review on first visit
-        StoreReviewManager.TryRequestReview();
+        // Request store review only after sufficient engagement (3+ visits)
+        int visitCount = PlayerPrefs.GetInt("dashboard_visit_count", 0) + 1;
+        PlayerPrefs.SetInt("dashboard_visit_count", visitCount);
+        if (visitCount >= 3)
+            StoreReviewManager.TryRequestReview();
 
         // Disable kerning on all newly created TMP components
         // (the runtime cleaner only caught the gate panel components at scene load)
@@ -1406,76 +1416,7 @@ public class ParentDashboardController : MonoBehaviour
 
     private void OnSharePressed()
     {
-        string message = BuildShareMessage();
-
-        #if UNITY_ANDROID && !UNITY_EDITOR
-        ShareAndroid(message);
-        #elif UNITY_IOS && !UNITY_EDITOR
-        ShareIOS(message);
-        #else
-        GUIUtility.systemCopyBuffer = message;
-        Debug.Log($"[Share] Copied to clipboard:\n{message}");
-        StartCoroutine(ShowCopiedFeedback());
-        #endif
-    }
-
-    private string BuildShareMessage()
-    {
-        string name = _data != null ? _data.profileName : "";
-        int sessions = _data != null ? _data.totalSessions : 0;
-        int animals = _data != null ? _data.discoveredAnimals : 0;
-        int colors = _data != null ? _data.discoveredColors : 0;
-        int stickers = _data != null ? _data.collectedStickers : 0;
-
-        string appName = Application.productName;
-
-        // הילד שלי X לומד ומשחק עם Y!
-        // כבר שיחק ב-X משחקים וגילה Y חיות, Z צבעים ו-W מדבקות!
-        // הורידו בחינם:
-        return $"\u05D4\u05D9\u05DC\u05D3 \u05E9\u05DC\u05D9 {name} \u05DC\u05D5\u05DE\u05D3 \u05D5\u05DE\u05E9\u05D7\u05E7 \u05E2\u05DD {appName}!\n" +
-               $"\u05DB\u05D1\u05E8 \u05E9\u05D9\u05D7\u05E7 \u05D1-{sessions} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05D5\u05D2\u05D9\u05DC\u05D4 {animals} \u05D7\u05D9\u05D5\u05EA, {colors} \u05E6\u05D1\u05E2\u05D9\u05DD \u05D5-{stickers} \u05DE\u05D3\u05D1\u05E7\u05D5\u05EA!\n" +
-               $"\u05D4\u05D5\u05E8\u05D9\u05D3\u05D5 \u05D1\u05D7\u05D9\u05E0\u05DD:\n" +
-               $"https://play.google.com/store/apps/details?id={Application.identifier}";
-    }
-
-    #if UNITY_ANDROID && !UNITY_EDITOR
-    private void ShareAndroid(string message)
-    {
-        using (var intentClass = new AndroidJavaClass("android.content.Intent"))
-        using (var intent = new AndroidJavaObject("android.content.Intent"))
-        {
-            intent.Call<AndroidJavaObject>("setAction", intentClass.GetStatic<string>("ACTION_SEND"));
-            intent.Call<AndroidJavaObject>("setType", "text/plain");
-            intent.Call<AndroidJavaObject>("putExtra", intentClass.GetStatic<string>("EXTRA_TEXT"), message);
-
-            using (var chooser = intentClass.CallStatic<AndroidJavaObject>("createChooser",
-                intent, "\u05E9\u05EA\u05E4\u05D5 \u05E2\u05DD \u05D7\u05D1\u05E8\u05D9\u05DD")) // שתפו עם חברים
-            {
-                using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-                using (var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
-                {
-                    activity.Call("startActivity", chooser);
-                }
-            }
-        }
-    }
-    #endif
-
-    #if UNITY_IOS && !UNITY_EDITOR
-    [System.Runtime.InteropServices.DllImport("__Internal")]
-    private static extern void _ShareText(string text);
-
-    private void ShareIOS(string message)
-    {
-        _ShareText(message);
-    }
-    #endif
-
-    private IEnumerator ShowCopiedFeedback()
-    {
-        // Brief visual feedback in Editor - find the share button and flash it
-        var shareBtn = dashboardPanel.GetComponentInChildren<Button>();
-        yield return new WaitForSeconds(1f);
+        StartCoroutine(CertificateGenerator.GenerateAndShare(_data, roundedRect));
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -3247,6 +3188,258 @@ public class ParentDashboardController : MonoBehaviour
 
     public void OnBackPressed() => BubbleTransition.LoadScene("WorldScene");
 
+    // ═══════════════════════════════════════════════════════════════
+    //  SETTINGS POPUP
+    // ═══════════════════════════════════════════════════════════════
+
+    private void ShowSettings()
+    {
+        if (_settingsModal != null) return;
+
+        var canvas = GetComponentInParent<Canvas>();
+        if (canvas == null) return;
+
+        // ── Modal overlay ──
+        _settingsModal = new GameObject("SettingsModal");
+        _settingsModal.transform.SetParent(canvas.transform, false);
+        var modalRT = _settingsModal.AddComponent<RectTransform>();
+        modalRT.anchorMin = Vector2.zero;
+        modalRT.anchorMax = Vector2.one;
+        modalRT.offsetMin = Vector2.zero;
+        modalRT.offsetMax = Vector2.zero;
+
+        var dimImg = _settingsModal.AddComponent<Image>();
+        dimImg.color = new Color(0, 0, 0, 0.5f);
+        dimImg.raycastTarget = true;
+
+        // Tap dim area to close
+        var dimBtn = _settingsModal.AddComponent<Button>();
+        dimBtn.targetGraphic = dimImg;
+        dimBtn.onClick.AddListener(CloseSettings);
+
+        // ── Center card ──
+        var cardGO = new GameObject("Card");
+        cardGO.transform.SetParent(_settingsModal.transform, false);
+        var cardRT = cardGO.AddComponent<RectTransform>();
+        cardRT.anchorMin = cardRT.anchorMax = new Vector2(0.5f, 0.5f);
+        cardRT.pivot = new Vector2(0.5f, 0.5f);
+        cardRT.sizeDelta = new Vector2(500, 380);
+
+        var cardImg = cardGO.AddComponent<Image>();
+        if (roundedRect != null) { cardImg.sprite = roundedRect; cardImg.type = Image.Type.Sliced; }
+        cardImg.color = Color.white;
+        cardImg.raycastTarget = true; // block tap-through to dim
+
+        var cardLayout = cardGO.AddComponent<VerticalLayoutGroup>();
+        cardLayout.spacing = 0;
+        cardLayout.padding = new RectOffset(0, 0, 0, 0);
+        cardLayout.childForceExpandWidth = true;
+        cardLayout.childForceExpandHeight = false;
+        cardLayout.childControlWidth = true;
+        cardLayout.childControlHeight = true;
+
+        // ── Header ──
+        var headerGO = new GameObject("Header");
+        headerGO.transform.SetParent(cardGO.transform, false);
+        headerGO.AddComponent<RectTransform>();
+        var headerImg = headerGO.AddComponent<Image>();
+        if (roundedRect != null) { headerImg.sprite = roundedRect; headerImg.type = Image.Type.Sliced; }
+        headerImg.color = HexColor("#2C3E50");
+        headerGO.AddComponent<LayoutElement>().preferredHeight = 60;
+
+        var headerLayout = headerGO.AddComponent<HorizontalLayoutGroup>();
+        headerLayout.padding = new RectOffset(16, 16, 8, 8);
+        headerLayout.spacing = 12;
+        headerLayout.childAlignment = TextAnchor.MiddleCenter;
+        headerLayout.childForceExpandWidth = false;
+        headerLayout.childForceExpandHeight = true;
+        headerLayout.childControlWidth = true;
+        headerLayout.childControlHeight = false;
+
+        // Close button
+        var closeBtnGO = new GameObject("CloseBtn");
+        closeBtnGO.transform.SetParent(headerGO.transform, false);
+        closeBtnGO.AddComponent<RectTransform>();
+        var closeTMP = closeBtnGO.AddComponent<TextMeshProUGUI>();
+        closeTMP.text = "\u2715"; // ✕
+        closeTMP.fontSize = 26;
+        closeTMP.color = Color.white;
+        closeTMP.alignment = TextAlignmentOptions.Center;
+        closeBtnGO.AddComponent<LayoutElement>().preferredWidth = 40;
+        var closeBtn = closeBtnGO.AddComponent<Button>();
+        closeBtn.targetGraphic = closeTMP;
+        closeBtn.onClick.AddListener(CloseSettings);
+
+        // Title (flexible center)
+        var titleGO = new GameObject("Title");
+        titleGO.transform.SetParent(headerGO.transform, false);
+        titleGO.AddComponent<RectTransform>();
+        var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
+        HebrewText.SetText(titleTMP, "\u05D4\u05D2\u05D3\u05E8\u05D5\u05EA"); // הגדרות
+        titleTMP.fontSize = 22;
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.color = Color.white;
+        titleTMP.alignment = TextAlignmentOptions.Center;
+        titleTMP.raycastTarget = false;
+        titleGO.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+        // Spacer (balance close button)
+        var spacerGO = new GameObject("Spacer");
+        spacerGO.transform.SetParent(headerGO.transform, false);
+        spacerGO.AddComponent<RectTransform>();
+        spacerGO.AddComponent<LayoutElement>().preferredWidth = 40;
+
+        // ── Toggle rows ──
+        var contentGO = new GameObject("Content");
+        contentGO.transform.SetParent(cardGO.transform, false);
+        contentGO.AddComponent<RectTransform>();
+        var contentLayout = contentGO.AddComponent<VerticalLayoutGroup>();
+        contentLayout.spacing = 0;
+        contentLayout.padding = new RectOffset(24, 24, 16, 16);
+        contentLayout.childForceExpandWidth = true;
+        contentLayout.childForceExpandHeight = false;
+        contentLayout.childControlWidth = true;
+        contentLayout.childControlHeight = true;
+        contentGO.AddComponent<LayoutElement>().flexibleHeight = 1;
+
+        // Music toggle
+        MakeSettingsToggle(contentGO.transform,
+            "\u05DE\u05D5\u05D6\u05D9\u05E7\u05D4", // מוזיקה
+            "\u05DE\u05D5\u05D6\u05D9\u05E7\u05EA \u05E8\u05E7\u05E2", // מוזיקת רקע
+            AppSettings.MusicEnabled,
+            val => AppSettings.MusicEnabled = val);
+
+        MakeSettingsDivider(contentGO.transform);
+
+        // Voice toggle
+        MakeSettingsToggle(contentGO.transform,
+            "\u05E7\u05D5\u05DC \u05D0\u05DC\u05D9\u05DF", // קול אלין
+            "\u05E9\u05DE\u05D5\u05EA \u05D7\u05D9\u05D5\u05EA, \u05DE\u05E9\u05D5\u05D1\u05D9\u05DD", // שמות חיות, משובים
+            AppSettings.VoiceEnabled,
+            val => AppSettings.VoiceEnabled = val);
+
+        MakeSettingsDivider(contentGO.transform);
+
+        // Notifications toggle
+        MakeSettingsToggle(contentGO.transform,
+            "\u05D4\u05EA\u05E8\u05D0\u05D5\u05EA", // התראות
+            "\u05EA\u05D6\u05DB\u05D5\u05E8\u05EA \u05DB\u05E9\u05DE\u05D3\u05D1\u05E7\u05D4 \u05DE\u05D5\u05DB\u05E0\u05D4", // תזכורת כשמדבקה מוכנה
+            AppSettings.NotificationsEnabled,
+            val => AppSettings.NotificationsEnabled = val);
+    }
+
+    private void MakeSettingsToggle(Transform parent, string title, string subtitle,
+        bool currentValue, System.Action<bool> onChanged)
+    {
+        var rowGO = new GameObject("ToggleRow");
+        rowGO.transform.SetParent(parent, false);
+        rowGO.AddComponent<RectTransform>();
+        var rowLayout = rowGO.AddComponent<HorizontalLayoutGroup>();
+        rowLayout.spacing = 12;
+        rowLayout.padding = new RectOffset(0, 0, 10, 10);
+        rowLayout.childAlignment = TextAnchor.MiddleRight;
+        rowLayout.childForceExpandWidth = false;
+        rowLayout.childForceExpandHeight = false;
+        rowLayout.childControlWidth = true;
+        rowLayout.childControlHeight = false;
+        rowGO.AddComponent<LayoutElement>().preferredHeight = 70;
+
+        // Toggle (right side in RTL = first in hierarchy)
+        var toggleGO = new GameObject("Toggle");
+        toggleGO.transform.SetParent(rowGO.transform, false);
+        toggleGO.AddComponent<RectTransform>();
+
+        var toggleBgGO = new GameObject("Background");
+        toggleBgGO.transform.SetParent(toggleGO.transform, false);
+        var toggleBgRT = toggleBgGO.AddComponent<RectTransform>();
+        toggleBgRT.anchorMin = toggleBgRT.anchorMax = new Vector2(0.5f, 0.5f);
+        toggleBgRT.sizeDelta = new Vector2(60, 32);
+        var toggleBgImg = toggleBgGO.AddComponent<Image>();
+        if (roundedRect != null) { toggleBgImg.sprite = roundedRect; toggleBgImg.type = Image.Type.Sliced; }
+        toggleBgImg.color = currentValue ? Primary : BarBg;
+        toggleBgImg.raycastTarget = true;
+
+        var knobGO = new GameObject("Knob");
+        knobGO.transform.SetParent(toggleBgGO.transform, false);
+        var knobRT = knobGO.AddComponent<RectTransform>();
+        knobRT.anchorMin = knobRT.anchorMax = new Vector2(currentValue ? 0.8f : 0.2f, 0.5f);
+        knobRT.sizeDelta = new Vector2(24, 24);
+        var knobImg = knobGO.AddComponent<Image>();
+        if (circleSprite != null) knobImg.sprite = circleSprite;
+        knobImg.color = Color.white;
+        knobImg.raycastTarget = false;
+
+        toggleGO.AddComponent<LayoutElement>().preferredWidth = 60;
+
+        // Click handler
+        var toggleBtn = toggleBgGO.AddComponent<Button>();
+        toggleBtn.targetGraphic = toggleBgImg;
+        bool state = currentValue;
+        toggleBtn.onClick.AddListener(() =>
+        {
+            state = !state;
+            onChanged(state);
+            toggleBgImg.color = state ? Primary : BarBg;
+            knobRT.anchorMin = knobRT.anchorMax = new Vector2(state ? 0.8f : 0.2f, 0.5f);
+        });
+
+        // Text column (fills remaining space)
+        var textCol = new GameObject("TextCol");
+        textCol.transform.SetParent(rowGO.transform, false);
+        textCol.AddComponent<RectTransform>();
+        var textLayout = textCol.AddComponent<VerticalLayoutGroup>();
+        textLayout.spacing = 2;
+        textLayout.childAlignment = TextAnchor.MiddleRight;
+        textLayout.childForceExpandWidth = true;
+        textLayout.childForceExpandHeight = false;
+        textLayout.childControlWidth = true;
+        textLayout.childControlHeight = true;
+        textCol.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+        var titleText = new GameObject("Title");
+        titleText.transform.SetParent(textCol.transform, false);
+        titleText.AddComponent<RectTransform>();
+        var titleTMP = titleText.AddComponent<TextMeshProUGUI>();
+        HebrewText.SetText(titleTMP, title);
+        titleTMP.fontSize = 20;
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.color = TextDark;
+        titleTMP.alignment = TextAlignmentOptions.Right;
+        titleTMP.raycastTarget = false;
+        titleText.AddComponent<LayoutElement>().preferredHeight = 28;
+
+        var subtitleText = new GameObject("Subtitle");
+        subtitleText.transform.SetParent(textCol.transform, false);
+        subtitleText.AddComponent<RectTransform>();
+        var subTMP = subtitleText.AddComponent<TextMeshProUGUI>();
+        HebrewText.SetText(subTMP, subtitle);
+        subTMP.fontSize = 15;
+        subTMP.color = TextMedium;
+        subTMP.alignment = TextAlignmentOptions.Right;
+        subTMP.raycastTarget = false;
+        subtitleText.AddComponent<LayoutElement>().preferredHeight = 22;
+    }
+
+    private void MakeSettingsDivider(Transform parent)
+    {
+        var divGO = new GameObject("Divider");
+        divGO.transform.SetParent(parent, false);
+        divGO.AddComponent<RectTransform>();
+        var divImg = divGO.AddComponent<Image>();
+        divImg.color = Divider;
+        divImg.raycastTarget = false;
+        divGO.AddComponent<LayoutElement>().preferredHeight = 1;
+    }
+
+    private void CloseSettings()
+    {
+        if (_settingsModal != null)
+        {
+            Destroy(_settingsModal);
+            _settingsModal = null;
+        }
+    }
+
     // ── Helpers ──
 
     private static string H(string raw) => raw;
@@ -3262,5 +3455,8 @@ public class ParentDashboardController : MonoBehaviour
         foreach (var tex in _galleryTextures)
             if (tex != null) Destroy(tex);
         _galleryTextures.Clear();
+
+        if (_settingsModal != null) Destroy(_settingsModal);
+        if (_leaderboardModal != null) Destroy(_leaderboardModal);
     }
 }

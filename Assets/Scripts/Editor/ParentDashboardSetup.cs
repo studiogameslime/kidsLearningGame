@@ -43,6 +43,7 @@ public class ParentDashboardSetup : EditorWindow
         var roundedRect = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/RoundedRect.png");
         var circleSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/Circle.png");
         var trophySprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/trophy.png");
+        var gearSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/gear.png");
 
         // ── Camera ──
         var camGO = new GameObject("Main Camera");
@@ -275,6 +276,25 @@ public class ParentDashboardSetup : EditorWindow
 
         // (Trophy button removed)
 
+        // Settings gear button — right side of header
+        var gearGO = new GameObject("SettingsButton");
+        gearGO.transform.SetParent(headerGO.transform, false);
+        var gearRT = gearGO.AddComponent<RectTransform>();
+        gearRT.anchorMin = new Vector2(1, 0.5f);
+        gearRT.anchorMax = new Vector2(1, 0.5f);
+        gearRT.pivot = new Vector2(1, 0.5f);
+        gearRT.anchoredPosition = new Vector2(-24, 0);
+        gearRT.sizeDelta = new Vector2(60, 60);
+
+        var gearImg = gearGO.AddComponent<Image>();
+        gearImg.sprite = gearSprite;
+        gearImg.preserveAspect = true;
+        gearImg.color = Color.white;
+        gearImg.raycastTarget = true;
+
+        var gearBtn = gearGO.AddComponent<Button>();
+        gearBtn.targetGraphic = gearImg;
+
         // ── Tab Content ScrollViews ──
         float contentTop = HeaderHeight;
         var tabContents = new RectTransform[4];
@@ -339,6 +359,8 @@ public class ParentDashboardSetup : EditorWindow
         ctrl.backButton = backBtn;
         ctrl.trophyButton = null;
         ctrl.trophySprite = trophySprite;
+        ctrl.settingsButton = gearBtn;
+        ctrl.gearSprite = gearSprite;
         ctrl.tabButtons = new Button[0];
         ctrl.tabIndicators = new Image[0];
         ctrl.tabContents = tabContents;

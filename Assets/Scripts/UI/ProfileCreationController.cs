@@ -81,7 +81,7 @@ public class ProfileCreationController : MonoBehaviour
     private AudioSource audioSource;
 
     private static readonly string[] AvatarColors = {
-        "#EF9A9A", "#F48FB1", "#CE93D8", "#B39DDB",
+        "#EF5350", "#F48FB1", "#CE93D8", "#B39DDB",
         "#90CAF9", "#80DEEA", "#80CBC4", "#A5D6A7",
         "#FFF59D", "#FFCC80", "#FFAB91", "#BCAAA4"
     };

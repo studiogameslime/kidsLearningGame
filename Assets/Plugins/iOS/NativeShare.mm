@@ -21,4 +21,33 @@ extern "C" {
 
         [rootVC presentViewController:activityVC animated:YES completion:nil];
     }
+
+    void _ShareImageWithText(const char* imagePath, const char* text) {
+        NSString *path = [NSString stringWithUTF8String:imagePath];
+        UIImage *image = [UIImage imageWithContentsOfFile:path];
+
+        if (image == nil) {
+            NSLog(@"[ShareImage] Failed to load image at path: %@", path);
+            return;
+        }
+
+        NSString *shareText = [NSString stringWithUTF8String:text];
+        NSArray *items = @[image, shareText];
+
+        UIActivityViewController *activityVC =
+            [[UIActivityViewController alloc] initWithActivityItems:items
+                                             applicationActivities:nil];
+
+        UIViewController *rootVC =
+            [UIApplication sharedApplication].keyWindow.rootViewController;
+
+        // iPad requires popover
+        if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+            activityVC.popoverPresentationController.sourceView = rootVC.view;
+            activityVC.popoverPresentationController.sourceRect =
+                CGRectMake(rootVC.view.bounds.size.width / 2, rootVC.view.bounds.size.height / 2, 0, 0);
+        }
+
+        [rootVC presentViewController:activityVC animated:YES completion:nil];
+    }
 }

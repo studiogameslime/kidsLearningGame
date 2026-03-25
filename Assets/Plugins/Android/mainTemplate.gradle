@@ -5,6 +5,8 @@ apply from: '../shared/keepUnitySymbols.gradle'
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 // Android Resolver Dependencies Start
+    implementation 'androidx.core:core:1.12.0' // FileProvider for image sharing
+    implementation 'com.google.android.play:review:2.0.1' // In-app review API
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4' // Packages/com.google.ads.mobile/GoogleMobileAds/Editor/GoogleMobileAdsDependencies.xml:12
     implementation 'androidx.lifecycle:lifecycle-process:2.6.2' // Packages/com.google.ads.mobile/GoogleMobileAds/Editor/GoogleMobileAdsDependencies.xml:17
     implementation 'com.google.android.gms:play-services-ads:25.0.0' // Packages/com.google.ads.mobile/GoogleMobileAds/Editor/GoogleMobileAdsDependencies.xml:7

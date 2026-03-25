@@ -1,13 +1,15 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 /// <summary>
-/// Sticker Tree in the World scene. The child waters the tree to grow it.
-/// Every 5 waterings it advances to the next growth stage (4 stages total).
-/// After watering the final stage 5 times, a sticker blooms on the tree.
-/// Tapping the sticker collects it and resets the tree to stage 0.
+/// Sticker Tree in the World scene. The tree grows a sticker automatically
+/// every 6 hours. The child can water the tree for fun (visual only).
+/// When the sticker is ready, tapping collects it.
+/// Notifications are controlled globally from the parent dashboard settings.
 /// </summary>
 public class StickerTreeController : MonoBehaviour
 {
@@ -15,8 +17,8 @@ public class StickerTreeController : MonoBehaviour
     public Sprite[] treeStages; // 4 stages: seedling → small → medium → full
     public Sprite[] stickerSprites; // available sticker sprites to award
 
-    [Header("Settings")]
-    public int wateringsPerStage = 5;
+    [Header("Timer")]
+    public float growDurationSeconds = 6f * 3600f; // 6 hours
 
     private Image _treeImage;
     private RectTransform _rt;
@@ -25,19 +27,24 @@ public class StickerTreeController : MonoBehaviour
     private GameObject _stickerGO;
     private Image _stickerImage;
     private bool _hasStickerReady;
+    private int _pendingStickerIndex = -1; // sticker chosen at bloom time, reused at collection
 
-    // Watering animation
+    // Watering animation (visual only)
     private bool _isAnimating;
-
-    // Particle-like water drops
     private List<GameObject> _waterDrops = new List<GameObject>();
 
-    // Size per stage (seedling is tiny, full tree is large)
+    // Timer UI
+    private TextMeshProUGUI _timerText;
+
+    // Current computed stage (driven by elapsed time)
+    private int _currentVisualStage = -1;
+
+    // Size per stage
     private static readonly Vector2[] StageSizes = {
-        new Vector2(60, 80),    // seedling - very small
-        new Vector2(120, 160),  // small sprout
-        new Vector2(200, 260),  // medium tree
-        new Vector2(280, 340),  // full tree
+        new Vector2(60, 80),
+        new Vector2(120, 160),
+        new Vector2(200, 260),
+        new Vector2(280, 340),
     };
 
     private void Start()
@@ -47,8 +54,14 @@ public class StickerTreeController : MonoBehaviour
 
         if (treeStages == null || treeStages.Length == 0) return;
 
-        LoadState();
-        UpdateVisual();
+        CreateTimerUI();
+        RefreshState();
+    }
+
+    private void Update()
+    {
+        if (treeStages == null || treeStages.Length == 0) return;
+        RefreshState();
     }
 
     /// <summary>Called by WorldInputHandler when player taps the tree.</summary>
@@ -62,60 +75,147 @@ public class StickerTreeController : MonoBehaviour
             return;
         }
 
+        // Visual-only watering — fun interaction, no effect on timer
         StartCoroutine(WaterSequence());
     }
 
-    private IEnumerator WaterSequence()
+    // ── Time-Based Growth ──
+
+    private void RefreshState()
     {
-        _isAnimating = true;
-
-        // Water drop animation
-        yield return StartCoroutine(ShowWaterDrops());
-
-        // Tree wiggle
-        yield return StartCoroutine(TreeWiggle());
-
-        // Increment watering count
         var profile = ProfileManager.ActiveProfile;
-        if (profile == null) { _isAnimating = false; yield break; }
+        if (profile == null) return;
 
-        int currentStage = GetCurrentStage(profile);
-        int waterings = GetWaterings(profile);
-        waterings++;
+        long lastCollect = GetLastCollectionTime(profile);
+        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
-        if (waterings >= wateringsPerStage)
+        // First ever load: give a sticker immediately
+        if (lastCollect == 0)
         {
-            waterings = 0;
-            if (currentStage < treeStages.Length - 1)
+            if (!_hasStickerReady)
             {
-                // Grow to next stage
-                currentStage++;
-                SetCurrentStage(profile, currentStage);
-                yield return StartCoroutine(GrowAnimation(currentStage));
-            }
-            else
-            {
-                // Final stage fully watered → bloom sticker
+                _hasStickerReady = true;
                 BloomSticker(profile);
             }
+            UpdateTimerText(0);
+            return;
         }
 
-        SetWaterings(profile, waterings);
-        ProfileManager.Instance.Save();
-        UpdateVisual();
+        long elapsed = now - lastCollect;
+        float duration = growDurationSeconds;
 
-        _isAnimating = false;
+        if (elapsed >= (long)duration)
+        {
+            // Sticker ready!
+            if (!_hasStickerReady)
+            {
+                _hasStickerReady = true;
+                BloomSticker(profile);
+            }
+            SetVisualStage(treeStages.Length - 1);
+            UpdateTimerText(0);
+        }
+        else
+        {
+            // Still growing — compute stage from elapsed time
+            float progress = elapsed / duration; // 0..1
+            int stage = Mathf.Clamp(Mathf.FloorToInt(progress * treeStages.Length), 0, treeStages.Length - 1);
+            SetVisualStage(stage);
+
+            long remaining = (long)duration - elapsed;
+            UpdateTimerText(remaining);
+
+            // Destroy sticker if somehow visible during growth
+            if (_hasStickerReady)
+            {
+                _hasStickerReady = false;
+                if (_stickerGO != null) { Destroy(_stickerGO); _stickerGO = null; }
+            }
+        }
     }
+
+    private void SetVisualStage(int stage)
+    {
+        if (stage == _currentVisualStage) return;
+
+        // Animate transition only if going up (not on first load)
+        bool shouldAnimate = _currentVisualStage >= 0 && stage > _currentVisualStage;
+        _currentVisualStage = stage;
+
+        if (shouldAnimate)
+            StartCoroutine(GrowAnimation(stage));
+        else
+            ApplyStageVisual(stage);
+    }
+
+    private void ApplyStageVisual(int stage)
+    {
+        if (treeStages != null && stage >= 0 && stage < treeStages.Length)
+            _treeImage.sprite = treeStages[stage];
+        if (stage >= 0 && stage < StageSizes.Length)
+            _rt.sizeDelta = StageSizes[stage];
+    }
+
+    // ── Timer UI ──
+
+    private void CreateTimerUI()
+    {
+        var timerGO = new GameObject("TimerText");
+        timerGO.transform.SetParent(transform, false);
+
+        var timerRT = timerGO.AddComponent<RectTransform>();
+        timerRT.anchorMin = new Vector2(0.5f, 0f);
+        timerRT.anchorMax = new Vector2(0.5f, 0f);
+        timerRT.pivot = new Vector2(0.5f, 1f);
+        timerRT.anchoredPosition = new Vector2(0, -8);
+        timerRT.sizeDelta = new Vector2(200, 40);
+
+        _timerText = timerGO.AddComponent<TextMeshProUGUI>();
+        _timerText.fontSize = 22;
+        _timerText.alignment = TextAlignmentOptions.Center;
+        _timerText.color = new Color(0.35f, 0.25f, 0.15f);
+        _timerText.raycastTarget = false;
+        _timerText.fontStyle = FontStyles.Bold;
+    }
+
+    private void UpdateTimerText(long remainingSeconds)
+    {
+        if (_timerText == null) return;
+
+        if (_hasStickerReady)
+        {
+            _timerText.text = "";
+            return;
+        }
+
+        if (remainingSeconds <= 0)
+        {
+            _timerText.text = "";
+            return;
+        }
+
+        int h = (int)(remainingSeconds / 3600);
+        int m = (int)((remainingSeconds % 3600) / 60);
+        int s = (int)(remainingSeconds % 60);
+        _timerText.text = $"{h}:{m:D2}:{s:D2}";
+    }
+
+    // ── Sticker Bloom & Collection ──
 
     private void BloomSticker(UserProfile profile)
     {
-        // Determine which sticker to give (random uncollected)
         int stickerIndex = GetNextStickerIndex(profile);
-        if (stickerIndex < 0) return; // all stickers collected — nothing to bloom
+        if (stickerIndex < 0)
+        {
+            // All stickers collected — reset flag, don't show bloom
+            _hasStickerReady = false;
+            _pendingStickerIndex = -1;
+            return;
+        }
 
         _hasStickerReady = true;
+        _pendingStickerIndex = stickerIndex;
 
-        // Create sticker floating above tree
         if (_stickerGO != null) Destroy(_stickerGO);
         _stickerGO = new GameObject("StickerReward");
         _stickerGO.transform.SetParent(transform, false);
@@ -123,7 +223,7 @@ public class StickerTreeController : MonoBehaviour
         var stickerRT = _stickerGO.AddComponent<RectTransform>();
         stickerRT.anchorMin = stickerRT.anchorMax = new Vector2(0.5f, 0.75f);
         stickerRT.pivot = new Vector2(0.5f, 0.5f);
-        stickerRT.anchoredPosition = new Vector2(0, 0);
+        stickerRT.anchoredPosition = Vector2.zero;
         stickerRT.sizeDelta = new Vector2(80, 80);
 
         _stickerImage = _stickerGO.AddComponent<Image>();
@@ -132,7 +232,6 @@ public class StickerTreeController : MonoBehaviour
         _stickerImage.preserveAspect = true;
         _stickerImage.raycastTarget = false;
 
-        // Add glow/pulse
         StartCoroutine(PulseSticker(stickerRT));
     }
 
@@ -147,8 +246,8 @@ public class StickerTreeController : MonoBehaviour
         var profile = ProfileManager.ActiveProfile;
         if (profile == null) { _isAnimating = false; yield break; }
 
-        // Determine sticker ID
-        int stickerIndex = GetNextStickerIndex(profile);
+        int stickerIndex = _pendingStickerIndex;
+        if (stickerIndex < 0) { _isAnimating = false; yield break; }
         string stickerId = $"sticker_{stickerIndex}";
 
         // Fly sticker up and fade
@@ -180,20 +279,38 @@ public class StickerTreeController : MonoBehaviour
         if (!profile.journey.collectedStickerIds.Contains(stickerId))
             profile.journey.collectedStickerIds.Add(stickerId);
 
-        // Reset tree to seedling
-        SetCurrentStage(profile, 0);
-        SetWaterings(profile, 0);
+        // Reset timer — set last collection to now
+        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        SetLastCollectionTime(profile, now);
         ProfileManager.Instance.Save();
 
         _hasStickerReady = false;
+        _pendingStickerIndex = -1;
+        _currentVisualStage = -1; // force visual refresh
+
+        // Schedule notification for next sticker if parent enabled notifications
+        if (AppSettings.NotificationsEnabled)
+        {
+            var fireUtc = DateTimeOffset.FromUnixTimeSeconds(now + (long)growDurationSeconds).UtcDateTime;
+            NotificationService.Instance?.ScheduleStickerReady(fireUtc);
+        }
 
         // Play feedback
         SoundLibrary.PlayRandomFeedback();
 
-        // Shrink animation back to seedling
+        // Shrink back to seedling
         yield return StartCoroutine(GrowAnimation(0));
-        UpdateVisual();
+        _currentVisualStage = 0;
+        _isAnimating = false;
+    }
 
+    // ── Visual-Only Watering ──
+
+    private IEnumerator WaterSequence()
+    {
+        _isAnimating = true;
+        yield return StartCoroutine(ShowWaterDrops());
+        yield return StartCoroutine(TreeWiggle());
         _isAnimating = false;
     }
 
@@ -201,7 +318,6 @@ public class StickerTreeController : MonoBehaviour
 
     private IEnumerator ShowWaterDrops()
     {
-        // Create simple water drops that fall
         for (int i = 0; i < 5; i++)
         {
             var drop = new GameObject("Drop");
@@ -209,7 +325,7 @@ public class StickerTreeController : MonoBehaviour
             var dropRT = drop.AddComponent<RectTransform>();
             dropRT.sizeDelta = new Vector2(12, 16);
             dropRT.anchorMin = dropRT.anchorMax = new Vector2(0.5f, 0.8f);
-            dropRT.anchoredPosition = new Vector2(Random.Range(-40f, 40f), Random.Range(0f, 30f));
+            dropRT.anchoredPosition = new Vector2(UnityEngine.Random.Range(-40f, 40f), UnityEngine.Random.Range(0f, 30f));
 
             var dropImg = drop.AddComponent<Image>();
             dropImg.color = new Color(0.4f, 0.7f, 1f, 0.8f);
@@ -218,7 +334,6 @@ public class StickerTreeController : MonoBehaviour
             _waterDrops.Add(drop);
         }
 
-        // Animate drops falling
         float elapsed = 0f;
         float dur = 0.5f;
         var startPositions = new List<Vector2>();
@@ -275,7 +390,6 @@ public class StickerTreeController : MonoBehaviour
             float t = Mathf.SmoothStep(0, 1, elapsed / dur);
             _rt.sizeDelta = Vector2.Lerp(startSize, endSize, t);
 
-            // Swap sprite at midpoint for smooth transition
             if (!spriteSwapped && t >= 0.5f)
             {
                 spriteSwapped = true;
@@ -283,7 +397,6 @@ public class StickerTreeController : MonoBehaviour
                     _treeImage.sprite = treeStages[targetStage];
             }
 
-            // Bounce overshoot
             float scale = 1f + 0.1f * Mathf.Sin(t * Mathf.PI);
             _rt.localScale = Vector3.one * scale;
             yield return null;
@@ -307,53 +420,20 @@ public class StickerTreeController : MonoBehaviour
 
     // ── State Persistence ──
 
-    private void UpdateVisual()
+    private long GetLastCollectionTime(UserProfile profile)
     {
-        var profile = ProfileManager.ActiveProfile;
-        int stage = profile != null ? GetCurrentStage(profile) : 0;
-
-        if (treeStages != null && stage >= 0 && stage < treeStages.Length)
-            _treeImage.sprite = treeStages[stage];
-
-        // Set size based on stage
-        if (stage >= 0 && stage < StageSizes.Length)
-            _rt.sizeDelta = StageSizes[stage];
+        // PlayerPrefs doesn't support long, store as string
+        string key = $"stree_{profile.id}_lastCollect";
+        string val = PlayerPrefs.GetString(key, "");
+        if (long.TryParse(val, out long ts)) return ts;
+        return 0;
     }
 
-    private void LoadState()
+    private void SetLastCollectionTime(UserProfile profile, long timestamp)
     {
-        var profile = ProfileManager.ActiveProfile;
-        if (profile == null) return;
-
-        int stage = GetCurrentStage(profile);
-        int waterings = GetWaterings(profile);
-
-        // Check if sticker is ready (final stage + fully watered)
-        if (stage >= treeStages.Length - 1 && waterings >= wateringsPerStage)
-        {
-            _hasStickerReady = true;
-            BloomSticker(profile);
-        }
-    }
-
-    private int GetCurrentStage(UserProfile profile)
-    {
-        return PlayerPrefs.GetInt($"stree_{profile.id}_stage", 0);
-    }
-
-    private void SetCurrentStage(UserProfile profile, int stage)
-    {
-        PlayerPrefs.SetInt($"stree_{profile.id}_stage", stage);
-    }
-
-    private int GetWaterings(UserProfile profile)
-    {
-        return PlayerPrefs.GetInt($"stree_{profile.id}_water", 0);
-    }
-
-    private void SetWaterings(UserProfile profile, int water)
-    {
-        PlayerPrefs.SetInt($"stree_{profile.id}_water", water);
+        string key = $"stree_{profile.id}_lastCollect";
+        PlayerPrefs.SetString(key, timestamp.ToString());
+        PlayerPrefs.Save();
     }
 
     private int GetNextStickerIndex(UserProfile profile)
@@ -361,7 +441,6 @@ public class StickerTreeController : MonoBehaviour
         var collected = profile.journey.collectedStickerIds ?? new List<string>();
         int total = (stickerSprites != null && stickerSprites.Length > 0) ? stickerSprites.Length : 12;
 
-        // Build list of uncollected sticker indices
         var available = new List<int>();
         for (int i = 0; i < total; i++)
         {
@@ -370,8 +449,8 @@ public class StickerTreeController : MonoBehaviour
         }
 
         if (available.Count == 0)
-            return -1; // all collected — no more stickers
+            return -1;
 
-        return available[Random.Range(0, available.Count)];
+        return available[UnityEngine.Random.Range(0, available.Count)];
     }
 }

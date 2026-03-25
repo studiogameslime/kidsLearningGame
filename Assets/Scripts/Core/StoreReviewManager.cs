@@ -43,8 +43,11 @@ public static class StoreReviewManager
         }
         catch (System.Exception e)
         {
-            Debug.Log($"[StoreReview] Native review failed, opening store: {e.Message}");
-            Application.OpenURL(PlayStoreUrl + Application.identifier);
+            // Don't open Play Store externally — it disrupts the user experience.
+            // Reset flag so we can retry next time.
+            Debug.Log($"[StoreReview] Native review failed, will retry later: {e.Message}");
+            profile.hasShownStoreReview = false;
+            ProfileManager.Instance?.Save();
         }
 #else
         Debug.Log("[StoreReview] Review requested (editor/non-Android — skipped)");
@@ -74,7 +77,8 @@ public static class StoreReviewManager
             }
             else
             {
-                Application.OpenURL(PlayStoreUrl + Application.identifier);
+                // Don't redirect externally — just skip and allow retry
+                Debug.Log("[StoreReview] Review task failed, will retry later");
             }
         }
     }
