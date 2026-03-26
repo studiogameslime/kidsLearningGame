@@ -50,7 +50,12 @@ public class CollectibleAlbumController : MonoBehaviour
         "Red", "Blue", "Yellow", "Green", "Orange", "Purple", "Pink", "Cyan", "Brown", "Black", "White", "Grey"
     };
 
-    private const int TotalPages = 3;
+    private const int StickersPerSpread = 18; // 9 left + 9 right per book spread
+    private int TotalPages => 2 + StickerPageCount; // Animals + Colors + N sticker pages
+    private int StickerPageCount =>
+        (stickerSprites != null && stickerSprites.Length > 0)
+            ? Mathf.CeilToInt((float)stickerSprites.Length / StickersPerSpread)
+            : 1;
 
     // Colors
     private static readonly Color BookCover = new Color(0.36f, 0.22f, 0.14f);
@@ -320,26 +325,31 @@ public class CollectibleAlbumController : MonoBehaviour
         var unlockedAnimals = new HashSet<string>(jp?.unlockedAnimalIds ?? new List<string>());
         var unlockedColors = new HashSet<string>(jp?.unlockedColorIds ?? new List<string>());
 
-        switch (page)
+        if (page == 0)
         {
-            case 0: // Animals — 12 left (4×3), 7 right
-                HebrewText.SetText(_leftTitleTMP, "\u05D7\u05D9\u05D5\u05EA"); // חיות
-                HebrewText.SetText(_rightTitleTMP, "\u05D7\u05D9\u05D5\u05EA");
-                BuildAnimalGrid(_leftPageContent, 0, 12, unlockedAnimals, 4);
-                BuildAnimalGrid(_rightPageContent, 12, 7, unlockedAnimals, 4);
-                break;
-            case 1: // Colors — 9 left (3×3), 3 right
-                HebrewText.SetText(_leftTitleTMP, "\u05E6\u05D1\u05E2\u05D9\u05DD"); // צבעים
-                HebrewText.SetText(_rightTitleTMP, "\u05E6\u05D1\u05E2\u05D9\u05DD");
-                BuildColorGrid(_leftPageContent, 0, 9, unlockedColors);
-                BuildColorGrid(_rightPageContent, 9, 3, unlockedColors);
-                break;
-            case 2: // Stickers — 9 left (3×3), 3 right
-                HebrewText.SetText(_leftTitleTMP, "\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA"); // מדבקות
-                HebrewText.SetText(_rightTitleTMP, "\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA");
-                BuildStickerGrid(_leftPageContent, 0, 9);
-                BuildStickerGrid(_rightPageContent, 9, 3);
-                break;
+            // Animals — 12 left (4×3), 7 right
+            HebrewText.SetText(_leftTitleTMP, "\u05D7\u05D9\u05D5\u05EA"); // חיות
+            HebrewText.SetText(_rightTitleTMP, "\u05D7\u05D9\u05D5\u05EA");
+            BuildAnimalGrid(_leftPageContent, 0, 12, unlockedAnimals, 4);
+            BuildAnimalGrid(_rightPageContent, 12, 7, unlockedAnimals, 4);
+        }
+        else if (page == 1)
+        {
+            // Colors — 9 left (3×3), 3 right
+            HebrewText.SetText(_leftTitleTMP, "\u05E6\u05D1\u05E2\u05D9\u05DD"); // צבעים
+            HebrewText.SetText(_rightTitleTMP, "\u05E6\u05D1\u05E2\u05D9\u05DD");
+            BuildColorGrid(_leftPageContent, 0, 9, unlockedColors);
+            BuildColorGrid(_rightPageContent, 9, 3, unlockedColors);
+        }
+        else
+        {
+            // Sticker pages (dynamic) — 9 left + 9 right per spread
+            HebrewText.SetText(_leftTitleTMP, "\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA"); // מדבקות
+            HebrewText.SetText(_rightTitleTMP, "\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA");
+            int stickerPage = page - 2;
+            int start = stickerPage * StickersPerSpread;
+            BuildStickerGrid(_leftPageContent, start, 9);
+            BuildStickerGrid(_rightPageContent, start + 9, 9);
         }
 
         // Page dots: ● ○ ○
