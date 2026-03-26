@@ -832,16 +832,21 @@ public class WorldSceneSetup : EditorWindow
         album.roundedRect = roundedRectSprite;
         album.gameDatabase = controller.gameDatabase;
 
-        // Load sticker sprites from sprite sheet
+        // Load sticker sprites from all sprite sheets in Assets/Art/Stickers/
         var stickerList = new List<Sprite>();
-        var stickerAssets = AssetDatabase.LoadAllAssetsAtPath("Assets/Art/Stickers/Sticker.png");
-        if (stickerAssets != null)
+        var stickerGuids = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Art/Stickers" });
+        foreach (var guid in stickerGuids)
         {
-            foreach (var asset in stickerAssets)
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            var allAssets = AssetDatabase.LoadAllAssetsAtPath(path);
+            if (allAssets == null) continue;
+            foreach (var asset in allAssets)
                 if (asset is Sprite spr) stickerList.Add(spr);
         }
         stickerList.Sort((a, b) =>
         {
+            int sheetCmp = string.Compare(a.texture.name, b.texture.name, System.StringComparison.Ordinal);
+            if (sheetCmp != 0) return sheetCmp;
             int na = 0, nb = 0;
             var pa = a.name.Split('_'); if (pa.Length > 1) int.TryParse(pa[pa.Length - 1], out na);
             var pb = b.name.Split('_'); if (pb.Length > 1) int.TryParse(pb[pb.Length - 1], out nb);
