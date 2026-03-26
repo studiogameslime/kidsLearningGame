@@ -348,7 +348,7 @@ public class WorldSceneSetup : EditorWindow
         var albumIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/star.png");
         var albumBtn = CreateIconButton(topBar.transform, "AlbumButton", albumIcon,
             new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f),
-            new Vector2(-100, 0), new Vector2(90, 90));
+            new Vector2(-235, 0), new Vector2(90, 90));
 
         // Parent dashboard button (top-right, icon + label "איזור הורים")
         var parentIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/multiplayer.png");
