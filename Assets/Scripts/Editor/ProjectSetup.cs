@@ -205,6 +205,9 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Letter Train…", 0.990f);
             LetterTrainSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Letter Tracing…", 0.9902f);
+            LetterTracingSetup.RunSetupSilent();
+
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Image Gallery…", 0.9905f);
             ImageGallerySetup.RunSetupSilent();
 
@@ -793,6 +796,15 @@ public class ProjectSetup : EditorWindow
         letterTrain.hasSubItems = false;
         EditorUtility.SetDirty(letterTrain);
 
+        // ── Letter Tracing ──
+        var letterTracing = CreateSO<GameItemData>($"{DataPath}/LetterTracing.asset");
+        letterTracing.id = "lettertracing";
+        letterTracing.title = "\u05DB\u05EA\u05D9\u05D1\u05EA \u05D0\u05D5\u05EA\u05D9\u05D5\u05EA"; // כתיבת אותיות
+        letterTracing.cardColor = HexColor("#66BB6A");
+        letterTracing.targetSceneName = "LetterTracing";
+        letterTracing.hasSubItems = false;
+        EditorUtility.SetDirty(letterTracing);
+
         // ── Connect Match ──
         var connectMatch = CreateSO<GameItemData>($"{DataPath}/ConnectMatch.asset");
         connectMatch.id = "connectmatch";
@@ -825,7 +837,7 @@ public class ProjectSetup : EditorWindow
         // ── Scratch Card ──
         // ── Game Database ──
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, /* towerStack hidden for v1 */ sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, connectMatch, laundrySorting, /* pizzaMaker hidden for v1 */ };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, /* towerStack hidden for v1 */ sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, letterTracing, connectMatch, laundrySorting, /* pizzaMaker hidden for v1 */ };
         EditorUtility.SetDirty(db);
 
         // Validate age baseline configuration
@@ -1434,6 +1446,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/QuantityMatch.unity",
             $"{ScenesPath}/NumberTrain.unity",
             $"{ScenesPath}/LetterTrain.unity",
+            $"{ScenesPath}/LetterTracing.unity",
             $"{ScenesPath}/ImageGallery.unity",
             $"{ScenesPath}/ConnectMatch.unity",
             $"{ScenesPath}/LaundrySorting.unity",
