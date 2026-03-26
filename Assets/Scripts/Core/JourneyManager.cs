@@ -142,13 +142,6 @@ public class JourneyManager : MonoBehaviour
         if (DiscoveryCatalog.HasMore(jp))
             jp.gamesUntilNextDiscovery--;
 
-        // Chain: puzzle → coloring (only on first journey game — the intro sequence)
-        if (completedGameId == "puzzle" && sessionGamesPlayed <= 1 && GameContext.CurrentSelection != null)
-        {
-            pendingChainGameId = "coloring";
-            pendingChainAnimalId = GameContext.CurrentSelection.categoryKey;
-        }
-
         // Check for discovery
         if (jp.gamesUntilNextDiscovery <= 0 && DiscoveryCatalog.HasMore(jp))
         {
