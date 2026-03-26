@@ -50,6 +50,16 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
     private bool areaFillMode;
     private bool[] boundaryMask;
 
+    // Pinch-to-zoom
+    private bool isPinching;
+    private float lastPinchDist;
+    private Vector2 lastPinchCenter;
+    private RectTransform zoomTarget;
+    private float currentZoom = 1f;
+    private Vector2 currentPan = Vector2.zero;
+    private const float MinZoom = 1f;
+    private const float MaxZoom = 4f;
+
     // Base color for the canvas (white) and the eraser
     private Color clearColor = Color.white;
 
@@ -68,6 +78,16 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
         drawTexture.filterMode = FilterMode.Bilinear;
         Clear();
         rawImage.texture = drawTexture;
+
+        // Setup pinch-to-zoom: zoom the parent that holds drawing + outline
+        zoomTarget = rectTransform.parent as RectTransform;
+        if (zoomTarget != null)
+        {
+            // Add mask on the frame (grandparent) to clip zoomed content
+            var clipParent = zoomTarget.parent;
+            if (clipParent != null && clipParent.GetComponent<UnityEngine.UI.RectMask2D>() == null)
+                clipParent.gameObject.AddComponent<UnityEngine.UI.RectMask2D>();
+        }
     }
 
     // ── Public API ──
@@ -162,11 +182,104 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
         return drawTexture != null ? new Vector2Int(drawTexture.width, drawTexture.height) : Vector2Int.zero;
     }
 
+    // ── Pinch-to-Zoom ──
+
+    private void Update()
+    {
+        int touchCount = Input.touchCount;
+
+        if (touchCount >= 2)
+        {
+            var t0 = Input.GetTouch(0);
+            var t1 = Input.GetTouch(1);
+
+            if (!isPinching)
+            {
+                // Start pinch — cancel any drawing in progress
+                isPinching = true;
+                if (isDrawing)
+                {
+                    isDrawing = false;
+                    lastDrawPos = null;
+                    // Restore undo snapshot to discard partial stroke
+                    if (undoStack.Count > 0)
+                    {
+                        var prev = undoStack[undoStack.Count - 1];
+                        undoStack.RemoveAt(undoStack.Count - 1);
+                        drawTexture.SetPixels(prev);
+                        drawTexture.Apply();
+                    }
+                }
+                activePointerId = -1;
+                lastPinchDist = Vector2.Distance(t0.position, t1.position);
+                lastPinchCenter = (t0.position + t1.position) * 0.5f;
+            }
+            else
+            {
+                float dist = Vector2.Distance(t0.position, t1.position);
+                Vector2 center = (t0.position + t1.position) * 0.5f;
+
+                // Zoom
+                if (lastPinchDist > 10f)
+                {
+                    float scale = dist / lastPinchDist;
+                    currentZoom = Mathf.Clamp(currentZoom * scale, MinZoom, MaxZoom);
+                }
+
+                // Pan
+                Vector2 panDelta = center - lastPinchCenter;
+                currentPan += panDelta;
+
+                ApplyZoomPan();
+
+                lastPinchDist = dist;
+                lastPinchCenter = center;
+            }
+        }
+        else if (isPinching)
+        {
+            isPinching = false;
+
+            // Snap back to 1x if nearly unzoomed
+            if (currentZoom < 1.1f)
+            {
+                currentZoom = 1f;
+                currentPan = Vector2.zero;
+                ApplyZoomPan();
+            }
+        }
+    }
+
+    private void ApplyZoomPan()
+    {
+        if (zoomTarget == null) return;
+
+        zoomTarget.localScale = new Vector3(currentZoom, currentZoom, 1f);
+
+        // Clamp pan so content doesn't drift too far outside the frame
+        Rect rect = zoomTarget.rect;
+        float maxPanX = (currentZoom - 1f) * rect.width * 0.5f;
+        float maxPanY = (currentZoom - 1f) * rect.height * 0.5f;
+        currentPan.x = Mathf.Clamp(currentPan.x, -maxPanX, maxPanX);
+        currentPan.y = Mathf.Clamp(currentPan.y, -maxPanY, maxPanY);
+
+        zoomTarget.anchoredPosition = currentPan;
+    }
+
+    /// <summary>Resets zoom and pan to default (1x, centered).</summary>
+    public void ResetZoom()
+    {
+        currentZoom = 1f;
+        currentPan = Vector2.zero;
+        ApplyZoomPan();
+    }
+
     // ── Input Handling ──
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        // Only track the first finger — ignore additional touches
+        // Block drawing during pinch or when second finger is already down
+        if (isPinching || Input.touchCount >= 2) return;
         if (isDrawing) return;
         activePointerId = eventData.pointerId;
 
@@ -206,8 +319,8 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
 
     public void OnDrag(PointerEventData eventData)
     {
-        // No dragging in area fill mode
-        if (areaFillMode) return;
+        // No dragging in area fill mode or during pinch
+        if (areaFillMode || isPinching) return;
         if (!isDrawing || activeSticker != null) return;
         if (eventData.pointerId != activePointerId) return;
 
