@@ -370,17 +370,21 @@ public class CollectibleAlbumController : MonoBehaviour
         var animals = new HashSet<string>(jp?.unlockedAnimalIds ?? new List<string>());
         var colors = new HashSet<string>(jp?.unlockedColorIds ?? new List<string>());
 
-        switch (page)
+        if (page == 0)
         {
-            case 0:
-                HebrewText.SetText(_leftTitleTMP, "\u05D7\u05D9\u05D5\u05EA");
-                BuildAnimalGrid(_leftPageContent, 0, 12, animals, 4); break;
-            case 1:
-                HebrewText.SetText(_leftTitleTMP, "\u05E6\u05D1\u05E2\u05D9\u05DD");
-                BuildColorGrid(_leftPageContent, 0, 9, colors); break;
-            case 2:
-                HebrewText.SetText(_leftTitleTMP, "\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA");
-                BuildStickerGrid(_leftPageContent, 0, 9); break;
+            HebrewText.SetText(_leftTitleTMP, "\u05D7\u05D9\u05D5\u05EA");
+            BuildAnimalGrid(_leftPageContent, 0, 12, animals, 4);
+        }
+        else if (page == 1)
+        {
+            HebrewText.SetText(_leftTitleTMP, "\u05E6\u05D1\u05E2\u05D9\u05DD");
+            BuildColorGrid(_leftPageContent, 0, 9, colors);
+        }
+        else
+        {
+            HebrewText.SetText(_leftTitleTMP, "\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA");
+            int start = (page - 2) * StickersPerSpread;
+            BuildStickerGrid(_leftPageContent, start, 9);
         }
     }
 
@@ -392,17 +396,21 @@ public class CollectibleAlbumController : MonoBehaviour
         var animals = new HashSet<string>(jp?.unlockedAnimalIds ?? new List<string>());
         var colors = new HashSet<string>(jp?.unlockedColorIds ?? new List<string>());
 
-        switch (page)
+        if (page == 0)
         {
-            case 0:
-                HebrewText.SetText(_rightTitleTMP, "\u05D7\u05D9\u05D5\u05EA");
-                BuildAnimalGrid(_rightPageContent, 12, 7, animals, 4); break;
-            case 1:
-                HebrewText.SetText(_rightTitleTMP, "\u05E6\u05D1\u05E2\u05D9\u05DD");
-                BuildColorGrid(_rightPageContent, 9, 3, colors); break;
-            case 2:
-                HebrewText.SetText(_rightTitleTMP, "\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA");
-                BuildStickerGrid(_rightPageContent, 9, 3); break;
+            HebrewText.SetText(_rightTitleTMP, "\u05D7\u05D9\u05D5\u05EA");
+            BuildAnimalGrid(_rightPageContent, 12, 7, animals, 4);
+        }
+        else if (page == 1)
+        {
+            HebrewText.SetText(_rightTitleTMP, "\u05E6\u05D1\u05E2\u05D9\u05DD");
+            BuildColorGrid(_rightPageContent, 9, 3, colors);
+        }
+        else
+        {
+            HebrewText.SetText(_rightTitleTMP, "\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA");
+            int start = (page - 2) * StickersPerSpread + 9;
+            BuildStickerGrid(_rightPageContent, start, 9);
         }
     }
 
