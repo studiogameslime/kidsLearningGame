@@ -266,169 +266,146 @@ public class TracingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
         ShowStartMarker(idx);
     }
 
-    // ── Guide Rendering ──
+    // ── Guide Rendering (Thick Road Style) ──
+
+    // Road colors
+    private static readonly Color RoadInactive = new Color(0.88f, 0.88f, 0.88f, 1f);
+    private static readonly Color RoadActive   = new Color(0.72f, 0.72f, 0.72f, 1f);
+    private static readonly Color RoadBorder   = new Color(0.60f, 0.60f, 0.60f, 1f);
+    private int RoadRadius => brushSize / 2 + 10;
+
+    private Texture2D guideTexture; // separate texture for guide roads (redrawn on stroke change)
 
     private void DrawAllStrokeGuides()
     {
-        // Draw guide paths directly on the texture as dashed lines
-        DrawGuideOnTexture();
+        // Create a separate guide texture for the road
+        guideTexture = new Texture2D(textureWidth, textureHeight, TextureFormat.RGBA32, false);
+        guideTexture.filterMode = FilterMode.Bilinear;
+        ClearGuideTexture();
 
-        // Also create UI dot markers for highlighting
-        if (guideParent == null) return;
+        // Draw all strokes as faint roads
+        for (int s = 0; s < currentLetter.strokes.Count; s++)
+            DrawStrokeRoad(s, RoadInactive);
 
+        guideTexture.Apply();
+
+        // Create a RawImage for the guide texture (behind the tracing layer)
+        if (guideParent != null)
+        {
+            var guideImgGO = new GameObject("GuideRoadImage");
+            guideImgGO.transform.SetParent(guideParent, false);
+            var grt = guideImgGO.AddComponent<RectTransform>();
+            grt.anchorMin = Vector2.zero; grt.anchorMax = Vector2.one;
+            grt.offsetMin = Vector2.zero; grt.offsetMax = Vector2.zero;
+            var rawImg = guideImgGO.AddComponent<RawImage>();
+            rawImg.texture = guideTexture;
+            rawImg.color = Color.white;
+            rawImg.raycastTarget = false;
+            guideObjects.Add(guideImgGO);
+        }
+    }
+
+    private void DrawStrokeRoad(int strokeIdx, Color roadColor)
+    {
+        var points = currentLetter.strokes[strokeIdx].points;
+        int r = RoadRadius;
+
+        // Draw border (slightly larger, darker)
+        for (int i = 0; i < points.Count - 1; i++)
+        {
+            Vector2 from = NormToTex(points[i]);
+            Vector2 to = NormToTex(points[i + 1]);
+            DrawRoadSegment(from, to, r + 3, RoadBorder);
+        }
+
+        // Draw road fill
+        for (int i = 0; i < points.Count - 1; i++)
+        {
+            Vector2 from = NormToTex(points[i]);
+            Vector2 to = NormToTex(points[i + 1]);
+            DrawRoadSegment(from, to, r, roadColor);
+        }
+    }
+
+    private void RedrawGuideForActiveStroke(int activeIdx)
+    {
+        if (guideTexture == null) return;
+
+        ClearGuideTexture();
+
+        // Draw inactive/completed strokes
         for (int s = 0; s < currentLetter.strokes.Count; s++)
         {
-            var stroke = currentLetter.strokes[s];
-            var points = stroke.points;
-
-            for (int i = 0; i < points.Count; i++)
+            if (s < activeIdx)
             {
-                var dotGO = new GameObject($"Dot_{s}_{i}");
-                dotGO.transform.SetParent(guideParent, false);
-                var rt = dotGO.AddComponent<RectTransform>();
-                rt.anchorMin = rt.anchorMax = new Vector2(points[i].x, points[i].y);
-                rt.sizeDelta = new Vector2(24, 24);
-
-                var img = dotGO.AddComponent<Image>();
-                img.color = new Color(0.5f, 0.5f, 0.5f, 0.5f);
-                img.raycastTarget = false;
-                if (circleSprite != null) img.sprite = circleSprite;
-
-                guideObjects.Add(dotGO);
+                // Completed: show in trace color (faded)
+                Color completedColor = new Color(traceColor.r * 0.5f + 0.5f,
+                                                  traceColor.g * 0.5f + 0.5f,
+                                                  traceColor.b * 0.5f + 0.5f, 0.3f);
+                DrawStrokeRoad(s, completedColor);
             }
-        }
-    }
-
-    /// <summary>
-    /// Draws dashed guide lines for all strokes directly on the drawing texture.
-    /// This ensures the letter shape is always visible on the canvas.
-    /// </summary>
-    private void DrawGuideOnTexture()
-    {
-        Color guideColor = new Color(0.75f, 0.75f, 0.75f, 1f);
-        int guideRadius = brushSize / 2 + 4;
-
-        for (int s = 0; s < currentLetter.strokes.Count; s++)
-        {
-            var points = currentLetter.strokes[s].points;
-
-            for (int i = 0; i < points.Count - 1; i++)
+            else if (s == activeIdx)
             {
-                Vector2 from = new Vector2(points[i].x * textureWidth, points[i].y * textureHeight);
-                Vector2 to = new Vector2(points[i + 1].x * textureWidth, points[i + 1].y * textureHeight);
-
-                // Draw dashed line: alternating draw/skip segments
-                float dist = Vector2.Distance(from, to);
-                float dashLen = guideRadius * 2.5f;
-                float gapLen = guideRadius * 1.5f;
-                float pos = 0;
-                bool draw = true;
-
-                while (pos < dist)
-                {
-                    float segEnd = Mathf.Min(pos + (draw ? dashLen : gapLen), dist);
-                    if (draw)
-                    {
-                        Vector2 a = Vector2.Lerp(from, to, pos / dist);
-                        Vector2 b = Vector2.Lerp(from, to, segEnd / dist);
-                        DrawGuideLine(a, b, guideRadius, guideColor);
-                    }
-                    pos = segEnd;
-                    draw = !draw;
-                }
+                // Active: highlighted road
+                DrawStrokeRoad(s, RoadActive);
             }
-
-            // Draw waypoint dots (solid circles at each waypoint)
-            for (int i = 0; i < points.Count; i++)
+            else
             {
-                Vector2 center = new Vector2(points[i].x * textureWidth, points[i].y * textureHeight);
-                DrawGuideCircle(center, guideRadius + 2, guideColor);
+                // Future: very faint
+                DrawStrokeRoad(s, RoadInactive);
             }
         }
 
-        drawTexture.Apply();
+        guideTexture.Apply();
     }
 
-    private void DrawGuideCircle(Vector2 center, int radius, Color color)
-    {
-        int cx = Mathf.RoundToInt(center.x);
-        int cy = Mathf.RoundToInt(center.y);
-        for (int y = -radius; y <= radius; y++)
-        {
-            for (int x = -radius; x <= radius; x++)
-            {
-                if (x * x + y * y <= radius * radius)
-                {
-                    int px = cx + x, py = cy + y;
-                    if (px >= 0 && px < textureWidth && py >= 0 && py < textureHeight)
-                        drawTexture.SetPixel(px, py, color);
-                }
-            }
-        }
-    }
-
-    private void DrawGuideLine(Vector2 from, Vector2 to, int radius, Color color)
+    private void DrawRoadSegment(Vector2 from, Vector2 to, int radius, Color color)
     {
         float dist = Vector2.Distance(from, to);
-        float step = Mathf.Max(1f, radius * 0.4f);
+        float step = Mathf.Max(1f, radius * 0.3f);
         int steps = Mathf.CeilToInt(dist / step);
         for (int i = 0; i <= steps; i++)
         {
             float t = steps == 0 ? 0 : (float)i / steps;
-            DrawGuideCircle(Vector2.Lerp(from, to, t), radius, color);
+            Vector2 p = Vector2.Lerp(from, to, t);
+            int cx = Mathf.RoundToInt(p.x);
+            int cy = Mathf.RoundToInt(p.y);
+            for (int y = -radius; y <= radius; y++)
+            {
+                for (int x = -radius; x <= radius; x++)
+                {
+                    if (x * x + y * y <= radius * radius)
+                    {
+                        int px = cx + x, py = cy + y;
+                        if (px >= 0 && px < textureWidth && py >= 0 && py < textureHeight)
+                        {
+                            Color existing = guideTexture.GetPixel(px, py);
+                            if (existing.a < color.a)
+                                guideTexture.SetPixel(px, py, color);
+                        }
+                    }
+                }
+            }
         }
+    }
+
+    private void ClearGuideTexture()
+    {
+        if (guideTexture == null) return;
+        var pixels = guideTexture.GetPixels();
+        Color clear = new Color(0, 0, 0, 0);
+        for (int i = 0; i < pixels.Length; i++) pixels[i] = clear;
+        guideTexture.SetPixels(pixels);
     }
 
     private void UpdateGuideHighlight(int activeStroke)
     {
-        int dotIdx = 0;
-        for (int s = 0; s < currentLetter.strokes.Count; s++)
-        {
-            var points = currentLetter.strokes[s].points;
-            bool isActive = s == activeStroke;
-            bool isCompleted = s < activeStroke;
-
-            for (int i = 0; i < points.Count; i++)
-            {
-                if (dotIdx < guideObjects.Count)
-                {
-                    var img = guideObjects[dotIdx].GetComponent<Image>();
-                    if (img != null)
-                    {
-                        if (isCompleted)
-                            img.color = new Color(traceColor.r, traceColor.g, traceColor.b, 0.6f);
-                        else if (isActive)
-                            img.color = new Color(0.3f, 0.3f, 0.3f, 0.7f);
-                        else
-                            img.color = new Color(0.6f, 0.6f, 0.6f, 0.3f);
-
-                        // Active stroke dots are bigger
-                        var rt = guideObjects[dotIdx].GetComponent<RectTransform>();
-                        rt.sizeDelta = isActive ? new Vector2(20, 20) : new Vector2(14, 14);
-                    }
-                }
-                dotIdx++;
-            }
-        }
+        RedrawGuideForActiveStroke(activeStroke);
     }
 
     private void MarkStrokeComplete(int strokeIdx)
     {
-        int dotIdx = 0;
-        for (int s = 0; s <= strokeIdx; s++)
-        {
-            var points = currentLetter.strokes[s].points;
-            for (int i = 0; i < points.Count; i++)
-            {
-                if (s == strokeIdx && dotIdx < guideObjects.Count)
-                {
-                    var img = guideObjects[dotIdx].GetComponent<Image>();
-                    if (img != null)
-                        img.color = new Color(traceColor.r, traceColor.g, traceColor.b, 0.6f);
-                }
-                dotIdx++;
-            }
-        }
+        // Will be redrawn when next stroke activates
     }
 
     private void ShowStartMarker(int strokeIdx)
@@ -438,16 +415,52 @@ public class TracingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
 
         var startPt = currentLetter.strokes[strokeIdx].points[0];
 
+        // Glowing start circle
         startMarker = new GameObject("StartMarker");
         startMarker.transform.SetParent(guideParent, false);
         var rt = startMarker.AddComponent<RectTransform>();
         rt.anchorMin = rt.anchorMax = new Vector2(startPt.x, startPt.y);
-        rt.sizeDelta = new Vector2(40, 40);
+        rt.sizeDelta = new Vector2(55, 55);
 
         var img = startMarker.AddComponent<Image>();
-        img.color = new Color(0.2f, 0.8f, 0.3f, 0.7f);
+        img.color = new Color(0.3f, 0.85f, 0.4f, 0.85f);
         img.raycastTarget = false;
         if (circleSprite != null) img.sprite = circleSprite;
+
+        // Inner glow (pulsing feel via slightly larger outer ring)
+        var glowGO = new GameObject("Glow");
+        glowGO.transform.SetParent(startMarker.transform, false);
+        var glowRT = glowGO.AddComponent<RectTransform>();
+        glowRT.anchorMin = Vector2.zero; glowRT.anchorMax = Vector2.one;
+        glowRT.offsetMin = new Vector2(-8, -8); glowRT.offsetMax = new Vector2(8, 8);
+        var glowImg = glowGO.AddComponent<Image>();
+        glowImg.color = new Color(0.3f, 0.85f, 0.4f, 0.3f);
+        glowImg.raycastTarget = false;
+        if (circleSprite != null) glowImg.sprite = circleSprite;
+
+        // Direction arrow (small text arrow pointing toward second waypoint)
+        if (strokeIdx < currentLetter.strokes.Count)
+        {
+            var points = currentLetter.strokes[strokeIdx].points;
+            if (points.Count >= 2)
+            {
+                Vector2 dir = (points[1] - points[0]).normalized;
+                float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+
+                var arrowGO = new GameObject("Arrow");
+                arrowGO.transform.SetParent(startMarker.transform, false);
+                var arrowRT = arrowGO.AddComponent<RectTransform>();
+                arrowRT.anchoredPosition = dir * 40f;
+                arrowRT.sizeDelta = new Vector2(30, 30);
+                arrowRT.localRotation = Quaternion.Euler(0, 0, angle);
+                var arrowTMP = arrowGO.AddComponent<TMPro.TextMeshProUGUI>();
+                arrowTMP.text = "\u25B6"; // ▶
+                arrowTMP.fontSize = 20;
+                arrowTMP.color = new Color(0.2f, 0.7f, 0.3f, 0.8f);
+                arrowTMP.alignment = TMPro.TextAlignmentOptions.Center;
+                arrowTMP.raycastTarget = false;
+            }
+        }
     }
 
     private void ClearGuides()
@@ -456,7 +469,11 @@ public class TracingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
         guideObjects.Clear();
         if (startMarker != null) { Destroy(startMarker); startMarker = null; }
         if (directionArrow != null) { Destroy(directionArrow); directionArrow = null; }
+        if (guideTexture != null) { Destroy(guideTexture); guideTexture = null; }
     }
+
+    private Vector2 NormToTex(Vector2 norm) =>
+        new Vector2(norm.x * textureWidth, norm.y * textureHeight);
 
     // ── Drawing ──
 
