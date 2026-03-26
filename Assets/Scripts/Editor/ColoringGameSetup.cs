@@ -496,20 +496,25 @@ public class ColoringGameSetup : EditorWindow
         var brushMedium = LoadSprite("Assets/Art/Brushes/Medium Brush.png");
         var brushBig    = LoadSprite("Assets/Art/Brushes/Big Brush.png");
 
-        // Load all sliced sprites from sticker sprite sheet
+        // Load all sliced sprites from all sticker sprite sheets in Assets/Art/Stickers/
         var stickerSprites = new List<Sprite>();
-        var allStickerAssets = AssetDatabase.LoadAllAssetsAtPath("Assets/Art/Stickers/Sticker.png");
-        if (allStickerAssets != null)
+        var stickerGuids = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Art/Stickers" });
+        foreach (var guid in stickerGuids)
         {
-            foreach (var asset in allStickerAssets)
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            var allAssets = AssetDatabase.LoadAllAssetsAtPath(path);
+            if (allAssets == null) continue;
+            foreach (var asset in allAssets)
             {
                 if (asset is Sprite spr)
                     stickerSprites.Add(spr);
             }
         }
-        // Sort by name for consistent order (Sticker_0, Sticker_1, ..., Sticker_15)
+        // Sort: by sheet name first, then by sprite index within sheet
         stickerSprites.Sort((a, b) =>
         {
+            int sheetCmp = string.Compare(a.texture.name, b.texture.name, System.StringComparison.Ordinal);
+            if (sheetCmp != 0) return sheetCmp;
             int numA = 0, numB = 0;
             var partsA = a.name.Split('_');
             var partsB = b.name.Split('_');
