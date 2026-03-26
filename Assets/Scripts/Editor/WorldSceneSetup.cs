@@ -350,11 +350,49 @@ public class WorldSceneSetup : EditorWindow
             new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f),
             new Vector2(-100, 0), new Vector2(90, 90));
 
-        // Parent dashboard button (top-right, multiplayer icon)
+        // Parent dashboard button (top-right, icon + label "איזור הורים")
         var parentIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/multiplayer.png");
-        var parentDashBtn = CreateIconButton(topBar.transform, "ParentDashboardButton", parentIcon,
-            new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f),
-            new Vector2(-16, 0), new Vector2(90, 90));
+        var roundedRect = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/RoundedRect.png");
+
+        var parentDashBtn = new GameObject("ParentDashboardButton");
+        parentDashBtn.transform.SetParent(topBar.transform, false);
+        var pdRT = parentDashBtn.AddComponent<RectTransform>();
+        pdRT.anchorMin = new Vector2(1, 0.5f);
+        pdRT.anchorMax = new Vector2(1, 0.5f);
+        pdRT.pivot = new Vector2(1, 0.5f);
+        pdRT.anchoredPosition = new Vector2(-12, 0);
+        pdRT.sizeDelta = new Vector2(180, 60);
+
+        var pdBgImg = parentDashBtn.AddComponent<Image>();
+        if (roundedRect != null) { pdBgImg.sprite = roundedRect; pdBgImg.type = Image.Type.Sliced; }
+        pdBgImg.color = new Color(1f, 1f, 1f, 0.25f);
+        pdBgImg.raycastTarget = true;
+        parentDashBtn.AddComponent<Button>().targetGraphic = pdBgImg;
+
+        // Icon
+        var pdIconGO = new GameObject("Icon");
+        pdIconGO.transform.SetParent(parentDashBtn.transform, false);
+        var pdIconRT = pdIconGO.AddComponent<RectTransform>();
+        pdIconRT.anchorMin = new Vector2(1, 0); pdIconRT.anchorMax = new Vector2(1, 1);
+        pdIconRT.pivot = new Vector2(1, 0.5f);
+        pdIconRT.anchoredPosition = new Vector2(-8, 0);
+        pdIconRT.sizeDelta = new Vector2(36, 36);
+        var pdIconImg = pdIconGO.AddComponent<Image>();
+        pdIconImg.sprite = parentIcon; pdIconImg.preserveAspect = true;
+        pdIconImg.color = Color.white; pdIconImg.raycastTarget = false;
+
+        // Label
+        var pdLabelGO = new GameObject("Label");
+        pdLabelGO.transform.SetParent(parentDashBtn.transform, false);
+        var pdLabelRT = pdLabelGO.AddComponent<RectTransform>();
+        pdLabelRT.anchorMin = Vector2.zero; pdLabelRT.anchorMax = new Vector2(1, 1);
+        pdLabelRT.offsetMin = new Vector2(8, 0); pdLabelRT.offsetMax = new Vector2(-48, 0);
+        var pdLabelTMP = pdLabelGO.AddComponent<TextMeshProUGUI>();
+        HebrewText.SetText(pdLabelTMP, "\u05D0\u05D9\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD"); // איזור הורים
+        pdLabelTMP.fontSize = 20; pdLabelTMP.fontStyle = FontStyles.Bold;
+        pdLabelTMP.color = Color.white;
+        pdLabelTMP.alignment = TextAlignmentOptions.Center;
+        pdLabelTMP.raycastTarget = false;
 
         // ── Viewport (full screen — sky/grass fill everything including cutout area) ──
         var viewport = new GameObject("Viewport");
