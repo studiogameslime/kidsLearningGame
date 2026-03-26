@@ -6,14 +6,17 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Drives the coloring/drawing game scene.
-/// Reads GameContext to determine mode (free draw vs coloring) and which animal to use.
+/// Supports two interaction modes:
+///   - Brush Mode (ages 5+): free drawing with brush strokes, stickers, eraser
+///   - Area Fill Mode (ages 2–4): tap-to-fill closed regions
+/// Mode is resolved automatically by age or manually via AppSettings.ColoringMode.
 /// </summary>
 public class ColoringGameController : BaseMiniGame
 {
     [Header("Canvas")]
     public DrawingCanvas drawingCanvas;
-    public RawImage outlineImage;     // overlay that shows the animal outline (coloring mode only)
-    public Image referenceImage;      // small colored sprite preview (coloring mode only)
+    public RawImage outlineImage;     // overlay that shows the coloring page outline
+    public Image referenceImage;      // small colored sprite preview (gallery upload only)
     public GameObject referenceContainer; // parent GO to show/hide the reference
 
     [Header("Palette")]
@@ -63,6 +66,7 @@ public class ColoringGameController : BaseMiniGame
     private int selectedBrushIndex = 1; // medium default
     private int selectedStickerIndex = -1; // -1 = no sticker
     private bool isEraserActive = false;
+    private bool isAreaFillMode = false;
     private List<Image> colorIndicators = new List<Image>();
     private List<Image> brushIndicators = new List<Image>();
     private List<Image> brushTipImages = new List<Image>();
@@ -84,18 +88,16 @@ public class ColoringGameController : BaseMiniGame
     {
         // Init drawing canvas
         drawingCanvas.Init();
-        drawingCanvas.SetColor(PaletteColors[selectedColorIndex]);
-        drawingCanvas.SetBrushSize(BrushSizes[selectedBrushIndex]);
 
-        // Dismiss tutorial hand on first draw
+        // Dismiss tutorial hand on first draw/fill
         drawingCanvas.onFirstDraw = () => DismissTutorial();
 
-        // Determine mode from context
+        // Determine outline source from context
         Texture2D customTex = GameContext.CustomTexture;
 
         if (customTex != null)
         {
-            // Selfie or gallery import — generate outlines from the photo
+            // Gallery/selfie import — generate outline from the photo
             SetupOutlineFromTexture(customTex);
             GameContext.CustomTexture = null;
         }
@@ -117,15 +119,20 @@ public class ColoringGameController : BaseMiniGame
             }
         }
 
-        // Build palette UI
-        BuildColorPalette();
-        BuildBrushSizes();
-        BuildStickers();
+        // Resolve interaction mode (area fill vs brush)
+        isAreaFillMode = ResolveAreaFillMode();
 
-        // Wire tool buttons
-        if (eraserButton != null) eraserButton.onClick.AddListener(ToggleEraser);
-        if (undoButton != null) undoButton.onClick.AddListener(OnUndo);
-        if (clearButton != null) clearButton.onClick.AddListener(OnClear);
+        // Build UI and configure canvas based on mode
+        BuildColorPalette();
+
+        if (isAreaFillMode)
+        {
+            ConfigureAreaFillMode();
+        }
+        else
+        {
+            ConfigureBrushMode();
+        }
 
         // Done button hidden — save button handles completion during journey
         if (doneButton != null)
@@ -139,6 +146,97 @@ public class ColoringGameController : BaseMiniGame
         PositionTutorialHand();
     }
 
+    // ── Mode Resolution ──
+
+    /// <summary>
+    /// Determines whether to use Area Fill mode based on settings and profile age.
+    /// Free draw mode always uses brush (no boundaries to fill).
+    /// </summary>
+    private bool ResolveAreaFillMode()
+    {
+        // Free draw has no outline — area fill makes no sense
+        string categoryKey = GameContext.CurrentSelection?.categoryKey ?? "free";
+        if (categoryKey == "free") return false;
+
+        var mode = AppSettings.ColoringMode;
+        if (mode == ColoringModeOption.AreaFill) return true;
+        if (mode == ColoringModeOption.Brush) return false;
+
+        // Auto: resolve by profile age
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null) return false;
+        return profile.age >= 2 && profile.age <= 4;
+    }
+
+    // ── Area Fill Mode ──
+
+    private void ConfigureAreaFillMode()
+    {
+        // Enable fill mode on canvas with outline boundaries
+        drawingCanvas.SetAreaFillMode(true);
+        if (outlineImage != null && outlineImage.texture != null)
+            drawingCanvas.SetOutlineBoundary(outlineImage.texture);
+
+        // Set initial fill color
+        drawingCanvas.SetColor(PaletteColors[selectedColorIndex]);
+
+        // Listen for successful fills
+        drawingCanvas.onAreaFilled = OnAreaFilled;
+
+        // Hide brush sizes and their section title
+        if (brushSizeContainer != null)
+        {
+            // Hide "מברשות" section title (sibling just before the brush container)
+            int idx = brushSizeContainer.GetSiblingIndex();
+            if (idx > 0)
+                brushSizeContainer.parent.GetChild(idx - 1).gameObject.SetActive(false);
+
+            brushSizeContainer.gameObject.SetActive(false);
+        }
+
+        // Hide tool row (parent of eraser/undo/clear)
+        if (eraserButton != null)
+            eraserButton.transform.parent.gameObject.SetActive(false);
+        if (eraserHighlight != null) eraserHighlight.gameObject.SetActive(false);
+
+        // Remove top padding reserved for reference image area
+        if (colorButtonContainer != null)
+        {
+            var panelLayout = colorButtonContainer.parent.GetComponent<VerticalLayoutGroup>();
+            if (panelLayout != null)
+                panelLayout.padding = new RectOffset(0, 0, 8, 8);
+        }
+
+        // Build stickers (available for all ages)
+        BuildStickers();
+    }
+
+    private void OnAreaFilled(int pixelCount)
+    {
+        // Sound feedback on successful fill
+        SoundLibrary.PlayRandomFeedback();
+    }
+
+    // ── Brush Mode ──
+
+    private void ConfigureBrushMode()
+    {
+        drawingCanvas.SetAreaFillMode(false);
+        drawingCanvas.SetColor(PaletteColors[selectedColorIndex]);
+        drawingCanvas.SetBrushSize(BrushSizes[selectedBrushIndex]);
+
+        // Build brush-mode UI
+        BuildBrushSizes();
+        BuildStickers();
+
+        // Wire tool buttons
+        if (eraserButton != null) eraserButton.onClick.AddListener(ToggleEraser);
+        if (undoButton != null) undoButton.onClick.AddListener(OnUndo);
+        if (clearButton != null) clearButton.onClick.AddListener(OnClear);
+    }
+
+    // ── Outline Setup ──
+
     private void PositionTutorialHand()
     {
         if (TutorialHand == null || drawingCanvas == null) return;
@@ -150,42 +248,78 @@ public class ColoringGameController : BaseMiniGame
 
     private void SetupOutline()
     {
-        Sprite animalSprite = null;
+        Sprite pageSprite = null;
 
-        // Load from the contentAsset assigned on the sub-item data
+        // Load pre-built coloring page from contentAsset
         if (GameContext.CurrentSelection != null)
-            animalSprite = GameContext.CurrentSelection.contentAsset;
+            pageSprite = GameContext.CurrentSelection.contentAsset;
 
-        if (animalSprite != null)
+        if (pageSprite != null && pageSprite.texture != null)
         {
-            var outlineTex = OutlineGenerator.Generate(
-                animalSprite, outlineResolution, outlineResolution, 0.12f, 2);
-
-            if (outlineTex != null)
-            {
-                outlineImage.texture = outlineTex;
-                outlineImage.gameObject.SetActive(true);
-            }
-            else
-            {
-                outlineImage.gameObject.SetActive(false);
-            }
-
-            // Show colored reference thumbnail
-            if (referenceImage != null)
-            {
-                referenceImage.sprite = animalSprite;
-                if (referenceContainer != null)
-                    referenceContainer.SetActive(true);
-            }
+            // Strip white/light background → transparent, keep dark lines only
+            var transparentOutline = MakeOutlineTransparent(pageSprite.texture);
+            outlineImage.texture = transparentOutline;
+            outlineImage.gameObject.SetActive(true);
         }
         else
         {
-            Debug.LogWarning($"Could not load animal sprite for coloring. Key: {GameContext.CurrentSelection?.categoryKey}");
+            if (pageSprite == null)
+                Debug.LogWarning($"Could not load coloring page sprite. Key: {GameContext.CurrentSelection?.categoryKey}");
             outlineImage.gameObject.SetActive(false);
-            if (referenceContainer != null)
-                referenceContainer.SetActive(false);
         }
+
+        // No reference image for pre-built coloring pages
+        if (referenceContainer != null)
+            referenceContainer.SetActive(false);
+    }
+
+    /// <summary>
+    /// Converts a coloring page texture so that light/white pixels become transparent
+    /// and dark line pixels are preserved. This allows the drawing layer to show through.
+    /// </summary>
+    private Texture2D MakeOutlineTransparent(Texture sourceTex)
+    {
+        // Blit to a readable texture at outline resolution
+        int w = outlineResolution;
+        int h = outlineResolution;
+        var rt = RenderTexture.GetTemporary(w, h, 0, RenderTextureFormat.ARGB32);
+        Graphics.Blit(sourceTex, rt);
+        RenderTexture.active = rt;
+        var readable = new Texture2D(w, h, TextureFormat.RGBA32, false);
+        readable.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+        readable.Apply();
+        RenderTexture.active = null;
+        RenderTexture.ReleaseTemporary(rt);
+
+        Color[] pixels = readable.GetPixels();
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            Color c = pixels[i];
+            float lum = (c.r + c.g + c.b) * 0.333f;
+
+            if (c.a < 0.1f)
+            {
+                // Already transparent
+                pixels[i] = Color.clear;
+            }
+            else if (lum > 0.7f)
+            {
+                // Light/white pixel → make transparent
+                pixels[i] = Color.clear;
+            }
+            else if (lum > 0.4f)
+            {
+                // Mid-tone → semi-transparent for anti-aliased edges
+                float alpha = 1f - ((lum - 0.4f) / 0.3f);
+                pixels[i] = new Color(c.r, c.g, c.b, alpha);
+            }
+            // else: dark pixel — keep as-is (outline line)
+        }
+
+        readable.SetPixels(pixels);
+        readable.Apply();
+        readable.filterMode = FilterMode.Bilinear;
+        return readable;
     }
 
     private void SetupOutlineFromTexture(Texture2D tex)

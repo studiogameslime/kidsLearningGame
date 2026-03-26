@@ -67,6 +67,33 @@ public class SelectionMenuController : MonoBehaviour
                     break;
             }
         }
+
+        // Add cards for pre-built content pages (e.g., painting pages)
+        if (game.contentPages != null)
+        {
+            for (int i = 0; i < game.contentPages.Length; i++)
+            {
+                var sprite = game.contentPages[i];
+                if (sprite == null) continue;
+
+                var card = Instantiate(cardPrefab, cardContainer);
+                int pageIndex = i;
+                var capturedGame = game;
+
+                // Create a SubItemData on the fly for navigation
+                card.Setup("", sprite, Color.white, () =>
+                {
+                    var pageItem = new SubItemData
+                    {
+                        id = $"page_{pageIndex}",
+                        categoryKey = $"page_{pageIndex}",
+                        contentAsset = sprite,
+                        targetSceneName = capturedGame.targetSceneName
+                    };
+                    NavigationManager.GoToGame(capturedGame, pageItem);
+                });
+            }
+        }
     }
 
     // ── Card Styling ──

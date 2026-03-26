@@ -30,6 +30,10 @@ public class GameItemData : ScriptableObject
     [Tooltip("Title shown at the top of the selection screen, e.g. 'Choose a Category'.")]
     public string selectionScreenTitle = "\u05D1\u05D7\u05E8\u05D5"; // בחרו
     public List<SubItemData> subItems = new List<SubItemData>();
+
+    [Header("Content Pages")]
+    [Tooltip("Pre-built content pages (e.g., painting pages). Each sprite creates a selection card automatically.")]
+    public Sprite[] contentPages;
 }
 
 /// <summary>

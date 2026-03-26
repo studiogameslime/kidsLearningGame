@@ -1727,6 +1727,96 @@ public class ParentDashboardController : MonoBehaviour
         MakeGameCard(contentRT, game);
     }
 
+    private void MakeColoringModeControl(Transform card)
+    {
+        // Title row
+        var titleRow = MakeHRow(card, 28, TextAnchor.MiddleRight);
+        titleRow.GetComponent<HorizontalLayoutGroup>().spacing = 6;
+        var titleTMP = AddChildTMP(titleRow.transform,
+            H("\u05E1\u05D2\u05E0\u05D5\u05DF \u05E6\u05D1\u05D9\u05E2\u05D4"), // סגנון צביעה
+            15, TextMedium, TextAlignmentOptions.Right);
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+        MakeSpacer(card, 4f);
+
+        // Segmented control: Auto / Fill / Brush
+        var segRow = MakeHRow(card, 38, TextAnchor.MiddleCenter);
+        segRow.GetComponent<HorizontalLayoutGroup>().spacing = 0;
+        segRow.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
+
+        // Background
+        var segBgImg = segRow.AddComponent<Image>();
+        if (roundedRect != null) { segBgImg.sprite = roundedRect; segBgImg.type = Image.Type.Sliced; }
+        segBgImg.color = BarBg;
+        segBgImg.raycastTarget = false;
+
+        var current = AppSettings.ColoringMode;
+
+        string[] labels = {
+            "\u05DC\u05E4\u05D9 \u05D2\u05D9\u05DC",  // לפי גיל
+            "\u05DE\u05D9\u05DC\u05D5\u05D9",          // מילוי
+            "\u05DE\u05D1\u05E8\u05E9\u05D5\u05EA"     // מברשות
+        };
+        var modes = new[] { ColoringModeOption.Auto, ColoringModeOption.AreaFill, ColoringModeOption.Brush };
+
+        var btnImages = new Image[3];
+        var btnTexts = new TextMeshProUGUI[3];
+
+        for (int i = 0; i < 3; i++)
+        {
+            var btnGO = new GameObject($"ColorMode_{i}");
+            btnGO.transform.SetParent(segRow.transform, false);
+            btnGO.AddComponent<RectTransform>();
+
+            var btnImg = btnGO.AddComponent<Image>();
+            if (roundedRect != null) { btnImg.sprite = roundedRect; btnImg.type = Image.Type.Sliced; }
+            bool active = current == modes[i];
+            btnImg.color = active ? Primary : Color.clear;
+            btnImg.raycastTarget = true;
+            btnImages[i] = btnImg;
+
+            var lblGO = new GameObject("Label");
+            lblGO.transform.SetParent(btnGO.transform, false);
+            var lblRT = lblGO.AddComponent<RectTransform>();
+            lblRT.anchorMin = Vector2.zero; lblRT.anchorMax = Vector2.one;
+            lblRT.offsetMin = Vector2.zero; lblRT.offsetMax = Vector2.zero;
+            var lblTMP = lblGO.AddComponent<TextMeshProUGUI>();
+            HebrewText.SetText(lblTMP, labels[i]);
+            lblTMP.fontSize = 14;
+            lblTMP.fontStyle = active ? FontStyles.Bold : FontStyles.Normal;
+            lblTMP.color = active ? Color.white : TextDark;
+            lblTMP.alignment = TextAlignmentOptions.Center;
+            lblTMP.raycastTarget = false;
+            btnTexts[i] = lblTMP;
+
+            int idx = i;
+            var btn = btnGO.AddComponent<Button>();
+            btn.targetGraphic = btnImg;
+            btn.onClick.AddListener(() =>
+            {
+                AppSettings.ColoringMode = modes[idx];
+                for (int j = 0; j < 3; j++)
+                {
+                    bool sel = j == idx;
+                    btnImages[j].color = sel ? Primary : Color.clear;
+                    btnTexts[j].color = sel ? Color.white : TextDark;
+                    btnTexts[j].fontStyle = sel ? FontStyles.Bold : FontStyles.Normal;
+                }
+            });
+        }
+
+        // Explanation
+        MakeSpacer(card, 2f);
+        string explain = current == ColoringModeOption.Auto
+            ? H("\u05D2\u05D9\u05DC 2\u20134: \u05DE\u05D9\u05DC\u05D5\u05D9 \u05D0\u05D6\u05D5\u05E8\u05D9\u05DD | \u05D2\u05D9\u05DC 5+: \u05DE\u05D1\u05E8\u05E9\u05D5\u05EA") // גיל 2–4: מילוי אזורים | גיל 5+: מברשות
+            : current == ColoringModeOption.AreaFill
+                ? H("\u05DC\u05D7\u05D9\u05E6\u05D4 \u05E2\u05DC \u05D0\u05D6\u05D5\u05E8 \u05DE\u05DE\u05DC\u05D0\u05EA \u05D0\u05D5\u05EA\u05D5 \u05D1\u05E6\u05D1\u05E2") // לחיצה על אזור ממלאת אותו בצבע
+                : H("\u05E6\u05D9\u05D5\u05E8 \u05D7\u05D5\u05E4\u05E9\u05D9 \u05E2\u05DD \u05DE\u05D1\u05E8\u05E9\u05D5\u05EA"); // ציור חופשי עם מברשות
+        var explainTMP = AddChildTMP(card, explain, 12, TextLight, TextAlignmentOptions.Right);
+        explainTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 18;
+    }
+
     private void CloseGameDetails()
     {
         if (_gameDetailsOverlay != null)
@@ -2038,6 +2128,15 @@ public class ParentDashboardController : MonoBehaviour
                 gameId, diffValTMP, modeLabelTMP, capturedFinalValTMP,
                 capturedResetGO, null,
                 capturedCard, capturedScrollContent));
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  SECTION 2.5: COLORING MODE (only for coloring game)
+        // ═══════════════════════════════════════════════════════════
+        if (gameId == "coloring")
+        {
+            MakeDivider(card);
+            MakeColoringModeControl(card);
         }
 
         // ═══════════════════════════════════════════════════════════

@@ -81,6 +81,12 @@ public class ColoringGameSetup : EditorWindow
         var coloring = AssetDatabase.LoadAssetAtPath<GameItemData>("Assets/Data/Games/Coloring.asset");
         if (coloring == null) { Debug.LogError("Coloring.asset not found."); return; }
 
+        // Keep only special items (free, selfie, gallery) — remove animal entries
+        coloring.subItems.RemoveAll(item =>
+            item.categoryKey != "free" &&
+            item.categoryKey != "selfie" &&
+            item.categoryKey != "gallery");
+
         if (!HasKey(coloring, "free"))
             coloring.subItems.Insert(0, new SubItemData {
                 id = "coloring_free", title = "\u05D3\u05E3 \u05D7\u05D3\u05E9",
@@ -94,14 +100,22 @@ public class ColoringGameSetup : EditorWindow
                 targetSceneName = "ColoringGame", thumbnail = LoadSprite("Assets/Art/Camera.png")
             });
 
-        foreach (var item in coloring.subItems)
+        // Load painting pages from Art/PaintingPages/ into contentPages array
+        var paintingPages = new List<Sprite>();
+        var guids = AssetDatabase.FindAssets("t:Sprite", new[] { "Assets/Art/PaintingPages" });
+        foreach (var guid in guids)
         {
-            if (item.categoryKey == "free" || item.categoryKey == "selfie") continue;
-            string name = char.ToUpper(item.categoryKey[0]) + item.categoryKey.Substring(1);
-            var spr = LoadSprite($"Assets/Art/Animals/{name}/Art/Puzzle/{name} Main.png");
-            if (spr != null) { item.contentAsset = spr; item.thumbnail = spr; }
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (sprite != null)
+                paintingPages.Add(sprite);
         }
+        // Sort by filename for consistent order (1.png, 2.png, ...)
+        paintingPages.Sort((a, b) => string.Compare(a.name, b.name, System.StringComparison.Ordinal));
+        coloring.contentPages = paintingPages.ToArray();
+
         EditorUtility.SetDirty(coloring);
+        Debug.Log($"Coloring data updated: {coloring.subItems.Count} special items, {coloring.contentPages.Length} painting pages.");
     }
 
     private static bool HasKey(GameItemData g, string key)

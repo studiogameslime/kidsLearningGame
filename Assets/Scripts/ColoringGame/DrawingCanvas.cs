@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 
 /// <summary>
 /// Handles touch/mouse drawing on a Texture2D displayed via a RawImage.
-/// Supports brush color, size, eraser, undo, and clear.
+/// Supports brush color, size, eraser, undo, clear, and area fill mode.
 /// </summary>
 [RequireComponent(typeof(RawImage))]
 public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
@@ -25,6 +25,9 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
     /// <summary>Invoked once on the very first pointer-down (draw or sticker stamp).</summary>
     public System.Action onFirstDraw;
 
+    /// <summary>Invoked after a successful area fill with the number of pixels filled.</summary>
+    public System.Action<int> onAreaFilled;
+
     // The drawable texture and its UI display
     private Texture2D drawTexture;
     private RawImage rawImage;
@@ -42,6 +45,10 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
     // Sticker stamp mode
     private Sprite activeSticker;
     public bool IsStickerMode => activeSticker != null;
+
+    // Area fill mode
+    private bool areaFillMode;
+    private bool[] boundaryMask;
 
     // Base color for the canvas (white) and the eraser
     private Color clearColor = Color.white;
@@ -84,6 +91,33 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
     public void SetStickerMode(Sprite sticker)
     {
         activeSticker = sticker;
+    }
+
+    /// <summary>
+    /// Enables or disables area fill mode. In fill mode, taps flood-fill regions
+    /// instead of drawing brush strokes.
+    /// </summary>
+    public void SetAreaFillMode(bool enabled)
+    {
+        areaFillMode = enabled;
+        if (!enabled)
+            boundaryMask = null;
+    }
+
+    /// <summary>
+    /// Sets the outline texture used to compute flood-fill boundaries.
+    /// Call after SetAreaFillMode(true). The texture is resized to match the canvas dimensions.
+    /// </summary>
+    public void SetOutlineBoundary(Texture outlineTex)
+    {
+        if (outlineTex == null)
+        {
+            boundaryMask = null;
+            return;
+        }
+
+        Color[] outlinePixels = GetResizedTexturePixels(outlineTex, textureWidth, textureHeight);
+        boundaryMask = FloodFiller.BuildBoundaryMask(outlinePixels);
     }
 
     public void Clear()
@@ -143,28 +177,37 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
             onFirstDraw = null;
         }
 
-        // Save snapshot for undo before starting a new stroke
+        Vector2 localPos;
+        if (!ScreenToTexturePos(eventData.position, out localPos))
+            return;
+
+        // Save snapshot for undo before any modification
         SaveUndoSnapshot();
 
-        Vector2 localPos;
-        if (ScreenToTexturePos(eventData.position, out localPos))
+        // Stickers work in all modes (fill + brush)
+        if (activeSticker != null)
         {
-            if (activeSticker != null)
-            {
-                StampSprite(activeSticker, localPos, stickerStampSize);
-                return;
-            }
-
-            isDrawing = true;
-            lastDrawPos = null;
-            DrawCircle(localPos);
-            lastDrawPos = localPos;
-            drawTexture.Apply();
+            StampSprite(activeSticker, localPos, stickerStampSize);
+            return;
         }
+
+        if (areaFillMode)
+        {
+            PerformAreaFill(localPos);
+            return;
+        }
+
+        isDrawing = true;
+        lastDrawPos = null;
+        DrawCircle(localPos);
+        lastDrawPos = localPos;
+        drawTexture.Apply();
     }
 
     public void OnDrag(PointerEventData eventData)
     {
+        // No dragging in area fill mode
+        if (areaFillMode) return;
         if (!isDrawing || activeSticker != null) return;
         if (eventData.pointerId != activePointerId) return;
 
@@ -187,6 +230,35 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
         isDrawing = false;
         lastDrawPos = null;
         activePointerId = -1;
+    }
+
+    // ── Area Fill ──
+
+    private void PerformAreaFill(Vector2 texturePos)
+    {
+        if (boundaryMask == null)
+        {
+            Debug.LogWarning("DrawingCanvas: Area fill attempted without boundary mask.");
+            return;
+        }
+
+        int tapX = Mathf.RoundToInt(texturePos.x);
+        int tapY = Mathf.RoundToInt(texturePos.y);
+
+        List<int> filled = FloodFiller.Fill(boundaryMask, textureWidth, textureHeight, tapX, tapY);
+
+        if (filled == null || filled.Count == 0)
+            return;
+
+        // Apply fill color
+        Color[] pixels = drawTexture.GetPixels();
+        for (int i = 0; i < filled.Count; i++)
+            pixels[filled[i]] = brushColor;
+
+        drawTexture.SetPixels(pixels);
+        drawTexture.Apply();
+
+        onAreaFilled?.Invoke(filled.Count);
     }
 
     // ── Drawing Methods ──
@@ -305,6 +377,31 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
 
         texturePos = new Vector2(normalizedX * textureWidth, normalizedY * textureHeight);
         return true;
+    }
+
+    // ── Texture Helpers ──
+
+    /// <summary>
+    /// Reads pixels from any Texture (handles non-readable and size mismatch).
+    /// Blits to a temporary RenderTexture at the target size.
+    /// </summary>
+    private Color[] GetResizedTexturePixels(Texture tex, int targetW, int targetH)
+    {
+        var rt = RenderTexture.GetTemporary(targetW, targetH, 0, RenderTextureFormat.ARGB32);
+        var prev = RenderTexture.active;
+        Graphics.Blit(tex, rt);
+        RenderTexture.active = rt;
+
+        var readable = new Texture2D(targetW, targetH, TextureFormat.RGBA32, false);
+        readable.ReadPixels(new Rect(0, 0, targetW, targetH), 0, 0);
+        readable.Apply();
+
+        RenderTexture.active = prev;
+        RenderTexture.ReleaseTemporary(rt);
+
+        Color[] pixels = readable.GetPixels();
+        Destroy(readable);
+        return pixels;
     }
 
     // ── Undo ──

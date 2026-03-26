@@ -1,6 +1,16 @@
 using UnityEngine;
 
 /// <summary>
+/// Coloring game interaction mode: Auto resolves by child age, or manual override.
+/// </summary>
+public enum ColoringModeOption
+{
+    Auto = 0,      // Age 2–4 → AreaFill, Age 5+ → Brush
+    AreaFill = 1,  // Always tap-to-fill
+    Brush = 2      // Always free drawing
+}
+
+/// <summary>
 /// Global app settings stored in PlayerPrefs.
 /// These are device-level (not per-profile) toggles controlled from the parent dashboard.
 /// </summary>
@@ -9,6 +19,7 @@ public static class AppSettings
     private const string KeyMusic = "app_music_enabled";
     private const string KeyVoice = "app_voice_enabled";
     private const string KeyNotifications = "app_notifications_enabled";
+    private const string KeyColoringMode = "app_coloring_mode";
 
     /// <summary>Background music on/off.</summary>
     public static bool MusicEnabled
@@ -51,6 +62,17 @@ public static class AppSettings
                 // Re-schedule sticker notification if a timer is running
                 RescheduleIfTimerRunning();
             }
+        }
+    }
+
+    /// <summary>Coloring mode: Auto (by age), AreaFill, or Brush.</summary>
+    public static ColoringModeOption ColoringMode
+    {
+        get => (ColoringModeOption)PlayerPrefs.GetInt(KeyColoringMode, 0);
+        set
+        {
+            PlayerPrefs.SetInt(KeyColoringMode, (int)value);
+            PlayerPrefs.Save();
         }
     }
 
