@@ -361,7 +361,7 @@ public class WorldSceneSetup : EditorWindow
         pdRT.anchorMax = new Vector2(1, 0.5f);
         pdRT.pivot = new Vector2(1, 0.5f);
         pdRT.anchoredPosition = new Vector2(-12, 0);
-        pdRT.sizeDelta = new Vector2(180, 60);
+        pdRT.sizeDelta = new Vector2(210, 60);
 
         var pdBgImg = parentDashBtn.AddComponent<Image>();
         if (roundedRect != null) { pdBgImg.sprite = roundedRect; pdBgImg.type = Image.Type.Sliced; }
@@ -379,18 +379,18 @@ public class WorldSceneSetup : EditorWindow
         pdIconRT.sizeDelta = new Vector2(36, 36);
         var pdIconImg = pdIconGO.AddComponent<Image>();
         pdIconImg.sprite = parentIcon; pdIconImg.preserveAspect = true;
-        pdIconImg.color = Color.white; pdIconImg.raycastTarget = false;
+        pdIconImg.color = new Color(0.15f, 0.15f, 0.15f, 1f); pdIconImg.raycastTarget = false;
 
         // Label
         var pdLabelGO = new GameObject("Label");
         pdLabelGO.transform.SetParent(parentDashBtn.transform, false);
         var pdLabelRT = pdLabelGO.AddComponent<RectTransform>();
         pdLabelRT.anchorMin = Vector2.zero; pdLabelRT.anchorMax = new Vector2(1, 1);
-        pdLabelRT.offsetMin = new Vector2(8, 0); pdLabelRT.offsetMax = new Vector2(-48, 0);
+        pdLabelRT.offsetMin = new Vector2(12, 0); pdLabelRT.offsetMax = new Vector2(-52, 0);
         var pdLabelTMP = pdLabelGO.AddComponent<TextMeshProUGUI>();
         HebrewText.SetText(pdLabelTMP, "\u05D0\u05D9\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD"); // איזור הורים
         pdLabelTMP.fontSize = 20; pdLabelTMP.fontStyle = FontStyles.Bold;
-        pdLabelTMP.color = Color.white;
+        pdLabelTMP.color = new Color(0.15f, 0.15f, 0.15f, 1f);
         pdLabelTMP.alignment = TextAlignmentOptions.Center;
         pdLabelTMP.raycastTarget = false;
 
