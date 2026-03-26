@@ -22,6 +22,9 @@ public class TracingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
     public float completionRatio = 0.80f;  // fraction of waypoints needed to complete stroke
     public int brushSize = 28;
 
+    [Header("Guide Visuals")]
+    public Sprite circleSprite;            // assigned by setup
+
     /// <summary>Called when a stroke is completed. Parameter: stroke index.</summary>
     public System.Action<int> onStrokeCompleted;
     /// <summary>Called when all strokes of the letter are completed.</summary>
@@ -267,6 +270,10 @@ public class TracingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
 
     private void DrawAllStrokeGuides()
     {
+        // Draw guide paths directly on the texture as dashed lines
+        DrawGuideOnTexture();
+
+        // Also create UI dot markers for highlighting
         if (guideParent == null) return;
 
         for (int s = 0; s < currentLetter.strokes.Count; s++)
@@ -279,21 +286,96 @@ public class TracingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
                 var dotGO = new GameObject($"Dot_{s}_{i}");
                 dotGO.transform.SetParent(guideParent, false);
                 var rt = dotGO.AddComponent<RectTransform>();
-
-                // Convert normalized pos to anchored position
                 rt.anchorMin = rt.anchorMax = new Vector2(points[i].x, points[i].y);
-                rt.sizeDelta = new Vector2(16, 16);
+                rt.sizeDelta = new Vector2(24, 24);
 
                 var img = dotGO.AddComponent<Image>();
-                img.color = new Color(0.6f, 0.6f, 0.6f, 0.4f);
+                img.color = new Color(0.5f, 0.5f, 0.5f, 0.5f);
                 img.raycastTarget = false;
-
-                // Try to use circle sprite
-                var circleSprite = Resources.Load<Sprite>("UI/Circle");
                 if (circleSprite != null) img.sprite = circleSprite;
 
                 guideObjects.Add(dotGO);
             }
+        }
+    }
+
+    /// <summary>
+    /// Draws dashed guide lines for all strokes directly on the drawing texture.
+    /// This ensures the letter shape is always visible on the canvas.
+    /// </summary>
+    private void DrawGuideOnTexture()
+    {
+        Color guideColor = new Color(0.75f, 0.75f, 0.75f, 1f);
+        int guideRadius = brushSize / 2 + 4;
+
+        for (int s = 0; s < currentLetter.strokes.Count; s++)
+        {
+            var points = currentLetter.strokes[s].points;
+
+            for (int i = 0; i < points.Count - 1; i++)
+            {
+                Vector2 from = new Vector2(points[i].x * textureWidth, points[i].y * textureHeight);
+                Vector2 to = new Vector2(points[i + 1].x * textureWidth, points[i + 1].y * textureHeight);
+
+                // Draw dashed line: alternating draw/skip segments
+                float dist = Vector2.Distance(from, to);
+                float dashLen = guideRadius * 2.5f;
+                float gapLen = guideRadius * 1.5f;
+                float pos = 0;
+                bool draw = true;
+
+                while (pos < dist)
+                {
+                    float segEnd = Mathf.Min(pos + (draw ? dashLen : gapLen), dist);
+                    if (draw)
+                    {
+                        Vector2 a = Vector2.Lerp(from, to, pos / dist);
+                        Vector2 b = Vector2.Lerp(from, to, segEnd / dist);
+                        DrawGuideLine(a, b, guideRadius, guideColor);
+                    }
+                    pos = segEnd;
+                    draw = !draw;
+                }
+            }
+
+            // Draw waypoint dots (solid circles at each waypoint)
+            for (int i = 0; i < points.Count; i++)
+            {
+                Vector2 center = new Vector2(points[i].x * textureWidth, points[i].y * textureHeight);
+                DrawGuideCircle(center, guideRadius + 2, guideColor);
+            }
+        }
+
+        drawTexture.Apply();
+    }
+
+    private void DrawGuideCircle(Vector2 center, int radius, Color color)
+    {
+        int cx = Mathf.RoundToInt(center.x);
+        int cy = Mathf.RoundToInt(center.y);
+        for (int y = -radius; y <= radius; y++)
+        {
+            for (int x = -radius; x <= radius; x++)
+            {
+                if (x * x + y * y <= radius * radius)
+                {
+                    int px = cx + x, py = cy + y;
+                    if (px >= 0 && px < textureWidth && py >= 0 && py < textureHeight)
+                        drawTexture.SetPixel(px, py, color);
+                }
+            }
+        }
+    }
+
+    private void DrawGuideLine(Vector2 from, Vector2 to, int radius, Color color)
+    {
+        float dist = Vector2.Distance(from, to);
+        float step = Mathf.Max(1f, radius * 0.4f);
+        int steps = Mathf.CeilToInt(dist / step);
+        for (int i = 0; i <= steps; i++)
+        {
+            float t = steps == 0 ? 0 : (float)i / steps;
+            DrawGuideCircle(Vector2.Lerp(from, to, t), radius, color);
         }
     }
 
@@ -365,8 +447,6 @@ public class TracingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
         var img = startMarker.AddComponent<Image>();
         img.color = new Color(0.2f, 0.8f, 0.3f, 0.7f);
         img.raycastTarget = false;
-
-        var circleSprite = Resources.Load<Sprite>("UI/Circle");
         if (circleSprite != null) img.sprite = circleSprite;
     }
 

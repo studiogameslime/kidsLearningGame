@@ -166,6 +166,7 @@ public class LetterTracingSetup : EditorWindow
         traceRaw.color = Color.white;
         var tracingCanvas = traceGO.AddComponent<TracingCanvas>();
         tracingCanvas.SetGuideParent(guideRT);
+        tracingCanvas.circleSprite = circleSprite;
 
         // ═══════════════════════════════════
         //  RIGHT — INFO PANEL
