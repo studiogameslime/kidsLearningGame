@@ -64,9 +64,6 @@ public static class ScoringStrategyRegistry
         if (id.Contains("lettertrain"))
             return new LetterTrainScoringStrategy();
 
-        if (id.Contains("lettertracing"))
-            return new LetterTracingScoringStrategy();
-
         if (id.Contains("pizza"))
             return new PizzaMakerScoringStrategy();
 
