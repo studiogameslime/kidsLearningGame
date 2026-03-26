@@ -297,7 +297,7 @@ public class LetterTracingSetup : EditorWindow
         leaderboard.gameId = "lettertracing";
 
         // Tutorial hand
-        TutorialHandHelper.Create(safeGO.transform, TutorialHandHelper.Anim.Drag,
+        TutorialHandHelper.Create(safeGO.transform, TutorialHandHelper.Anim.SlideDown,
             new Vector2(0, 0), new Vector2(400, 400), "lettertracing");
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/LetterTracing.unity");
