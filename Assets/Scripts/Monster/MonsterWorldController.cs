@@ -33,45 +33,44 @@ public class MonsterWorldController : MonoBehaviour
         rt = GetComponent<RectTransform>();
         basePos = rt.anchoredPosition;
 
-        SetPart(bodyImage, data.bodySprite);
+        Color bodyTint = Color.white, armTint = Color.white, legTint = Color.white;
+        if (!string.IsNullOrEmpty(data.bodyColorHex))
+            ColorUtility.TryParseHtmlString("#" + data.bodyColorHex, out bodyTint);
+        if (!string.IsNullOrEmpty(data.armColorHex))
+            ColorUtility.TryParseHtmlString("#" + data.armColorHex, out armTint);
+        if (!string.IsNullOrEmpty(data.legColorHex))
+            ColorUtility.TryParseHtmlString("#" + data.legColorHex, out legTint);
+
+        SetPart(bodyImage, data.bodySprite, tint: bodyTint);
         SetPart(eyeLeftImage, data.eyeSprite);
         SetPart(eyeRightImage, data.eyeSprite);
         SetPart(noseImage, data.noseSprite);
         SetPart(mouthImage, data.mouthSprite);
-        SetPart(armLeftImage, data.leftArmSprite);
-        SetPart(armRightImage, data.rightArmSprite, flipX: true);
-        SetPart(legLeftImage, data.leftLegSprite);
-        SetPart(legRightImage, data.rightLegSprite, flipX: true);
+        // Screen-left = monster's right (no flip), screen-right = monster's left (flip)
+        SetPart(armLeftImage, data.armSprite, tint: armTint);
+        SetPart(armRightImage, data.armSprite, flipX: true, tint: armTint);
+        SetPart(legLeftImage, data.legSprite, tint: legTint);
+        SetPart(legRightImage, data.legSprite, flipX: true, tint: legTint);
         SetPart(detailImage, data.detailSprite);
 
         initialized = true;
     }
 
-    private void SetPart(Image img, string spriteName, bool flipX = false)
+    private void SetPart(Image img, string spriteName, bool flipX = false, Color? tint = null)
     {
         if (img == null) return;
-        if (string.IsNullOrEmpty(spriteName))
-        {
-            img.enabled = false;
-            return;
-        }
+        if (string.IsNullOrEmpty(spriteName)) { img.enabled = false; return; }
 
         var sprite = MonsterCreatorController.LoadMonsterSprite(spriteName);
         if (sprite != null)
         {
-            img.sprite = sprite;
-            img.enabled = true;
-            if (flipX)
-            {
-                var s = img.rectTransform.localScale;
-                s.x = -Mathf.Abs(s.x);
-                img.rectTransform.localScale = s;
-            }
+            img.sprite = sprite; img.enabled = true;
+            img.color = tint ?? Color.white;
+            var s = img.rectTransform.localScale;
+            s.x = flipX ? -Mathf.Abs(s.x) : Mathf.Abs(s.x);
+            img.rectTransform.localScale = s;
         }
-        else
-        {
-            img.enabled = false;
-        }
+        else { img.enabled = false; }
     }
 
     // ── Idle Animation ──

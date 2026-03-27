@@ -7,24 +7,25 @@ using System;
 [Serializable]
 public class MonsterData
 {
-    public string bodySprite;      // e.g. "body_blueA"
+    public string bodySprite;      // e.g. "body_whiteA"
     public string eyeSprite;       // e.g. "eye_blue"
     public string noseSprite;      // e.g. "nose_red"
     public string mouthSprite;     // e.g. "mouthA"
-    public string leftArmSprite;   // e.g. "arm_blueC"
-    public string rightArmSprite;  // e.g. "arm_greenA"
-    public string leftLegSprite;   // e.g. "leg_blueA"
-    public string rightLegSprite;  // e.g. "leg_redB"
+    public string armSprite;       // e.g. "arm_whiteC" (both arms same shape)
+    public string legSprite;       // e.g. "leg_whiteA" (both legs same shape)
     public string detailSprite;    // e.g. "detail_blue_horn_large" (optional)
+
+    // Per-part tint colors (hex)
+    public string bodyColorHex = "#EF5350";
+    public string armColorHex = "#EF5350";
+    public string legColorHex = "#EF5350";
 
     public bool IsComplete =>
         !string.IsNullOrEmpty(bodySprite) &&
         !string.IsNullOrEmpty(eyeSprite) &&
         !string.IsNullOrEmpty(mouthSprite) &&
-        !string.IsNullOrEmpty(leftArmSprite) &&
-        !string.IsNullOrEmpty(rightArmSprite) &&
-        !string.IsNullOrEmpty(leftLegSprite) &&
-        !string.IsNullOrEmpty(rightLegSprite);
+        !string.IsNullOrEmpty(armSprite) &&
+        !string.IsNullOrEmpty(legSprite);
 }
 
 /// <summary>

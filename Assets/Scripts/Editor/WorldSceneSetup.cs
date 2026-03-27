@@ -897,16 +897,19 @@ public class WorldSceneSetup : EditorWindow
         prevRT.anchorMin = new Vector2(0.5f, 0.5f); prevRT.anchorMax = new Vector2(0.5f, 0.5f);
         prevRT.sizeDelta = new Vector2(400, 500);
 
-        var prevBody   = CreatePreviewPart(previewGO.transform, "Body",   new Vector2(200, 200), new Vector2(0, 10));
-        var prevEyeL   = CreatePreviewPart(previewGO.transform, "EyeL",   new Vector2(55, 55),   new Vector2(-35, 90));
-        var prevEyeR   = CreatePreviewPart(previewGO.transform, "EyeR",   new Vector2(55, 55),   new Vector2(35, 90));
-        var prevNose   = CreatePreviewPart(previewGO.transform, "Nose",   new Vector2(40, 40),   new Vector2(0, 45));
-        var prevMouth  = CreatePreviewPart(previewGO.transform, "Mouth",  new Vector2(65, 35),   new Vector2(0, 10));
-        var prevArmL   = CreatePreviewPart(previewGO.transform, "ArmL",   new Vector2(70, 100),  new Vector2(-110, 30));
-        var prevArmR   = CreatePreviewPart(previewGO.transform, "ArmR",   new Vector2(70, 100),  new Vector2(110, 30));
-        var prevLegL   = CreatePreviewPart(previewGO.transform, "LegL",   new Vector2(60, 90),   new Vector2(-40, -110));
-        var prevLegR   = CreatePreviewPart(previewGO.transform, "LegR",   new Vector2(60, 90),   new Vector2(40, -110));
-        var prevDetail = CreatePreviewPart(previewGO.transform, "Detail", new Vector2(55, 55),   new Vector2(0, 145));
+        // Proportions matched to reference: large body, arms on sides, legs at bottom
+        // Body dominates, facial features inside body area
+        var prevBody   = CreatePreviewPart(previewGO.transform, "Body",   new Vector2(280, 280), new Vector2(0, 0));
+        var prevEyeL   = CreatePreviewPart(previewGO.transform, "EyeL",   new Vector2(55, 55),   new Vector2(-45, 40));
+        var prevEyeR   = CreatePreviewPart(previewGO.transform, "EyeR",   new Vector2(55, 55),   new Vector2(45, 40));
+        var prevNose   = CreatePreviewPart(previewGO.transform, "Nose",   new Vector2(35, 35),   new Vector2(0, -5));
+        var prevMouth  = CreatePreviewPart(previewGO.transform, "Mouth",  new Vector2(60, 30),   new Vector2(0, -45));
+        // Screen-left arm = monster's right, screen-right arm = monster's left (flipped)
+        var prevArmL   = CreatePreviewPart(previewGO.transform, "ArmL",   new Vector2(80, 120),  new Vector2(-155, -10));
+        var prevArmR   = CreatePreviewPart(previewGO.transform, "ArmR",   new Vector2(80, 120),  new Vector2(155, -10));
+        var prevLegL   = CreatePreviewPart(previewGO.transform, "LegL",   new Vector2(55, 100),  new Vector2(-55, -170));
+        var prevLegR   = CreatePreviewPart(previewGO.transform, "LegR",   new Vector2(55, 100),  new Vector2(55, -170));
+        var prevDetail = CreatePreviewPart(previewGO.transform, "Detail", new Vector2(55, 55),   new Vector2(0, 160));
 
         // ── RIGHT PANEL: Options (50% width) ──
         var rightGO = new GameObject("RightOptions");

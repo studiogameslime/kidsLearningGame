@@ -942,16 +942,17 @@ public class WorldController : MonoBehaviour
         mrt.sizeDelta = new Vector2(200, 250);
         mrt.anchoredPosition = new Vector2(-250f, 130f);
 
-        var body   = CreateMonsterPart(monsterGO.transform, "Body",     new Vector2(110, 110), new Vector2(0, 65));
-        var legL   = CreateMonsterPart(monsterGO.transform, "LegLeft",  new Vector2(45, 65),   new Vector2(-28, 0));
-        var legR   = CreateMonsterPart(monsterGO.transform, "LegRight", new Vector2(45, 65),   new Vector2(28, 0));
-        var armL   = CreateMonsterPart(monsterGO.transform, "ArmLeft",  new Vector2(45, 75),   new Vector2(-58, 80));
-        var armR   = CreateMonsterPart(monsterGO.transform, "ArmRight", new Vector2(45, 75),   new Vector2(58, 80));
-        var eyeL   = CreateMonsterPart(monsterGO.transform, "EyeLeft",  new Vector2(28, 28),   new Vector2(-16, 115));
-        var eyeR   = CreateMonsterPart(monsterGO.transform, "EyeRight", new Vector2(28, 28),   new Vector2(16, 115));
-        var nose   = CreateMonsterPart(monsterGO.transform, "Nose",     new Vector2(22, 22),   new Vector2(0, 95));
-        var mouth  = CreateMonsterPart(monsterGO.transform, "Mouth",    new Vector2(38, 18),   new Vector2(0, 75));
-        var detail = CreateMonsterPart(monsterGO.transform, "Detail",   new Vector2(35, 35),   new Vector2(0, 145));
+        // Proportions: large body, arms on sides, face inside body
+        var body   = CreateMonsterPart(monsterGO.transform, "Body",     new Vector2(140, 140), new Vector2(0, 75));
+        var legL   = CreateMonsterPart(monsterGO.transform, "LegLeft",  new Vector2(30, 55),   new Vector2(-30, 0));
+        var legR   = CreateMonsterPart(monsterGO.transform, "LegRight", new Vector2(30, 55),   new Vector2(30, 0));
+        var armL   = CreateMonsterPart(monsterGO.transform, "ArmLeft",  new Vector2(40, 60),   new Vector2(-80, 65));
+        var armR   = CreateMonsterPart(monsterGO.transform, "ArmRight", new Vector2(40, 60),   new Vector2(80, 65));
+        var eyeL   = CreateMonsterPart(monsterGO.transform, "EyeLeft",  new Vector2(24, 24),   new Vector2(-22, 100));
+        var eyeR   = CreateMonsterPart(monsterGO.transform, "EyeRight", new Vector2(24, 24),   new Vector2(22, 100));
+        var nose   = CreateMonsterPart(monsterGO.transform, "Nose",     new Vector2(18, 18),   new Vector2(0, 78));
+        var mouth  = CreateMonsterPart(monsterGO.transform, "Mouth",    new Vector2(32, 16),   new Vector2(0, 58));
+        var detail = CreateMonsterPart(monsterGO.transform, "Detail",   new Vector2(30, 30),   new Vector2(0, 155));
 
         var ctrl = monsterGO.AddComponent<MonsterWorldController>();
         ctrl.bodyImage = body; ctrl.legLeftImage = legL; ctrl.legRightImage = legR;
