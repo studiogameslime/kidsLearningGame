@@ -83,9 +83,10 @@ public class SwimmingFish : MonoBehaviour
 
     private void UpdateDirection()
     {
-        // Flip sprite horizontally when changing direction
+        // Fish sprites face LEFT by default.
+        // Moving left = default scale, moving right = flip X.
         var scale = baseScale;
-        scale.x = movingRight ? Mathf.Abs(scale.x) : -Mathf.Abs(scale.x);
+        scale.x = movingRight ? -Mathf.Abs(scale.x) : Mathf.Abs(scale.x);
         rt.localScale = scale;
     }
 
