@@ -69,9 +69,24 @@ public class MonsterCreatorController : MonoBehaviour
         "\u05E4\u05E8\u05D8\u05D9\u05DD",          // פרטים
     };
 
+    private CanvasGroup _worldCanvasGroup;
+
     public void Open()
     {
         if (creatorPanel != null) creatorPanel.SetActive(true);
+
+        // Block all interaction on the world canvas behind us
+        var worldCanvas = GetComponentInParent<Canvas>();
+        if (worldCanvas == null) worldCanvas = FindObjectOfType<Canvas>();
+        if (worldCanvas != null && worldCanvas.gameObject != creatorPanel)
+        {
+            _worldCanvasGroup = worldCanvas.GetComponent<CanvasGroup>();
+            if (_worldCanvasGroup == null)
+                _worldCanvasGroup = worldCanvas.gameObject.AddComponent<CanvasGroup>();
+            _worldCanvasGroup.interactable = false;
+            _worldCanvasGroup.blocksRaycasts = false;
+        }
+
         currentStep = 0;
         data = new MonsterData();
 
@@ -92,6 +107,14 @@ public class MonsterCreatorController : MonoBehaviour
     public void Close()
     {
         if (creatorPanel != null) creatorPanel.SetActive(false);
+
+        // Re-enable world canvas interaction
+        if (_worldCanvasGroup != null)
+        {
+            _worldCanvasGroup.interactable = true;
+            _worldCanvasGroup.blocksRaycasts = true;
+            _worldCanvasGroup = null;
+        }
     }
 
     private void ShowStep(int step)
