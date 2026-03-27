@@ -116,13 +116,12 @@ public class MonsterCreatorController : MonoBehaviour
         SetPreview(previewNose, data.noseSprite, Color.white);
         SetPreview(previewMouth, data.mouthSprite, Color.white);
 
-        // Screen-left arm = monster's right (no flip, arm sprite faces left by default)
-        SetPreview(previewArmLeft, data.armSprite, armColor, flipX: false);
-        // Screen-right arm = monster's left (flip)
-        SetPreview(previewArmRight, data.armSprite, armColor, flipX: true);
+        // Arm sprite curves RIGHT by default → screen-left needs flip, screen-right stays normal
+        SetPreview(previewArmLeft, data.armSprite, armColor, flipX: true);
+        SetPreview(previewArmRight, data.armSprite, armColor, flipX: false);
 
-        SetPreview(previewLegLeft, data.legSprite, legColor, flipX: false);
-        SetPreview(previewLegRight, data.legSprite, legColor, flipX: true);
+        SetPreview(previewLegLeft, data.legSprite, legColor, flipX: true);
+        SetPreview(previewLegRight, data.legSprite, legColor, flipX: false);
     }
 
     private void SetPreview(Image img, string spriteName, Color tint, bool flipX = false)
@@ -297,14 +296,13 @@ public class MonsterCreatorController : MonoBehaviour
                 break;
             case Step.Arms:
                 data.armSprite = spriteName;
-                // Screen-left = monster's right (no flip), screen-right = monster's left (flip)
-                SetPreview(previewArmLeft, spriteName, armColor, flipX: false);
-                SetPreview(previewArmRight, spriteName, armColor, flipX: true);
+                SetPreview(previewArmLeft, spriteName, armColor, flipX: true);
+                SetPreview(previewArmRight, spriteName, armColor, flipX: false);
                 break;
             case Step.Legs:
                 data.legSprite = spriteName;
-                SetPreview(previewLegLeft, spriteName, legColor, flipX: false);
-                SetPreview(previewLegRight, spriteName, legColor, flipX: true);
+                SetPreview(previewLegLeft, spriteName, legColor, flipX: true);
+                SetPreview(previewLegRight, spriteName, legColor, flipX: false);
                 break;
             case Step.Detail:
                 data.detailSprite = spriteName;

@@ -46,11 +46,11 @@ public class MonsterWorldController : MonoBehaviour
         SetPart(eyeRightImage, data.eyeSprite);
         SetPart(noseImage, data.noseSprite);
         SetPart(mouthImage, data.mouthSprite);
-        // Screen-left = monster's right (no flip), screen-right = monster's left (flip)
-        SetPart(armLeftImage, data.armSprite, tint: armTint);
-        SetPart(armRightImage, data.armSprite, flipX: true, tint: armTint);
-        SetPart(legLeftImage, data.legSprite, tint: legTint);
-        SetPart(legRightImage, data.legSprite, flipX: true, tint: legTint);
+        // Sprite curves RIGHT by default → screen-left flipped, screen-right normal
+        SetPart(armLeftImage, data.armSprite, flipX: true, tint: armTint);
+        SetPart(armRightImage, data.armSprite, flipX: false, tint: armTint);
+        SetPart(legLeftImage, data.legSprite, flipX: true, tint: legTint);
+        SetPart(legRightImage, data.legSprite, flipX: false, tint: legTint);
         SetPart(detailImage, data.detailSprite);
 
         initialized = true;
