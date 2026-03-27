@@ -25,6 +25,9 @@ public class WorldController : MonoBehaviour
     [Header("Star Display")]
     public TMPro.TextMeshProUGUI headerTitleTMP;
 
+    [Header("Monster System")]
+    public MonsterCreatorController monsterCreator;
+
     [Header("Environment")]
     public WorldEnvironment environment;
     public WorldCloudSystem cloudSystem;
@@ -586,6 +589,9 @@ public class WorldController : MonoBehaviour
 
         // Spawn game shelf on grass (right-center area)
         SpawnGameShelf(worldWidth);
+
+        // Spawn monster egg or created monster
+        SpawnMonsterEggOrMonster();
     }
 
     private void SpawnAnimals(List<string> animalIds, float worldWidth)
@@ -834,6 +840,142 @@ public class WorldController : MonoBehaviour
         img.raycastTarget = true;
 
         go.AddComponent<WorldGameShelf>();
+    }
+
+    private void SpawnMonsterEggOrMonster()
+    {
+        if (grassArea == null) return;
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null) return;
+        var mp = profile.journey.monster;
+
+        if (mp.monsterCreated && mp.monsterData != null && mp.monsterData.IsComplete)
+            SpawnWorldMonster(mp.monsterData);
+        else
+            SpawnMonsterEgg();
+    }
+
+    private void SpawnMonsterEgg()
+    {
+        var eggSprite = Resources.Load<Sprite>("MonsterParts/Egg");
+
+        var eggGO = new GameObject("MonsterEgg");
+        eggGO.transform.SetParent(grassArea, false);
+        var rt = eggGO.AddComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0);
+        rt.sizeDelta = new Vector2(120, 140);
+        rt.anchoredPosition = new Vector2(-250f, 130f);
+
+        var img = eggGO.AddComponent<Image>();
+        img.sprite = eggSprite; img.preserveAspect = true; img.raycastTarget = true;
+
+        var eggCtrl = eggGO.AddComponent<MonsterEggController>();
+        eggCtrl.eggImage = img;
+
+        // Lock overlay
+        var lockGO = new GameObject("LockOverlay");
+        lockGO.transform.SetParent(eggGO.transform, false);
+        var lockRT = lockGO.AddComponent<RectTransform>();
+        lockRT.anchorMin = new Vector2(0.5f, 0); lockRT.anchorMax = new Vector2(0.5f, 0);
+        lockRT.pivot = new Vector2(0.5f, 1f);
+        lockRT.anchoredPosition = new Vector2(0, -8); lockRT.sizeDelta = new Vector2(160, 50);
+        var lockBg = lockGO.AddComponent<Image>();
+        if (roundedRect != null) { lockBg.sprite = roundedRect; lockBg.type = Image.Type.Sliced; }
+        lockBg.color = new Color(0, 0, 0, 0.6f); lockBg.raycastTarget = false;
+
+        var lockTextGO = new GameObject("LockText");
+        lockTextGO.transform.SetParent(lockGO.transform, false);
+        var ltRT = lockTextGO.AddComponent<RectTransform>();
+        ltRT.anchorMin = Vector2.zero; ltRT.anchorMax = Vector2.one;
+        ltRT.offsetMin = new Vector2(4, 8); ltRT.offsetMax = new Vector2(-4, -2);
+        var lockTMP = lockTextGO.AddComponent<TMPro.TextMeshProUGUI>();
+        lockTMP.fontSize = 14; lockTMP.fontStyle = TMPro.FontStyles.Bold;
+        lockTMP.color = Color.white; lockTMP.alignment = TMPro.TextAlignmentOptions.Center;
+        lockTMP.raycastTarget = false;
+
+        var barBgGO = new GameObject("BarBg");
+        barBgGO.transform.SetParent(lockGO.transform, false);
+        var barBgRT = barBgGO.AddComponent<RectTransform>();
+        barBgRT.anchorMin = new Vector2(0.1f, 0); barBgRT.anchorMax = new Vector2(0.9f, 0);
+        barBgRT.pivot = new Vector2(0.5f, 0); barBgRT.anchoredPosition = new Vector2(0, 4);
+        barBgRT.sizeDelta = new Vector2(0, 6);
+        barBgGO.AddComponent<Image>().color = new Color(1, 1, 1, 0.2f);
+        barBgGO.GetComponent<Image>().raycastTarget = false;
+
+        var barFillGO = new GameObject("BarFill");
+        barFillGO.transform.SetParent(barBgGO.transform, false);
+        var barFillRT = barFillGO.AddComponent<RectTransform>();
+        barFillRT.anchorMin = Vector2.zero; barFillRT.anchorMax = new Vector2(0, 1);
+        barFillRT.offsetMin = Vector2.zero; barFillRT.offsetMax = Vector2.zero;
+        var barFillImg = barFillGO.AddComponent<Image>();
+        barFillImg.color = new Color(1f, 0.85f, 0.2f, 0.9f); barFillImg.raycastTarget = false;
+
+        eggCtrl.lockOverlay = lockGO;
+        eggCtrl.lockText = lockTMP;
+        eggCtrl.progressBarFill = barFillImg;
+
+        var btn = eggGO.AddComponent<Button>(); btn.targetGraphic = img;
+        btn.onClick.AddListener(eggCtrl.OnEggTapped);
+
+        eggCtrl.onHatchComplete = () =>
+        {
+            if (monsterCreator != null)
+            {
+                monsterCreator.Open();
+                monsterCreator.onMonsterCreated = (data) =>
+                {
+                    eggGO.SetActive(false);
+                    SpawnWorldMonster(data);
+                    UpdateHeaderTitle();
+                };
+            }
+        };
+    }
+
+    private void SpawnWorldMonster(MonsterData data)
+    {
+        var monsterGO = new GameObject("WorldMonster");
+        monsterGO.transform.SetParent(grassArea, false);
+        var mrt = monsterGO.AddComponent<RectTransform>();
+        mrt.anchorMin = mrt.anchorMax = new Vector2(0.5f, 0.5f);
+        mrt.pivot = new Vector2(0.5f, 0);
+        mrt.sizeDelta = new Vector2(200, 250);
+        mrt.anchoredPosition = new Vector2(-250f, 130f);
+
+        var body   = CreateMonsterPart(monsterGO.transform, "Body",     new Vector2(110, 110), new Vector2(0, 65));
+        var legL   = CreateMonsterPart(monsterGO.transform, "LegLeft",  new Vector2(45, 65),   new Vector2(-28, 0));
+        var legR   = CreateMonsterPart(monsterGO.transform, "LegRight", new Vector2(45, 65),   new Vector2(28, 0));
+        var armL   = CreateMonsterPart(monsterGO.transform, "ArmLeft",  new Vector2(45, 75),   new Vector2(-58, 80));
+        var armR   = CreateMonsterPart(monsterGO.transform, "ArmRight", new Vector2(45, 75),   new Vector2(58, 80));
+        var eyeL   = CreateMonsterPart(monsterGO.transform, "EyeLeft",  new Vector2(28, 28),   new Vector2(-16, 115));
+        var eyeR   = CreateMonsterPart(monsterGO.transform, "EyeRight", new Vector2(28, 28),   new Vector2(16, 115));
+        var nose   = CreateMonsterPart(monsterGO.transform, "Nose",     new Vector2(22, 22),   new Vector2(0, 95));
+        var mouth  = CreateMonsterPart(monsterGO.transform, "Mouth",    new Vector2(38, 18),   new Vector2(0, 75));
+        var detail = CreateMonsterPart(monsterGO.transform, "Detail",   new Vector2(35, 35),   new Vector2(0, 145));
+
+        var ctrl = monsterGO.AddComponent<MonsterWorldController>();
+        ctrl.bodyImage = body; ctrl.legLeftImage = legL; ctrl.legRightImage = legR;
+        ctrl.armLeftImage = armL; ctrl.armRightImage = armR;
+        ctrl.eyeLeftImage = eyeL; ctrl.eyeRightImage = eyeR;
+        ctrl.noseImage = nose; ctrl.mouthImage = mouth; ctrl.detailImage = detail;
+        ctrl.Setup(data);
+
+        var tapBtn = monsterGO.AddComponent<Button>(); tapBtn.targetGraphic = body;
+        tapBtn.onClick.AddListener(ctrl.OnMonsterTapped);
+    }
+
+    private Image CreateMonsterPart(Transform parent, string name, Vector2 size, Vector2 pos)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.sizeDelta = size; rt.anchoredPosition = pos;
+        var img = go.AddComponent<Image>();
+        img.preserveAspect = true; img.raycastTarget = false; img.enabled = false;
+        return img;
     }
 
     private Color GetColorById(string colorId)

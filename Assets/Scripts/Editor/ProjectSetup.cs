@@ -208,6 +208,9 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Fishing Game…", 0.9902f);
             FishingGameSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Copying Monster Parts…", 0.9903f);
+            CopyMonsterPartsToResources();
+
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Image Gallery…", 0.9905f);
             ImageGallerySetup.RunSetupSilent();
 
@@ -1415,6 +1418,29 @@ public class ProjectSetup : EditorWindow
         // Set default resolution for editor testing (landscape)
         PlayerSettings.defaultScreenWidth = 1920;
         PlayerSettings.defaultScreenHeight = 1080;
+    }
+
+    private static void CopyMonsterPartsToResources()
+    {
+        string src = "Assets/Art/Monsters Parts";
+        string dst = "Assets/Resources/MonsterParts";
+        EnsureFolder(dst);
+
+        var guids = AssetDatabase.FindAssets("t:Sprite", new[] { src });
+        int copied = 0;
+        foreach (var guid in guids)
+        {
+            string srcPath = AssetDatabase.GUIDToAssetPath(guid);
+            string fileName = System.IO.Path.GetFileName(srcPath);
+            string dstPath = $"{dst}/{fileName}";
+            if (!System.IO.File.Exists(dstPath))
+            {
+                AssetDatabase.CopyAsset(srcPath, dstPath);
+                copied++;
+            }
+        }
+        if (copied > 0)
+            Debug.Log($"Copied {copied} monster part sprites to Resources/MonsterParts");
     }
 
     private static void ConfigureBuildSettings()

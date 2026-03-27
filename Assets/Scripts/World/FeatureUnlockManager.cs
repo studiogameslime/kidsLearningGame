@@ -13,6 +13,7 @@ public static class FeatureUnlockManager
         GameCollection,  // 5 stars
         Gallery,         // 10 stars
         StickerTree,     // 15 stars
+        MonsterEgg,      // 20 stars
     }
 
     private static readonly Dictionary<Feature, int> Thresholds = new Dictionary<Feature, int>
@@ -21,6 +22,7 @@ public static class FeatureUnlockManager
         { Feature.GameCollection, 5 },
         { Feature.Gallery,        10 },
         { Feature.StickerTree,    15 },
+        { Feature.MonsterEgg,     20 },
     };
 
     /// <summary>Returns whether the feature is unlocked for the active profile.</summary>
