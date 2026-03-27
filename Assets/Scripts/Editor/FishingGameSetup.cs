@@ -219,7 +219,7 @@ public class FishingGameSetup : EditorWindow
         bsRT.anchorMin = new Vector2(0.25f, WaterlineY);
         bsRT.anchorMax = new Vector2(0.25f, WaterlineY);
         bsRT.pivot = new Vector2(0.5f, 0.6f);
-        bsRT.anchoredPosition = new Vector2(0, -15);
+        bsRT.anchoredPosition = new Vector2(0, -30);
         bsRT.sizeDelta = new Vector2(280, 35);
         var bsImg = boatShadowGO.AddComponent<Image>();
         if (circleSprite != null) bsImg.sprite = circleSprite;
@@ -232,8 +232,8 @@ public class FishingGameSetup : EditorWindow
         // Left side, anchored at waterline, hull sinks into water
         elroeyRT.anchorMin = new Vector2(0.25f, WaterlineY);
         elroeyRT.anchorMax = new Vector2(0.25f, WaterlineY);
-        elroeyRT.pivot = new Vector2(0.5f, 0.15f); // pivot at hull bottom
-        elroeyRT.anchoredPosition = new Vector2(0, -25); // sink deeper into water
+        elroeyRT.pivot = new Vector2(0.5f, 0.18f); // pivot at hull bottom
+        elroeyRT.anchoredPosition = new Vector2(0, -45); // sink well into water
         elroeyRT.sizeDelta = new Vector2(300, 360);
         var elroeyImg = elroeyGO.AddComponent<Image>();
         elroeyImg.sprite = elroeySprite;
@@ -319,22 +319,20 @@ public class FishingGameSetup : EditorWindow
         deepGO.GetComponent<Image>().raycastTarget = false;
 
         // ════════════════════════════════════════════════════
-        //  LAYER 12: sandLayer — seabed (flat warm sand, not sprite-tinted)
+        //  LAYER 12: sandLayer — seabed with organic shaped silhouette
+        //  Uses hills sprite (wavy top edge) tinted to warm sand.
+        //  Same approach as World scene uses groundLayer for terrain.
         // ════════════════════════════════════════════════════
 
-        // Sand accent (darker line at top of sand for depth)
-        var sandAccentGO = StretchImage(safeGO.transform, "sandAccent", SandDarkColor);
-        var saRT = sandAccentGO.GetComponent<RectTransform>();
-        saRT.anchorMin = new Vector2(0, 0.07f); saRT.anchorMax = new Vector2(1, 0.10f);
-        saRT.offsetMin = Vector2.zero; saRT.offsetMax = Vector2.zero;
-        sandAccentGO.GetComponent<Image>().raycastTarget = false;
+        // Sand back layer (darker, taller — provides depth behind main sand)
+        if (hillsLargeSprite != null)
+            CreateSpriteLayer(safeGO.transform, "sandBack", hillsLargeSprite,
+                new Vector2(0, -0.05f), new Vector2(1, 0.16f), SandDarkColor);
 
-        // Main sand body
-        var sandGO = StretchImage(safeGO.transform, "sandLayer", SandColor);
-        var sandRT = sandGO.GetComponent<RectTransform>();
-        sandRT.anchorMin = new Vector2(0, 0); sandRT.anchorMax = new Vector2(1, 0.08f);
-        sandRT.offsetMin = Vector2.zero; sandRT.offsetMax = Vector2.zero;
-        sandGO.GetComponent<Image>().raycastTarget = false;
+        // Sand front layer (lighter, organic wavy top edge — the visible seabed)
+        if (hillsSprite != null)
+            CreateSpriteLayer(safeGO.transform, "sandLayer", hillsSprite,
+                new Vector2(0, -0.05f), new Vector2(1, 0.12f), SandColor);
 
         // ════════════════════════════════════════════════════
         //  HEADER (topmost UI)
