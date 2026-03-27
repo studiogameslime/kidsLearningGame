@@ -881,7 +881,6 @@ public class WorldController : MonoBehaviour
         lockRT.pivot = new Vector2(0.5f, 1f);
         lockRT.anchoredPosition = new Vector2(0, -8); lockRT.sizeDelta = new Vector2(160, 50);
         var lockBg = lockGO.AddComponent<Image>();
-        if (roundedRect != null) { lockBg.sprite = roundedRect; lockBg.type = Image.Type.Sliced; }
         lockBg.color = new Color(0, 0, 0, 0.6f); lockBg.raycastTarget = false;
 
         var lockTextGO = new GameObject("LockText");
