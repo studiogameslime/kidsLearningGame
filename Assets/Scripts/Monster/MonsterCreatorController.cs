@@ -6,8 +6,9 @@ using TMPro;
 
 /// <summary>
 /// Step-by-step monster creation screen.
-/// Layout: preview on left (big), options + color palette on right.
-/// Body step shows only white shapes + color palette to tint.
+/// All parts pre-populated with defaults on open. Each step swaps that part.
+/// Layout: preview left (big), options + color palette right.
+/// Body step shows white shapes + color palette to tint.
 /// </summary>
 public class MonsterCreatorController : MonoBehaviour
 {
@@ -39,67 +40,72 @@ public class MonsterCreatorController : MonoBehaviour
     private Color bodyColor = Color.white;
     private List<GameObject> optionItems = new List<GameObject>();
     private List<GameObject> colorItems = new List<GameObject>();
+    private Canvas _worldCanvas;
 
     // Same colors as onboarding profile creation
     private static readonly Color[] PaletteColors =
     {
-        HexColor("#EF5350"), // red
-        HexColor("#F48FB1"), // pink
-        HexColor("#CE93D8"), // purple
-        HexColor("#90CAF9"), // blue
-        HexColor("#80DEEA"), // light blue
-        HexColor("#A5D6A7"), // green
-        HexColor("#FFF59D"), // yellow
-        HexColor("#FFCC80"), // orange
-        HexColor("#BCAAA4"), // brown
+        HexColor("#EF5350"), HexColor("#F48FB1"), HexColor("#CE93D8"),
+        HexColor("#90CAF9"), HexColor("#80DEEA"), HexColor("#A5D6A7"),
+        HexColor("#FFF59D"), HexColor("#FFCC80"), HexColor("#BCAAA4"),
+    };
+
+    // Default parts (first option per step)
+    private static readonly string[] DefaultParts =
+    {
+        "body_whiteA",    // body
+        "eye_blue",       // eyes
+        "nose_red",       // nose
+        "mouthA",         // mouth
+        "arm_whiteA",     // left arm
+        "arm_whiteA",     // right arm
+        "leg_whiteA",     // left leg
+        "leg_whiteA",     // right leg
+        "",               // detail (optional)
     };
 
     private enum Step { Body, Eyes, Nose, Mouth, LeftArm, RightArm, LeftLeg, RightLeg, Detail }
 
     private static readonly string[] StepTitles =
     {
-        "\u05D2\u05D5\u05E3",                     // גוף
-        "\u05E2\u05D9\u05E0\u05D9\u05D9\u05DD",   // עיניים
-        "\u05D0\u05E3",                           // אף
-        "\u05E4\u05D4",                           // פה
-        "\u05D9\u05D3 \u05E9\u05DE\u05D0\u05DC",   // יד שמאל
-        "\u05D9\u05D3 \u05D9\u05DE\u05D9\u05DF",   // יד ימין
+        "\u05D2\u05D5\u05E3",                        // גוף
+        "\u05E2\u05D9\u05E0\u05D9\u05D9\u05DD",      // עיניים
+        "\u05D0\u05E3",                              // אף
+        "\u05E4\u05D4",                              // פה
+        "\u05D9\u05D3 \u05E9\u05DE\u05D0\u05DC",      // יד שמאל
+        "\u05D9\u05D3 \u05D9\u05DE\u05D9\u05DF",      // יד ימין
         "\u05E8\u05D2\u05DC \u05E9\u05DE\u05D0\u05DC", // רגל שמאל
         "\u05E8\u05D2\u05DC \u05D9\u05DE\u05D9\u05DF", // רגל ימין
-        "\u05E4\u05E8\u05D8\u05D9\u05DD",          // פרטים
+        "\u05E4\u05E8\u05D8\u05D9\u05DD",             // פרטים
     };
 
-    private CanvasGroup _worldCanvasGroup;
+    private void Awake()
+    {
+        // Wire buttons internally — don't rely on external listener wiring
+        if (nextButton != null) nextButton.onClick.AddListener(OnNextPressed);
+        if (backButton != null) backButton.onClick.AddListener(OnBackPressed);
+        if (doneButton != null) doneButton.onClick.AddListener(OnDonePressed);
+    }
 
     public void Open()
     {
         if (creatorPanel != null) creatorPanel.SetActive(true);
 
-        // Block all interaction on the world canvas behind us
-        var worldCanvas = GetComponentInParent<Canvas>();
-        if (worldCanvas == null) worldCanvas = FindObjectOfType<Canvas>();
-        if (worldCanvas != null && worldCanvas.gameObject != creatorPanel)
-        {
-            _worldCanvasGroup = worldCanvas.GetComponent<CanvasGroup>();
-            if (_worldCanvasGroup == null)
-                _worldCanvasGroup = worldCanvas.gameObject.AddComponent<CanvasGroup>();
-            _worldCanvasGroup.interactable = false;
-            _worldCanvasGroup.blocksRaycasts = false;
-        }
+        // Find and disable the WORLD canvas (the one named "Canvas" or containing WorldController)
+        DisableWorldCanvas();
 
         currentStep = 0;
         data = new MonsterData();
 
-        // Default body color = child's favorite color from profile
+        // Default body color from profile
         var profile = ProfileManager.ActiveProfile;
         if (profile != null && !string.IsNullOrEmpty(profile.avatarColorHex))
-        {
             ColorUtility.TryParseHtmlString(profile.avatarColorHex, out bodyColor);
-        }
         else
-        {
             bodyColor = PaletteColors[0];
-        }
+
+        // Pre-populate all parts with defaults
+        ApplyDefaults();
 
         ShowStep(0);
     }
@@ -107,15 +113,85 @@ public class MonsterCreatorController : MonoBehaviour
     public void Close()
     {
         if (creatorPanel != null) creatorPanel.SetActive(false);
+        EnableWorldCanvas();
+    }
 
-        // Re-enable world canvas interaction
-        if (_worldCanvasGroup != null)
+    private void DisableWorldCanvas()
+    {
+        // Find the world canvas — it has a WorldController on it
+        var wc = FindObjectOfType<WorldController>();
+        if (wc != null)
         {
-            _worldCanvasGroup.interactable = true;
-            _worldCanvasGroup.blocksRaycasts = true;
-            _worldCanvasGroup = null;
+            _worldCanvas = wc.GetComponentInParent<Canvas>();
+            if (_worldCanvas != null)
+            {
+                var cg = _worldCanvas.GetComponent<CanvasGroup>();
+                if (cg == null) cg = _worldCanvas.gameObject.AddComponent<CanvasGroup>();
+                cg.interactable = false;
+                cg.blocksRaycasts = false;
+            }
         }
     }
+
+    private void EnableWorldCanvas()
+    {
+        if (_worldCanvas != null)
+        {
+            var cg = _worldCanvas.GetComponent<CanvasGroup>();
+            if (cg != null)
+            {
+                cg.interactable = true;
+                cg.blocksRaycasts = true;
+            }
+            _worldCanvas = null;
+        }
+    }
+
+    // ── Pre-populate all parts ──
+
+    private void ApplyDefaults()
+    {
+        data.bodySprite = DefaultParts[0];
+        data.eyeSprite = DefaultParts[1];
+        data.noseSprite = DefaultParts[2];
+        data.mouthSprite = DefaultParts[3];
+        data.leftArmSprite = DefaultParts[4];
+        data.rightArmSprite = DefaultParts[5];
+        data.leftLegSprite = DefaultParts[6];
+        data.rightLegSprite = DefaultParts[7];
+        data.detailSprite = DefaultParts[8];
+
+        SetPreview(previewBody,    data.bodySprite,    bodyColor);
+        SetPreview(previewEyeLeft, data.eyeSprite,     Color.white);
+        SetPreview(previewEyeRight,data.eyeSprite,     Color.white);
+        SetPreview(previewNose,    data.noseSprite,     Color.white);
+        SetPreview(previewMouth,   data.mouthSprite,    Color.white);
+        SetPreview(previewArmLeft, data.leftArmSprite,  bodyColor);
+        SetPreview(previewArmRight,data.rightArmSprite, bodyColor, flipX: true);
+        SetPreview(previewLegLeft, data.leftLegSprite,  bodyColor);
+        SetPreview(previewLegRight,data.rightLegSprite, bodyColor, flipX: true);
+
+        if (!string.IsNullOrEmpty(data.detailSprite))
+            SetPreview(previewDetail, data.detailSprite, Color.white);
+    }
+
+    private void SetPreview(Image img, string spriteName, Color tint, bool flipX = false)
+    {
+        if (img == null || string.IsNullOrEmpty(spriteName)) return;
+        var sprite = LoadPartSprite(spriteName);
+        if (sprite == null) return;
+        img.sprite = sprite;
+        img.color = tint;
+        img.enabled = true;
+        if (flipX)
+        {
+            var s = img.rectTransform.localScale;
+            s.x = -Mathf.Abs(s.x);
+            img.rectTransform.localScale = s;
+        }
+    }
+
+    // ── Steps ──
 
     private void ShowStep(int step)
     {
@@ -134,8 +210,8 @@ public class MonsterCreatorController : MonoBehaviour
         var stepEnum = (Step)step;
         BuildOptions(stepEnum);
 
-        // Show color palette for body step
-        if (stepEnum == Step.Body)
+        if (stepEnum == Step.Body || stepEnum == Step.LeftArm || stepEnum == Step.RightArm ||
+            stepEnum == Step.LeftLeg || stepEnum == Step.RightLeg)
             BuildColorPalette();
     }
 
@@ -146,22 +222,20 @@ public class MonsterCreatorController : MonoBehaviour
         switch (step)
         {
             case Step.Body:
-                // Only white body shapes — user picks color separately
                 sprites = new[] { "body_whiteA", "body_whiteB", "body_whiteC",
                                    "body_whiteD", "body_whiteE", "body_whiteF" };
                 break;
             case Step.Eyes:
                 sprites = new[] { "eye_blue", "eye_red", "eye_yellow",
-                    "eye_cute_dark", "eye_cute_light", "eye_human", "eye_human_blue",
-                    "eye_human_green", "eye_human_red", "eye_closed_happy", "eye_closed_feminine" };
+                    "eye_cute_dark", "eye_cute_light", "eye_human",
+                    "eye_closed_happy", "eye_closed_feminine" };
                 break;
             case Step.Nose:
                 sprites = new[] { "nose_brown", "nose_green", "nose_red", "nose_yellow" };
                 break;
             case Step.Mouth:
                 sprites = new[] { "mouthA", "mouthB", "mouthC", "mouthD", "mouthE",
-                    "mouthF", "mouthG", "mouthH", "mouthI", "mouthJ",
-                    "mouth_closed_happy", "mouth_closed_teeth", "mouth_closed_fangs" };
+                    "mouthF", "mouthG", "mouthH", "mouthI", "mouthJ" };
                 break;
             case Step.LeftArm:
             case Step.RightArm:
@@ -190,24 +264,23 @@ public class MonsterCreatorController : MonoBehaviour
 
             var go = new GameObject(spriteName);
             go.transform.SetParent(optionsGrid, false);
-            var rt = go.AddComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(90, 90);
+            go.AddComponent<RectTransform>().sizeDelta = new Vector2(100, 100);
 
             var img = go.AddComponent<Image>();
             img.sprite = sprite;
             img.preserveAspect = true;
             img.raycastTarget = true;
 
-            // Tint white parts with body color
-            if (step == Step.Body || step == Step.LeftArm || step == Step.RightArm ||
-                step == Step.LeftLeg || step == Step.RightLeg)
-                img.color = bodyColor;
+            // Tint tintable parts
+            bool tintable = step == Step.Body || step == Step.LeftArm || step == Step.RightArm ||
+                            step == Step.LeftLeg || step == Step.RightLeg;
+            if (tintable) img.color = bodyColor;
 
             var btn = go.AddComponent<Button>();
             btn.targetGraphic = img;
             string captured = spriteName;
             Step capturedStep = step;
-            RectTransform capturedRT = rt;
+            RectTransform capturedRT = go.GetComponent<RectTransform>();
             btn.onClick.AddListener(() => OnPartSelected(capturedStep, captured, capturedRT));
 
             optionItems.Add(go);
@@ -222,8 +295,7 @@ public class MonsterCreatorController : MonoBehaviour
         {
             var go = new GameObject($"Color_{i}");
             go.transform.SetParent(colorPaletteGrid, false);
-            var rt = go.AddComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(70, 70);
+            go.AddComponent<RectTransform>().sizeDelta = new Vector2(65, 65);
 
             var img = go.AddComponent<Image>();
             img.color = PaletteColors[i];
@@ -242,11 +314,14 @@ public class MonsterCreatorController : MonoBehaviour
     {
         bodyColor = PaletteColors[colorIndex];
 
-        // Tint the body preview
-        if (previewBody != null)
-            previewBody.color = bodyColor;
+        // Update preview tints
+        if (previewBody != null) previewBody.color = bodyColor;
+        if (previewArmLeft != null) previewArmLeft.color = bodyColor;
+        if (previewArmRight != null) previewArmRight.color = bodyColor;
+        if (previewLegLeft != null) previewLegLeft.color = bodyColor;
+        if (previewLegRight != null) previewLegRight.color = bodyColor;
 
-        // Tint all white shape options in the grid to show the color
+        // Tint option items too
         foreach (var go in optionItems)
         {
             var img = go.GetComponent<Image>();
@@ -326,13 +401,7 @@ public class MonsterCreatorController : MonoBehaviour
 
     public void OnDonePressed()
     {
-        if (!data.IsComplete)
-        {
-            if (doneButton != null)
-                StartCoroutine(PopAnimation(doneButton.GetComponent<RectTransform>()));
-            return;
-        }
-
+        // Detail is optional — don't require it
         var profile = ProfileManager.ActiveProfile;
         if (profile != null)
         {
@@ -359,6 +428,7 @@ public class MonsterCreatorController : MonoBehaviour
 
     private static Sprite LoadPartSprite(string spriteName)
     {
+        if (string.IsNullOrEmpty(spriteName)) return null;
         var sprite = Resources.Load<Sprite>($"MonsterParts/{spriteName}");
         if (sprite != null) return sprite;
         var all = Resources.LoadAll<Sprite>("MonsterParts");

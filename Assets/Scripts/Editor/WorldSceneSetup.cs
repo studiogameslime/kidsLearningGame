@@ -997,9 +997,7 @@ public class WorldSceneSetup : EditorWindow
         monsterCreator.backButton = backBtnGO.GetComponent<Button>();
         monsterCreator.doneButton = doneBtnGO.GetComponent<Button>();
 
-        nextBtnGO.GetComponent<Button>().onClick.AddListener(monsterCreator.OnNextPressed);
-        backBtnGO.GetComponent<Button>().onClick.AddListener(monsterCreator.OnBackPressed);
-        doneBtnGO.GetComponent<Button>().onClick.AddListener(monsterCreator.OnDonePressed);
+        // Button listeners wired in MonsterCreatorController.Awake()
 
         monsterCanvasGO.SetActive(false);
 
