@@ -941,41 +941,19 @@ public class WorldController : MonoBehaviour
         mrt.pivot = new Vector2(0.5f, 0);
         mrt.sizeDelta = new Vector2(200, 250);
         mrt.anchoredPosition = new Vector2(-250f, 130f);
-
-        // Proportions: large body, arms on sides, face inside body
-        var body   = CreateMonsterPart(monsterGO.transform, "Body",     new Vector2(140, 140), new Vector2(0, 75));
-        var legL   = CreateMonsterPart(monsterGO.transform, "LegLeft",  new Vector2(30, 55),   new Vector2(-30, 0));
-        var legR   = CreateMonsterPart(monsterGO.transform, "LegRight", new Vector2(30, 55),   new Vector2(30, 0));
-        var armL   = CreateMonsterPart(monsterGO.transform, "ArmLeft",  new Vector2(40, 60),   new Vector2(-80, 65));
-        var armR   = CreateMonsterPart(monsterGO.transform, "ArmRight", new Vector2(40, 60),   new Vector2(80, 65));
-        var eyeL   = CreateMonsterPart(monsterGO.transform, "EyeLeft",  new Vector2(24, 24),   new Vector2(-22, 100));
-        var eyeR   = CreateMonsterPart(monsterGO.transform, "EyeRight", new Vector2(24, 24),   new Vector2(22, 100));
-        var nose   = CreateMonsterPart(monsterGO.transform, "Nose",     new Vector2(18, 18),   new Vector2(0, 78));
-        var mouth  = CreateMonsterPart(monsterGO.transform, "Mouth",    new Vector2(32, 16),   new Vector2(0, 58));
-        var detail = CreateMonsterPart(monsterGO.transform, "Detail",   new Vector2(30, 30),   new Vector2(0, 155));
+        mrt.localScale = new Vector3(0.55f, 0.55f, 1f); // scale down for world view
 
         var ctrl = monsterGO.AddComponent<MonsterWorldController>();
-        ctrl.bodyImage = body; ctrl.legLeftImage = legL; ctrl.legRightImage = legR;
-        ctrl.armLeftImage = armL; ctrl.armRightImage = armR;
-        ctrl.eyeLeftImage = eyeL; ctrl.eyeRightImage = eyeR;
-        ctrl.noseImage = nose; ctrl.mouthImage = mouth; ctrl.detailImage = detail;
         ctrl.Setup(data);
 
-        var tapBtn = monsterGO.AddComponent<Button>(); tapBtn.targetGraphic = body;
-        tapBtn.onClick.AddListener(ctrl.OnMonsterTapped);
-    }
-
-    private Image CreateMonsterPart(Transform parent, string name, Vector2 size, Vector2 pos)
-    {
-        var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
-        var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0);
-        rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.sizeDelta = size; rt.anchoredPosition = pos;
-        var img = go.AddComponent<Image>();
-        img.preserveAspect = true; img.raycastTarget = false; img.enabled = false;
-        return img;
+        // Make tappable (use body image as target graphic after setup)
+        if (ctrl.preview != null && ctrl.preview.body != null)
+        {
+            ctrl.preview.body.raycastTarget = true;
+            var tapBtn = monsterGO.AddComponent<Button>();
+            tapBtn.targetGraphic = ctrl.preview.body;
+            tapBtn.onClick.AddListener(ctrl.OnMonsterTapped);
+        }
     }
 
     private Color GetColorById(string colorId)

@@ -895,21 +895,9 @@ public class WorldSceneSetup : EditorWindow
         previewGO.transform.SetParent(leftGO.transform, false);
         var prevRT = previewGO.AddComponent<RectTransform>();
         prevRT.anchorMin = new Vector2(0.5f, 0.5f); prevRT.anchorMax = new Vector2(0.5f, 0.5f);
-        prevRT.sizeDelta = new Vector2(400, 500);
-
-        // Proportions matched to reference: large body, arms on sides, legs at bottom
-        // Body dominates, facial features inside body area
-        var prevBody   = CreatePreviewPart(previewGO.transform, "Body",   new Vector2(280, 280), new Vector2(0, 0));
-        var prevEyeL   = CreatePreviewPart(previewGO.transform, "EyeL",   new Vector2(55, 55),   new Vector2(-45, 40));
-        var prevEyeR   = CreatePreviewPart(previewGO.transform, "EyeR",   new Vector2(55, 55),   new Vector2(45, 40));
-        var prevNose   = CreatePreviewPart(previewGO.transform, "Nose",   new Vector2(35, 35),   new Vector2(0, -5));
-        var prevMouth  = CreatePreviewPart(previewGO.transform, "Mouth",  new Vector2(60, 30),   new Vector2(0, -45));
-        // Screen-left arm = monster's right, screen-right arm = monster's left (flipped)
-        var prevArmL   = CreatePreviewPart(previewGO.transform, "ArmL",   new Vector2(80, 120),  new Vector2(-155, -10));
-        var prevArmR   = CreatePreviewPart(previewGO.transform, "ArmR",   new Vector2(80, 120),  new Vector2(155, -10));
-        var prevLegL   = CreatePreviewPart(previewGO.transform, "LegL",   new Vector2(55, 100),  new Vector2(-55, -170));
-        var prevLegR   = CreatePreviewPart(previewGO.transform, "LegR",   new Vector2(55, 100),  new Vector2(55, -170));
-        var prevDetail = CreatePreviewPart(previewGO.transform, "Detail", new Vector2(55, 55),   new Vector2(0, 160));
+        prevRT.sizeDelta = new Vector2(500, 550);
+        // MonsterPreview builds its own hierarchy with body-specific anchoring
+        var monsterPreview = previewGO.AddComponent<MonsterPreview>();
 
         // ── RIGHT PANEL: Options (50% width) ──
         var rightGO = new GameObject("RightOptions");
@@ -983,16 +971,7 @@ public class WorldSceneSetup : EditorWindow
 
         // Wire MonsterCreatorController
         var monsterCreator = monsterPanelGO.AddComponent<MonsterCreatorController>();
-        monsterCreator.previewBody = prevBody;
-        monsterCreator.previewEyeLeft = prevEyeL;
-        monsterCreator.previewEyeRight = prevEyeR;
-        monsterCreator.previewNose = prevNose;
-        monsterCreator.previewMouth = prevMouth;
-        monsterCreator.previewArmLeft = prevArmL;
-        monsterCreator.previewArmRight = prevArmR;
-        monsterCreator.previewLegLeft = prevLegL;
-        monsterCreator.previewLegRight = prevLegR;
-        monsterCreator.previewDetail = prevDetail;
+        monsterCreator.preview = monsterPreview;
         monsterCreator.optionsGrid = optionsGridGO.transform;
         monsterCreator.colorPaletteGrid = colorGridGO.transform;
         monsterCreator.stepTitle = mcTitleTMP;
