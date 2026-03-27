@@ -861,11 +861,22 @@ public class WorldSceneSetup : EditorWindow
         //  Left: big monster preview | Right: title, parts, colors, nav
         // ══════════════════════════════════════════════════════════
 
+        // Monster Creator on its own Canvas (higher sort order) to fully isolate raycasts
+        var monsterCanvasGO = new GameObject("MonsterCreatorCanvas");
+        monsterCanvasGO.transform.SetParent(canvasGO.transform.parent, false);
+        var monsterCanvas = monsterCanvasGO.AddComponent<Canvas>();
+        monsterCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        monsterCanvas.sortingOrder = 10; // above the main canvas
+        var mcScaler = monsterCanvasGO.AddComponent<CanvasScaler>();
+        mcScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        mcScaler.referenceResolution = new Vector2(1920, 1080);
+        mcScaler.matchWidthOrHeight = 0.5f;
+        monsterCanvasGO.AddComponent<GraphicRaycaster>();
+
         var monsterPanelGO = new GameObject("MonsterCreatorPanel");
-        monsterPanelGO.transform.SetParent(canvasGO.transform, false);
+        monsterPanelGO.transform.SetParent(monsterCanvasGO.transform, false);
         var mpRT = monsterPanelGO.AddComponent<RectTransform>();
         StretchFull(mpRT);
-        // Opaque background that blocks ALL raycasts behind it
         var mpBg = monsterPanelGO.AddComponent<Image>();
         mpBg.color = new Color(0.95f, 0.92f, 0.88f, 1f);
         mpBg.raycastTarget = true;
@@ -969,7 +980,6 @@ public class WorldSceneSetup : EditorWindow
 
         // Wire MonsterCreatorController
         var monsterCreator = monsterPanelGO.AddComponent<MonsterCreatorController>();
-        monsterCreator.creatorPanel = monsterPanelGO;
         monsterCreator.previewBody = prevBody;
         monsterCreator.previewEyeLeft = prevEyeL;
         monsterCreator.previewEyeRight = prevEyeR;
@@ -991,7 +1001,10 @@ public class WorldSceneSetup : EditorWindow
         backBtnGO.GetComponent<Button>().onClick.AddListener(monsterCreator.OnBackPressed);
         doneBtnGO.GetComponent<Button>().onClick.AddListener(monsterCreator.OnDonePressed);
 
-        monsterPanelGO.SetActive(false);
+        monsterCanvasGO.SetActive(false);
+
+        // creatorPanel points to the canvas root so Open/Close toggles the entire overlay
+        monsterCreator.creatorPanel = monsterCanvasGO;
         controller.monsterCreator = monsterCreator;
 
         // ── Reward Reveal ──

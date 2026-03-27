@@ -40,16 +40,18 @@ public class MonsterCreatorController : MonoBehaviour
     private List<GameObject> optionItems = new List<GameObject>();
     private List<GameObject> colorItems = new List<GameObject>();
 
+    // Same colors as onboarding profile creation
     private static readonly Color[] PaletteColors =
     {
-        HexColor("#5BC8E8"), // blue
-        HexColor("#4CAF50"), // green
-        HexColor("#EF4444"), // red
-        HexColor("#FACC15"), // yellow
-        HexColor("#8B5CF6"), // purple
-        HexColor("#EC4899"), // pink
-        HexColor("#F97316"), // orange
-        HexColor("#78716C"), // gray
+        HexColor("#EF5350"), // red
+        HexColor("#F48FB1"), // pink
+        HexColor("#CE93D8"), // purple
+        HexColor("#90CAF9"), // blue
+        HexColor("#80DEEA"), // light blue
+        HexColor("#A5D6A7"), // green
+        HexColor("#FFF59D"), // yellow
+        HexColor("#FFCC80"), // orange
+        HexColor("#BCAAA4"), // brown
     };
 
     private enum Step { Body, Eyes, Nose, Mouth, LeftArm, RightArm, LeftLeg, RightLeg, Detail }
@@ -72,7 +74,18 @@ public class MonsterCreatorController : MonoBehaviour
         if (creatorPanel != null) creatorPanel.SetActive(true);
         currentStep = 0;
         data = new MonsterData();
-        bodyColor = Color.white;
+
+        // Default body color = child's favorite color from profile
+        var profile = ProfileManager.ActiveProfile;
+        if (profile != null && !string.IsNullOrEmpty(profile.avatarColorHex))
+        {
+            ColorUtility.TryParseHtmlString(profile.avatarColorHex, out bodyColor);
+        }
+        else
+        {
+            bodyColor = PaletteColors[0];
+        }
+
         ShowStep(0);
     }
 
