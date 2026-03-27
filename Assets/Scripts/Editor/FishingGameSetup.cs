@@ -212,13 +212,28 @@ public class FishingGameSetup : EditorWindow
 
         var elroeySprite = LoadSprite($"{FishingArt}/Elroey in the boat.png");
 
+        // Boat shadow/ripple on water (placed before Elroey so it's behind)
+        var boatShadowGO = new GameObject("BoatShadow");
+        boatShadowGO.transform.SetParent(safeGO.transform, false);
+        var bsRT = boatShadowGO.AddComponent<RectTransform>();
+        bsRT.anchorMin = new Vector2(0.25f, WaterlineY);
+        bsRT.anchorMax = new Vector2(0.25f, WaterlineY);
+        bsRT.pivot = new Vector2(0.5f, 0.6f);
+        bsRT.anchoredPosition = new Vector2(0, -8);
+        bsRT.sizeDelta = new Vector2(280, 40);
+        var bsImg = boatShadowGO.AddComponent<Image>();
+        if (circleSprite != null) bsImg.sprite = circleSprite;
+        bsImg.color = new Color(0.15f, 0.35f, 0.50f, 0.25f);
+        bsImg.raycastTarget = false;
+
         var elroeyGO = new GameObject("Elroey");
         elroeyGO.transform.SetParent(safeGO.transform, false);
         var elroeyRT = elroeyGO.AddComponent<RectTransform>();
-        elroeyRT.anchorMin = new Vector2(0.5f, WaterlineY);
-        elroeyRT.anchorMax = new Vector2(0.5f, WaterlineY);
-        elroeyRT.pivot = new Vector2(0.5f, 0.08f); // pivot at hull bottom
-        elroeyRT.anchoredPosition = Vector2.zero;   // exactly on waterline
+        // Left side of screen, anchored at waterline, sinking slightly into water
+        elroeyRT.anchorMin = new Vector2(0.25f, WaterlineY);
+        elroeyRT.anchorMax = new Vector2(0.25f, WaterlineY);
+        elroeyRT.pivot = new Vector2(0.5f, 0.12f); // pivot at hull bottom
+        elroeyRT.anchoredPosition = new Vector2(0, -10); // sink 10px into water
         elroeyRT.sizeDelta = new Vector2(300, 360);
         var elroeyImg = elroeyGO.AddComponent<Image>();
         elroeyImg.sprite = elroeySprite;
@@ -240,10 +255,10 @@ public class FishingGameSetup : EditorWindow
         var bubbleGO = new GameObject("SpeechBubble");
         bubbleGO.transform.SetParent(safeGO.transform, false);
         var bubbleRT = bubbleGO.AddComponent<RectTransform>();
-        bubbleRT.anchorMin = new Vector2(0.5f, WaterlineY);
-        bubbleRT.anchorMax = new Vector2(0.5f, WaterlineY);
+        bubbleRT.anchorMin = new Vector2(0.25f, WaterlineY);
+        bubbleRT.anchorMax = new Vector2(0.25f, WaterlineY);
         bubbleRT.pivot = new Vector2(0f, 0f);
-        bubbleRT.anchoredPosition = new Vector2(160, 260);
+        bubbleRT.anchoredPosition = new Vector2(160, 250);
         bubbleRT.sizeDelta = new Vector2(150, 150);
         var bubbleBgImg = bubbleGO.AddComponent<Image>();
         if (roundedRect != null) { bubbleBgImg.sprite = roundedRect; bubbleBgImg.type = Image.Type.Sliced; }
