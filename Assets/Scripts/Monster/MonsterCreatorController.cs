@@ -346,6 +346,8 @@ public class MonsterCreatorController : MonoBehaviour
 
     // ── World Canvas Blocking ──
 
+    private CanvasGroup _worldCG;
+
     private void DisableWorldCanvas()
     {
         var wc = FindObjectOfType<WorldController>();
@@ -354,20 +356,24 @@ public class MonsterCreatorController : MonoBehaviour
             _worldCanvas = wc.GetComponentInParent<Canvas>();
             if (_worldCanvas != null)
             {
-                var cg = _worldCanvas.GetComponent<CanvasGroup>() ?? _worldCanvas.gameObject.AddComponent<CanvasGroup>();
-                cg.interactable = false; cg.blocksRaycasts = false;
+                _worldCG = _worldCanvas.GetComponent<CanvasGroup>();
+                if (_worldCG == null)
+                    _worldCG = _worldCanvas.gameObject.AddComponent<CanvasGroup>();
+                _worldCG.interactable = false;
+                _worldCG.blocksRaycasts = false;
             }
         }
     }
 
     private void EnableWorldCanvas()
     {
-        if (_worldCanvas != null)
+        if (_worldCG != null)
         {
-            var cg = _worldCanvas.GetComponent<CanvasGroup>();
-            if (cg != null) { cg.interactable = true; cg.blocksRaycasts = true; }
-            _worldCanvas = null;
+            _worldCG.interactable = true;
+            _worldCG.blocksRaycasts = true;
+            _worldCG = null;
         }
+        _worldCanvas = null;
     }
 
     // ── Helpers ──
