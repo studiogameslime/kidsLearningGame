@@ -6,8 +6,8 @@ using TMPro;
 
 /// <summary>
 /// Step-by-step monster creation screen.
-/// Player taps parts from a selection grid; monster preview updates live.
-/// Steps: Body → Eyes → Nose → Mouth → Left Arm → Right Arm → Left Leg → Right Leg → Detail (optional) → Done
+/// Layout: preview on left (big), options + color palette on right.
+/// Body step shows only white shapes + color palette to tint.
 /// </summary>
 public class MonsterCreatorController : MonoBehaviour
 {
@@ -25,37 +25,46 @@ public class MonsterCreatorController : MonoBehaviour
 
     [Header("UI")]
     public Transform optionsGrid;
+    public Transform colorPaletteGrid;
     public TextMeshProUGUI stepTitle;
     public Button nextButton;
     public Button backButton;
     public Button doneButton;
-    public GameObject creatorPanel; // fullscreen panel
+    public GameObject creatorPanel;
 
-    /// <summary>Called when monster creation is finished.</summary>
     public System.Action<MonsterData> onMonsterCreated;
 
     private MonsterData data = new MonsterData();
     private int currentStep;
+    private Color bodyColor = Color.white;
     private List<GameObject> optionItems = new List<GameObject>();
+    private List<GameObject> colorItems = new List<GameObject>();
 
-    private static readonly string PartsPath = "Assets/Art/Monsters Parts/";
-
-    private enum Step
+    private static readonly Color[] PaletteColors =
     {
-        Body, Eyes, Nose, Mouth, LeftArm, RightArm, LeftLeg, RightLeg, Detail
-    }
+        HexColor("#5BC8E8"), // blue
+        HexColor("#4CAF50"), // green
+        HexColor("#EF4444"), // red
+        HexColor("#FACC15"), // yellow
+        HexColor("#8B5CF6"), // purple
+        HexColor("#EC4899"), // pink
+        HexColor("#F97316"), // orange
+        HexColor("#78716C"), // gray
+    };
+
+    private enum Step { Body, Eyes, Nose, Mouth, LeftArm, RightArm, LeftLeg, RightLeg, Detail }
 
     private static readonly string[] StepTitles =
     {
-        "\u05D2\u05D5\u05E3",           // גוף
-        "\u05E2\u05D9\u05E0\u05D9\u05D9\u05DD", // עיניים
-        "\u05D0\u05E3",                 // אף
-        "\u05E4\u05D4",                 // פה
-        "\u05D9\u05D3 \u05E9\u05DE\u05D0\u05DC", // יד שמאל
-        "\u05D9\u05D3 \u05D9\u05DE\u05D9\u05DF", // יד ימין
+        "\u05D2\u05D5\u05E3",                     // גוף
+        "\u05E2\u05D9\u05E0\u05D9\u05D9\u05DD",   // עיניים
+        "\u05D0\u05E3",                           // אף
+        "\u05E4\u05D4",                           // פה
+        "\u05D9\u05D3 \u05E9\u05DE\u05D0\u05DC",   // יד שמאל
+        "\u05D9\u05D3 \u05D9\u05DE\u05D9\u05DF",   // יד ימין
         "\u05E8\u05D2\u05DC \u05E9\u05DE\u05D0\u05DC", // רגל שמאל
         "\u05E8\u05D2\u05DC \u05D9\u05DE\u05D9\u05DF", // רגל ימין
-        "\u05E4\u05E8\u05D8\u05D9\u05DD",  // פרטים
+        "\u05E4\u05E8\u05D8\u05D9\u05DD",          // פרטים
     };
 
     public void Open()
@@ -63,6 +72,7 @@ public class MonsterCreatorController : MonoBehaviour
         if (creatorPanel != null) creatorPanel.SetActive(true);
         currentStep = 0;
         data = new MonsterData();
+        bodyColor = Color.white;
         ShowStep(0);
     }
 
@@ -75,18 +85,22 @@ public class MonsterCreatorController : MonoBehaviour
     {
         currentStep = step;
 
-        // Update title
         if (stepTitle != null && step < StepTitles.Length)
             HebrewText.SetText(stepTitle, StepTitles[step]);
 
-        // Navigation buttons
         if (backButton != null) backButton.gameObject.SetActive(step > 0);
         if (nextButton != null) nextButton.gameObject.SetActive(step < (int)Step.Detail);
         if (doneButton != null) doneButton.gameObject.SetActive(step == (int)Step.Detail);
 
-        // Build options for this step
         ClearOptions();
-        BuildOptions((Step)step);
+        ClearColors();
+
+        var stepEnum = (Step)step;
+        BuildOptions(stepEnum);
+
+        // Show color palette for body step
+        if (stepEnum == Step.Body)
+            BuildColorPalette();
     }
 
     private void BuildOptions(Step step)
@@ -96,27 +110,37 @@ public class MonsterCreatorController : MonoBehaviour
         switch (step)
         {
             case Step.Body:
-                sprites = GetSpriteNames("body_");
+                // Only white body shapes — user picks color separately
+                sprites = new[] { "body_whiteA", "body_whiteB", "body_whiteC",
+                                   "body_whiteD", "body_whiteE", "body_whiteF" };
                 break;
             case Step.Eyes:
-                sprites = GetSpriteNames("eye_");
+                sprites = new[] { "eye_blue", "eye_red", "eye_yellow",
+                    "eye_cute_dark", "eye_cute_light", "eye_human", "eye_human_blue",
+                    "eye_human_green", "eye_human_red", "eye_closed_happy", "eye_closed_feminine" };
                 break;
             case Step.Nose:
-                sprites = GetSpriteNames("nose_");
+                sprites = new[] { "nose_brown", "nose_green", "nose_red", "nose_yellow" };
                 break;
             case Step.Mouth:
-                sprites = GetSpriteNames("mouth");
+                sprites = new[] { "mouthA", "mouthB", "mouthC", "mouthD", "mouthE",
+                    "mouthF", "mouthG", "mouthH", "mouthI", "mouthJ",
+                    "mouth_closed_happy", "mouth_closed_teeth", "mouth_closed_fangs" };
                 break;
             case Step.LeftArm:
             case Step.RightArm:
-                sprites = GetSpriteNames("arm_");
+                sprites = new[] { "arm_whiteA", "arm_whiteB", "arm_whiteC", "arm_whiteD", "arm_whiteE" };
                 break;
             case Step.LeftLeg:
             case Step.RightLeg:
-                sprites = GetSpriteNames("leg_");
+                sprites = new[] { "leg_whiteA", "leg_whiteB", "leg_whiteC", "leg_whiteD", "leg_whiteE" };
                 break;
             case Step.Detail:
-                sprites = GetSpriteNames("detail_");
+                sprites = new[] { "detail_blue_horn_large", "detail_blue_horn_small",
+                    "detail_blue_ear", "detail_blue_ear_round",
+                    "detail_blue_antenna_large", "detail_blue_antenna_small",
+                    "detail_red_horn_large", "detail_green_horn_large",
+                    "detail_yellow_ear", "detail_red_ear_round" };
                 break;
             default:
                 sprites = new string[0];
@@ -138,29 +162,73 @@ public class MonsterCreatorController : MonoBehaviour
             img.preserveAspect = true;
             img.raycastTarget = true;
 
+            // Tint white parts with body color
+            if (step == Step.Body || step == Step.LeftArm || step == Step.RightArm ||
+                step == Step.LeftLeg || step == Step.RightLeg)
+                img.color = bodyColor;
+
             var btn = go.AddComponent<Button>();
             btn.targetGraphic = img;
             string captured = spriteName;
             Step capturedStep = step;
-            btn.onClick.AddListener(() => OnPartSelected(capturedStep, captured, rt));
+            RectTransform capturedRT = rt;
+            btn.onClick.AddListener(() => OnPartSelected(capturedStep, captured, capturedRT));
 
             optionItems.Add(go);
         }
     }
 
+    private void BuildColorPalette()
+    {
+        if (colorPaletteGrid == null) return;
+
+        for (int i = 0; i < PaletteColors.Length; i++)
+        {
+            var go = new GameObject($"Color_{i}");
+            go.transform.SetParent(colorPaletteGrid, false);
+            var rt = go.AddComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(70, 70);
+
+            var img = go.AddComponent<Image>();
+            img.color = PaletteColors[i];
+            img.raycastTarget = true;
+
+            var btn = go.AddComponent<Button>();
+            btn.targetGraphic = img;
+            int idx = i;
+            btn.onClick.AddListener(() => OnColorSelected(idx));
+
+            colorItems.Add(go);
+        }
+    }
+
+    private void OnColorSelected(int colorIndex)
+    {
+        bodyColor = PaletteColors[colorIndex];
+
+        // Tint the body preview
+        if (previewBody != null)
+            previewBody.color = bodyColor;
+
+        // Tint all white shape options in the grid to show the color
+        foreach (var go in optionItems)
+        {
+            var img = go.GetComponent<Image>();
+            if (img != null) img.color = bodyColor;
+        }
+    }
+
     private void OnPartSelected(Step step, string spriteName, RectTransform btnRT)
     {
-        // Pop animation on button
         StartCoroutine(PopAnimation(btnRT));
 
-        // Apply to data + preview
         var sprite = LoadPartSprite(spriteName);
 
         switch (step)
         {
             case Step.Body:
                 data.bodySprite = spriteName;
-                if (previewBody != null) { previewBody.sprite = sprite; previewBody.enabled = true; }
+                if (previewBody != null) { previewBody.sprite = sprite; previewBody.enabled = true; previewBody.color = bodyColor; }
                 break;
             case Step.Eyes:
                 data.eyeSprite = spriteName;
@@ -177,33 +245,28 @@ public class MonsterCreatorController : MonoBehaviour
                 break;
             case Step.LeftArm:
                 data.leftArmSprite = spriteName;
-                if (previewArmLeft != null) { previewArmLeft.sprite = sprite; previewArmLeft.enabled = true; }
+                if (previewArmLeft != null) { previewArmLeft.sprite = sprite; previewArmLeft.enabled = true; previewArmLeft.color = bodyColor; }
                 break;
             case Step.RightArm:
                 data.rightArmSprite = spriteName;
                 if (previewArmRight != null)
                 {
-                    previewArmRight.sprite = sprite;
-                    previewArmRight.enabled = true;
-                    // Flip right arm horizontally
+                    previewArmRight.sprite = sprite; previewArmRight.enabled = true; previewArmRight.color = bodyColor;
                     var s = previewArmRight.rectTransform.localScale;
-                    s.x = -Mathf.Abs(s.x);
-                    previewArmRight.rectTransform.localScale = s;
+                    s.x = -Mathf.Abs(s.x); previewArmRight.rectTransform.localScale = s;
                 }
                 break;
             case Step.LeftLeg:
                 data.leftLegSprite = spriteName;
-                if (previewLegLeft != null) { previewLegLeft.sprite = sprite; previewLegLeft.enabled = true; }
+                if (previewLegLeft != null) { previewLegLeft.sprite = sprite; previewLegLeft.enabled = true; previewLegLeft.color = bodyColor; }
                 break;
             case Step.RightLeg:
                 data.rightLegSprite = spriteName;
                 if (previewLegRight != null)
                 {
-                    previewLegRight.sprite = sprite;
-                    previewLegRight.enabled = true;
+                    previewLegRight.sprite = sprite; previewLegRight.enabled = true; previewLegRight.color = bodyColor;
                     var s = previewLegRight.rectTransform.localScale;
-                    s.x = -Mathf.Abs(s.x);
-                    previewLegRight.rectTransform.localScale = s;
+                    s.x = -Mathf.Abs(s.x); previewLegRight.rectTransform.localScale = s;
                 }
                 break;
             case Step.Detail:
@@ -229,13 +292,11 @@ public class MonsterCreatorController : MonoBehaviour
     {
         if (!data.IsComplete)
         {
-            // Shake the done button as feedback — need at least body, eyes, mouth, arms, legs
             if (doneButton != null)
                 StartCoroutine(PopAnimation(doneButton.GetComponent<RectTransform>()));
             return;
         }
 
-        // Save monster
         var profile = ProfileManager.ActiveProfile;
         if (profile != null)
         {
@@ -248,111 +309,29 @@ public class MonsterCreatorController : MonoBehaviour
         onMonsterCreated?.Invoke(data);
     }
 
-    // ── Helpers ──
-
     private void ClearOptions()
     {
         foreach (var go in optionItems) if (go != null) Destroy(go);
         optionItems.Clear();
     }
 
-    private string[] GetSpriteNames(string prefix)
+    private void ClearColors()
     {
-        var results = new List<string>();
-
-        // Load from Resources at runtime
-        var allSprites = Resources.LoadAll<Sprite>("MonsterParts");
-        if (allSprites != null)
-        {
-            foreach (var s in allSprites)
-            {
-                if (s.name.StartsWith(prefix))
-                    results.Add(s.name);
-            }
-        }
-
-        // Fallback: if nothing in Resources, use hardcoded common patterns
-        if (results.Count == 0)
-        {
-            string[] colors = { "blue", "dark", "green", "red", "white", "yellow" };
-            string[] shapes;
-
-            if (prefix == "body_")
-            {
-                shapes = new[] { "A", "B", "C", "D", "E", "F" };
-                foreach (var c in colors)
-                    foreach (var s in shapes)
-                        results.Add($"body_{c}{s}");
-            }
-            else if (prefix == "arm_")
-            {
-                shapes = new[] { "A", "B", "C", "D", "E" };
-                foreach (var c in colors)
-                    foreach (var s in shapes)
-                        results.Add($"arm_{c}{s}");
-            }
-            else if (prefix == "leg_")
-            {
-                shapes = new[] { "A", "B", "C", "D", "E" };
-                foreach (var c in colors)
-                    foreach (var s in shapes)
-                        results.Add($"leg_{c}{s}");
-            }
-            else if (prefix == "eye_")
-            {
-                results.AddRange(new[] {
-                    "eye_blue", "eye_red", "eye_yellow",
-                    "eye_cute_dark", "eye_cute_light",
-                    "eye_human", "eye_human_blue", "eye_human_green", "eye_human_red",
-                    "eye_closed_happy", "eye_closed_feminine",
-                    "eye_angry_blue", "eye_angry_green", "eye_angry_red"
-                });
-            }
-            else if (prefix == "nose_")
-            {
-                results.AddRange(new[] { "nose_brown", "nose_green", "nose_red", "nose_yellow" });
-            }
-            else if (prefix == "mouth")
-            {
-                for (char c = 'A'; c <= 'J'; c++)
-                    results.Add($"mouth{c}");
-                results.AddRange(new[] {
-                    "mouth_closed_fangs", "mouth_closed_happy",
-                    "mouth_closed_sad", "mouth_closed_teeth"
-                });
-            }
-            else if (prefix == "detail_")
-            {
-                string[] types = { "antenna_large", "antenna_small", "ear", "ear_round", "horn_large", "horn_small" };
-                foreach (var c in colors)
-                    foreach (var t in types)
-                        results.Add($"detail_{c}_{t}");
-            }
-        }
-
-        results.Sort();
-        return results.ToArray();
+        foreach (var go in colorItems) if (go != null) Destroy(go);
+        colorItems.Clear();
     }
 
     private static Sprite LoadPartSprite(string spriteName)
     {
-        // Try Resources/MonsterParts first
         var sprite = Resources.Load<Sprite>($"MonsterParts/{spriteName}");
         if (sprite != null) return sprite;
-
-        // Try loading all from MonsterParts and find by name
         var all = Resources.LoadAll<Sprite>("MonsterParts");
         foreach (var s in all)
             if (s.name == spriteName) return s;
-
         return null;
     }
 
-    /// <summary>Loads a sprite by name — used by other systems to reconstruct monsters.</summary>
-    public static Sprite LoadMonsterSprite(string spriteName)
-    {
-        return LoadPartSprite(spriteName);
-    }
+    public static Sprite LoadMonsterSprite(string spriteName) => LoadPartSprite(spriteName);
 
     private IEnumerator PopAnimation(RectTransform target)
     {
@@ -367,5 +346,11 @@ public class MonsterCreatorController : MonoBehaviour
             yield return null;
         }
         target.localScale = orig;
+    }
+
+    private static Color HexColor(string hex)
+    {
+        ColorUtility.TryParseHtmlString(hex, out Color c);
+        return c;
     }
 }
