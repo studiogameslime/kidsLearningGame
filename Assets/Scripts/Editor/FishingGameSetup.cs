@@ -43,8 +43,8 @@ public class FishingGameSetup : EditorWindow
     private static readonly Color SeaMidTint   = HexColor("#3BA8CC");  // mid water body
     private static readonly Color SeaFrontTint = new Color(0.18f, 0.55f, 0.72f, 0.35f); // foreground overlay
     private static readonly Color SeaDeepColor = HexColor("#2A8CC4");  // deep flat
-    private static readonly Color SandTint     = HexColor("#E8CFA0");  // sandy seabed
-    private static readonly Color SandDeepTint = HexColor("#D4B87A");  // darker sand accent
+    private static readonly Color SandColor     = HexColor("#F2D9A0");  // warm sandy beige
+    private static readonly Color SandDarkColor = HexColor("#D4B87A"); // darker sand accent
     private static readonly Color FoamColor    = new Color(1f, 1f, 1f, 0.2f);
     private static readonly Color TopBarColor  = new Color(0.37f, 0.78f, 0.91f, 0.85f);
     private static readonly Color BubbleColor  = new Color(1f, 1f, 1f, 0.92f);
@@ -219,34 +219,38 @@ public class FishingGameSetup : EditorWindow
         bsRT.anchorMin = new Vector2(0.25f, WaterlineY);
         bsRT.anchorMax = new Vector2(0.25f, WaterlineY);
         bsRT.pivot = new Vector2(0.5f, 0.6f);
-        bsRT.anchoredPosition = new Vector2(0, -8);
-        bsRT.sizeDelta = new Vector2(280, 40);
+        bsRT.anchoredPosition = new Vector2(0, -15);
+        bsRT.sizeDelta = new Vector2(280, 35);
         var bsImg = boatShadowGO.AddComponent<Image>();
         if (circleSprite != null) bsImg.sprite = circleSprite;
-        bsImg.color = new Color(0.15f, 0.35f, 0.50f, 0.25f);
+        bsImg.color = new Color(0.12f, 0.30f, 0.45f, 0.25f);
         bsImg.raycastTarget = false;
 
         var elroeyGO = new GameObject("Elroey");
         elroeyGO.transform.SetParent(safeGO.transform, false);
         var elroeyRT = elroeyGO.AddComponent<RectTransform>();
-        // Left side of screen, anchored at waterline, sinking slightly into water
+        // Left side, anchored at waterline, hull sinks into water
         elroeyRT.anchorMin = new Vector2(0.25f, WaterlineY);
         elroeyRT.anchorMax = new Vector2(0.25f, WaterlineY);
-        elroeyRT.pivot = new Vector2(0.5f, 0.12f); // pivot at hull bottom
-        elroeyRT.anchoredPosition = new Vector2(0, -10); // sink 10px into water
+        elroeyRT.pivot = new Vector2(0.5f, 0.15f); // pivot at hull bottom
+        elroeyRT.anchoredPosition = new Vector2(0, -25); // sink deeper into water
         elroeyRT.sizeDelta = new Vector2(300, 360);
         var elroeyImg = elroeyGO.AddComponent<Image>();
         elroeyImg.sprite = elroeySprite;
         elroeyImg.preserveAspect = true;
         elroeyImg.raycastTarget = false;
 
-        // Rod tip
-        var rodTipGO = new GameObject("RodTip");
+        // RodTipAnchor — child of Elroey, positioned at the exact tip of the fishing rod.
+        // Looking at the sprite: the rod extends from Elroey's hands up-right,
+        // the tip is at roughly the top-right corner of the image.
+        var rodTipGO = new GameObject("RodTipAnchor");
         rodTipGO.transform.SetParent(elroeyGO.transform, false);
         var rodTipRT = rodTipGO.AddComponent<RectTransform>();
-        rodTipRT.anchorMin = new Vector2(0.82f, 0.92f);
-        rodTipRT.anchorMax = new Vector2(0.82f, 0.92f);
+        // Rod tip is at ~80% X (right side) and ~95% Y (top) of the Elroey sprite
+        rodTipRT.anchorMin = new Vector2(0.78f, 0.95f);
+        rodTipRT.anchorMax = new Vector2(0.78f, 0.95f);
         rodTipRT.sizeDelta = Vector2.zero;
+        rodTipRT.anchoredPosition = Vector2.zero;
 
         // ════════════════════════════════════════════════════
         //  LAYER 7: SPEECH BUBBLE
@@ -315,12 +319,22 @@ public class FishingGameSetup : EditorWindow
         deepGO.GetComponent<Image>().raycastTarget = false;
 
         // ════════════════════════════════════════════════════
-        //  LAYER 12: sandLayer — seabed (groundLayer1 tinted sand)
+        //  LAYER 12: sandLayer — seabed (flat warm sand, not sprite-tinted)
         // ════════════════════════════════════════════════════
 
-        if (groundLayer1 != null)
-            CreateSpriteLayer(safeGO.transform, "sandLayer", groundLayer1,
-                new Vector2(0, -0.02f), new Vector2(1, 0.10f), SandTint);
+        // Sand accent (darker line at top of sand for depth)
+        var sandAccentGO = StretchImage(safeGO.transform, "sandAccent", SandDarkColor);
+        var saRT = sandAccentGO.GetComponent<RectTransform>();
+        saRT.anchorMin = new Vector2(0, 0.07f); saRT.anchorMax = new Vector2(1, 0.10f);
+        saRT.offsetMin = Vector2.zero; saRT.offsetMax = Vector2.zero;
+        sandAccentGO.GetComponent<Image>().raycastTarget = false;
+
+        // Main sand body
+        var sandGO = StretchImage(safeGO.transform, "sandLayer", SandColor);
+        var sandRT = sandGO.GetComponent<RectTransform>();
+        sandRT.anchorMin = new Vector2(0, 0); sandRT.anchorMax = new Vector2(1, 0.08f);
+        sandRT.offsetMin = Vector2.zero; sandRT.offsetMax = Vector2.zero;
+        sandGO.GetComponent<Image>().raycastTarget = false;
 
         // ════════════════════════════════════════════════════
         //  HEADER (topmost UI)
