@@ -58,6 +58,7 @@ public class UserProfile
 public class JourneyProgress
 {
     public int totalGamesCompleted;
+    public int totalStars;  // lifetime accumulated, earned 1 per journey game completion
     public int gamesUntilNextDiscovery;
 
     public List<string> unlockedAnimalIds = new List<string>();

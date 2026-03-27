@@ -20,6 +20,7 @@ public class JourneyManager : MonoBehaviour
     private string pendingChainGameId;
     private string pendingChainAnimalId;
     private int sessionGamesPlayed;
+    private bool _pendingUnlockMessage;
 
     private GameDatabase _gameDb;
 
@@ -129,8 +130,15 @@ public class JourneyManager : MonoBehaviour
         if (profile == null) return;
 
         var jp = profile.journey;
+        int prevStars = jp.totalStars;
         jp.totalGamesCompleted++;
+        jp.totalStars++;
         sessionGamesPlayed++;
+
+        // Check for feature unlocks
+        var newUnlocks = FeatureUnlockManager.GetNewlyUnlocked(prevStars);
+        if (newUnlocks.Count > 0)
+            _pendingUnlockMessage = true;
 
         // Update per-game stat
         if (!string.IsNullOrEmpty(completedGameId))

@@ -22,6 +22,9 @@ public class WorldController : MonoBehaviour
     public Button parentAreaButton;
     public Button albumButton;
 
+    [Header("Star Display")]
+    public TMPro.TextMeshProUGUI headerTitleTMP;
+
     [Header("Environment")]
     public WorldEnvironment environment;
     public WorldCloudSystem cloudSystem;
@@ -67,6 +70,8 @@ public class WorldController : MonoBehaviour
 
         BuildAnimalSpriteLookup();
         UpdateProfileAvatar();
+        UpdateHeaderTitle();
+        ApplyFeatureLocks();
         BuildWorld();
         StartCoroutine(PlayWorldIntroThenGifts());
     }
@@ -849,6 +854,103 @@ public class WorldController : MonoBehaviour
             case "Grey":   return new Color(0.6f, 0.6f, 0.6f);
             default:       return Color.white;
         }
+    }
+
+    // ── Star Header & Feature Locks ──
+
+    private void UpdateHeaderTitle()
+    {
+        if (headerTitleTMP == null) return;
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null) return;
+
+        string name = profile.name ?? "";
+        int stars = profile.journey?.totalStars ?? 0;
+        HebrewText.SetText(headerTitleTMP, $"\u05D4\u05E2\u05D5\u05DC\u05DD \u05E9\u05DC {name} \u2B50 {stars}");
+    }
+
+    private void ApplyFeatureLocks()
+    {
+        // Game Shelf
+        var shelf = FindObjectOfType<WorldGameShelf>();
+        if (shelf != null)
+            ApplyLock(shelf.gameObject, FeatureUnlockManager.Feature.GameCollection);
+
+        // Easel / Gallery
+        var easel = FindObjectOfType<WorldEasel>();
+        if (easel != null)
+            ApplyLock(easel.gameObject, FeatureUnlockManager.Feature.Gallery);
+
+        // Sticker Tree
+        var tree = FindObjectOfType<StickerTreeController>();
+        if (tree != null)
+            ApplyLock(tree.gameObject, FeatureUnlockManager.Feature.StickerTree);
+    }
+
+    private void ApplyLock(GameObject featureGO, FeatureUnlockManager.Feature feature)
+    {
+        if (FeatureUnlockManager.IsUnlocked(feature)) return;
+
+        // Disable interaction
+        var buttons = featureGO.GetComponentsInChildren<UnityEngine.UI.Button>(true);
+        foreach (var btn in buttons) btn.interactable = false;
+
+        // Dim the feature
+        var images = featureGO.GetComponentsInChildren<UnityEngine.UI.Image>(true);
+        foreach (var img in images) img.color = new UnityEngine.Color(img.color.r, img.color.g, img.color.b, 0.45f);
+
+        // Add lock overlay with progress
+        var lockGO = new GameObject("LockOverlay");
+        lockGO.transform.SetParent(featureGO.transform, false);
+        var lockRT = lockGO.AddComponent<RectTransform>();
+        lockRT.anchorMin = new Vector2(0.5f, 0.5f);
+        lockRT.anchorMax = new Vector2(0.5f, 0.5f);
+        lockRT.sizeDelta = new Vector2(160, 80);
+        lockRT.anchoredPosition = new Vector2(0, -20);
+
+        // Background
+        var lockBg = lockGO.AddComponent<UnityEngine.UI.Image>();
+        var roundedRect = Resources.Load<Sprite>("UI/RoundedRect");
+        if (roundedRect != null) { lockBg.sprite = roundedRect; lockBg.type = UnityEngine.UI.Image.Type.Sliced; }
+        lockBg.color = new UnityEngine.Color(0, 0, 0, 0.6f);
+        lockBg.raycastTarget = false;
+
+        // Lock icon + progress text
+        var textGO = new GameObject("LockText");
+        textGO.transform.SetParent(lockGO.transform, false);
+        var textRT = textGO.AddComponent<RectTransform>();
+        textRT.anchorMin = Vector2.zero; textRT.anchorMax = Vector2.one;
+        textRT.offsetMin = new Vector2(8, 4); textRT.offsetMax = new Vector2(-8, -4);
+        var lockTMP = textGO.AddComponent<TMPro.TextMeshProUGUI>();
+        int remaining = FeatureUnlockManager.GetRemainingStars(feature);
+        HebrewText.SetText(lockTMP, $"\uD83D\uDD12 \u05E2\u05D5\u05D3 {remaining} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD"); // 🔒 עוד X משחקים
+        lockTMP.fontSize = 16;
+        lockTMP.fontStyle = TMPro.FontStyles.Bold;
+        lockTMP.color = UnityEngine.Color.white;
+        lockTMP.alignment = TMPro.TextAlignmentOptions.Center;
+        lockTMP.raycastTarget = false;
+
+        // Progress bar
+        var barBgGO = new GameObject("ProgressBarBg");
+        barBgGO.transform.SetParent(lockGO.transform, false);
+        var barBgRT = barBgGO.AddComponent<RectTransform>();
+        barBgRT.anchorMin = new Vector2(0.1f, 0); barBgRT.anchorMax = new Vector2(0.9f, 0);
+        barBgRT.pivot = new Vector2(0.5f, 1f);
+        barBgRT.anchoredPosition = new Vector2(0, -2);
+        barBgRT.sizeDelta = new Vector2(0, 8);
+        var barBgImg = barBgGO.AddComponent<UnityEngine.UI.Image>();
+        barBgImg.color = new UnityEngine.Color(1, 1, 1, 0.2f);
+        barBgImg.raycastTarget = false;
+
+        var barFillGO = new GameObject("ProgressBarFill");
+        barFillGO.transform.SetParent(barBgGO.transform, false);
+        var barFillRT = barFillGO.AddComponent<RectTransform>();
+        barFillRT.anchorMin = Vector2.zero;
+        barFillRT.anchorMax = new Vector2(FeatureUnlockManager.GetProgress(feature), 1);
+        barFillRT.offsetMin = Vector2.zero; barFillRT.offsetMax = Vector2.zero;
+        var barFillImg = barFillGO.AddComponent<UnityEngine.UI.Image>();
+        barFillImg.color = new UnityEngine.Color(1f, 0.85f, 0.2f, 0.9f); // gold
+        barFillImg.raycastTarget = false;
     }
 
     public void OnHomePressed()

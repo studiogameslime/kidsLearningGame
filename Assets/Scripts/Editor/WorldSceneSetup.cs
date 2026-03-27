@@ -854,6 +854,7 @@ public class WorldSceneSetup : EditorWindow
         controller.parentAreaButton = parentDashBtn.GetComponent<Button>();
         controller.environment = envComponent;
         controller.cloudSystem = cloudSystemComp;
+        controller.headerTitleTMP = titleTMP;
 
         // ── Reward Reveal ──
         var rewardReveal = canvasGO.AddComponent<RewardRevealController>();
