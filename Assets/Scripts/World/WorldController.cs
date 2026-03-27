@@ -864,7 +864,7 @@ public class WorldController : MonoBehaviour
         var profile = ProfileManager.ActiveProfile;
         if (profile == null) return;
 
-        string name = profile.name ?? "";
+        string name = profile.displayName ?? "";
         int stars = profile.journey?.totalStars ?? 0;
         HebrewText.SetText(headerTitleTMP, $"\u05D4\u05E2\u05D5\u05DC\u05DD \u05E9\u05DC {name} \u2B50 {stars}");
     }
