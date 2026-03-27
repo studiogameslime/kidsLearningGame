@@ -273,6 +273,7 @@ public static class AgeBaselineConfig
             new Entry(4, "quantitymatch", 5),   // quantities up to 5
             new Entry(4, "numbertrain",   6),   // 6 wagons, 2 missing
             new Entry(4, "lettertrain",  5),   // 5 wagons, 1 missing letter, early alphabet
+            new Entry(3, "fishing"),                // shape recognition + tapping
             new Entry(4, "numbermaze",    10),  // target 10, 5x3 grid
             new Entry(4, "patterncopy",   3),   // 3x3 grid
             new Entry(4, "letters",       3),   // 2-3 letter words
