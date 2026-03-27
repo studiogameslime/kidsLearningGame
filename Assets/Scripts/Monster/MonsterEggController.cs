@@ -15,7 +15,7 @@ public class MonsterEggController : MonoBehaviour
     public TextMeshProUGUI lockText;
     public Image progressBarFill;
 
-    public const int UnlockThreshold = 20;
+    public const int UnlockThreshold = 5;
 
     private RectTransform rt;
     private float idleTimer;

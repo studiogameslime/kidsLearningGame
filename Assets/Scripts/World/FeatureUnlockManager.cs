@@ -22,7 +22,7 @@ public static class FeatureUnlockManager
         { Feature.GameCollection, 5 },
         { Feature.Gallery,        10 },
         { Feature.StickerTree,    15 },
-        { Feature.MonsterEgg,     20 },
+        { Feature.MonsterEgg,     5 },
     };
 
     /// <summary>Returns whether the feature is unlocked for the active profile.</summary>
