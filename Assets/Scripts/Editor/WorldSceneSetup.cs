@@ -856,6 +856,123 @@ public class WorldSceneSetup : EditorWindow
         controller.cloudSystem = cloudSystemComp;
         controller.headerTitleTMP = titleTMP;
 
+        // ── Monster Creator Panel (fullscreen, hidden by default) ──
+        var monsterPanelGO = new GameObject("MonsterCreatorPanel");
+        monsterPanelGO.transform.SetParent(canvasGO.transform, false);
+        var mpRT = monsterPanelGO.AddComponent<RectTransform>();
+        mpRT.anchorMin = Vector2.zero; mpRT.anchorMax = Vector2.one;
+        mpRT.offsetMin = Vector2.zero; mpRT.offsetMax = Vector2.zero;
+        var mpBg = monsterPanelGO.AddComponent<Image>();
+        mpBg.color = new Color(0.95f, 0.92f, 0.88f, 1f);
+        mpBg.raycastTarget = true;
+
+        // Panel layout
+        var mpLayout = monsterPanelGO.AddComponent<VerticalLayoutGroup>();
+        mpLayout.spacing = 8;
+        mpLayout.padding = new RectOffset(20, 20, 20, 20);
+        mpLayout.childAlignment = TextAnchor.UpperCenter;
+        mpLayout.childForceExpandWidth = true;
+        mpLayout.childForceExpandHeight = false;
+        mpLayout.childControlWidth = true;
+        mpLayout.childControlHeight = true;
+
+        // Step title
+        var mcTitleGO = new GameObject("StepTitle");
+        mcTitleGO.transform.SetParent(monsterPanelGO.transform, false);
+        mcTitleGO.AddComponent<RectTransform>();
+        mcTitleGO.AddComponent<LayoutElement>().preferredHeight = 50;
+        var mcTitleTMP = mcTitleGO.AddComponent<TextMeshProUGUI>();
+        HebrewText.SetText(mcTitleTMP, "\u05D2\u05D5\u05E3"); // גוף
+        mcTitleTMP.fontSize = 32; mcTitleTMP.fontStyle = FontStyles.Bold;
+        mcTitleTMP.color = new Color(0.25f, 0.15f, 0.08f);
+        mcTitleTMP.alignment = TextAlignmentOptions.Center;
+        mcTitleTMP.raycastTarget = false;
+
+        // Monster preview area (center)
+        var previewGO = new GameObject("MonsterPreview");
+        previewGO.transform.SetParent(monsterPanelGO.transform, false);
+        previewGO.AddComponent<RectTransform>();
+        previewGO.AddComponent<LayoutElement>().preferredHeight = 350;
+
+        // Create preview part images
+        var prevBody   = CreatePreviewPart(previewGO.transform, "Body",     new Vector2(160, 160), new Vector2(0, 20));
+        var prevEyeL   = CreatePreviewPart(previewGO.transform, "EyeL",     new Vector2(45, 45),   new Vector2(-28, 80));
+        var prevEyeR   = CreatePreviewPart(previewGO.transform, "EyeR",     new Vector2(45, 45),   new Vector2(28, 80));
+        var prevNose   = CreatePreviewPart(previewGO.transform, "Nose",     new Vector2(35, 35),   new Vector2(0, 45));
+        var prevMouth  = CreatePreviewPart(previewGO.transform, "Mouth",    new Vector2(55, 30),   new Vector2(0, 15));
+        var prevArmL   = CreatePreviewPart(previewGO.transform, "ArmL",     new Vector2(60, 90),   new Vector2(-90, 40));
+        var prevArmR   = CreatePreviewPart(previewGO.transform, "ArmR",     new Vector2(60, 90),   new Vector2(90, 40));
+        var prevLegL   = CreatePreviewPart(previewGO.transform, "LegL",     new Vector2(55, 80),   new Vector2(-35, -85));
+        var prevLegR   = CreatePreviewPart(previewGO.transform, "LegR",     new Vector2(55, 80),   new Vector2(35, -85));
+        var prevDetail = CreatePreviewPart(previewGO.transform, "Detail",   new Vector2(50, 50),   new Vector2(0, 115));
+
+        // Options grid (scrollable)
+        var optionsScrollGO = new GameObject("OptionsScroll");
+        optionsScrollGO.transform.SetParent(monsterPanelGO.transform, false);
+        optionsScrollGO.AddComponent<RectTransform>();
+        optionsScrollGO.AddComponent<LayoutElement>().flexibleHeight = 1;
+        optionsScrollGO.AddComponent<Image>().color = new Color(1, 1, 1, 0.3f);
+        optionsScrollGO.GetComponent<Image>().raycastTarget = false;
+
+        var optionsGridGO = new GameObject("OptionsGrid");
+        optionsGridGO.transform.SetParent(optionsScrollGO.transform, false);
+        var ogRT = optionsGridGO.AddComponent<RectTransform>();
+        ogRT.anchorMin = Vector2.zero; ogRT.anchorMax = Vector2.one;
+        ogRT.offsetMin = new Vector2(8, 8); ogRT.offsetMax = new Vector2(-8, -8);
+        var ogGrid = optionsGridGO.AddComponent<GridLayoutGroup>();
+        ogGrid.cellSize = new Vector2(90, 90);
+        ogGrid.spacing = new Vector2(10, 10);
+        ogGrid.childAlignment = TextAnchor.UpperCenter;
+        ogGrid.constraint = GridLayoutGroup.Constraint.Flexible;
+
+        // Navigation buttons row
+        var navRowGO = new GameObject("NavRow");
+        navRowGO.transform.SetParent(monsterPanelGO.transform, false);
+        navRowGO.AddComponent<RectTransform>();
+        navRowGO.AddComponent<LayoutElement>().preferredHeight = 60;
+        var navHL = navRowGO.AddComponent<HorizontalLayoutGroup>();
+        navHL.spacing = 20; navHL.childAlignment = TextAnchor.MiddleCenter;
+        navHL.childForceExpandWidth = true; navHL.childForceExpandHeight = true;
+
+        // Back button
+        var backBtnGO = CreateNavButton(navRowGO.transform, "\u05D7\u05D6\u05E8\u05D4", new Color(0.75f, 0.75f, 0.75f)); // חזרה
+        var backBtn = backBtnGO.GetComponent<Button>();
+
+        // Next button
+        var nextBtnGO = CreateNavButton(navRowGO.transform, "\u05D4\u05D1\u05D0", HexColor("#4CAF50")); // הבא
+        var nextBtn = nextBtnGO.GetComponent<Button>();
+
+        // Done button
+        var doneBtnGO = CreateNavButton(navRowGO.transform, "\u05E1\u05D9\u05D9\u05DE\u05EA\u05D9!", HexColor("#FF9800")); // סיימתי!
+        var doneBtn = doneBtnGO.GetComponent<Button>();
+
+        // Wire MonsterCreatorController
+        var monsterCreator = monsterPanelGO.AddComponent<MonsterCreatorController>();
+        monsterCreator.creatorPanel = monsterPanelGO;
+        monsterCreator.previewBody = prevBody;
+        monsterCreator.previewEyeLeft = prevEyeL;
+        monsterCreator.previewEyeRight = prevEyeR;
+        monsterCreator.previewNose = prevNose;
+        monsterCreator.previewMouth = prevMouth;
+        monsterCreator.previewArmLeft = prevArmL;
+        monsterCreator.previewArmRight = prevArmR;
+        monsterCreator.previewLegLeft = prevLegL;
+        monsterCreator.previewLegRight = prevLegR;
+        monsterCreator.previewDetail = prevDetail;
+        monsterCreator.optionsGrid = optionsGridGO.transform;
+        monsterCreator.stepTitle = mcTitleTMP;
+        monsterCreator.nextButton = nextBtn;
+        monsterCreator.backButton = backBtn;
+        monsterCreator.doneButton = doneBtn;
+
+        nextBtn.onClick.AddListener(monsterCreator.OnNextPressed);
+        backBtn.onClick.AddListener(monsterCreator.OnBackPressed);
+        doneBtn.onClick.AddListener(monsterCreator.OnDonePressed);
+
+        monsterPanelGO.SetActive(false); // hidden until egg hatches
+
+        controller.monsterCreator = monsterCreator;
+
         // ── Reward Reveal ──
         var rewardReveal = canvasGO.AddComponent<RewardRevealController>();
         rewardReveal.grassArea = grassAreaRT;
@@ -922,6 +1039,41 @@ public class WorldSceneSetup : EditorWindow
     // ─────────────────────────────────────────
     //  HELPERS
     // ─────────────────────────────────────────
+
+    private static Image CreatePreviewPart(Transform parent, string name, Vector2 size, Vector2 pos)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.sizeDelta = size; rt.anchoredPosition = pos;
+        var img = go.AddComponent<Image>();
+        img.preserveAspect = true; img.raycastTarget = false; img.enabled = false;
+        return img;
+    }
+
+    private static GameObject CreateNavButton(Transform parent, string label, Color bgColor)
+    {
+        var go = new GameObject($"Btn_{label}");
+        go.transform.SetParent(parent, false);
+        go.AddComponent<RectTransform>();
+        var bgImg = go.AddComponent<Image>();
+        bgImg.color = bgColor; bgImg.raycastTarget = true;
+        go.AddComponent<Button>().targetGraphic = bgImg;
+
+        var lblGO = new GameObject("Label");
+        lblGO.transform.SetParent(go.transform, false);
+        var lblRT = lblGO.AddComponent<RectTransform>();
+        lblRT.anchorMin = Vector2.zero; lblRT.anchorMax = Vector2.one;
+        lblRT.offsetMin = Vector2.zero; lblRT.offsetMax = Vector2.zero;
+        var lblTMP = lblGO.AddComponent<TextMeshProUGUI>();
+        HebrewText.SetText(lblTMP, label);
+        lblTMP.fontSize = 24; lblTMP.fontStyle = FontStyles.Bold;
+        lblTMP.color = Color.white; lblTMP.alignment = TextAlignmentOptions.Center;
+        lblTMP.raycastTarget = false;
+        return go;
+    }
 
     private static Sprite LoadSprite(string path)
     {
