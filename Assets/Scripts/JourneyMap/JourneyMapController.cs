@@ -157,12 +157,16 @@ public class JourneyMapController : MonoBehaviour
     }
 
     // ── Coordinate conversion: world → UI ──
-    // Centers path vertically in the viewport
+    // Anchor (0, 0.5) means anchoredPosition.y=0 is vertical center of parent.
+    // Positive anchoredPosition.y = UP on screen.
+    // World: positive Y = visually higher on the path.
+    // So: UI.y = -(world.y - centerY) to flip (world positive Y → screen up,
+    // but our world Y increases downward in the wave pattern).
     private Vector2 ToUI(Vector2 world, float offX, float centerY, float viewH)
     {
         float x = world.x + offX;
-        float y = viewH * 0.5f - (world.y - centerY); // center of viewport + offset from path center
-        return new Vector2(x, -y + viewH); // flip for UI top-left origin
+        float y = -(world.y - centerY); // center the wave around Y=0
+        return new Vector2(x, y);
     }
 
     private GameObject MakeImg(string name, Transform parent, Sprite spr, float w, float h)
@@ -170,7 +174,7 @@ public class JourneyMapController : MonoBehaviour
         var go = new GameObject(name);
         go.transform.SetParent(parent, false);
         var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = rt.anchorMax = new Vector2(0, 0.5f);
+        rt.anchorMin = rt.anchorMax = new Vector2(0, 0.5f); // left-center anchor
         rt.pivot = new Vector2(0.5f, 0.5f);
         rt.sizeDelta = new Vector2(w, h);
         var img = go.AddComponent<Image>();
