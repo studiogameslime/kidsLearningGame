@@ -296,10 +296,6 @@ public class WorldInputHandler : MonoBehaviour
             draggedAnimal = null;
         }
 
-        // Snap back if overscrolled
-        if (isWorldPan && isDragging)
-            SnapBackFromOverscroll();
-
         isDragging = false;
         isWorldPan = false;
     }
@@ -317,54 +313,13 @@ public class WorldInputHandler : MonoBehaviour
         }
         else
         {
-            float minX = -(contentWidth - viewportWidth);
-            float maxX = 0f;
-
-            // Elastic overscroll: allow slight drag past edges, rubber-band back
-            float overscrollLimit = 150f;
-            if (newX > maxX)
-                newX = maxX + (newX - maxX) * 0.3f; // damped overscroll
-            else if (newX < minX)
-                newX = minX + (newX - minX) * 0.3f;
-
-            newX = Mathf.Clamp(newX, minX - overscrollLimit, maxX + overscrollLimit);
+            // Cylindrical wrap: seamless infinite scroll
+            float range = contentWidth - viewportWidth;
+            // Wrap into [-range, 0] so content loops endlessly
+            newX = ((newX % range) + range) % range;
+            newX = -newX; // convert to negative offset (content moves left)
         }
 
         worldContent.anchoredPosition = new Vector2(newX, worldContent.anchoredPosition.y);
-    }
-
-    /// <summary>Smoothly snaps back from overscroll when touch ends.</summary>
-    private void SnapBackFromOverscroll()
-    {
-        if (worldContent == null) return;
-        float contentWidth = worldContent.rect.width;
-        float viewportWidth = viewport != null ? viewport.rect.width : 1080f;
-        if (contentWidth <= viewportWidth) return;
-
-        float minX = -(contentWidth - viewportWidth);
-        float maxX = 0f;
-        float curX = worldContent.anchoredPosition.x;
-
-        if (curX > maxX || curX < minX)
-        {
-            float target = Mathf.Clamp(curX, minX, maxX);
-            StartCoroutine(SnapCoroutine(target));
-        }
-    }
-
-    private System.Collections.IEnumerator SnapCoroutine(float targetX)
-    {
-        float duration = 0.3f;
-        float elapsed = 0f;
-        float startX = worldContent.anchoredPosition.x;
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.SmoothStep(0, 1, elapsed / duration);
-            float x = Mathf.Lerp(startX, targetX, t);
-            worldContent.anchoredPosition = new Vector2(x, worldContent.anchoredPosition.y);
-            yield return null;
-        }
-        worldContent.anchoredPosition = new Vector2(targetX, worldContent.anchoredPosition.y);
     }
 }
