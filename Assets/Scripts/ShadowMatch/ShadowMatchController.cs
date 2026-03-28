@@ -65,20 +65,37 @@ public class ShadowMatchController : BaseMiniGame
         matchedCount = 0;
 
         var game = GameContext.CurrentGame;
-        if (game == null || game.subItems == null || game.subItems.Count < animalCount)
+        if (game == null || game.subItems == null || game.subItems.Count == 0)
         {
-            Debug.LogError("ShadowMatch: Not enough animal sub-items!");
+            Debug.LogError("ShadowMatch: No animal sub-items!");
             return;
         }
 
-        // Pick random animals
+        // Filter to only animals with valid sprites
+        var validItems = new List<SubItemData>();
+        foreach (var item in game.subItems)
+        {
+            Sprite spr = item.thumbnail ?? item.contentAsset;
+            if (spr != null)
+                validItems.Add(item);
+        }
+
+        if (validItems.Count < animalCount)
+        {
+            Debug.LogError($"ShadowMatch: Only {validItems.Count} animals have sprites, need {animalCount}!");
+            // Use what we have
+            animalCount = validItems.Count;
+            if (animalCount == 0) return;
+        }
+
+        // Pick random animals from valid pool
         var pool = new List<int>();
-        for (int i = 0; i < game.subItems.Count; i++) pool.Add(i);
+        for (int i = 0; i < validItems.Count; i++) pool.Add(i);
         Shuffle(pool);
 
         var picked = new List<SubItemData>();
         for (int i = 0; i < animalCount; i++)
-            picked.Add(game.subItems[pool[i]]);
+            picked.Add(validItems[pool[i]]);
 
         // ── Shadows: single horizontal row ──
         float shadowAreaW = shadowsArea.rect.width;

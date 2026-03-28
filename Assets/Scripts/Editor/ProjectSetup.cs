@@ -634,7 +634,7 @@ public class ProjectSetup : EditorWindow
         shadows.title = "Shadow Match";
         shadows.cardColor = ShadowsColor;
         shadows.targetSceneName = "ShadowMatch";
-        shadows.hasSubItems = false;
+        shadows.hasSubItems = true;
         shadows.thumbnail = LoadSprite($"{previewPath}/Shadows.png");
         shadows.nameClip = LoadAudioClip("Assets/Sounds/Games Names/Shadows.mp3");
         EditorUtility.SetDirty(shadows);
