@@ -94,13 +94,6 @@ public static class NavigationManager
         SceneManager.LoadScene(MainMenuScene);
     }
 
-    /// <summary>Go to the World scene.</summary>
-    public static void GoToWorld()
-    {
-        GameContext.Clear();
-        BubbleTransition.LoadScene(WorldSceneName);
-    }
-
     /// <summary>Go to the Journey Map screen.</summary>
     public static void GoToJourneyMap()
     {
