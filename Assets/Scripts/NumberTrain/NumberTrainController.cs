@@ -485,9 +485,11 @@ public class NumberTrainController : BaseMiniGame
         _dragOriginalPos = _draggedRT.anchoredPosition;
         _dragOriginalSiblingIndex = option.transform.GetSiblingIndex();
 
-        // Bring to front
+        // Bring to front and disable raycast so it doesn't push/block other options
         option.transform.SetAsLastSibling();
         _draggedRT.localScale = Vector3.one * 1.1f;
+        var dragImg = option.GetComponent<UnityEngine.UI.Image>();
+        if (dragImg != null) dragImg.raycastTarget = false;
     }
 
     public void OnOptionDrag(PointerEventData eventData)
@@ -531,6 +533,14 @@ public class NumberTrainController : BaseMiniGame
         {
             // Dropped nowhere — return silently
             StartCoroutine(ReturnToOriginal(_draggedRT, _dragOriginalPos));
+        }
+
+        // Restore raycast and sibling order
+        if (_draggedOption != null)
+        {
+            var dragImg = _draggedOption.GetComponent<UnityEngine.UI.Image>();
+            if (dragImg != null) dragImg.raycastTarget = true;
+            _draggedOption.transform.SetSiblingIndex(_dragOriginalSiblingIndex);
         }
 
         // Reset highlights

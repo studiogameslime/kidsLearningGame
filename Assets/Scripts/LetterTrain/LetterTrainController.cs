@@ -492,9 +492,14 @@ public class LetterTrainController : BaseMiniGame
         _draggedRT = option.GetComponent<RectTransform>();
         _draggedLetter = letter;
         _dragOriginalPos = _draggedRT.anchoredPosition;
+        _dragOriginalSiblingIndex = option.transform.GetSiblingIndex();
         option.transform.SetAsLastSibling();
         _draggedRT.localScale = Vector3.one * 1.1f;
+        var dragImg = option.GetComponent<UnityEngine.UI.Image>();
+        if (dragImg != null) dragImg.raycastTarget = false;
     }
+
+    private int _dragOriginalSiblingIndex;
 
     public void OnOptionDrag(PointerEventData eventData)
     {
@@ -529,6 +534,14 @@ public class LetterTrainController : BaseMiniGame
         else
         {
             StartCoroutine(ReturnToOriginal(_draggedRT, _dragOriginalPos));
+        }
+
+        // Restore raycast and sibling order
+        if (_draggedOption != null)
+        {
+            var dragImg = _draggedOption.GetComponent<UnityEngine.UI.Image>();
+            if (dragImg != null) dragImg.raycastTarget = true;
+            _draggedOption.transform.SetSiblingIndex(_dragOriginalSiblingIndex);
         }
 
         ResetWagonHighlights();
