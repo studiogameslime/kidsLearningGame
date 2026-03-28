@@ -2515,7 +2515,8 @@ public class ParentDashboardController : MonoBehaviour
 
         gp.currentDifficulty = newDiff;
         gp.manualDifficultyOverride = true;
-        gp.sessionsSinceDifficultyChange = 0;
+        gp.consecutiveStrongResults = 0;
+        gp.consecutiveWeakResults = 0;
         ProfileManager.Instance.Save();
 
         displayTMP.text = $"{newDiff}";
@@ -2541,7 +2542,8 @@ public class ParentDashboardController : MonoBehaviour
 
         var gp = profile.analytics.GetOrCreateGame(gameId);
         gp.manualDifficultyOverride = false;
-        gp.sessionsSinceDifficultyChange = 0;
+        gp.consecutiveStrongResults = 0;
+        gp.consecutiveWeakResults = 0;
 
         // Restore to last auto difficulty if available
         if (gp.lastAutoDifficulty > 0)
