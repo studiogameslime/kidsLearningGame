@@ -623,7 +623,7 @@ public class ProjectSetup : EditorWindow
         findObject.title = "Find the Animal";
         findObject.cardColor = FindObjectColor;
         findObject.targetSceneName = "FindTheAnimal";
-        findObject.hasSubItems = false;
+        findObject.hasSubItems = true;
         findObject.thumbnail = LoadSprite($"{previewPath}/FindTheObject.png");
         findObject.nameClip = LoadAudioClip("Assets/Sounds/Games Names/Find the animal.mp3");
         EditorUtility.SetDirty(findObject);
