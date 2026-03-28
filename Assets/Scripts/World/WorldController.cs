@@ -25,8 +25,6 @@ public class WorldController : MonoBehaviour
     [Header("Star Display")]
     public TMPro.TextMeshProUGUI headerTitleTMP;
 
-    [Header("Monster System")]
-    public MonsterCreatorController monsterCreator;
 
     [Header("Environment")]
     public WorldEnvironment environment;
@@ -590,8 +588,6 @@ public class WorldController : MonoBehaviour
         // Spawn game shelf on grass (right-center area)
         SpawnGameShelf(worldWidth);
 
-        // Spawn monster egg or created monster
-        SpawnMonsterEggOrMonster();
     }
 
     private void SpawnAnimals(List<string> animalIds, float worldWidth)
@@ -840,120 +836,6 @@ public class WorldController : MonoBehaviour
         img.raycastTarget = true;
 
         go.AddComponent<WorldGameShelf>();
-    }
-
-    private void SpawnMonsterEggOrMonster()
-    {
-        if (grassArea == null) return;
-        var profile = ProfileManager.ActiveProfile;
-        if (profile == null) return;
-        var mp = profile.journey.monster;
-
-        if (mp.monsterCreated && mp.monsterData != null && mp.monsterData.IsComplete)
-            SpawnWorldMonster(mp.monsterData);
-        else
-            SpawnMonsterEgg();
-    }
-
-    private void SpawnMonsterEgg()
-    {
-        var eggSprite = Resources.Load<Sprite>("MonsterParts/Egg");
-
-        var eggGO = new GameObject("MonsterEgg");
-        eggGO.transform.SetParent(grassArea, false);
-        var rt = eggGO.AddComponent<RectTransform>();
-        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-        rt.pivot = new Vector2(0.5f, 0);
-        rt.sizeDelta = new Vector2(120, 140);
-        rt.anchoredPosition = new Vector2(-250f, 130f);
-
-        var img = eggGO.AddComponent<Image>();
-        img.sprite = eggSprite; img.preserveAspect = true; img.raycastTarget = true;
-
-        var eggCtrl = eggGO.AddComponent<MonsterEggController>();
-        eggCtrl.eggImage = img;
-
-        // Lock overlay
-        var lockGO = new GameObject("LockOverlay");
-        lockGO.transform.SetParent(eggGO.transform, false);
-        var lockRT = lockGO.AddComponent<RectTransform>();
-        lockRT.anchorMin = new Vector2(0.5f, 0); lockRT.anchorMax = new Vector2(0.5f, 0);
-        lockRT.pivot = new Vector2(0.5f, 1f);
-        lockRT.anchoredPosition = new Vector2(0, -8); lockRT.sizeDelta = new Vector2(160, 50);
-        var lockBg = lockGO.AddComponent<Image>();
-        lockBg.color = new Color(0, 0, 0, 0.6f); lockBg.raycastTarget = false;
-
-        var lockTextGO = new GameObject("LockText");
-        lockTextGO.transform.SetParent(lockGO.transform, false);
-        var ltRT = lockTextGO.AddComponent<RectTransform>();
-        ltRT.anchorMin = Vector2.zero; ltRT.anchorMax = Vector2.one;
-        ltRT.offsetMin = new Vector2(4, 8); ltRT.offsetMax = new Vector2(-4, -2);
-        var lockTMP = lockTextGO.AddComponent<TMPro.TextMeshProUGUI>();
-        lockTMP.fontSize = 14; lockTMP.fontStyle = TMPro.FontStyles.Bold;
-        lockTMP.color = Color.white; lockTMP.alignment = TMPro.TextAlignmentOptions.Center;
-        lockTMP.raycastTarget = false;
-
-        var barBgGO = new GameObject("BarBg");
-        barBgGO.transform.SetParent(lockGO.transform, false);
-        var barBgRT = barBgGO.AddComponent<RectTransform>();
-        barBgRT.anchorMin = new Vector2(0.1f, 0); barBgRT.anchorMax = new Vector2(0.9f, 0);
-        barBgRT.pivot = new Vector2(0.5f, 0); barBgRT.anchoredPosition = new Vector2(0, 4);
-        barBgRT.sizeDelta = new Vector2(0, 6);
-        barBgGO.AddComponent<Image>().color = new Color(1, 1, 1, 0.2f);
-        barBgGO.GetComponent<Image>().raycastTarget = false;
-
-        var barFillGO = new GameObject("BarFill");
-        barFillGO.transform.SetParent(barBgGO.transform, false);
-        var barFillRT = barFillGO.AddComponent<RectTransform>();
-        barFillRT.anchorMin = Vector2.zero; barFillRT.anchorMax = new Vector2(0, 1);
-        barFillRT.offsetMin = Vector2.zero; barFillRT.offsetMax = Vector2.zero;
-        var barFillImg = barFillGO.AddComponent<Image>();
-        barFillImg.color = new Color(1f, 0.85f, 0.2f, 0.9f); barFillImg.raycastTarget = false;
-
-        eggCtrl.lockOverlay = lockGO;
-        eggCtrl.lockText = lockTMP;
-        eggCtrl.progressBarFill = barFillImg;
-
-        var btn = eggGO.AddComponent<Button>(); btn.targetGraphic = img;
-        btn.onClick.AddListener(eggCtrl.OnEggTapped);
-
-        eggCtrl.onHatchComplete = () =>
-        {
-            if (monsterCreator != null)
-            {
-                monsterCreator.Open();
-                monsterCreator.onMonsterCreated = (data) =>
-                {
-                    eggGO.SetActive(false);
-                    SpawnWorldMonster(data);
-                    UpdateHeaderTitle();
-                };
-            }
-        };
-    }
-
-    private void SpawnWorldMonster(MonsterData data)
-    {
-        var monsterGO = new GameObject("WorldMonster");
-        monsterGO.transform.SetParent(grassArea, false);
-        var mrt = monsterGO.AddComponent<RectTransform>();
-        mrt.anchorMin = mrt.anchorMax = new Vector2(0.5f, 0.5f);
-        mrt.pivot = new Vector2(0.5f, 0);
-        mrt.sizeDelta = new Vector2(200, 250);
-        mrt.anchoredPosition = new Vector2(-250f, 130f);
-        mrt.localScale = new Vector3(0.55f, 0.55f, 1f); // scale down for world view
-
-        var ctrl = monsterGO.AddComponent<MonsterWorldController>();
-        ctrl.Setup(data);
-
-        // Make tappable (use body image as target graphic after setup)
-        if (ctrl.preview != null && ctrl.preview.body != null)
-        {
-            ctrl.preview.body.raycastTarget = true;
-            var tapBtn = monsterGO.AddComponent<Button>();
-            tapBtn.targetGraphic = ctrl.preview.body;
-            tapBtn.onClick.AddListener(ctrl.OnMonsterTapped);
-        }
     }
 
     private Color GetColorById(string colorId)

@@ -60,7 +60,6 @@ public class JourneyProgress
     public int totalGamesCompleted;
     public int totalStars;  // lifetime accumulated, earned 1 per journey game completion
     public int gamesUntilNextDiscovery;
-    public MonsterProgress monster = new MonsterProgress();
 
     public List<string> unlockedAnimalIds = new List<string>();
     public List<string> unlockedColorIds = new List<string>();
