@@ -36,8 +36,9 @@ public class GamePerformanceProfile
     // Trend: positive = improving, negative = declining
     public float improvementTrend;
 
-    // Cooldown: sessions since last difficulty change
-    public int sessionsSinceDifficultyChange;
+    // Streak-based difficulty progression
+    public int consecutiveStrongResults;
+    public int consecutiveWeakResults;
 
     // Extended stats (persisted, updated on each session)
     public float totalPlayTimeSeconds;
@@ -58,7 +59,6 @@ public class GamePerformanceProfile
         if (recentSessions.Count > MaxRecentSessions)
             recentSessions.RemoveAt(0);
         sessionsPlayed++;
-        sessionsSinceDifficultyChange++;
 
         // Update extended stats
         totalPlayTimeSeconds += session.durationSeconds;

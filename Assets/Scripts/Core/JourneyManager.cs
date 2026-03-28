@@ -111,7 +111,7 @@ public class JourneyManager : MonoBehaviour
 
         IsJourneyActive = true;
 
-        // First game: puzzle with favorite animal → chains automatically to coloring
+        // First game: puzzle with favorite animal
         if (sessionGamesPlayed == 0)
         {
             string favAnimal = profile.favoriteAnimalId;
@@ -313,7 +313,10 @@ public class JourneyManager : MonoBehaviour
         LoadGame(picked, null);
     }
 
-    /// <summary>Returns all game IDs visible to the profile (age-filtered from GameDatabase).</summary>
+    // Games excluded from journey rotation (available only in Game Collection / Free Play)
+    private static readonly HashSet<string> JourneyExcludedGames = new HashSet<string> { "coloring" };
+
+    /// <summary>Returns all game IDs visible to the profile, excluding journey-banned games.</summary>
     private List<string> GetAllVisibleGameIds(UserProfile profile)
     {
         var db = GetGameDb();
@@ -322,7 +325,10 @@ public class JourneyManager : MonoBehaviour
         var visible = GameVisibilityService.GetVisibleGames(profile, db.games);
         var ids = new List<string>();
         foreach (var g in visible)
-            ids.Add(g.id);
+        {
+            if (!JourneyExcludedGames.Contains(g.id))
+                ids.Add(g.id);
+        }
         return ids;
     }
 

@@ -1,94 +1,137 @@
 using UnityEngine;
 
 /// <summary>
-/// Adjusts per-game difficulty based on recent performance.
-/// Scale: 1–10. Uses stability safeguards to prevent oscillation.
+/// Per-game difficulty progression based on consecutive performance streaks.
+///
+/// Rules:
+///   - 2 consecutive STRONG results → difficulty +1
+///   - 2 consecutive WEAK results → difficulty -1
+///   - NEUTRAL result → resets both streaks, no change
+///
+/// Performance evaluation per round:
+///   STRONG: few/no mistakes AND fast completion
+///   WEAK: many mistakes OR very slow completion
+///   NEUTRAL: anything in between
+///
+/// Each game adapts independently. No cross-game influence.
+/// Estimated age is only used for initial difficulty seeding.
 /// </summary>
 public static class DifficultyManager
 {
     private const int MinDifficulty = 1;
     private const int MaxDifficulty = 10;
-
-    // Thresholds
-    private const float IncreaseThreshold = 80f;
-    private const float DecreaseThreshold = 40f;
-
-    // Stability: minimum sessions between difficulty changes
-    private const int CooldownSessions = 2;
-
-    // Minimum recent sessions required to confirm a trend
-    private const int TrendConfirmSessions = 3;
+    private const int StreakRequired = 2;
 
     /// <summary>
-    /// Evaluates the game profile and adjusts difficulty if warranted.
+    /// Performance classification for a single round.
+    /// </summary>
+    public enum PerformanceLevel { Strong, Neutral, Weak }
+
+    /// <summary>
+    /// Evaluates a completed session and adjusts difficulty if streak threshold is reached.
     /// Returns true if difficulty was changed.
     /// </summary>
     public static bool Evaluate(GamePerformanceProfile profile)
     {
         if (profile == null) return false;
 
-        // Skip auto-adjustment when parent has manually set difficulty
+        // Skip when parent has manually set difficulty
         if (profile.manualDifficultyOverride)
             return false;
 
-        // Respect cooldown
-        if (profile.sessionsSinceDifficultyChange < CooldownSessions)
-            return false;
+        // Need at least 1 session
+        int count = profile.recentSessions.Count;
+        if (count == 0) return false;
 
-        int recentCount = profile.recentSessions.Count;
-        if (recentCount < TrendConfirmSessions)
-            return false;
+        // Evaluate the most recent session
+        var latest = profile.recentSessions[count - 1];
+        PerformanceLevel perf = EvaluateSession(latest);
 
-        // Check last N sessions for consistent trend
-        int checkCount = Mathf.Min(TrendConfirmSessions, recentCount);
-        float avgScore = 0f;
-        float avgMistakeRate = 0f;
-        int abandonCount = 0;
-        int completedCount = 0;
-
-        for (int i = recentCount - checkCount; i < recentCount; i++)
+        // Update streaks
+        switch (perf)
         {
-            var s = profile.recentSessions[i];
-            float acc = s.totalActions > 0 ? (float)s.correctActions / s.totalActions * 100f : 0f;
-            avgScore += acc;
-            avgMistakeRate += s.mistakes;
-            if (s.abandoned) abandonCount++;
-            if (s.completed) completedCount++;
+            case PerformanceLevel.Strong:
+                profile.consecutiveStrongResults++;
+                profile.consecutiveWeakResults = 0;
+                break;
+            case PerformanceLevel.Weak:
+                profile.consecutiveWeakResults++;
+                profile.consecutiveStrongResults = 0;
+                break;
+            case PerformanceLevel.Neutral:
+                profile.consecutiveStrongResults = 0;
+                profile.consecutiveWeakResults = 0;
+                return false; // no change on neutral
         }
-        avgScore /= checkCount;
-        avgMistakeRate /= checkCount;
 
-        // Use the overall performance score too
-        float perfScore = profile.performanceScore;
-
-        // ── Increase ──
-        if (perfScore > IncreaseThreshold && avgScore > IncreaseThreshold
-            && avgMistakeRate < 1f && completedCount == checkCount)
+        // Check if streak threshold reached
+        if (profile.consecutiveStrongResults >= StreakRequired)
         {
             if (profile.currentDifficulty < MaxDifficulty)
             {
                 profile.currentDifficulty++;
                 profile.lastAutoDifficulty = profile.currentDifficulty;
-                profile.sessionsSinceDifficultyChange = 0;
+                profile.consecutiveStrongResults = 0;
+                profile.consecutiveWeakResults = 0;
+                if (profile.currentDifficulty > profile.highestDifficultyReached)
+                    profile.highestDifficultyReached = profile.currentDifficulty;
                 return true;
             }
+            profile.consecutiveStrongResults = 0; // cap reached, reset
         }
 
-        // ── Decrease ──
-        if (perfScore < DecreaseThreshold || abandonCount >= 2
-            || (avgScore < DecreaseThreshold && avgMistakeRate > 3f))
+        if (profile.consecutiveWeakResults >= StreakRequired)
         {
             if (profile.currentDifficulty > MinDifficulty)
             {
                 profile.currentDifficulty--;
                 profile.lastAutoDifficulty = profile.currentDifficulty;
-                profile.sessionsSinceDifficultyChange = 0;
+                profile.consecutiveStrongResults = 0;
+                profile.consecutiveWeakResults = 0;
                 return true;
             }
+            profile.consecutiveWeakResults = 0; // floor reached, reset
         }
 
-        // ── Stable zone (40–80): no change ──
         return false;
+    }
+
+    /// <summary>
+    /// Classifies a session as Strong, Neutral, or Weak based on mistakes and time.
+    /// </summary>
+    public static PerformanceLevel EvaluateSession(GameSessionData session)
+    {
+        if (session == null || session.abandoned)
+            return PerformanceLevel.Weak;
+
+        if (!session.completed)
+            return PerformanceLevel.Weak;
+
+        // ── Mistake-based evaluation ──
+        int mistakes = session.mistakes;
+        float duration = session.durationSeconds;
+        int totalActions = Mathf.Max(session.totalActions, 1);
+        float accuracy = (float)session.correctActions / totalActions;
+
+        // Strong: high accuracy (≥85%) and reasonable time
+        // Weak: low accuracy (<50%) or very slow (>3x expected) or many mistakes
+        // Neutral: everything in between
+
+        bool fewMistakes = mistakes <= 1 && accuracy >= 0.85f;
+        bool manyMistakes = mistakes >= 4 || accuracy < 0.50f;
+
+        // Time evaluation: use a generous baseline
+        // Most kids games should complete in 10-60 seconds per round
+        bool fast = duration < 30f;
+        bool verySlow = duration > 120f;
+
+        if (fewMistakes && !verySlow)
+            return PerformanceLevel.Strong;
+
+        if (manyMistakes || verySlow)
+            return PerformanceLevel.Weak;
+
+        return PerformanceLevel.Neutral;
     }
 
     /// <summary>
