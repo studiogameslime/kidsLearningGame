@@ -303,13 +303,20 @@ public class WorldInputHandler : MonoBehaviour
 
         float contentWidth = worldContent.rect.width;
         float viewportWidth = viewport != null ? viewport.rect.width : 1080f;
-        float minX = -(contentWidth - viewportWidth);
-        float maxX = 0f;
 
         if (contentWidth <= viewportWidth)
+        {
             newX = 0f;
+        }
         else
-            newX = Mathf.Clamp(newX, minX, maxX);
+        {
+            // Cylindrical wrap: when scrolled past edge, wrap around
+            float range = contentWidth - viewportWidth;
+            // Wrap newX into [-range, 0] range
+            newX = newX % range;
+            if (newX > 0) newX -= range;
+            if (newX < -range) newX += range;
+        }
 
         worldContent.anchoredPosition = new Vector2(newX, worldContent.anchoredPosition.y);
     }
