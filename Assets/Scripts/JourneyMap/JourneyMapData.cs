@@ -2,9 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Generates the 100-node journey map as a dense, organic isometric path.
-/// The path snakes diagonally creating a connected island world.
-/// Islands overlap and cluster — minimal water visible.
+/// Generates a 100-node journey map: dense but readable, clear path.
+/// Snake path with soft curves, organized in clusters of ~6 nodes.
 /// </summary>
 public static class JourneyMapData
 {
@@ -16,19 +15,16 @@ public static class JourneyMapData
         public Vector2 position;
         public NodeType type;
         public int platformIndex;     // 1-22
-        public int elementIndex;      // 0=none, 1-10
-        public int bridgeIndex;       // 1-10 element for connector
-        public float platformScale;   // size multiplier
-        public float rotation;        // slight tilt
+        public int decoIndex;         // 0=none, 1-10
+        public float platformScale;
+        public bool hasDecoration;
     }
 
     public const int TotalNodes = 100;
 
-    // Platform pools
     private static readonly int[] SmallPlatforms = { 1, 2, 3, 4, 20, 21, 22 };
     private static readonly int[] MediumPlatforms = { 6, 7, 8, 9, 16, 17, 18, 19 };
     private static readonly int[] LargePlatforms = { 10, 11, 12, 13, 14 };
-    private static readonly int[] BridgeElements = { 2, 3, 5, 6 };
     private static readonly int[] DecoElements = { 1, 4, 7, 8, 9, 10 };
 
     public static List<MapNode> Generate()
@@ -36,12 +32,11 @@ public static class JourneyMapData
         var nodes = new List<MapNode>();
         var rng = new System.Random(42);
 
-        // Dense isometric spacing — islands nearly touching
-        float stepX = 105f;   // horizontal gap (tight)
-        float stepY = 85f;    // vertical drop per step
-        float rowDrop = 140f; // extra drop when changing direction
+        // Balanced spacing — not sparse, not stacked
+        float stepX = 145f;
+        float rowDrop = 180f;
+        int nodesPerRow = 5;
 
-        int nodesPerRow = 6;
         int row = 0;
         int col = 0;
         bool goingRight = true;
@@ -50,63 +45,74 @@ public static class JourneyMapData
 
         for (int i = 0; i < TotalNodes; i++)
         {
-            // Base position — diagonal isometric feel
+            // Base position
             float baseX = col * stepX;
-            float baseY = row * rowDrop + col * stepY * 0.3f; // slight diagonal slope
+            float baseY = row * rowDrop;
 
-            // Organic offset (wave + random)
-            float waveX = Mathf.Sin(i * 0.4f) * 25f;
-            float waveY = Mathf.Cos(i * 0.3f) * 15f;
-            float randX = (float)(rng.NextDouble() * 20 - 10);
-            float randY = (float)(rng.NextDouble() * 16 - 8);
+            // Soft wave offset (organic, not chaotic)
+            float waveX = Mathf.Sin(i * 0.5f) * 18f;
+            float waveY = Mathf.Sin(i * 0.35f) * 12f;
 
-            float x = baseX + waveX + randX;
-            float y = baseY + waveY + randY;
+            // Small random jitter
+            float jitterX = (float)(rng.NextDouble() * 12 - 6);
+            float jitterY = (float)(rng.NextDouble() * 10 - 5);
 
-            // Center the path horizontally
-            float centerOffset = (nodesPerRow - 1) * stepX * 0.5f;
-            x -= centerOffset * (goingRight ? 0 : 0) ; // already centered by col range
+            float x = baseX + waveX + jitterX;
+            float y = baseY + waveY + jitterY;
+
+            // Add cluster gap every 6 nodes (slight extra Y spacing)
+            if (i > 0 && i % 6 == 0)
+                y += 25f;
 
             // Node type
             NodeType type = NodeType.Regular;
             if (i > 0 && i % 15 == 0) type = NodeType.BigReward;
             else if (i > 0 && i % 5 == 0) type = NodeType.Gift;
 
-            // Platform — landmark every 10-12, otherwise alternate small/medium
+            // Platform selection
             int platformIdx;
-            float pScale = 1.0f;
+            float pScale;
 
-            if (type == NodeType.BigReward || (i % 12 == 0 && i > 0))
+            if (type == NodeType.BigReward || (i > 0 && i % 12 == 0))
             {
                 platformIdx = LargePlatforms[rng.Next(LargePlatforms.Length)];
-                pScale = 1.3f;
+                pScale = 1.15f;
             }
             else if (type == NodeType.Gift)
             {
                 platformIdx = MediumPlatforms[rng.Next(MediumPlatforms.Length)];
-                pScale = 1.1f;
+                pScale = 1.0f;
             }
             else
             {
-                int[] pool = (i % 3 < 2) ? SmallPlatforms : MediumPlatforms;
+                int[] pool = (rng.Next(3) < 2) ? SmallPlatforms : MediumPlatforms;
                 platformIdx = pool[rng.Next(pool.Length)];
-                pScale = 0.9f + (float)rng.NextDouble() * 0.2f;
+                pScale = 0.85f + (float)rng.NextDouble() * 0.15f;
             }
 
             // Prevent >2 same in a row
-            if (platformIdx == lastPlatform) { sameCount++; if (sameCount >= 2) { while (platformIdx == lastPlatform) { int[] any = (rng.Next(2) == 0) ? SmallPlatforms : MediumPlatforms; platformIdx = any[rng.Next(any.Length)]; } sameCount = 0; } } else { sameCount = 0; }
+            if (platformIdx == lastPlatform)
+            {
+                sameCount++;
+                if (sameCount >= 2)
+                {
+                    int[] any = (rng.Next(2) == 0) ? SmallPlatforms : MediumPlatforms;
+                    while (platformIdx == lastPlatform)
+                        platformIdx = any[rng.Next(any.Length)];
+                    sameCount = 0;
+                }
+            }
+            else sameCount = 0;
             lastPlatform = platformIdx;
 
-            // Decoration every 2-3 nodes (asymmetric)
-            int elemIdx = 0;
-            if (i % 2 == 1 && type == NodeType.Regular && rng.Next(3) != 0)
-                elemIdx = DecoElements[rng.Next(DecoElements.Length)];
-
-            // Bridge type
-            int bridgeIdx = BridgeElements[rng.Next(BridgeElements.Length)];
-
-            // Slight random rotation for organic feel
-            float rot = (float)(rng.NextDouble() * 6 - 3);
+            // Decoration: sparse — every 3-4 nodes, never on gift/reward nodes
+            bool hasDeco = false;
+            int decoIdx = 0;
+            if (type == NodeType.Regular && i % 4 == 2 && rng.Next(3) != 0)
+            {
+                hasDeco = true;
+                decoIdx = DecoElements[rng.Next(DecoElements.Length)];
+            }
 
             nodes.Add(new MapNode
             {
@@ -114,10 +120,9 @@ public static class JourneyMapData
                 position = new Vector2(x, y),
                 type = type,
                 platformIndex = platformIdx,
-                elementIndex = elemIdx,
-                bridgeIndex = bridgeIdx,
+                decoIndex = decoIdx,
                 platformScale = pScale,
-                rotation = rot,
+                hasDecoration = hasDeco,
             });
 
             // Snake movement
