@@ -3,8 +3,13 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Renders the journey map: ONE clear path flowing left→right with curves.
-/// Horizontal scrolling. Path priority over decoration.
+/// Renders the journey map following strict build order:
+/// 1. Path positions (from JourneyMapData)
+/// 2. Bridges between consecutive nodes
+/// 3. Platform islands on each node
+/// 4. Decorations (sparse, last)
+///
+/// Bridges are SMALL and SUBTLE. Platforms are BIG and dominant.
 /// </summary>
 public class JourneyMapController : MonoBehaviour
 {
@@ -19,11 +24,14 @@ public class JourneyMapController : MonoBehaviour
     public Sprite starSprite;
     public Sprite playerSprite;
 
-    [Header("Bridge")]
-    public int bridgeSpriteIndex = 5; // consistent bridge style
+    // Use element 03 (wood logs) — clean, simple, doesn't dominate
+    private const int BridgeSpriteIdx = 2; // 0-indexed → element 03
 
-    private const float PlatW = 160f;
-    private const float PlatH = 130f;
+    // Platforms: BIG (dominant visual). Bridges: SMALL (subtle connector).
+    private const float PlatW = 195f;
+    private const float PlatH = 160f;
+    private const float BridgeMaxW = 70f;
+    private const float BridgeH = 20f;
 
     private List<JourneyMapData.MapNode> nodes;
     private int currentNode;
@@ -35,15 +43,15 @@ public class JourneyMapController : MonoBehaviour
         currentNode = Mathf.Clamp(currentNode, 0, JourneyMapData.TotalNodes - 1);
 
         nodes = JourneyMapData.Generate();
-        BuildMap();
+        Build();
         ScrollToPlayer();
     }
 
-    private void BuildMap()
+    private void Build()
     {
         if (mapContent == null || platformSprites == null) return;
 
-        // Bounds
+        // ── Bounds ──
         float minX = float.MaxValue, maxX = float.MinValue;
         float minY = float.MaxValue, maxY = float.MinValue;
         foreach (var n in nodes)
@@ -51,50 +59,77 @@ public class JourneyMapController : MonoBehaviour
             minX = Mathf.Min(minX, n.position.x); maxX = Mathf.Max(maxX, n.position.x);
             minY = Mathf.Min(minY, n.position.y); maxY = Mathf.Max(maxY, n.position.y);
         }
-
-        float padX = 200f, padY = 200f;
+        float padX = 250f, padY = 250f;
         float cW = (maxX - minX) + padX * 2;
         float cH = Mathf.Max((maxY - minY) + padY * 2, 1080f);
         mapContent.sizeDelta = new Vector2(cW, cH);
-
         float offX = -minX + padX;
         float offY = padY;
 
-        // ── Bridges ──
-        int bIdx = Mathf.Clamp(bridgeSpriteIndex - 1, 0,
-            elementSprites != null ? elementSprites.Length - 1 : 0);
+        // ════════════════════════════════════
+        //  BUILD ORDER 1: BRIDGES (behind)
+        // ════════════════════════════════════
+        int bIdx = (elementSprites != null && BridgeSpriteIdx < elementSprites.Length)
+            ? BridgeSpriteIdx : 0;
 
         for (int i = 0; i < nodes.Count - 1; i++)
         {
-            Vector2 a = ToUI(nodes[i].position, offX, offY);
-            Vector2 b = ToUI(nodes[i + 1].position, offX, offY);
-            DrawBridge(a, b, bIdx);
+            Vector2 a = UI(nodes[i].position, offX, offY);
+            Vector2 b = UI(nodes[i + 1].position, offX, offY);
+            PlaceBridge(a, b, bIdx);
         }
 
-        // ── Nodes (depth sorted) ──
+        // ════════════════════════════════════
+        //  BUILD ORDER 2: PLATFORMS (depth sorted)
+        // ════════════════════════════════════
         var order = new List<int>();
         for (int i = 0; i < nodes.Count; i++) order.Add(i);
         order.Sort((a, b) => nodes[a].position.y.CompareTo(nodes[b].position.y));
 
         foreach (int i in order)
-            DrawNode(nodes[i], ToUI(nodes[i].position, offX, offY), i);
+            PlaceNode(nodes[i], UI(nodes[i].position, offX, offY), i);
 
-        // ── Player ──
+        // ════════════════════════════════════
+        //  BUILD ORDER 3: PLAYER (topmost)
+        // ════════════════════════════════════
         if (playerSprite != null && currentNode < nodes.Count)
         {
             var cn = nodes[currentNode];
-            var p = Img("Player", mapContent, playerSprite, 50, 50);
+            var p = Img("Player", mapContent, playerSprite, 55, 55);
             p.GetComponent<RectTransform>().anchoredPosition =
-                ToUI(cn.position, offX, offY) + new Vector2(0, 48 * cn.platformScale);
+                UI(cn.position, offX, offY) + new Vector2(0, 52 * cn.platformScale);
         }
     }
 
-    private void DrawNode(JourneyMapData.MapNode node, Vector2 pos, int idx)
+    // ── Build Step 1: Bridge ──
+    private void PlaceBridge(Vector2 from, Vector2 to, int sprIdx)
+    {
+        if (elementSprites == null || sprIdx >= elementSprites.Length || elementSprites[sprIdx] == null) return;
+
+        Vector2 mid = (from + to) * 0.5f;
+        Vector2 diff = to - from;
+        float angle = Mathf.Atan2(diff.y, diff.x) * Mathf.Rad2Deg;
+        float dist = diff.magnitude;
+
+        // Bridge sized to fill the gap — but capped to stay subtle
+        float w = Mathf.Min(dist * 0.55f, BridgeMaxW);
+
+        var go = Img("Br", mapContent, elementSprites[sprIdx], w, BridgeH);
+        var rt = go.GetComponent<RectTransform>();
+        rt.anchoredPosition = mid;
+        rt.localRotation = Quaternion.Euler(0, 0, angle);
+        go.GetComponent<Image>().color = new Color(1, 1, 1, 0.55f);
+        go.transform.SetAsFirstSibling(); // behind everything
+    }
+
+    // ── Build Step 2: Node ──
+    private void PlaceNode(JourneyMapData.MapNode node, Vector2 pos, int idx)
     {
         float s = node.platformScale;
         bool done = idx < currentNode;
         bool cur = idx == currentNode;
 
+        // Platform (dominant visual)
         int pIdx = Mathf.Clamp(node.platformIndex - 1, 0, platformSprites.Length - 1);
         var go = Img($"N{idx}", mapContent, platformSprites[pIdx], PlatW * s, PlatH * s);
         var rt = go.GetComponent<RectTransform>();
@@ -106,49 +141,34 @@ public class JourneyMapController : MonoBehaviour
         // Gift or star
         if (node.type != JourneyMapData.NodeType.Regular && giftSprite != null)
         {
-            float gs = node.type == JourneyMapData.NodeType.BigReward ? 52f : 40f;
+            float gs = node.type == JourneyMapData.NodeType.BigReward ? 55f : 42f;
             var g = Img("G", go.transform, giftSprite, gs, gs);
             g.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 22 * s);
             if (done) g.GetComponent<Image>().color = new Color(0.6f, 0.6f, 0.6f, 0.6f);
         }
         else if (done && starSprite != null)
         {
-            var st = Img("S", go.transform, starSprite, 28, 28);
+            var st = Img("S", go.transform, starSprite, 30, 30);
             st.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 18 * s);
             st.GetComponent<Image>().color = new Color(1f, 0.9f, 0.3f, 0.85f);
         }
 
-        // Sparse decoration
+        // Build Step 4: Sparse decoration (last priority)
         if (node.hasDecoration && node.decoIndex > 0 && elementSprites != null)
         {
             int eIdx = Mathf.Clamp(node.decoIndex - 1, 0, elementSprites.Length - 1);
             if (elementSprites[eIdx] != null)
             {
-                float dx = ((idx % 3) - 1) * 35f;
+                float dx = ((idx % 3) - 1) * 38f;
                 var d = Img("D", go.transform, elementSprites[eIdx], 50, 50);
-                d.GetComponent<RectTransform>().anchoredPosition = new Vector2(dx, -12);
+                d.GetComponent<RectTransform>().anchoredPosition = new Vector2(dx, -14);
             }
         }
     }
 
-    private void DrawBridge(Vector2 from, Vector2 to, int sprIdx)
-    {
-        if (elementSprites == null || sprIdx >= elementSprites.Length || elementSprites[sprIdx] == null) return;
+    // ── Helpers ──
 
-        Vector2 mid = (from + to) * 0.5f;
-        Vector2 diff = to - from;
-        float angle = Mathf.Atan2(diff.y, diff.x) * Mathf.Rad2Deg;
-        float dist = diff.magnitude;
-
-        var go = Img("Br", mapContent, elementSprites[sprIdx], dist * 0.45f, 26f);
-        var rt = go.GetComponent<RectTransform>();
-        rt.anchoredPosition = mid;
-        rt.localRotation = Quaternion.Euler(0, 0, angle);
-        go.GetComponent<Image>().color = new Color(1, 1, 1, 0.6f);
-        go.transform.SetAsFirstSibling();
-    }
-
-    private Vector2 ToUI(Vector2 w, float ox, float oy) =>
+    private Vector2 UI(Vector2 w, float ox, float oy) =>
         new Vector2(w.x + ox, -(w.y + oy));
 
     private GameObject Img(string n, Transform p, Sprite s, float w, float h)
@@ -172,9 +192,8 @@ public class JourneyMapController : MonoBehaviour
         if (totalW <= viewW) return;
 
         float nodeX = nodes[currentNode].position.x;
-        float minX = nodes[0].position.x;
-        float maxX = float.MinValue;
-        foreach (var n in nodes) maxX = Mathf.Max(maxX, n.position.x);
+        float minX = float.MaxValue, maxX = float.MinValue;
+        foreach (var n in nodes) { minX = Mathf.Min(minX, n.position.x); maxX = Mathf.Max(maxX, n.position.x); }
         float range = maxX - minX;
         if (range <= 0) return;
 

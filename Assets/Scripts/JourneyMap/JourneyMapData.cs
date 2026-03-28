@@ -3,8 +3,8 @@ using UnityEngine;
 
 /// <summary>
 /// Generates 100 nodes along ONE continuous flowing path.
-/// Path flows LEFT → RIGHT in gentle curves, with soft downward drift.
-/// NOT a grid. NOT rows. A single organic river-like path.
+/// Build order: path positions → connections → platforms → decorations.
+/// Path flows LEFT→RIGHT in smooth curves with gentle turns.
 /// </summary>
 public static class JourneyMapData
 {
@@ -33,28 +33,31 @@ public static class JourneyMapData
         var nodes = new List<MapNode>();
         var rng = new System.Random(42);
 
-        // Path parameters
-        float stepSize = 135f;        // distance between nodes along the path
-        float pathWidth = 1400f;      // horizontal span before curving back
-        float curveAmplitude = 40f;   // vertical wave amplitude
-        float rowGap = 220f;          // vertical drop between left→right passes
+        // ── STEP 1: Generate path positions ──
+        // Walk one node at a time, flowing right then curving down
+        float x = 100f;
+        float y = 100f;
+        float dir = 1f;              // 1=right, -1=left
+        float stepDist = 115f;       // distance between nodes (tight)
+        float bandWidth = 1200f;     // how far right before turning
+        float turnDropTotal = 180f;  // vertical drop during turn
+        int turnSteps = 3;           // how many nodes to spend on the turn curve
+        int straightCount = 0;
+        bool inTurn = false;
+        int turnProgress = 0;
 
-        // Walk along a flowing path
-        float x = 80f;               // start near left edge
-        float y = 0f;
-        float direction = 1f;        // 1 = going right, -1 = going left
         int lastPlatform = -1;
         int sameCount = 0;
 
         for (int i = 0; i < TotalNodes; i++)
         {
-            // Organic Y wobble (sine wave + random jitter)
-            float wobbleY = Mathf.Sin(i * 0.6f) * curveAmplitude;
-            float jitterY = (float)(rng.NextDouble() * 20 - 10);
-            float jitterX = (float)(rng.NextDouble() * 15 - 7);
+            // Gentle wave wobble
+            float wobble = Mathf.Sin(i * 0.55f) * 22f;
+            float jX = (float)(rng.NextDouble() * 10 - 5);
+            float jY = (float)(rng.NextDouble() * 8 - 4);
 
-            float nodeX = x + jitterX;
-            float nodeY = y + wobbleY + jitterY;
+            float nodeX = x + jX;
+            float nodeY = y + wobble + jY;
 
             // Node type
             NodeType type = NodeType.Regular;
@@ -67,33 +70,27 @@ public static class JourneyMapData
             if (type == NodeType.BigReward || (i > 0 && i % 12 == 0))
             {
                 platIdx = LargePlatforms[rng.Next(LargePlatforms.Length)];
-                pScale = 1.15f;
+                pScale = 1.2f;
             }
             else if (type == NodeType.Gift)
             {
                 platIdx = MediumPlatforms[rng.Next(MediumPlatforms.Length)];
-                pScale = 1.0f;
+                pScale = 1.05f;
             }
             else
             {
                 int[] pool = rng.Next(3) < 2 ? SmallPlatforms : MediumPlatforms;
                 platIdx = pool[rng.Next(pool.Length)];
-                pScale = 0.85f + (float)rng.NextDouble() * 0.15f;
+                pScale = 0.9f + (float)rng.NextDouble() * 0.1f;
             }
 
-            // No >2 repeats
-            if (platIdx == lastPlatform) { sameCount++; if (sameCount >= 2) { int[] any = SmallPlatforms; while (platIdx == lastPlatform) platIdx = any[rng.Next(any.Length)]; sameCount = 0; } }
+            if (platIdx == lastPlatform) { sameCount++; if (sameCount >= 2) { int[] a = SmallPlatforms; while (platIdx == lastPlatform) platIdx = a[rng.Next(a.Length)]; sameCount = 0; } }
             else sameCount = 0;
             lastPlatform = platIdx;
 
             // Sparse decoration
-            bool hasDeco = false;
-            int decoIdx = 0;
-            if (type == NodeType.Regular && i % 4 == 2 && rng.Next(3) != 0)
-            {
-                hasDeco = true;
-                decoIdx = DecoElements[rng.Next(DecoElements.Length)];
-            }
+            bool hasDeco = type == NodeType.Regular && i % 4 == 2 && rng.Next(3) != 0;
+            int decoIdx = hasDeco ? DecoElements[rng.Next(DecoElements.Length)] : 0;
 
             nodes.Add(new MapNode
             {
@@ -106,22 +103,36 @@ public static class JourneyMapData
                 hasDecoration = hasDeco,
             });
 
-            // Advance along the path
-            x += stepSize * direction;
-
-            // Check if we need to curve to the next "row"
-            if (direction > 0 && x > pathWidth)
+            // ── Advance along path ──
+            if (inTurn)
             {
-                // Reached right edge → curve down, reverse direction
-                direction = -1f;
-                y += rowGap;
-                // Don't snap — keep x where it is, just reverse
+                // During a turn: move diagonally down while reversing
+                float turnFrac = (float)(turnProgress + 1) / turnSteps;
+                x += stepDist * 0.3f * (-dir); // slight horizontal shift in new direction
+                y += turnDropTotal / turnSteps;
+                turnProgress++;
+                if (turnProgress >= turnSteps)
+                {
+                    inTurn = false;
+                    turnProgress = 0;
+                    dir = -dir;
+                    straightCount = 0;
+                }
             }
-            else if (direction < 0 && x < 80f)
+            else
             {
-                // Reached left edge → curve down, reverse direction
-                direction = 1f;
-                y += rowGap;
+                // Straight section: move in current direction
+                x += stepDist * dir;
+                straightCount++;
+
+                // Check if we need to start a turn
+                bool hitRight = dir > 0 && x > bandWidth;
+                bool hitLeft = dir < 0 && x < 100f;
+                if (hitRight || hitLeft)
+                {
+                    inTurn = true;
+                    turnProgress = 0;
+                }
             }
         }
 
