@@ -111,7 +111,7 @@ public class JourneyMapSetup : EditorWindow
         scrollGO.AddComponent<Image>().color = Color.clear;
         scrollGO.GetComponent<Image>().raycastTarget = true;
         var scrollView = scrollGO.AddComponent<ScrollRect>();
-        scrollView.horizontal = false;
+        scrollView.horizontal = true;
         scrollView.vertical = true;
         scrollView.movementType = ScrollRect.MovementType.Elastic;
         scrollView.elasticity = 0.1f;
@@ -122,10 +122,10 @@ public class JourneyMapSetup : EditorWindow
         var contentGO = new GameObject("MapContent");
         contentGO.transform.SetParent(scrollGO.transform, false);
         var contentRT = contentGO.AddComponent<RectTransform>();
-        contentRT.anchorMin = new Vector2(0.5f, 1); // top-center
-        contentRT.anchorMax = new Vector2(0.5f, 1);
-        contentRT.pivot = new Vector2(0.5f, 1);
-        contentRT.sizeDelta = new Vector2(1920, 5000); // will be resized by controller
+        contentRT.anchorMin = new Vector2(0, 1); // top-left
+        contentRT.anchorMax = new Vector2(0, 1);
+        contentRT.pivot = new Vector2(0, 1);
+        contentRT.sizeDelta = new Vector2(5000, 3000); // resized by controller
 
         scrollView.content = contentRT;
 

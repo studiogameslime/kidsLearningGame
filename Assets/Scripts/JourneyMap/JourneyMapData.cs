@@ -2,8 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Generates a 100-node journey map: dense but readable, clear path.
-/// Snake path with soft curves, organized in clusters of ~6 nodes.
+/// Generates 100 nodes along ONE continuous flowing path.
+/// Path flows LEFT → RIGHT in gentle curves, with soft downward drift.
+/// NOT a grid. NOT rows. A single organic river-like path.
 /// </summary>
 public static class JourneyMapData
 {
@@ -14,8 +15,8 @@ public static class JourneyMapData
         public int index;
         public Vector2 position;
         public NodeType type;
-        public int platformIndex;     // 1-22
-        public int decoIndex;         // 0=none, 1-10
+        public int platformIndex;
+        public int decoIndex;
         public float platformScale;
         public bool hasDecoration;
     }
@@ -32,80 +33,60 @@ public static class JourneyMapData
         var nodes = new List<MapNode>();
         var rng = new System.Random(42);
 
-        // Balanced spacing — not sparse, not stacked
-        float stepX = 145f;
-        float rowDrop = 180f;
-        int nodesPerRow = 5;
+        // Path parameters
+        float stepSize = 135f;        // distance between nodes along the path
+        float pathWidth = 1400f;      // horizontal span before curving back
+        float curveAmplitude = 40f;   // vertical wave amplitude
+        float rowGap = 220f;          // vertical drop between left→right passes
 
-        int row = 0;
-        int col = 0;
-        bool goingRight = true;
+        // Walk along a flowing path
+        float x = 80f;               // start near left edge
+        float y = 0f;
+        float direction = 1f;        // 1 = going right, -1 = going left
         int lastPlatform = -1;
         int sameCount = 0;
 
         for (int i = 0; i < TotalNodes; i++)
         {
-            // Base position
-            float baseX = col * stepX;
-            float baseY = row * rowDrop;
+            // Organic Y wobble (sine wave + random jitter)
+            float wobbleY = Mathf.Sin(i * 0.6f) * curveAmplitude;
+            float jitterY = (float)(rng.NextDouble() * 20 - 10);
+            float jitterX = (float)(rng.NextDouble() * 15 - 7);
 
-            // Soft wave offset (organic, not chaotic)
-            float waveX = Mathf.Sin(i * 0.5f) * 18f;
-            float waveY = Mathf.Sin(i * 0.35f) * 12f;
-
-            // Small random jitter
-            float jitterX = (float)(rng.NextDouble() * 12 - 6);
-            float jitterY = (float)(rng.NextDouble() * 10 - 5);
-
-            float x = baseX + waveX + jitterX;
-            float y = baseY + waveY + jitterY;
-
-            // Add cluster gap every 6 nodes (slight extra Y spacing)
-            if (i > 0 && i % 6 == 0)
-                y += 25f;
+            float nodeX = x + jitterX;
+            float nodeY = y + wobbleY + jitterY;
 
             // Node type
             NodeType type = NodeType.Regular;
             if (i > 0 && i % 15 == 0) type = NodeType.BigReward;
             else if (i > 0 && i % 5 == 0) type = NodeType.Gift;
 
-            // Platform selection
-            int platformIdx;
+            // Platform
+            int platIdx;
             float pScale;
-
             if (type == NodeType.BigReward || (i > 0 && i % 12 == 0))
             {
-                platformIdx = LargePlatforms[rng.Next(LargePlatforms.Length)];
+                platIdx = LargePlatforms[rng.Next(LargePlatforms.Length)];
                 pScale = 1.15f;
             }
             else if (type == NodeType.Gift)
             {
-                platformIdx = MediumPlatforms[rng.Next(MediumPlatforms.Length)];
+                platIdx = MediumPlatforms[rng.Next(MediumPlatforms.Length)];
                 pScale = 1.0f;
             }
             else
             {
-                int[] pool = (rng.Next(3) < 2) ? SmallPlatforms : MediumPlatforms;
-                platformIdx = pool[rng.Next(pool.Length)];
+                int[] pool = rng.Next(3) < 2 ? SmallPlatforms : MediumPlatforms;
+                platIdx = pool[rng.Next(pool.Length)];
                 pScale = 0.85f + (float)rng.NextDouble() * 0.15f;
             }
 
-            // Prevent >2 same in a row
-            if (platformIdx == lastPlatform)
-            {
-                sameCount++;
-                if (sameCount >= 2)
-                {
-                    int[] any = (rng.Next(2) == 0) ? SmallPlatforms : MediumPlatforms;
-                    while (platformIdx == lastPlatform)
-                        platformIdx = any[rng.Next(any.Length)];
-                    sameCount = 0;
-                }
-            }
+            // No >2 repeats
+            if (platIdx == lastPlatform) { sameCount++; if (sameCount >= 2) { int[] any = SmallPlatforms; while (platIdx == lastPlatform) platIdx = any[rng.Next(any.Length)]; sameCount = 0; } }
             else sameCount = 0;
-            lastPlatform = platformIdx;
+            lastPlatform = platIdx;
 
-            // Decoration: sparse — every 3-4 nodes, never on gift/reward nodes
+            // Sparse decoration
             bool hasDeco = false;
             int decoIdx = 0;
             if (type == NodeType.Regular && i % 4 == 2 && rng.Next(3) != 0)
@@ -117,24 +98,30 @@ public static class JourneyMapData
             nodes.Add(new MapNode
             {
                 index = i,
-                position = new Vector2(x, y),
+                position = new Vector2(nodeX, nodeY),
                 type = type,
-                platformIndex = platformIdx,
+                platformIndex = platIdx,
                 decoIndex = decoIdx,
                 platformScale = pScale,
                 hasDecoration = hasDeco,
             });
 
-            // Snake movement
-            if (goingRight)
+            // Advance along the path
+            x += stepSize * direction;
+
+            // Check if we need to curve to the next "row"
+            if (direction > 0 && x > pathWidth)
             {
-                col++;
-                if (col >= nodesPerRow) { col = nodesPerRow - 1; row++; goingRight = false; }
+                // Reached right edge → curve down, reverse direction
+                direction = -1f;
+                y += rowGap;
+                // Don't snap — keep x where it is, just reverse
             }
-            else
+            else if (direction < 0 && x < 80f)
             {
-                col--;
-                if (col < 0) { col = 0; row++; goingRight = true; }
+                // Reached left edge → curve down, reverse direction
+                direction = 1f;
+                y += rowGap;
             }
         }
 
