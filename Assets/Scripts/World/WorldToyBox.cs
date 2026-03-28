@@ -196,6 +196,9 @@ public class WorldToyBox : MonoBehaviour
 
         isAnimatingTap = false;
 
-        NavigationManager.GoToJourneyMap();
+        if (JourneyManager.Instance != null)
+            JourneyManager.Instance.StartJourney();
+        else
+            Debug.LogWarning("WorldToyBox: JourneyManager not found.");
     }
 }

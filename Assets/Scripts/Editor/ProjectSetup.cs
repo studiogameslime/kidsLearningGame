@@ -208,8 +208,6 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Fishing Game…", 0.9902f);
             FishingGameSetup.RunSetupSilent();
 
-            EditorUtility.DisplayProgressBar("Setting up project…", "Building Journey Map…", 0.9904f);
-            JourneyMapSetup.RunSetupSilent();
 
 
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Image Gallery…", 0.9905f);
@@ -1451,7 +1449,6 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/NumberTrain.unity",
             $"{ScenesPath}/LetterTrain.unity",
             $"{ScenesPath}/FishingGame.unity",
-            $"{ScenesPath}/JourneyMap.unity",
             $"{ScenesPath}/ImageGallery.unity",
             $"{ScenesPath}/ConnectMatch.unity",
             $"{ScenesPath}/LaundrySorting.unity",
