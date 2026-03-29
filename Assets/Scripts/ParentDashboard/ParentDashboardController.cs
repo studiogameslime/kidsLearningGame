@@ -713,89 +713,314 @@ public class ParentDashboardController : MonoBehaviour
     {
         if (_data == null) return;
         var parent = tabContents[0];
-
-        // ── Overall Score Card ──
-        var scoreCard = MakeCard(parent);
-        var scoreRow = MakeHRow(scoreCard, 150, TextAnchor.MiddleCenter);
-
-        // Large circular score
-        var scoreBadgeGO = new GameObject("ScoreBadge");
-        scoreBadgeGO.transform.SetParent(scoreRow.transform, false);
-        var scoreBadgeLE = scoreBadgeGO.AddComponent<LayoutElement>();
-        scoreBadgeLE.preferredWidth = 100;
-        scoreBadgeLE.preferredHeight = 100;
-        var scoreBadgeImg = scoreBadgeGO.AddComponent<Image>();
-        if (circleSprite != null) scoreBadgeImg.sprite = circleSprite;
-        scoreBadgeImg.color = ParentDashboardViewModel.ScoreColor(_data.overallScore);
-        var scoreValTMP = AddChildTMP(scoreBadgeGO.transform, $"{_data.overallScore:F0}",
-            36, Color.white, TextAlignmentOptions.Center);
-        scoreValTMP.fontStyle = FontStyles.Bold;
-
-        // Score info column (no progress bar)
-        var scoreInfoGO = MakeVCol(scoreRow.transform);
-        var scoreInfoLE = scoreInfoGO.AddComponent<LayoutElement>();
-        scoreInfoLE.flexibleWidth = 1;
-        scoreInfoLE.preferredHeight = 140;
-
-        var scoreTitleTMP = AddChildTMP(scoreInfoGO.transform, H("\u05E6\u05D9\u05D5\u05DF \u05DB\u05DC\u05DC\u05D9"), // ציון כללי
-            36, TextDark, TextAlignmentOptions.Right);
-        scoreTitleTMP.fontStyle = FontStyles.Bold;
-        scoreTitleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 59;
-
-        var statusTMP = AddChildTMP(scoreInfoGO.transform, H(_data.overallScoreLabel),
-            28, TextMedium, TextAlignmentOptions.Right);
-        statusTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 49;
-
-        var trendTMP2 = AddChildTMP(scoreInfoGO.transform,
-            H($"{ParentDashboardViewModel.TrendArrow(_data.overallTrend)} {_data.overallTrendLabel}"),
-            24, TextMedium, TextAlignmentOptions.Right);
-        trendTMP2.gameObject.AddComponent<LayoutElement>().preferredHeight = 43;
-
-        FitCard(scoreCard);
-
-        // ── Quick Stats Card ──
-        var statsCard = MakeCard(parent);
-        MakeSectionTitle(statsCard, "\u05E1\u05D8\u05D8\u05D9\u05E1\u05D8\u05D9\u05E7\u05D5\u05EA"); // סטטיסטיקות
-
-        var statsGrid = new GameObject("StatsGrid");
-        statsGrid.transform.SetParent(statsCard, false);
-        var gridLayout = statsGrid.AddComponent<GridLayoutGroup>();
-        gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        gridLayout.constraintCount = 4;
-        gridLayout.cellSize = new Vector2(400, 120);
-        gridLayout.spacing = new Vector2(16, 12);
-        gridLayout.childAlignment = TextAnchor.UpperCenter;
-        gridLayout.startCorner = GridLayoutGroup.Corner.UpperRight;
-        var gridLE = statsGrid.AddComponent<LayoutElement>();
-        gridLE.preferredHeight = 260;
-
-        MakeStatCell(statsGrid.transform, $"{_data.totalSessions}", "\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD"); // משחקים
-        MakeStatCell(statsGrid.transform, H(_data.totalPlayTimeDisplay), "\u05D6\u05DE\u05DF \u05DE\u05E9\u05D7\u05E7 \u05DB\u05D5\u05DC\u05DC"); // זמן משחק כולל
-        MakeStatCell(statsGrid.transform, $"{_data.gamesPlayedCount}", "\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05E9\u05D5\u05E0\u05D9\u05DD"); // משחקים שונים
-        MakeStatCell(statsGrid.transform, H(_data.favoriteGameName), "\u05DE\u05E9\u05D7\u05E7 \u05D0\u05D4\u05D5\u05D1"); // משחק אהוב
-        MakeStatCell(statsGrid.transform, $"{_data.discoveredAnimals}", "\u05D7\u05D9\u05D5\u05EA \u05E9\u05D2\u05D9\u05DC\u05D4"); // חיות שגילה
-        MakeStatCell(statsGrid.transform, $"{_data.discoveredColors}", "\u05E6\u05D1\u05E2\u05D9\u05DD \u05E9\u05D2\u05D9\u05DC\u05D4"); // צבעים שגילה
-        MakeStatCell(statsGrid.transform, $"{_data.collectedStickers}", "\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA \u05E9\u05E0\u05D0\u05E1\u05E4\u05D5"); // מדבקות שנאספו
-        MakeStatCell(statsGrid.transform, H(_data.thisWeekPlayTimeDisplay), "\u05D6\u05DE\u05DF \u05DE\u05E9\u05D7\u05E7 \u05D4\u05E9\u05D1\u05D5\u05E2"); // זמן משחק השבוע
-        // מעורבות removed
-
-        FitCard(statsCard);
-
-        // ── Play Distribution Pie Chart ──
-        BuildPlayDistributionChart(parent);
-
-        // ── Play Time Distribution Pie Chart ──
-        BuildPlayTimeDistributionChart(parent);
-
-        // ═══════════════════════════════════════════════════════════
-        //  STORY-DRIVEN SECTIONS (below statistics)
-        // ═══════════════════════════════════════════════════════════
-
         var profile = ProfileManager.ActiveProfile;
-        var story = DashboardStoryBuilder.Build(_data, profile != null ? profile.analytics : null);
+        int totalStars = profile?.journey?.totalStars ?? 0;
 
-        // ── Story sections ──
-        BuildStorySections(parent, story);
+        // ═══════════════════════════════════════════════════════════
+        //  ROW 1: Three summary cards (Games Played | Total Time | Stars)
+        // ═══════════════════════════════════════════════════════════
+        var topRow = MakeHRow(parent, 140, TextAnchor.MiddleCenter);
+        topRow.GetComponent<HorizontalLayoutGroup>().spacing = 16;
+        topRow.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
+
+        MakeSummaryCard(topRow.transform,
+            "\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05E9\u05E9\u05D5\u05D7\u05E7\u05D5", // משחקים ששוחקו
+            $"{_data.totalSessions}", null);
+        MakeSummaryCard(topRow.transform,
+            "\u05D6\u05DE\u05DF \u05DE\u05E9\u05D7\u05E7 \u05DB\u05D5\u05DC\u05DC", // זמן משחק כולל
+            H(_data.totalPlayTimeDisplay), null);
+        MakeSummaryCard(topRow.transform,
+            "\u05DB\u05D5\u05DB\u05D1\u05D9\u05DD", // כוכבים
+            $"{totalStars} \u2B50", null);
+
+        // ═══════════════════════════════════════════════════════════
+        //  ROW 2: Chart (left) + Performance by game (right)
+        // ═══════════════════════════════════════════════════════════
+        var midRow = MakeHRow(parent, 350, TextAnchor.UpperCenter);
+        midRow.GetComponent<HorizontalLayoutGroup>().spacing = 16;
+        midRow.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
+        midRow.GetComponent<HorizontalLayoutGroup>().childForceExpandHeight = true;
+
+        // ── Left: Weekly chart ──
+        BuildWeeklyChart(midRow.transform);
+
+        // ── Right: Performance by game (progress bars) ──
+        BuildGamePerformanceList(midRow.transform);
+
+        // ═══════════════════════════════════════════════════════════
+        //  ROW 3: Insight cards (left) + Recent activity (right)
+        // ═══════════════════════════════════════════════════════════
+        var botRow = MakeHRow(parent, 140, TextAnchor.UpperCenter);
+        botRow.GetComponent<HorizontalLayoutGroup>().spacing = 16;
+        botRow.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
+        botRow.GetComponent<HorizontalLayoutGroup>().childForceExpandHeight = true;
+
+        // ── Left: Two insight cards side by side ──
+        var insightCol = MakeVCol(botRow.transform);
+        insightCol.GetComponent<VerticalLayoutGroup>().spacing = 12;
+        insightCol.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+        var insightRow = MakeHRow(insightCol.transform, 0, TextAnchor.MiddleCenter);
+        insightRow.GetComponent<HorizontalLayoutGroup>().spacing = 12;
+        insightRow.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
+        insightRow.AddComponent<LayoutElement>().flexibleHeight = 1;
+
+        // Strength card
+        var story = DashboardStoryBuilder.Build(_data, profile?.analytics);
+        string strengthText = !string.IsNullOrEmpty(story.strengthSummary) ? story.strengthSummary : "\u05DE\u05E6\u05D8\u05D9\u05D9\u05DF \u05D1\u05DE\u05E9\u05D7\u05E7\u05D9 \u05D6\u05D9\u05DB\u05E8\u05D5\u05DF";
+        MakeInsightCard(insightRow.transform, AccentGreen, "\u05E0\u05E7\u05D5\u05D3\u05EA \u05D7\u05D5\u05D6\u05E7", strengthText, "\uD83D\uDCAA"); // נקודת חוזק 💪
+
+        // Practice card
+        string practiceText = !string.IsNullOrEmpty(story.practiceSuggestion) ? story.practiceSuggestion : "\u05DB\u05D3\u05D0\u05D9 \u05DC\u05E9\u05D7\u05E7 \u05E2\u05D5\u05D3";
+        MakeInsightCard(insightRow.transform, AccentOrange, "\u05DE\u05D5\u05DE\u05DC\u05E5 \u05DC\u05EA\u05E8\u05D2\u05DC", practiceText, "\uD83C\uDFAF"); // מומלץ לתרגל 🎯
+
+        // ── Right: Recent activity ──
+        BuildRecentActivity(botRow.transform);
+    }
+
+    // ── Summary card (for top row) ──
+    private void MakeSummaryCard(Transform parent, string title, string value, string subtitle)
+    {
+        var card = MakeInlineCard(parent, CardColor);
+        card.GetComponent<VerticalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
+        card.GetComponent<VerticalLayoutGroup>().spacing = 4;
+        card.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+        var titleTMP = AddChildTMP(card.transform, H(title), 18, TextMedium, TextAlignmentOptions.Center);
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+
+        var valTMP = AddChildTMP(card.transform, value, 42, TextDark, TextAlignmentOptions.Center);
+        valTMP.fontStyle = FontStyles.Bold;
+        valTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 55;
+
+        if (!string.IsNullOrEmpty(subtitle))
+        {
+            var subTMP = AddChildTMP(card.transform, H(subtitle), 14, TextLight, TextAlignmentOptions.Center);
+            subTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 22;
+        }
+    }
+
+    // ── Weekly chart (bar chart placeholder — uses pie chart data) ──
+    private void BuildWeeklyChart(Transform parent)
+    {
+        var card = MakeInlineCard(parent, CardColor);
+        card.AddComponent<LayoutElement>().flexibleWidth = 1;
+        card.GetComponent<VerticalLayoutGroup>().spacing = 8;
+
+        var titleTMP = AddChildTMP(card.transform,
+            H("\u05D4\u05EA\u05E7\u05D3\u05DE\u05D5\u05EA \u05E9\u05D1\u05D5\u05E2\u05D9\u05EA"), // התקדמות שבועית
+            22, TextDark, TextAlignmentOptions.Center);
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
+
+        // Bar chart area
+        var chartArea = new GameObject("ChartArea");
+        chartArea.transform.SetParent(card.transform, false);
+        chartArea.AddComponent<RectTransform>();
+        chartArea.AddComponent<LayoutElement>().flexibleHeight = 1;
+
+        var chartHL = chartArea.AddComponent<HorizontalLayoutGroup>();
+        chartHL.spacing = 12;
+        chartHL.childAlignment = TextAnchor.BottomCenter;
+        chartHL.childForceExpandWidth = true;
+        chartHL.childForceExpandHeight = false;
+        chartHL.padding = new RectOffset(20, 20, 10, 30);
+
+        // Generate bars from recent session data
+        string[] days = { "\u05D0", "\u05D1", "\u05D2", "\u05D3", "\u05D4", "\u05D5", "\u05E9" };
+        int[] dayCounts = new int[7];
+
+        // Count sessions per day of week from recent games
+        if (_data.games != null)
+        {
+            foreach (var g in _data.games)
+            {
+                if (g.recentSessions != null)
+                {
+                    foreach (var s in g.recentSessions)
+                    {
+                        if (s.timestamp > 0)
+                        {
+                            var dt = System.DateTimeOffset.FromUnixTimeSeconds(s.timestamp).LocalDateTime;
+                            int dow = (int)dt.DayOfWeek; // 0=Sun
+                            dayCounts[dow]++;
+                        }
+                    }
+                }
+            }
+        }
+
+        int maxCount = 1;
+        foreach (int c in dayCounts) if (c > maxCount) maxCount = c;
+
+        for (int i = 0; i < 7; i++)
+        {
+            var colGO = MakeVCol(chartArea.transform);
+            colGO.GetComponent<VerticalLayoutGroup>().childAlignment = TextAnchor.LowerCenter;
+            colGO.GetComponent<VerticalLayoutGroup>().spacing = 4;
+            colGO.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+            // Bar
+            float barHeight = Mathf.Max((float)dayCounts[i] / maxCount * 200f, 8f);
+            var barGO = new GameObject("Bar");
+            barGO.transform.SetParent(colGO.transform, false);
+            barGO.AddComponent<RectTransform>();
+            barGO.AddComponent<LayoutElement>().preferredHeight = barHeight;
+            var barImg = barGO.AddComponent<Image>();
+            if (roundedRect != null) { barImg.sprite = roundedRect; barImg.type = Image.Type.Sliced; }
+            barImg.color = Primary;
+            barImg.raycastTarget = false;
+
+            // Day label
+            var dayTMP = AddChildTMP(colGO.transform, days[i], 16, TextMedium, TextAlignmentOptions.Center);
+            dayTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 22;
+        }
+    }
+
+    // ── Game performance list (progress bars) ──
+    private void BuildGamePerformanceList(Transform parent)
+    {
+        var card = MakeInlineCard(parent, CardColor);
+        card.AddComponent<LayoutElement>().flexibleWidth = 1;
+        card.GetComponent<VerticalLayoutGroup>().spacing = 6;
+
+        var titleTMP = AddChildTMP(card.transform,
+            H("\u05D1\u05D9\u05E6\u05D5\u05E2\u05D9\u05DD \u05DC\u05E4\u05D9 \u05DE\u05E9\u05D7\u05E7"), // ביצועים לפי משחק
+            22, TextDark, TextAlignmentOptions.Right);
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
+
+        if (_data.games == null) return;
+
+        var sorted = new List<GameDashboardData>(_data.games);
+        sorted.Sort((a, b) => b.score.CompareTo(a.score));
+
+        int count = Mathf.Min(sorted.Count, 5);
+        for (int i = 0; i < count; i++)
+        {
+            var g = sorted[i];
+            if (g.sessionsPlayed <= 0) continue;
+
+            float pct = g.accuracy * 100f;
+            Color barColor = pct >= 70 ? AccentGreen : pct >= 40 ? AccentOrange : AccentRed;
+
+            var row = MakeVCol(card.transform);
+            row.GetComponent<VerticalLayoutGroup>().spacing = 2;
+            row.AddComponent<LayoutElement>().preferredHeight = 50;
+
+            // Name + percentage
+            var nameRow = MakeHRow(row.transform, 22, TextAnchor.MiddleRight);
+            nameRow.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
+
+            var nameTMP = AddChildTMP(nameRow.transform, H(g.gameName), 18, TextDark, TextAlignmentOptions.Right);
+            nameTMP.fontStyle = FontStyles.Bold;
+            nameTMP.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+            var pctTMP = AddChildTMP(nameRow.transform, $"{pct:F0}%", 18, barColor, TextAlignmentOptions.Left);
+            pctTMP.fontStyle = FontStyles.Bold;
+            pctTMP.gameObject.AddComponent<LayoutElement>().preferredWidth = 60;
+
+            // Progress bar
+            var barBgGO = new GameObject("BarBg");
+            barBgGO.transform.SetParent(row.transform, false);
+            barBgGO.AddComponent<RectTransform>();
+            barBgGO.AddComponent<LayoutElement>().preferredHeight = 12;
+            var barBgImg = barBgGO.AddComponent<Image>();
+            if (roundedRect != null) { barBgImg.sprite = roundedRect; barBgImg.type = Image.Type.Sliced; }
+            barBgImg.color = BarBg;
+            barBgImg.raycastTarget = false;
+
+            var barFillGO = new GameObject("Fill");
+            barFillGO.transform.SetParent(barBgGO.transform, false);
+            var fillRT = barFillGO.AddComponent<RectTransform>();
+            fillRT.anchorMin = new Vector2(1f - Mathf.Clamp01(pct / 100f), 0); // RTL fill
+            fillRT.anchorMax = Vector2.one;
+            fillRT.offsetMin = Vector2.zero; fillRT.offsetMax = Vector2.zero;
+            var fillImg = barFillGO.AddComponent<Image>();
+            if (roundedRect != null) { fillImg.sprite = roundedRect; fillImg.type = Image.Type.Sliced; }
+            fillImg.color = barColor;
+            fillImg.raycastTarget = false;
+
+            // Subtitle
+            AddChildTMP(row.transform,
+                H($"\u05E9\u05D5\u05D7\u05E7 {g.sessionsPlayed} \u05E4\u05E2\u05DE\u05D9\u05DD"), // שוחק X פעמים
+                14, TextLight, TextAlignmentOptions.Right)
+                .gameObject.AddComponent<LayoutElement>().preferredHeight = 18;
+        }
+    }
+
+    // ── Insight card (strength / practice) ──
+    private void MakeInsightCard(Transform parent, Color accentColor, string title, string body, string emoji)
+    {
+        var card = MakeInlineCard(parent, Color.white);
+        card.AddComponent<LayoutElement>().flexibleWidth = 1;
+        card.GetComponent<VerticalLayoutGroup>().spacing = 6;
+
+        // Accent top border
+        var borderGO = new GameObject("Border");
+        borderGO.transform.SetParent(card.transform, false);
+        borderGO.transform.SetAsFirstSibling();
+        borderGO.AddComponent<RectTransform>();
+        borderGO.AddComponent<LayoutElement>().preferredHeight = 4;
+        borderGO.AddComponent<Image>().color = accentColor;
+        borderGO.GetComponent<Image>().raycastTarget = false;
+
+        var headerRow = MakeHRow(card.transform, 30, TextAnchor.MiddleRight);
+        var emojiTMP = AddChildTMP(headerRow.transform, emoji, 24, TextDark, TextAlignmentOptions.Center);
+        emojiTMP.gameObject.AddComponent<LayoutElement>().preferredWidth = 36;
+        var titleTMP = AddChildTMP(headerRow.transform, H(title), 20, TextDark, TextAlignmentOptions.Right);
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+        var bodyTMP = AddChildTMP(card.transform, H(body), 16, TextMedium, TextAlignmentOptions.Right);
+        bodyTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
+    }
+
+    // ── Recent activity ──
+    private void BuildRecentActivity(Transform parent)
+    {
+        var card = MakeInlineCard(parent, CardColor);
+        card.AddComponent<LayoutElement>().flexibleWidth = 1;
+        card.GetComponent<VerticalLayoutGroup>().spacing = 6;
+
+        var titleTMP = AddChildTMP(card.transform,
+            H("\u05E4\u05E2\u05D9\u05DC\u05D5\u05EA \u05D0\u05D7\u05E8\u05D5\u05E0\u05D4"), // פעילות אחרונה
+            22, TextDark, TextAlignmentOptions.Right);
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
+
+        if (_data.games == null) return;
+
+        // Collect recent sessions across all games
+        var recent = new List<(string gameName, GameSessionData session)>();
+        foreach (var g in _data.games)
+        {
+            if (g.recentSessions != null)
+            {
+                foreach (var s in g.recentSessions)
+                    recent.Add((g.gameName, s));
+            }
+        }
+        recent.Sort((a, b) => b.session.timestamp.CompareTo(a.session.timestamp));
+
+        int count = Mathf.Min(recent.Count, 4);
+        for (int i = 0; i < count; i++)
+        {
+            var (gameName, session) = recent[i];
+            string dateStr = ParentDashboardViewModel.FormatDate(session.timestamp);
+            string status = session.completed ? "\u2713" : "\u2717";
+            string line = $"{H(gameName)} \u2014 {status}";
+
+            var row = MakeHRow(card.transform, 26, TextAnchor.MiddleRight);
+            row.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
+
+            var lineTMP = AddChildTMP(row.transform, line, 16, TextDark, TextAlignmentOptions.Right);
+            lineTMP.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+            var dateTMP = AddChildTMP(row.transform, H(dateStr), 14, TextLight, TextAlignmentOptions.Left);
+            dateTMP.gameObject.AddComponent<LayoutElement>().preferredWidth = 100;
+        }
     }
 
     // ── Pie chart colors (warm, kid-friendly palette) ──
