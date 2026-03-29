@@ -527,9 +527,9 @@ public class WorldSceneSetup : EditorWindow
         // Tree Left — background framing element, upper grass ridge
         CreatePropAnchored(grassAreaGO.transform, "TreeLeft", treeSprite, WorldProp.PropType.Tree,
             0.15f, 380, new Vector2(160, 260));
-        // Tree Right — background framing element, upper grass ridge
+        // Tree Right — center screen, right side
         CreatePropAnchored(grassAreaGO.transform, "TreeRight", treeLongSprite, WorldProp.PropType.Tree,
-            0.85f, 360, new Vector2(140, 300));
+            0.55f, 360, new Vector2(140, 300));
 
         // ── Toy Box — centered focal point, upper grass ridge ──
         var toyBoxSprite = LoadSprite("Assets/Art/Toy Box.png");
@@ -572,8 +572,9 @@ public class WorldSceneSetup : EditorWindow
         var stickerTreeGO = new GameObject("StickerTree");
         stickerTreeGO.transform.SetParent(grassAreaGO.transform, false);
         var stickerTreeRT = stickerTreeGO.AddComponent<RectTransform>();
-        stickerTreeRT.anchorMin = new Vector2(0.35f, 0);
-        stickerTreeRT.anchorMax = new Vector2(0.35f, 0);
+        // Left screen (0-0.333 of total width). Place at ~0.18 = center-right of left screen
+        stickerTreeRT.anchorMin = new Vector2(0.18f, 0);
+        stickerTreeRT.anchorMax = new Vector2(0.18f, 0);
         stickerTreeRT.pivot = new Vector2(0.5f, 0);
         stickerTreeRT.sizeDelta = new Vector2(60, 80); // starts as seedling
         stickerTreeRT.anchoredPosition = new Vector2(0, 180);

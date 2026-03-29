@@ -179,7 +179,9 @@ public class WorldEnvironment : MonoBehaviour
         // Squash-bounce the sun
         yield return SquashBounce(sunRT, 0.15f);
 
-        // Animate sun down + colors transition simultaneously
+        // Make moon visible (alpha 1) before it rises
+        SetCelestialAlpha(moonRT, 1f);
+
         float dur = 1.2f;
         float elapsed = 0f;
         Vector2 sunStart = sunRT.anchoredPosition;
@@ -192,21 +194,23 @@ public class WorldEnvironment : MonoBehaviour
             elapsed += Time.deltaTime;
             float t = Mathf.SmoothStep(0f, 1f, elapsed / dur);
 
-            // Sun goes down
-            if (sunRT != null) sunRT.anchoredPosition = Vector2.Lerp(sunStart, sunEnd, t);
+            // Sun goes down + fades out gradually
+            if (sunRT != null)
+            {
+                sunRT.anchoredPosition = Vector2.Lerp(sunStart, sunEnd, t);
+                SetCelestialAlpha(sunRT, 1f - t);
+            }
 
-            // Moon comes up (delayed start at 30%)
+            // Moon comes up (delayed start at 30%) + fades in
             float moonT = Mathf.Clamp01((t - 0.3f) / 0.7f);
             moonT = Mathf.SmoothStep(0f, 1f, moonT);
-            if (moonRT != null) moonRT.anchoredPosition = Vector2.Lerp(moonStart, moonEnd, moonT);
+            if (moonRT != null)
+                moonRT.anchoredPosition = Vector2.Lerp(moonStart, moonEnd, moonT);
 
-            // Colors transition
             ApplyColors(t);
 
-            // Sun glow fade out
             if (sunGlow != null) sunGlow.color = new Color(DaySunGlow.r, DaySunGlow.g, DaySunGlow.b, DaySunGlow.a * (1f - t));
 
-            // Stars fade in (synced with transition)
             for (int i = 0; i < starImages.Count; i++)
             {
                 if (starImages[i] == null) continue;
@@ -217,11 +221,9 @@ public class WorldEnvironment : MonoBehaviour
             yield return null;
         }
 
-        // Hide sun completely, show moon
         SetCelestialAlpha(sunRT, 0f);
         SetCelestialAlpha(moonRT, 1f);
 
-        // Settle moon with bounce
         yield return SquashBounce(moonRT, 0.12f);
 
         IsNight = true;
@@ -235,6 +237,9 @@ public class WorldEnvironment : MonoBehaviour
         // Squash-bounce the moon
         yield return SquashBounce(moonRT, 0.15f);
 
+        // Make sun visible (alpha 1) before it rises
+        SetCelestialAlpha(sunRT, 1f);
+
         float dur = 1.2f;
         float elapsed = 0f;
         Vector2 moonStart = moonRT.anchoredPosition;
@@ -242,7 +247,6 @@ public class WorldEnvironment : MonoBehaviour
         Vector2 sunStart = new Vector2(sunRT.anchoredPosition.x, offScreenY);
         Vector2 sunEnd = new Vector2(sunRT.anchoredPosition.x, sunRestY);
 
-        // Capture current star alphas for smooth fade out
         float[] starStartAlpha = new float[starImages.Count];
         for (int i = 0; i < starStartAlpha.Length; i++)
         {
@@ -255,21 +259,23 @@ public class WorldEnvironment : MonoBehaviour
             elapsed += Time.deltaTime;
             float t = Mathf.SmoothStep(0f, 1f, elapsed / dur);
 
-            // Moon goes down
-            if (moonRT != null) moonRT.anchoredPosition = Vector2.Lerp(moonStart, moonEnd, t);
+            // Moon goes down + fades out
+            if (moonRT != null)
+            {
+                moonRT.anchoredPosition = Vector2.Lerp(moonStart, moonEnd, t);
+                SetCelestialAlpha(moonRT, 1f - t);
+            }
 
             // Sun comes up (delayed start at 30%)
             float sunT = Mathf.Clamp01((t - 0.3f) / 0.7f);
             sunT = Mathf.SmoothStep(0f, 1f, sunT);
-            if (sunRT != null) sunRT.anchoredPosition = Vector2.Lerp(sunStart, sunEnd, sunT);
+            if (sunRT != null)
+                sunRT.anchoredPosition = Vector2.Lerp(sunStart, sunEnd, sunT);
 
-            // Colors transition (reverse: night → day, so use 1-t)
             ApplyColors(1f - t);
 
-            // Sun glow fade in
             if (sunGlow != null) sunGlow.color = new Color(DaySunGlow.r, DaySunGlow.g, DaySunGlow.b, DaySunGlow.a * sunT);
 
-            // Stars fade out (synced with transition)
             for (int i = 0; i < starImages.Count; i++)
             {
                 if (starImages[i] == null) continue;
@@ -280,7 +286,6 @@ public class WorldEnvironment : MonoBehaviour
             yield return null;
         }
 
-        // Hide moon completely, show sun
         SetCelestialAlpha(moonRT, 0f);
         SetCelestialAlpha(sunRT, 1f);
 
