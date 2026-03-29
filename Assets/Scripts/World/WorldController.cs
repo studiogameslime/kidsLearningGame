@@ -813,7 +813,7 @@ public class WorldController : MonoBehaviour
         shadowRT.anchorMax = new Vector2(0.5f, 0.5f);
         shadowRT.pivot = new Vector2(0.5f, 0.5f);
         shadowRT.sizeDelta = new Vector2(shelfSize * 0.75f, shelfSize * 0.18f);
-        shadowRT.anchoredPosition = new Vector2(250f, 134f);
+        shadowRT.anchoredPosition = new Vector2(800f, 134f);
         var shadowImg = shadowGO.AddComponent<Image>();
         if (circleSprite != null) shadowImg.sprite = circleSprite;
         shadowImg.color = new Color(0f, 0f, 0f, 0.12f);
@@ -827,7 +827,7 @@ public class WorldController : MonoBehaviour
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0f);
         rt.sizeDelta = new Vector2(shelfSize, shelfSize);
-        rt.anchoredPosition = new Vector2(250f, 139f);
+        rt.anchoredPosition = new Vector2(800f, 139f);
 
         var img = go.AddComponent<Image>();
         img.sprite = gameShelfSprite;

@@ -441,11 +441,10 @@ public class WorldSceneSetup : EditorWindow
             new Vector2(0, 0.25f), new Vector2(1, 0.5f), DayHills);
 
         // ── Sun (top-right corner, equal padding from top and right) ──
-        // Sun is parented to viewport (not worldContent) so it stays fixed during pan
-        // SetSiblingIndex(1) puts it behind WorldContent (index 0 = WorldContent)
+        // Sun inside WorldContent, between sky and hills (behind ground, in front of sky)
         var sunGO = new GameObject("Sun");
-        sunGO.transform.SetParent(viewport.transform, false);
-        sunGO.transform.SetSiblingIndex(0); // behind WorldContent
+        sunGO.transform.SetParent(worldContent.transform, false);
+        sunGO.transform.SetSiblingIndex(2); // after SkyBackground(0) and Stars(1), before Hills
         var sunRT = sunGO.AddComponent<RectTransform>();
         sunRT.anchorMin = new Vector2(1, 1);
         sunRT.anchorMax = new Vector2(1, 1);
@@ -474,9 +473,9 @@ public class WorldSceneSetup : EditorWindow
 
         // ── Moon (same corner as sun, starts hidden below) ──
         var moonGO = new GameObject("Moon");
-        // Moon also fixed to viewport (stays in place during pan)
-        moonGO.transform.SetParent(viewport.transform, false);
-        moonGO.transform.SetSiblingIndex(1); // behind WorldContent, after sun
+        // Moon inside WorldContent, same layer as sun (behind ground)
+        moonGO.transform.SetParent(worldContent.transform, false);
+        moonGO.transform.SetSiblingIndex(3); // after sun
         var moonRT = moonGO.AddComponent<RectTransform>();
         moonRT.anchorMin = new Vector2(1, 1);
         moonRT.anchorMax = new Vector2(1, 1);
