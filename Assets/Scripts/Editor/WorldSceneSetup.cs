@@ -447,11 +447,12 @@ public class WorldSceneSetup : EditorWindow
         sunGO.transform.SetParent(worldContent.transform, false);
         sunGO.transform.SetSiblingIndex(2); // after SkyBackground(0) + Stars(1)
         var sunRT = sunGO.AddComponent<RectTransform>();
-        sunRT.anchorMin = new Vector2(1, 1);
-        sunRT.anchorMax = new Vector2(1, 1);
-        sunRT.pivot = new Vector2(1, 1);
+        // Anchor top-left (0,1) so counter-offset math works with scrolling
+        sunRT.anchorMin = new Vector2(0, 1);
+        sunRT.anchorMax = new Vector2(0, 1);
+        sunRT.pivot = new Vector2(0.5f, 1);
         sunRT.sizeDelta = new Vector2(160, 160);
-        sunRT.anchoredPosition = new Vector2(-30, -30);
+        sunRT.anchoredPosition = new Vector2(1750, -30); // right side of first visible screen
         var sunImg = sunGO.AddComponent<Image>();
         sunImg.sprite = sunSprite;
         sunImg.preserveAspect = true;
@@ -478,11 +479,11 @@ public class WorldSceneSetup : EditorWindow
         moonGO.transform.SetParent(worldContent.transform, false);
         moonGO.transform.SetSiblingIndex(3);
         var moonRT = moonGO.AddComponent<RectTransform>();
-        moonRT.anchorMin = new Vector2(1, 1);
-        moonRT.anchorMax = new Vector2(1, 1);
-        moonRT.pivot = new Vector2(1, 1);
+        moonRT.anchorMin = new Vector2(0, 1);
+        moonRT.anchorMax = new Vector2(0, 1);
+        moonRT.pivot = new Vector2(0.5f, 1);
         moonRT.sizeDelta = new Vector2(130, 130);
-        moonRT.anchoredPosition = new Vector2(-45, -45);
+        moonRT.anchoredPosition = new Vector2(1750, -45);
         var moonImg = moonGO.AddComponent<Image>();
         moonImg.sprite = moonSprite;
         moonImg.preserveAspect = true;

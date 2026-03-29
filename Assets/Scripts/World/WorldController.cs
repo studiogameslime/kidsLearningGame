@@ -888,15 +888,17 @@ public class WorldController : MonoBehaviour
     }
 
     // ── Keep sun/moon visually fixed while worldContent scrolls ──
+    // Sun/moon are in worldContent (correct z-order) with anchor (0,1).
+    // To keep them visually fixed: X = desiredScreenX - worldContent.x
     private void LateUpdate()
     {
         if (worldContent == null) return;
-        float scrollX = -worldContent.anchoredPosition.x; // how far content has scrolled
+        float contentX = worldContent.anchoredPosition.x; // negative when scrolled right
 
         if (sunRT != null)
-            sunRT.anchoredPosition = new Vector2(sunBaseX + scrollX, sunRT.anchoredPosition.y);
+            sunRT.anchoredPosition = new Vector2(sunBaseX - contentX, sunRT.anchoredPosition.y);
         if (moonRT != null)
-            moonRT.anchoredPosition = new Vector2(moonBaseX + scrollX, moonRT.anchoredPosition.y);
+            moonRT.anchoredPosition = new Vector2(moonBaseX - contentX, moonRT.anchoredPosition.y);
     }
 
     // ── Screen Navigation (arrows) ──
