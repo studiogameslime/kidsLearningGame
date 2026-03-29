@@ -671,11 +671,6 @@ public class NumberTrainController : BaseMiniGame
     {
         if (_trainGroupRT == null) yield break;
 
-        // Flip locomotive to face right (exit direction)
-        var loco = _trainGroupRT.Find("Locomotive");
-        if (loco != null)
-            loco.localScale = new Vector3(1, 1, 1); // face right
-
         float screenW = trainArea.rect.width;
         Vector2 start = _trainGroupRT.anchoredPosition;
         Vector2 target = new Vector2(screenW * 1.5f, 0);
@@ -694,15 +689,16 @@ public class NumberTrainController : BaseMiniGame
     {
         if (wagonIndex >= _wagonObjects.Count) yield break;
         var rt = _wagonObjects[wagonIndex].GetComponent<RectTransform>();
+        Vector3 origScale = rt.localScale; // preserve flip direction
         float dur = 0.25f;
         for (float t = 0; t < dur; t += Time.deltaTime)
         {
             float p = t / dur;
             float scale = 1f + 0.15f * Mathf.Sin(p * Mathf.PI);
-            rt.localScale = Vector3.one * scale;
+            rt.localScale = new Vector3(origScale.x * scale, origScale.y * scale, origScale.z);
             yield return null;
         }
-        rt.localScale = Vector3.one;
+        rt.localScale = origScale;
     }
 
     private IEnumerator ShakeWagon(int wagonIndex)
