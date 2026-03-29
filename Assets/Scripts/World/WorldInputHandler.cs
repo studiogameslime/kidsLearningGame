@@ -315,14 +315,12 @@ public class WorldInputHandler : MonoBehaviour
 
         if (contentWidth <= viewportWidth) return;
 
-        // Apply frame delta to current position
         float curX = worldContent.anchoredPosition.x + frameDelta.x;
 
-        // Cylindrical wrap: seamless infinite scroll
-        float range = contentWidth - viewportWidth;
-        // Keep curX in [-range, 0] range
-        if (curX > 0) curX -= range;
-        if (curX < -range) curX += range;
+        // Clamp to valid range — no jump, no wrap
+        float minX = -(contentWidth - viewportWidth);
+        float maxX = 0f;
+        curX = Mathf.Clamp(curX, minX, maxX);
 
         worldContent.anchoredPosition = new Vector2(curX, worldContent.anchoredPosition.y);
     }

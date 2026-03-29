@@ -442,8 +442,10 @@ public class WorldSceneSetup : EditorWindow
 
         // ── Sun (top-right corner, equal padding from top and right) ──
         // Sun is parented to viewport (not worldContent) so it stays fixed during pan
+        // SetSiblingIndex(1) puts it behind WorldContent (index 0 = WorldContent)
         var sunGO = new GameObject("Sun");
         sunGO.transform.SetParent(viewport.transform, false);
+        sunGO.transform.SetSiblingIndex(0); // behind WorldContent
         var sunRT = sunGO.AddComponent<RectTransform>();
         sunRT.anchorMin = new Vector2(1, 1);
         sunRT.anchorMax = new Vector2(1, 1);
@@ -474,6 +476,7 @@ public class WorldSceneSetup : EditorWindow
         var moonGO = new GameObject("Moon");
         // Moon also fixed to viewport (stays in place during pan)
         moonGO.transform.SetParent(viewport.transform, false);
+        moonGO.transform.SetSiblingIndex(1); // behind WorldContent, after sun
         var moonRT = moonGO.AddComponent<RectTransform>();
         moonRT.anchorMin = new Vector2(1, 1);
         moonRT.anchorMax = new Vector2(1, 1);
