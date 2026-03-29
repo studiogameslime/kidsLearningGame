@@ -414,6 +414,24 @@ public static class CertificateGenerator
     #endif
 
     // ════════════════════════════════════════════════════════════════
+    //  PUBLIC SHARE WRAPPERS (used by drawing share, certificate share)
+    // ════════════════════════════════════════════════════════════════
+
+    public static void ShareImageWithTextAndroid(string imagePath, string text)
+    {
+        #if UNITY_ANDROID && !UNITY_EDITOR
+        ShareImageAndroid(imagePath, text);
+        #endif
+    }
+
+    public static void ShareImageWithTextIOS(string imagePath, string text)
+    {
+        #if UNITY_IOS && !UNITY_EDITOR
+        ShareImageIOS(imagePath, text);
+        #endif
+    }
+
+    // ════════════════════════════════════════════════════════════════
     //  HELPERS
     // ════════════════════════════════════════════════════════════════
 

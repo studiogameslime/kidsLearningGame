@@ -1819,6 +1819,120 @@ public class ParentDashboardController : MonoBehaviour
         explainTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 18;
     }
 
+    private void MakeDrawingsGallery(Transform card)
+    {
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null || profile.savedDrawings == null || profile.savedDrawings.Count == 0)
+        {
+            AddChildTMP(card, H("\u05D0\u05D9\u05DF \u05E6\u05D9\u05D5\u05E8\u05D9\u05DD \u05E2\u05D3\u05D9\u05D9\u05DF"), // אין ציורים עדיין
+                14, TextLight, TextAlignmentOptions.Center)
+                .gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+            return;
+        }
+
+        var titleTMP = AddChildTMP(card, H("\u05E6\u05D9\u05D5\u05E8\u05D9\u05DD"), // ציורים
+            16, TextDark, TextAlignmentOptions.Right);
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
+
+        // Grid of recent drawings (last 6)
+        var gridGO = new GameObject("DrawingsGrid");
+        gridGO.transform.SetParent(card, false);
+        gridGO.AddComponent<RectTransform>();
+        var gridLE = gridGO.AddComponent<LayoutElement>();
+        gridLE.preferredHeight = 140;
+        gridLE.flexibleWidth = 1;
+        var grid = gridGO.AddComponent<GridLayoutGroup>();
+        grid.cellSize = new Vector2(120, 120);
+        grid.spacing = new Vector2(8, 8);
+        grid.childAlignment = TextAnchor.MiddleCenter;
+        grid.constraint = GridLayoutGroup.Constraint.Flexible;
+
+        string appLink = "https://play.google.com/store/apps/details?id=com.elroey.kidslearning";
+        string childName = profile.displayName ?? "";
+
+        int count = Mathf.Min(profile.savedDrawings.Count, 6);
+        for (int i = profile.savedDrawings.Count - 1; i >= profile.savedDrawings.Count - count; i--)
+        {
+            var drawing = profile.savedDrawings[i];
+            string fullPath = System.IO.Path.Combine(Application.persistentDataPath, drawing.imagePath);
+
+            if (!System.IO.File.Exists(fullPath)) continue;
+
+            var cellGO = new GameObject($"Drawing_{i}");
+            cellGO.transform.SetParent(gridGO.transform, false);
+
+            // Drawing thumbnail
+            var imgGO = new GameObject("Img");
+            imgGO.transform.SetParent(cellGO.transform, false);
+            var imgRT = imgGO.AddComponent<RectTransform>();
+            imgRT.anchorMin = Vector2.zero; imgRT.anchorMax = Vector2.one;
+            imgRT.offsetMin = Vector2.zero; imgRT.offsetMax = Vector2.zero;
+            var img = imgGO.AddComponent<Image>();
+            img.raycastTarget = true;
+
+            // Load drawing texture
+            byte[] bytes = System.IO.File.ReadAllBytes(fullPath);
+            var tex = new Texture2D(2, 2);
+            tex.LoadImage(bytes);
+            img.sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height),
+                new Vector2(0.5f, 0.5f), 100f);
+            img.preserveAspect = true;
+
+            // Game icon watermark (bottom-right corner)
+            var gameItem = FindGameItemFromDb("coloring");
+            if (gameItem != null && gameItem.thumbnail != null)
+            {
+                var iconGO = new GameObject("Icon");
+                iconGO.transform.SetParent(cellGO.transform, false);
+                var iconRT = iconGO.AddComponent<RectTransform>();
+                iconRT.anchorMin = new Vector2(1, 0); iconRT.anchorMax = new Vector2(1, 0);
+                iconRT.pivot = new Vector2(1, 0);
+                iconRT.sizeDelta = new Vector2(28, 28);
+                iconRT.anchoredPosition = new Vector2(-4, 4);
+                var iconImg = iconGO.AddComponent<Image>();
+                iconImg.sprite = gameItem.thumbnail;
+                iconImg.preserveAspect = true;
+                iconImg.raycastTarget = false;
+            }
+
+            // Share button overlay
+            var shareBtnGO = new GameObject("ShareBtn");
+            shareBtnGO.transform.SetParent(cellGO.transform, false);
+            var shareRT = shareBtnGO.AddComponent<RectTransform>();
+            shareRT.anchorMin = new Vector2(0, 0); shareRT.anchorMax = new Vector2(0, 0);
+            shareRT.pivot = new Vector2(0, 0);
+            shareRT.sizeDelta = new Vector2(30, 30);
+            shareRT.anchoredPosition = new Vector2(4, 4);
+            var shareBg = shareBtnGO.AddComponent<Image>();
+            shareBg.color = new Color(0.2f, 0.7f, 0.3f, 0.85f);
+            shareBg.raycastTarget = true;
+            var shareTMP = AddChildTMP(shareBtnGO.transform, "\u21AA", 18, Color.white, TextAlignmentOptions.Center); // ↪
+            var shareBtn = shareBtnGO.AddComponent<Button>();
+            shareBtn.targetGraphic = shareBg;
+
+            string capturedPath = fullPath;
+            string capturedName = childName;
+            shareBtn.onClick.AddListener(() => ShareDrawing(capturedPath, capturedName, appLink));
+        }
+    }
+
+    private void ShareDrawing(string imagePath, string childName, string appLink)
+    {
+        string text = $"\u05EA\u05E8\u05D0\u05D5 \u05D0\u05D9\u05D6\u05D4 \u05E6\u05D9\u05D5\u05E8 \u05D9\u05E4\u05D4 {childName} \u05E2\u05E9\u05D4 \u05D1\u05DC\u05D5\u05DE\u05D3\u05D9\u05DD \u05E2\u05DD \u05D0\u05DC\u05D9\u05DF \uD83C\uDFA8\n{appLink}";
+        // תראו איזה ציור יפה X עשה בלומדים עם אלין 🎨
+
+        #if UNITY_ANDROID && !UNITY_EDITOR
+        CertificateGenerator.ShareImageWithTextAndroid(imagePath, text);
+        #elif UNITY_IOS && !UNITY_EDITOR
+        CertificateGenerator.ShareImageWithTextIOS(imagePath, text);
+        #else
+        GUIUtility.systemCopyBuffer = imagePath;
+        Debug.Log($"[ShareDrawing] Editor — path: {imagePath}\nText: {text}");
+        Application.OpenURL("file://" + imagePath);
+        #endif
+    }
+
     private void CloseGameDetails()
     {
         if (_gameDetailsOverlay != null)
@@ -2151,6 +2265,8 @@ public class ParentDashboardController : MonoBehaviour
         {
             MakeDivider(card);
             MakeColoringModeControl(card);
+            MakeDivider(card);
+            MakeDrawingsGallery(card);
         }
 
         // ═══════════════════════════════════════════════════════════
