@@ -75,7 +75,7 @@ public class WorldEnvironment : MonoBehaviour
         if (moonRT != null)
         {
             moonRT.anchoredPosition = new Vector2(moonRT.anchoredPosition.x, offScreenY);
-            SetCelestialAlpha(moonRT, 0f);
+            SetCelestialVisible(moonRT, false);
         }
 
         // Create stars (invisible during day)
@@ -180,7 +180,7 @@ public class WorldEnvironment : MonoBehaviour
         yield return SquashBounce(sunRT, 0.15f);
 
         // Make moon visible (alpha 1) before it rises
-        SetCelestialAlpha(moonRT, 1f);
+        SetCelestialVisible(moonRT, true);
 
         float dur = 1.2f;
         float elapsed = 0f;
@@ -198,7 +198,7 @@ public class WorldEnvironment : MonoBehaviour
             if (sunRT != null)
             {
                 sunRT.anchoredPosition = Vector2.Lerp(sunStart, sunEnd, t);
-                SetCelestialAlpha(sunRT, 1f - t);
+                // Sun fades via position (going offscreen) — no alpha change needed
             }
 
             // Moon comes up (delayed start at 30%) + fades in
@@ -221,8 +221,8 @@ public class WorldEnvironment : MonoBehaviour
             yield return null;
         }
 
-        SetCelestialAlpha(sunRT, 0f);
-        SetCelestialAlpha(moonRT, 1f);
+        SetCelestialVisible(sunRT, false);
+        SetCelestialVisible(moonRT, true);
 
         yield return SquashBounce(moonRT, 0.12f);
 
@@ -238,7 +238,7 @@ public class WorldEnvironment : MonoBehaviour
         yield return SquashBounce(moonRT, 0.15f);
 
         // Make sun visible (alpha 1) before it rises
-        SetCelestialAlpha(sunRT, 1f);
+        SetCelestialVisible(sunRT, true);
 
         float dur = 1.2f;
         float elapsed = 0f;
@@ -263,7 +263,7 @@ public class WorldEnvironment : MonoBehaviour
             if (moonRT != null)
             {
                 moonRT.anchoredPosition = Vector2.Lerp(moonStart, moonEnd, t);
-                SetCelestialAlpha(moonRT, 1f - t);
+                // Moon fades via position (going offscreen) — no alpha change needed
             }
 
             // Sun comes up (delayed start at 30%)
@@ -287,7 +287,7 @@ public class WorldEnvironment : MonoBehaviour
         }
 
         SetCelestialAlpha(moonRT, 0f);
-        SetCelestialAlpha(sunRT, 1f);
+        SetCelestialVisible(sunRT, true);
 
         // Settle sun with bounce
         yield return SquashBounce(sunRT, 0.12f);
@@ -330,16 +330,10 @@ public class WorldEnvironment : MonoBehaviour
         rt.localScale = Vector3.one;
     }
 
-    /// <summary>Sets alpha on all Image components of a celestial body (sun/moon + glow children).</summary>
-    private void SetCelestialAlpha(RectTransform rt, float alpha)
+    /// <summary>Shows or hides a celestial body by toggling the GameObject active state.</summary>
+    private void SetCelestialVisible(RectTransform rt, bool visible)
     {
-        if (rt == null) return;
-        var imgs = rt.GetComponentsInChildren<Image>(true);
-        foreach (var img in imgs)
-        {
-            var c = img.color;
-            img.color = new Color(c.r, c.g, c.b, alpha);
-        }
+        if (rt != null) rt.gameObject.SetActive(visible);
     }
 
     public Color GetCurrentCloudTint()

@@ -895,9 +895,9 @@ public class WorldController : MonoBehaviour
         if (worldContent == null) return;
         float contentX = worldContent.anchoredPosition.x; // negative when scrolled right
 
-        if (sunRT != null)
+        if (sunRT != null && sunRT.gameObject.activeInHierarchy)
             sunRT.anchoredPosition = new Vector2(sunBaseX - contentX, sunRT.anchoredPosition.y);
-        if (moonRT != null)
+        if (moonRT != null && moonRT.gameObject.activeInHierarchy)
             moonRT.anchoredPosition = new Vector2(moonBaseX - contentX, moonRT.anchoredPosition.y);
     }
 
