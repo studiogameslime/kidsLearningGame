@@ -160,17 +160,11 @@ public class WorldController : MonoBehaviour
 
         yield return new WaitForSeconds(0.3f);
 
-        // ── Step 3: Highlight Game Shelf — "Here all the games" ──
-        var shelf = FindObjectOfType<WorldGameShelf>();
-        yield return StartCoroutine(LiftObjectStep(
-            shelf != null ? shelf.gameObject : null,
-            SoundLibrary.WorldAllGames()));
-
-        // ── Step 4: Highlight ToyBox — "Here is your journey" ──
+        // ── Step 3: Highlight ToyBox — "Here all the games" ──
         var toyBox = FindObjectOfType<WorldToyBox>();
         yield return StartCoroutine(LiftObjectStep(
             toyBox != null ? toyBox.gameObject : null,
-            SoundLibrary.WorldJourney()));
+            SoundLibrary.WorldAllGames()));
 
         // ── Step 5: Highlight Easel — "Here your paintings" ──
         var easel = FindObjectOfType<WorldEasel>();
