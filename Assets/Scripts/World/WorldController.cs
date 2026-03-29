@@ -211,9 +211,14 @@ public class WorldController : MonoBehaviour
         // Overlay stays active — DarkOverlayStep won't hide it at the end
         yield return StartCoroutine(DarkOverlayStepKeepActive(SoundLibrary.WorldAnotherGift()));
 
-        // Second gift is already spawned by RewardRevealController — spotlight it
-        yield return new WaitForSeconds(0.5f);
-        var gift2 = FindObjectOfType<GiftBoxController>();
+        // Second gift — wait for it to appear then spotlight immediately
+        GiftBoxController gift2 = null;
+        float waitTime = 0f;
+        while (gift2 == null && waitTime < 5f)
+        {
+            gift2 = FindObjectOfType<GiftBoxController>();
+            if (gift2 == null) { yield return null; waitTime += Time.deltaTime; }
+        }
         if (gift2 != null)
         {
             ShowSpotlightOnTarget(gift2.GetComponent<RectTransform>(), 180f);

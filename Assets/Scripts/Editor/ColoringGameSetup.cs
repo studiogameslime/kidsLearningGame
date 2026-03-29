@@ -81,23 +81,13 @@ public class ColoringGameSetup : EditorWindow
         var coloring = AssetDatabase.LoadAssetAtPath<GameItemData>("Assets/Data/Games/Coloring.asset");
         if (coloring == null) { Debug.LogError("Coloring.asset not found."); return; }
 
-        // Keep only special items (free, selfie, gallery) — remove animal entries
-        coloring.subItems.RemoveAll(item =>
-            item.categoryKey != "free" &&
-            item.categoryKey != "selfie" &&
-            item.categoryKey != "gallery");
+        // Keep only free draw option — remove selfie, gallery, and animal entries
+        coloring.subItems.RemoveAll(item => item.categoryKey != "free");
 
         if (!HasKey(coloring, "free"))
             coloring.subItems.Insert(0, new SubItemData {
                 id = "coloring_free", title = "\u05D3\u05E3 \u05D7\u05D3\u05E9",
                 cardColor = HexColor("#FFD93D"), categoryKey = "free", targetSceneName = "ColoringGame"
-            });
-
-        if (!HasKey(coloring, "selfie"))
-            coloring.subItems.Insert(1, new SubItemData {
-                id = "coloring_selfie", title = "\u05E1\u05DC\u05E4\u05D9",
-                cardColor = HexColor("#F472B6"), categoryKey = "selfie",
-                targetSceneName = "ColoringGame", thumbnail = LoadSprite("Assets/Art/Camera.png")
             });
 
         // Load painting pages from Art/PaintingPages/ into contentPages array

@@ -1826,6 +1826,18 @@ public class ParentDashboardController : MonoBehaviour
             Destroy(_gameDetailsOverlay);
             _gameDetailsOverlay = null;
         }
+
+        // Rebuild games tab to reflect any difficulty changes
+        if (tabContents != null && tabContents.Length > 1)
+        {
+            var parent = tabContents[1];
+            // Clear existing content
+            for (int i = parent.childCount - 1; i >= 0; i--)
+                Destroy(parent.GetChild(i).gameObject);
+            // Rebuild data and content
+            _data = ParentDashboardViewModel.Build();
+            BuildGamesTabContent();
+        }
     }
 
     private void MakeGameCard(Transform parent, GameDashboardData game)
