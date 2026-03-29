@@ -805,6 +805,7 @@ public class ProjectSetup : EditorWindow
         fishingGame.cardColor = HexColor("#29B6F6");
         fishingGame.targetSceneName = "FishingGame";
         fishingGame.hasSubItems = false;
+        fishingGame.thumbnail = LoadSprite($"{previewPath}/Fishing.png");
         EditorUtility.SetDirty(fishingGame);
 
         // ── Connect Match ──
