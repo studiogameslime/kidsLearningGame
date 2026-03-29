@@ -208,38 +208,6 @@ public class SelectionMenuController : MonoBehaviour
 #endif
     }
 
-    // ── Gallery (Image Pick) ──
-
-    private void OpenGallery(GameItemData game)
-    {
-        string targetScene = game.targetSceneName;
-
-#if UNITY_ANDROID || UNITY_IOS
-        NativeGallery.GetImageFromGallery((path) =>
-        {
-            if (string.IsNullOrEmpty(path)) return;
-            var tex = NativeGallery.LoadImageAtPath(path, 1024, false);
-            if (tex == null) return;
-            LaunchWithTexture(game, tex, targetScene);
-        });
-#else
-        try
-        {
-            NativeGallery.GetImageFromGallery((path) =>
-            {
-                if (string.IsNullOrEmpty(path)) return;
-                var tex = NativeGallery.LoadImageAtPath(path, 1024, false);
-                if (tex == null) return;
-                LaunchWithTexture(game, tex, targetScene);
-            });
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogWarning($"Gallery pick failed: {e.Message}");
-        }
-#endif
-    }
-
     private void LaunchWithTexture(GameItemData game, Texture2D tex, string sceneName)
     {
         GameContext.CurrentGame = game;
