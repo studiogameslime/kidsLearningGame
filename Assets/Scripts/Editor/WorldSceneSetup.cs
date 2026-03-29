@@ -441,10 +441,11 @@ public class WorldSceneSetup : EditorWindow
             new Vector2(0, 0.25f), new Vector2(1, 0.5f), DayHills);
 
         // ── Sun (top-right corner, equal padding from top and right) ──
-        // Sun in safeArea — fixed on screen, visible on all 3 screens
-        // Inactive one hidden via alpha=0 by WorldEnvironment
+        // Sun in worldContent between sky and ground layers (correct z-order)
+        // WorldController counter-offsets X at runtime to keep it visually fixed
         var sunGO = new GameObject("Sun");
-        sunGO.transform.SetParent(safeArea.transform, false);
+        sunGO.transform.SetParent(worldContent.transform, false);
+        sunGO.transform.SetSiblingIndex(2); // after SkyBackground(0) + Stars(1)
         var sunRT = sunGO.AddComponent<RectTransform>();
         sunRT.anchorMin = new Vector2(1, 1);
         sunRT.anchorMax = new Vector2(1, 1);
@@ -473,8 +474,9 @@ public class WorldSceneSetup : EditorWindow
 
         // ── Moon (same corner as sun, starts hidden below) ──
         var moonGO = new GameObject("Moon");
-        // Moon in safeArea — fixed, hidden via alpha=0 when inactive
-        moonGO.transform.SetParent(safeArea.transform, false);
+        // Moon in worldContent same z-layer as sun
+        moonGO.transform.SetParent(worldContent.transform, false);
+        moonGO.transform.SetSiblingIndex(3);
         var moonRT = moonGO.AddComponent<RectTransform>();
         moonRT.anchorMin = new Vector2(1, 1);
         moonRT.anchorMax = new Vector2(1, 1);
@@ -865,6 +867,8 @@ public class WorldSceneSetup : EditorWindow
         controller.environment = envComponent;
         controller.cloudSystem = cloudSystemComp;
         controller.headerTitleTMP = titleTMP;
+        controller.sunRT = sunRT;
+        controller.moonRT = moonRT;
 
         // ── Arrow Navigation Buttons (left/right screen switch) ──
         var arrowLeftGO = new GameObject("ArrowLeft");

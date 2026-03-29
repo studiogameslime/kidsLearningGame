@@ -25,6 +25,11 @@ public class WorldController : MonoBehaviour
     [Header("Star Display")]
     public TMPro.TextMeshProUGUI headerTitleTMP;
 
+    [Header("Sun/Moon (fixed on screen)")]
+    public RectTransform sunRT;
+    public RectTransform moonRT;
+    private float sunBaseX, moonBaseX;
+
     [Header("Screen Navigation")]
     public Button arrowLeftButton;
     public Button arrowRightButton;
@@ -87,6 +92,10 @@ public class WorldController : MonoBehaviour
         currentScreen = 1; // start on center screen
         SnapToScreen(currentScreen, false);
         UpdateArrowVisibility();
+
+        // Store initial sun/moon X for counter-offset
+        if (sunRT != null) sunBaseX = sunRT.anchoredPosition.x;
+        if (moonRT != null) moonBaseX = moonRT.anchoredPosition.x;
 
         StartCoroutine(PlayWorldIntroThenGifts());
     }
@@ -876,6 +885,18 @@ public class WorldController : MonoBehaviour
             case "Grey":   return new Color(0.6f, 0.6f, 0.6f);
             default:       return Color.white;
         }
+    }
+
+    // ── Keep sun/moon visually fixed while worldContent scrolls ──
+    private void LateUpdate()
+    {
+        if (worldContent == null) return;
+        float scrollX = -worldContent.anchoredPosition.x; // how far content has scrolled
+
+        if (sunRT != null)
+            sunRT.anchoredPosition = new Vector2(sunBaseX + scrollX, sunRT.anchoredPosition.y);
+        if (moonRT != null)
+            moonRT.anchoredPosition = new Vector2(moonBaseX + scrollX, moonRT.anchoredPosition.y);
     }
 
     // ── Screen Navigation (arrows) ──
