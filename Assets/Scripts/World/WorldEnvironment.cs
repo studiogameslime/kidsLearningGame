@@ -286,7 +286,7 @@ public class WorldEnvironment : MonoBehaviour
             yield return null;
         }
 
-        SetCelestialAlpha(moonRT, 0f);
+        SetCelestialVisible(moonRT, false);
         SetCelestialVisible(sunRT, true);
 
         // Settle sun with bounce
