@@ -316,7 +316,11 @@ public class LaundrySortingController : BaseMiniGame
                 StartCoroutine(RejectItem(item));
             }
         }
-        // Dropped on neither — stays where dropped, dragger handles return
+        else
+        {
+            // Dropped on neither target — shake and return to original position
+            StartCoroutine(RejectItem(item));
+        }
     }
 
     private bool IsOverTarget(RectTransform itemRT, RectTransform targetRT)
