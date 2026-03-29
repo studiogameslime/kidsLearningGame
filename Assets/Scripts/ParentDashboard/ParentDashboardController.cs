@@ -767,11 +767,15 @@ public class ParentDashboardController : MonoBehaviour
 
         // Strength card
         var story = DashboardStoryBuilder.Build(_data, profile?.analytics);
-        string strengthText = !string.IsNullOrEmpty(story.strengthSummary) ? story.strengthSummary : "\u05DE\u05E6\u05D8\u05D9\u05D9\u05DF \u05D1\u05DE\u05E9\u05D7\u05E7\u05D9 \u05D6\u05D9\u05DB\u05E8\u05D5\u05DF";
+        string strengthText = story.strengths != null && story.strengths.Count > 0
+            ? $"\u05DE\u05E6\u05D8\u05D9\u05D9\u05DF \u05D1{story.strengths[0]}" // מצטיין ב...
+            : "\u05DE\u05E6\u05D8\u05D9\u05D9\u05DF \u05D1\u05DE\u05E9\u05D7\u05E7\u05D9 \u05D6\u05D9\u05DB\u05E8\u05D5\u05DF";
         MakeInsightCard(insightRow.transform, AccentGreen, "\u05E0\u05E7\u05D5\u05D3\u05EA \u05D7\u05D5\u05D6\u05E7", strengthText, "\uD83D\uDCAA"); // נקודת חוזק 💪
 
         // Practice card
-        string practiceText = !string.IsNullOrEmpty(story.practiceSuggestion) ? story.practiceSuggestion : "\u05DB\u05D3\u05D0\u05D9 \u05DC\u05E9\u05D7\u05E7 \u05E2\u05D5\u05D3";
+        string practiceText = story.practiceAreas != null && story.practiceAreas.Count > 0
+            ? $"\u05DB\u05D3\u05D0\u05D9 \u05DC\u05E9\u05D7\u05E7 \u05D9\u05D5\u05EA\u05E8 {story.practiceAreas[0]}" // כדאי לשחק יותר...
+            : "\u05DB\u05D3\u05D0\u05D9 \u05DC\u05E9\u05D7\u05E7 \u05E2\u05D5\u05D3";
         MakeInsightCard(insightRow.transform, AccentOrange, "\u05DE\u05D5\u05DE\u05DC\u05E5 \u05DC\u05EA\u05E8\u05D2\u05DC", practiceText, "\uD83C\uDFAF"); // מומלץ לתרגל 🎯
 
         // ── Right: Recent activity ──
@@ -822,7 +826,7 @@ public class ParentDashboardController : MonoBehaviour
 
         var chartHL = chartArea.AddComponent<HorizontalLayoutGroup>();
         chartHL.spacing = 12;
-        chartHL.childAlignment = TextAnchor.BottomCenter;
+        chartHL.childAlignment = TextAnchor.LowerCenter;
         chartHL.childForceExpandWidth = true;
         chartHL.childForceExpandHeight = false;
         chartHL.padding = new RectOffset(20, 20, 10, 30);
@@ -993,7 +997,7 @@ public class ParentDashboardController : MonoBehaviour
         if (_data.games == null) return;
 
         // Collect recent sessions across all games
-        var recent = new List<(string gameName, GameSessionData session)>();
+        var recent = new List<(string gameName, SessionSummary session)>();
         foreach (var g in _data.games)
         {
             if (g.recentSessions != null)
