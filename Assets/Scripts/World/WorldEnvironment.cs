@@ -70,9 +70,13 @@ public class WorldEnvironment : MonoBehaviour
         IsNight = false;
         ApplyColors(0f);
 
-        // Sun visible, moon hidden below
+        // Sun visible, moon hidden (alpha 0 + offscreen)
         if (sunRT != null) sunRT.anchoredPosition = new Vector2(sunRT.anchoredPosition.x, sunRestY);
-        if (moonRT != null) moonRT.anchoredPosition = new Vector2(moonRT.anchoredPosition.x, offScreenY);
+        if (moonRT != null)
+        {
+            moonRT.anchoredPosition = new Vector2(moonRT.anchoredPosition.x, offScreenY);
+            SetCelestialAlpha(moonRT, 0f);
+        }
 
         // Create stars (invisible during day)
         CreateStars();
@@ -213,6 +217,10 @@ public class WorldEnvironment : MonoBehaviour
             yield return null;
         }
 
+        // Hide sun completely, show moon
+        SetCelestialAlpha(sunRT, 0f);
+        SetCelestialAlpha(moonRT, 1f);
+
         // Settle moon with bounce
         yield return SquashBounce(moonRT, 0.12f);
 
@@ -272,6 +280,10 @@ public class WorldEnvironment : MonoBehaviour
             yield return null;
         }
 
+        // Hide moon completely, show sun
+        SetCelestialAlpha(moonRT, 0f);
+        SetCelestialAlpha(sunRT, 1f);
+
         // Settle sun with bounce
         yield return SquashBounce(sunRT, 0.12f);
 
@@ -311,6 +323,18 @@ public class WorldEnvironment : MonoBehaviour
             yield return null;
         }
         rt.localScale = Vector3.one;
+    }
+
+    /// <summary>Sets alpha on all Image components of a celestial body (sun/moon + glow children).</summary>
+    private void SetCelestialAlpha(RectTransform rt, float alpha)
+    {
+        if (rt == null) return;
+        var imgs = rt.GetComponentsInChildren<Image>(true);
+        foreach (var img in imgs)
+        {
+            var c = img.color;
+            img.color = new Color(c.r, c.g, c.b, alpha);
+        }
     }
 
     public Color GetCurrentCloudTint()
