@@ -118,23 +118,25 @@ public class ParentDashboardController : MonoBehaviour
                 a = Random.Range(12, 30);
                 b = Random.Range(8, 25);
                 _correctAnswer = a + b;
-                question = $"? = {b} + {a}";
+                question = $"{a} + {b} = ?";
                 break;
             case 1: // subtraction
                 a = Random.Range(20, 50);
                 b = Random.Range(5, a - 3);
                 _correctAnswer = a - b;
-                question = $"? = {b} - {a}";
+                question = $"{a} - {b} = ?";
                 break;
             default: // multiplication
                 a = Random.Range(3, 10);
                 b = Random.Range(3, 10);
                 _correctAnswer = a * b;
-                question = $"? = {b} × {a}";
+                question = $"{a} × {b} = ?";
                 break;
         }
 
-        HebrewText.SetText(questionText, question);
+        // Math equation displayed LTR (not Hebrew RTL processed)
+        questionText.isRightToLeftText = false;
+        questionText.text = question;
 
         var answers = new List<int> { _correctAnswer };
         while (answers.Count < 4)
