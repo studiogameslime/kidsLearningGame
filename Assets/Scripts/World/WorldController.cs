@@ -903,7 +903,7 @@ public class WorldController : MonoBehaviour
 
     // ── Screen Navigation (arrows) ──
 
-    private void GoScreenLeft()
+    public void GoScreenLeft()
     {
         if (currentScreen > 0)
         {
@@ -913,7 +913,7 @@ public class WorldController : MonoBehaviour
         }
     }
 
-    private void GoScreenRight()
+    public void GoScreenRight()
     {
         if (currentScreen < TotalScreens - 1)
         {

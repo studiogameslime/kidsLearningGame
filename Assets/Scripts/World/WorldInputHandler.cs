@@ -289,6 +289,8 @@ public class WorldInputHandler : MonoBehaviour
         lastTouchPos = screenPos;
     }
 
+    private const float SwipeThreshold = 80f; // minimum horizontal distance for a swipe
+
     private void OnTouchEnd(Vector2 screenPos)
     {
         if (draggedAnimal != null)
@@ -298,6 +300,22 @@ public class WorldInputHandler : MonoBehaviour
             else
                 draggedAnimal.OnDragEnd();
             draggedAnimal = null;
+        }
+        else if (isDragging && isWorldPan)
+        {
+            // Detect horizontal swipe → switch screen
+            float deltaX = screenPos.x - touchStartPos.x;
+            if (Mathf.Abs(deltaX) > SwipeThreshold)
+            {
+                var controller = FindObjectOfType<WorldController>();
+                if (controller != null)
+                {
+                    if (deltaX > 0)
+                        controller.GoScreenLeft();  // swipe right = go left
+                    else
+                        controller.GoScreenRight(); // swipe left = go right
+                }
+            }
         }
 
         isDragging = false;
