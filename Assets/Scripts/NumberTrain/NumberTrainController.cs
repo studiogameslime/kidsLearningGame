@@ -671,6 +671,11 @@ public class NumberTrainController : BaseMiniGame
     {
         if (_trainGroupRT == null) yield break;
 
+        // Flip locomotive to face right (exit direction)
+        var loco = _trainGroupRT.Find("Locomotive");
+        if (loco != null)
+            loco.localScale = new Vector3(1, 1, 1); // face right
+
         float screenW = trainArea.rect.width;
         Vector2 start = _trainGroupRT.anchoredPosition;
         Vector2 target = new Vector2(screenW * 1.5f, 0);
