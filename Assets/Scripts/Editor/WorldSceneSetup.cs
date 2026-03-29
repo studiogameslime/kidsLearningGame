@@ -863,6 +863,44 @@ public class WorldSceneSetup : EditorWindow
         controller.cloudSystem = cloudSystemComp;
         controller.headerTitleTMP = titleTMP;
 
+        // ── Arrow Navigation Buttons (left/right screen switch) ──
+        var arrowLeftGO = new GameObject("ArrowLeft");
+        arrowLeftGO.transform.SetParent(safeGO.transform, false);
+        var alRT = arrowLeftGO.AddComponent<RectTransform>();
+        alRT.anchorMin = new Vector2(0, 0.5f); alRT.anchorMax = new Vector2(0, 0.5f);
+        alRT.pivot = new Vector2(0, 0.5f);
+        alRT.anchoredPosition = new Vector2(10, 0); alRT.sizeDelta = new Vector2(70, 70);
+        var alImg = arrowLeftGO.AddComponent<Image>();
+        alImg.color = new Color(0, 0, 0, 0.3f); alImg.raycastTarget = true;
+        var alBtn = arrowLeftGO.AddComponent<Button>(); alBtn.targetGraphic = alImg;
+        var alLbl = new GameObject("Label");
+        alLbl.transform.SetParent(arrowLeftGO.transform, false);
+        var alLblRT = alLbl.AddComponent<RectTransform>();
+        StretchFull(alLblRT);
+        var alTMP = alLbl.AddComponent<TextMeshProUGUI>();
+        alTMP.text = "\u25C0"; alTMP.fontSize = 36; alTMP.color = Color.white;
+        alTMP.alignment = TextAlignmentOptions.Center; alTMP.raycastTarget = false;
+
+        var arrowRightGO = new GameObject("ArrowRight");
+        arrowRightGO.transform.SetParent(safeGO.transform, false);
+        var arRT = arrowRightGO.AddComponent<RectTransform>();
+        arRT.anchorMin = new Vector2(1, 0.5f); arRT.anchorMax = new Vector2(1, 0.5f);
+        arRT.pivot = new Vector2(1, 0.5f);
+        arRT.anchoredPosition = new Vector2(-10, 0); arRT.sizeDelta = new Vector2(70, 70);
+        var arImg = arrowRightGO.AddComponent<Image>();
+        arImg.color = new Color(0, 0, 0, 0.3f); arImg.raycastTarget = true;
+        var arBtn = arrowRightGO.AddComponent<Button>(); arBtn.targetGraphic = arImg;
+        var arLbl = new GameObject("Label");
+        arLbl.transform.SetParent(arrowRightGO.transform, false);
+        var arLblRT = arLbl.AddComponent<RectTransform>();
+        StretchFull(arLblRT);
+        var arTMP = arLbl.AddComponent<TextMeshProUGUI>();
+        arTMP.text = "\u25B6"; arTMP.fontSize = 36; arTMP.color = Color.white;
+        arTMP.alignment = TextAlignmentOptions.Center; arTMP.raycastTarget = false;
+
+        controller.arrowLeftButton = alBtn;
+        controller.arrowRightButton = arBtn;
+
         // ══════════════════════════════════════════════════════════
         // ── Reward Reveal ──
         var rewardReveal = canvasGO.AddComponent<RewardRevealController>();

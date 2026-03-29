@@ -284,11 +284,7 @@ public class WorldInputHandler : MonoBehaviour
         {
             draggedAnimal.OnDrag(screenPos);
         }
-        else if (isWorldPan)
-        {
-            Vector2 frameDelta = screenPos - lastTouchPos;
-            PanWorld(frameDelta);
-        }
+        // World pan disabled — use arrow buttons instead
 
         lastTouchPos = screenPos;
     }

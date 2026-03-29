@@ -25,6 +25,12 @@ public class WorldController : MonoBehaviour
     [Header("Star Display")]
     public TMPro.TextMeshProUGUI headerTitleTMP;
 
+    [Header("Screen Navigation")]
+    public Button arrowLeftButton;
+    public Button arrowRightButton;
+    private int currentScreen = 1; // 0=left, 1=center, 2=right
+    private const int TotalScreens = 3;
+
 
     [Header("Environment")]
     public WorldEnvironment environment;
@@ -74,6 +80,14 @@ public class WorldController : MonoBehaviour
         UpdateHeaderTitle();
         ApplyFeatureLocks();
         BuildWorld();
+
+        // Wire screen navigation arrows
+        if (arrowLeftButton != null) arrowLeftButton.onClick.AddListener(GoScreenLeft);
+        if (arrowRightButton != null) arrowRightButton.onClick.AddListener(GoScreenRight);
+        currentScreen = 1; // start on center screen
+        SnapToScreen(currentScreen, false);
+        UpdateArrowVisibility();
+
         StartCoroutine(PlayWorldIntroThenGifts());
     }
 
@@ -557,39 +571,46 @@ public class WorldController : MonoBehaviour
             ProfileManager.Instance.Save();
         }
 
-        // Size the world — 3x viewport width for cylindrical scrolling
+        // 3 screens side by side: left | center | right
         float viewportWidth = 1920f;
         var viewportParent = worldContent.parent as RectTransform;
         if (viewportParent != null && viewportParent.rect.width > 0)
             viewportWidth = viewportParent.rect.width;
 
-        float worldWidth = viewportWidth * 3f;
+        float worldWidth = viewportWidth * TotalScreens;
         worldContent.anchorMin = new Vector2(0, 0);
         worldContent.anchorMax = new Vector2(0, 1);
         worldContent.pivot = new Vector2(0, 0.5f);
         worldContent.sizeDelta = new Vector2(worldWidth, 0);
-        worldContent.anchoredPosition = Vector2.zero;
+        worldContent.anchoredPosition = new Vector2(-viewportWidth, 0); // start on center screen
 
-        // Update cloud system with world width
         if (cloudSystem != null)
             cloudSystem.worldWidth = worldWidth;
 
-        // Set static exclusion zone for easel (used by WorldAnimal on drag)
-        ExclusionCenterX = worldWidth * easelAnchorX;
+        // Screen layout:
+        // Left (screen 0):  Gallery + Sticker Tree   → X: 0 to viewportWidth
+        // Center (screen 1): ToyBox + GameShelf + Alin → X: viewportWidth to viewportWidth*2
+        // Right (screen 2):  Animals + Balloons       → X: viewportWidth*2 to viewportWidth*3
+
+        float centerOffset = viewportWidth;     // center screen X start
+        float rightOffset = viewportWidth * 2f; // right screen X start
+
+        // Easel exclusion zone (left screen)
+        ExclusionCenterX = viewportWidth * easelAnchorX;
         ExclusionHalfWidth = easelExclusionRadius;
 
-        // Spawn animals evenly on grass
-        SpawnAnimals(jp.unlockedAnimalIds, worldWidth);
+        // Animals on RIGHT screen
+        SpawnAnimals(jp.unlockedAnimalIds, viewportWidth, rightOffset);
 
-        // Spawn balloons for unlocked colors
-        SpawnBalloons(jp.unlockedColorIds, worldWidth);
+        // Balloons on RIGHT screen (above animals)
+        SpawnBalloons(jp.unlockedColorIds, viewportWidth, rightOffset);
 
-        // Spawn game shelf on grass (right-center area)
-        SpawnGameShelf(worldWidth);
+        // Game shelf on CENTER screen
+        SpawnGameShelf(viewportWidth, centerOffset);
 
     }
 
-    private void SpawnAnimals(List<string> animalIds, float worldWidth)
+    private void SpawnAnimals(List<string> animalIds, float screenWidth, float xOffset = 0f)
     {
         if (grassArea == null) return;
 
@@ -627,16 +648,16 @@ public class WorldController : MonoBehaviour
             var rt = go.AddComponent<RectTransform>();
             rt.sizeDelta = new Vector2(animalSize, animalSize);
 
-            // Distribute animals evenly across the width with safe margins
-            float usableWidth = worldWidth - worldPadding * 2;
+            // Distribute animals evenly across screen width with offset
+            float usableWidth = screenWidth - worldPadding * 2;
             float x;
             if (animalIds.Count <= 1)
-                x = worldWidth * 0.5f; // single animal centered
+                x = xOffset + screenWidth * 0.5f;
             else
-                x = worldPadding + usableWidth * i / (animalIds.Count - 1);
+                x = xOffset + worldPadding + usableWidth * i / (animalIds.Count - 1);
 
             // Avoid easel exclusion zone — nudge animal to nearest safe edge
-            float easelCenterX = worldWidth * easelAnchorX;
+            float easelCenterX = xOffset + screenWidth * easelAnchorX;
             float halfAnimal = animalSize * 0.5f;
             if (Mathf.Abs(x - easelCenterX) < easelExclusionRadius + halfAnimal)
             {
@@ -645,7 +666,7 @@ public class WorldController : MonoBehaviour
                 // Nudge to whichever side is closer
                 x = (x < easelCenterX) ? Mathf.Min(x, leftEdge) : Mathf.Max(x, rightEdge);
                 // Clamp within world bounds
-                x = Mathf.Clamp(x, worldPadding, worldWidth - worldPadding);
+                x = Mathf.Clamp(x, xOffset + worldPadding, xOffset + screenWidth - worldPadding);
             }
 
             float y = Mathf.Lerp(placementMinY, placementMaxY, Random.Range(0f, 1f));
@@ -693,7 +714,7 @@ public class WorldController : MonoBehaviour
         }
     }
 
-    private void SpawnBalloons(List<string> colorIds, float worldWidth)
+    private void SpawnBalloons(List<string> colorIds, float screenWidth, float xOffset = 0f)
     {
         if (skyArea == null) return;
 
@@ -718,7 +739,7 @@ public class WorldController : MonoBehaviour
                 rt.anchorMax = Vector2.zero;
                 rt.pivot = new Vector2(0.5f, 0.5f);
 
-                float x = Random.Range(worldPadding, worldWidth - worldPadding);
+                float x = xOffset + Random.Range(worldPadding, screenWidth - worldPadding);
                 float y = Random.Range(skyHeight * 0.15f, skyHeight * 0.65f);
                 rt.anchoredPosition = new Vector2(x, y);
 
@@ -784,7 +805,7 @@ public class WorldController : MonoBehaviour
                 balloon.bubbleColor = bubbleColor;
                 balloon.colorId = colorId;
                 balloon.circleSprite = circleSprite;
-                balloon.skyWidth = worldWidth;
+                balloon.skyWidth = screenWidth;
                 balloon.skyHeight = skyHeight;
                 balloon.padding = worldPadding;
                 spawnedBalloons.Add(balloon);
@@ -792,7 +813,7 @@ public class WorldController : MonoBehaviour
         }
     }
 
-    private void SpawnGameShelf(float worldWidth)
+    private void SpawnGameShelf(float screenWidth, float xOffset = 0f)
     {
         // Load from Resources if not set in Inspector
         if (gameShelfSprite == null)
@@ -813,7 +834,7 @@ public class WorldController : MonoBehaviour
         shadowRT.anchorMax = new Vector2(0.5f, 0.5f);
         shadowRT.pivot = new Vector2(0.5f, 0.5f);
         shadowRT.sizeDelta = new Vector2(shelfSize * 0.75f, shelfSize * 0.18f);
-        shadowRT.anchoredPosition = new Vector2(800f, 134f);
+        shadowRT.anchoredPosition = new Vector2(xOffset + screenWidth * 0.6f, 134f);
         var shadowImg = shadowGO.AddComponent<Image>();
         if (circleSprite != null) shadowImg.sprite = circleSprite;
         shadowImg.color = new Color(0f, 0f, 0f, 0.12f);
@@ -827,7 +848,7 @@ public class WorldController : MonoBehaviour
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0f);
         rt.sizeDelta = new Vector2(shelfSize, shelfSize);
-        rt.anchoredPosition = new Vector2(800f, 139f);
+        rt.anchoredPosition = new Vector2(xOffset + screenWidth * 0.6f, 139f);
 
         var img = go.AddComponent<Image>();
         img.sprite = gameShelfSprite;
@@ -855,6 +876,68 @@ public class WorldController : MonoBehaviour
             case "Grey":   return new Color(0.6f, 0.6f, 0.6f);
             default:       return Color.white;
         }
+    }
+
+    // ── Screen Navigation (arrows) ──
+
+    private void GoScreenLeft()
+    {
+        if (currentScreen > 0)
+        {
+            currentScreen--;
+            SnapToScreen(currentScreen, true);
+            UpdateArrowVisibility();
+        }
+    }
+
+    private void GoScreenRight()
+    {
+        if (currentScreen < TotalScreens - 1)
+        {
+            currentScreen++;
+            SnapToScreen(currentScreen, true);
+            UpdateArrowVisibility();
+        }
+    }
+
+    private void SnapToScreen(int screenIndex, bool animate)
+    {
+        if (worldContent == null) return;
+
+        float viewportWidth = 1920f;
+        var viewportParent = worldContent.parent as RectTransform;
+        if (viewportParent != null && viewportParent.rect.width > 0)
+            viewportWidth = viewportParent.rect.width;
+
+        float targetX = -screenIndex * viewportWidth;
+
+        if (animate)
+            StartCoroutine(AnimateToScreen(targetX));
+        else
+            worldContent.anchoredPosition = new Vector2(targetX, worldContent.anchoredPosition.y);
+    }
+
+    private System.Collections.IEnumerator AnimateToScreen(float targetX)
+    {
+        float startX = worldContent.anchoredPosition.x;
+        float duration = 0.35f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0, 1, elapsed / duration);
+            float x = Mathf.Lerp(startX, targetX, t);
+            worldContent.anchoredPosition = new Vector2(x, worldContent.anchoredPosition.y);
+            yield return null;
+        }
+        worldContent.anchoredPosition = new Vector2(targetX, worldContent.anchoredPosition.y);
+    }
+
+    private void UpdateArrowVisibility()
+    {
+        if (arrowLeftButton != null) arrowLeftButton.gameObject.SetActive(currentScreen > 0);
+        if (arrowRightButton != null) arrowRightButton.gameObject.SetActive(currentScreen < TotalScreens - 1);
     }
 
     // ── Star Header & Feature Locks ──
