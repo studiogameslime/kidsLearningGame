@@ -441,16 +441,17 @@ public class WorldSceneSetup : EditorWindow
             new Vector2(0, 0.25f), new Vector2(1, 0.5f), DayHills);
 
         // ── Sun (top-right corner, equal padding from top and right) ──
-        // Sun fixed to safeArea (doesn't scroll), placed before TopBar in sibling order
+        // Sun in worldContent between sky and hills — active = visible in sky, inactive = hidden behind ground
         var sunGO = new GameObject("Sun");
-        sunGO.transform.SetParent(safeArea.transform, false);
-        sunGO.transform.SetSiblingIndex(0); // first child = behind everything else in safeArea
+        sunGO.transform.SetParent(worldContent.transform, false);
+        sunGO.transform.SetSiblingIndex(2); // after SkyBackground(0) + Stars(1), before HillsLarge
         var sunRT = sunGO.AddComponent<RectTransform>();
-        sunRT.anchorMin = new Vector2(1, 1);
-        sunRT.anchorMax = new Vector2(1, 1);
-        sunRT.pivot = new Vector2(1, 1);
+        // Position in center screen sky area (center screen = anchors 0.333-0.666)
+        sunRT.anchorMin = new Vector2(0.55f, 1);
+        sunRT.anchorMax = new Vector2(0.55f, 1);
+        sunRT.pivot = new Vector2(0.5f, 1);
         sunRT.sizeDelta = new Vector2(160, 160);
-        sunRT.anchoredPosition = new Vector2(-30, -30);
+        sunRT.anchoredPosition = new Vector2(0, -30);
         var sunImg = sunGO.AddComponent<Image>();
         sunImg.sprite = sunSprite;
         sunImg.preserveAspect = true;
@@ -473,15 +474,16 @@ public class WorldSceneSetup : EditorWindow
 
         // ── Moon (same corner as sun, starts hidden below) ──
         var moonGO = new GameObject("Moon");
-        // Moon fixed to safeArea (doesn't scroll)
-        moonGO.transform.SetParent(safeArea.transform, false);
-        moonGO.transform.SetSiblingIndex(1); // after sun, before other safeArea children
+        // Moon in worldContent same layer as sun
+        moonGO.transform.SetParent(worldContent.transform, false);
+        moonGO.transform.SetSiblingIndex(3); // after sun
         var moonRT = moonGO.AddComponent<RectTransform>();
-        moonRT.anchorMin = new Vector2(1, 1);
-        moonRT.anchorMax = new Vector2(1, 1);
-        moonRT.pivot = new Vector2(1, 1);
+        // Same position as sun (they swap via WorldEnvironment animation)
+        moonRT.anchorMin = new Vector2(0.55f, 1);
+        moonRT.anchorMax = new Vector2(0.55f, 1);
+        moonRT.pivot = new Vector2(0.5f, 1);
         moonRT.sizeDelta = new Vector2(130, 130);
-        moonRT.anchoredPosition = new Vector2(-45, -45);
+        moonRT.anchoredPosition = new Vector2(0, -45);
         var moonImg = moonGO.AddComponent<Image>();
         moonImg.sprite = moonSprite;
         moonImg.preserveAspect = true;
