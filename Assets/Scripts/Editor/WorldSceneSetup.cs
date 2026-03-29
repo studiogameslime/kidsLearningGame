@@ -407,10 +407,13 @@ public class WorldSceneSetup : EditorWindow
         var worldContent = new GameObject("WorldContent");
         worldContent.transform.SetParent(viewport.transform, false);
         var worldContentRT = worldContent.AddComponent<RectTransform>();
-        worldContentRT.anchorMin = Vector2.zero;
-        worldContentRT.anchorMax = Vector2.one;
-        worldContentRT.offsetMin = Vector2.zero;
-        worldContentRT.offsetMax = Vector2.zero;
+        // Content must be WIDER than viewport for horizontal scrolling
+        // 3x viewport width = scrollable world with wrap
+        worldContentRT.anchorMin = new Vector2(0, 0);
+        worldContentRT.anchorMax = new Vector2(0, 1);  // anchor left, stretch vertically
+        worldContentRT.pivot = new Vector2(0, 0.5f);
+        worldContentRT.sizeDelta = new Vector2(1920 * 3, 0);  // 3x screen width
+        worldContentRT.anchoredPosition = Vector2.zero;
 
         // ════════════════════════════════════════
         //  LAYERED BACKGROUND (far to near)
