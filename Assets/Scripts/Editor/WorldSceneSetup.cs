@@ -865,7 +865,7 @@ public class WorldSceneSetup : EditorWindow
 
         // ── Arrow Navigation Buttons (left/right screen switch) ──
         var arrowLeftGO = new GameObject("ArrowLeft");
-        arrowLeftGO.transform.SetParent(safeGO.transform, false);
+        arrowLeftGO.transform.SetParent(safeArea.transform, false);
         var alRT = arrowLeftGO.AddComponent<RectTransform>();
         alRT.anchorMin = new Vector2(0, 0.5f); alRT.anchorMax = new Vector2(0, 0.5f);
         alRT.pivot = new Vector2(0, 0.5f);
@@ -882,7 +882,7 @@ public class WorldSceneSetup : EditorWindow
         alTMP.alignment = TextAlignmentOptions.Center; alTMP.raycastTarget = false;
 
         var arrowRightGO = new GameObject("ArrowRight");
-        arrowRightGO.transform.SetParent(safeGO.transform, false);
+        arrowRightGO.transform.SetParent(safeArea.transform, false);
         var arRT = arrowRightGO.AddComponent<RectTransform>();
         arRT.anchorMin = new Vector2(1, 0.5f); arRT.anchorMax = new Vector2(1, 0.5f);
         arRT.pivot = new Vector2(1, 0.5f);
