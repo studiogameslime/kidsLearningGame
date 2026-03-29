@@ -266,12 +266,17 @@ public class WorldInputHandler : MonoBehaviour
         isWorldPan = true;
     }
 
+    private Vector2 lastTouchPos;
+
     private void OnTouchMove(Vector2 screenPos)
     {
-        Vector2 delta = screenPos - touchStartPos;
+        Vector2 totalDelta = screenPos - touchStartPos;
 
-        if (!isDragging && delta.magnitude > dragThreshold)
+        if (!isDragging && totalDelta.magnitude > dragThreshold)
+        {
             isDragging = true;
+            lastTouchPos = screenPos; // start tracking frame deltas from here
+        }
 
         if (!isDragging) return;
 
@@ -281,8 +286,11 @@ public class WorldInputHandler : MonoBehaviour
         }
         else if (isWorldPan)
         {
-            PanWorld(delta);
+            Vector2 frameDelta = screenPos - lastTouchPos;
+            PanWorld(frameDelta);
         }
+
+        lastTouchPos = screenPos;
     }
 
     private void OnTouchEnd(Vector2 screenPos)
@@ -300,26 +308,22 @@ public class WorldInputHandler : MonoBehaviour
         isWorldPan = false;
     }
 
-    private void PanWorld(Vector2 totalDelta)
+    private void PanWorld(Vector2 frameDelta)
     {
-        float newX = contentStartPos.x + totalDelta.x;
-
         float contentWidth = worldContent.rect.width;
         float viewportWidth = viewport != null ? viewport.rect.width : 1080f;
 
-        if (contentWidth <= viewportWidth)
-        {
-            newX = 0f;
-        }
-        else
-        {
-            // Cylindrical wrap: seamless infinite scroll
-            float range = contentWidth - viewportWidth;
-            // Wrap into [-range, 0] so content loops endlessly
-            newX = ((newX % range) + range) % range;
-            newX = -newX; // convert to negative offset (content moves left)
-        }
+        if (contentWidth <= viewportWidth) return;
 
-        worldContent.anchoredPosition = new Vector2(newX, worldContent.anchoredPosition.y);
+        // Apply frame delta to current position
+        float curX = worldContent.anchoredPosition.x + frameDelta.x;
+
+        // Cylindrical wrap: seamless infinite scroll
+        float range = contentWidth - viewportWidth;
+        // Keep curX in [-range, 0] range
+        if (curX > 0) curX -= range;
+        if (curX < -range) curX += range;
+
+        worldContent.anchoredPosition = new Vector2(curX, worldContent.anchoredPosition.y);
     }
 }
