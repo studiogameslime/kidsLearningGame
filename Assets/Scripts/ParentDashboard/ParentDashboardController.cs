@@ -1983,17 +1983,18 @@ public class ParentDashboardController : MonoBehaviour
         // Create overlay on top of the dashboard
         if (_gameDetailsOverlay != null) Destroy(_gameDetailsOverlay);
 
-        _gameDetailsOverlay = new GameObject("GameDetailsOverlay");
+        _gameDetailsOverlay = new GameObject("GameDetailsPanel");
         _gameDetailsOverlay.transform.SetParent(dashboardPanel, false);
         var overlayRT = _gameDetailsOverlay.AddComponent<RectTransform>();
-        overlayRT.anchorMin = Vector2.zero;
-        overlayRT.anchorMax = Vector2.one;
+        // Right-side panel (35% width) — games grid stays visible on the left
+        overlayRT.anchorMin = new Vector2(0, 0);
+        overlayRT.anchorMax = new Vector2(0.38f, 1);
         overlayRT.offsetMin = Vector2.zero;
         overlayRT.offsetMax = Vector2.zero;
 
-        // Semi-transparent background
         var overlayBg = _gameDetailsOverlay.AddComponent<Image>();
-        overlayBg.color = new Color(1, 1, 1, 0.98f);
+        if (roundedRect != null) { overlayBg.sprite = roundedRect; overlayBg.type = Image.Type.Sliced; }
+        overlayBg.color = new Color(0.97f, 0.97f, 0.98f, 1f);
         overlayBg.raycastTarget = true;
 
         // Scroll view for details
@@ -2001,7 +2002,7 @@ public class ParentDashboardController : MonoBehaviour
         scrollGO.transform.SetParent(_gameDetailsOverlay.transform, false);
         var scrollRT = scrollGO.AddComponent<RectTransform>();
         scrollRT.anchorMin = new Vector2(0.02f, 0.02f);
-        scrollRT.anchorMax = new Vector2(0.98f, 0.88f);
+        scrollRT.anchorMax = new Vector2(0.98f, 0.92f);
         scrollRT.offsetMin = Vector2.zero;
         scrollRT.offsetMax = Vector2.zero;
         scrollGO.AddComponent<Image>().color = Color.clear;
@@ -2031,12 +2032,12 @@ public class ParentDashboardController : MonoBehaviour
         var headerGO = new GameObject("Header");
         headerGO.transform.SetParent(_gameDetailsOverlay.transform, false);
         var headerRT = headerGO.AddComponent<RectTransform>();
-        headerRT.anchorMin = new Vector2(0, 0.90f);
+        headerRT.anchorMin = new Vector2(0, 0.92f);
         headerRT.anchorMax = new Vector2(1, 1f);
-        headerRT.offsetMin = new Vector2(12, 0);
-        headerRT.offsetMax = new Vector2(-12, -8);
+        headerRT.offsetMin = new Vector2(8, 0);
+        headerRT.offsetMax = new Vector2(-8, -4);
         var headerHL = headerGO.AddComponent<HorizontalLayoutGroup>();
-        headerHL.spacing = 16;
+        headerHL.spacing = 8;
         headerHL.childAlignment = TextAnchor.MiddleRight;
         headerHL.childForceExpandWidth = false;
         headerHL.childControlWidth = false;
@@ -2048,7 +2049,7 @@ public class ParentDashboardController : MonoBehaviour
         nameGO.AddComponent<LayoutElement>().flexibleWidth = 1;
         var nameTMP = nameGO.AddComponent<TextMeshProUGUI>();
         HebrewText.SetText(nameTMP, game.gameName);
-        nameTMP.fontSize = 36;
+        nameTMP.fontSize = 28;
         nameTMP.fontStyle = FontStyles.Bold;
         nameTMP.color = TextDark;
         nameTMP.alignment = TextAlignmentOptions.Right;
