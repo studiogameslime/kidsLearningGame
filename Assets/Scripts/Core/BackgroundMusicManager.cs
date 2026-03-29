@@ -103,16 +103,30 @@ public class BackgroundMusicManager : MonoBehaviour
     /// Play a feedback clip (Alin voice, praise).
     /// Lower priority — skipped if a content clip is currently playing.
     /// </summary>
+    /// <summary>
+    /// Play a feedback clip (Alin voice, praise).
+    /// If content is playing, waits for it to finish + 0.5s gap, then plays.
+    /// </summary>
     public static void PlayFeedback(AudioClip clip, float volume = 1f)
     {
         if (clip == null || _instance == null) return;
         if (!AppSettings.VoiceEnabled) return;
 
-        // Don't play feedback if content sound is still playing
+        float delay = 0f;
         if (Time.time < _instance.contentEndTime)
-            return;
+            delay = _instance.contentEndTime - Time.time + 0.5f; // wait for content + 0.5s gap
 
-        _instance.GetFeedbackSource().PlayOneShot(clip, volume);
+        if (delay > 0f)
+            _instance.StartCoroutine(_instance.PlayFeedbackDelayed(clip, volume, delay));
+        else
+            _instance.GetFeedbackSource().PlayOneShot(clip, volume);
+    }
+
+    private System.Collections.IEnumerator PlayFeedbackDelayed(AudioClip clip, float volume, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (!AppSettings.VoiceEnabled) yield break;
+        GetFeedbackSource().PlayOneShot(clip, volume);
     }
 
     /// <summary>
