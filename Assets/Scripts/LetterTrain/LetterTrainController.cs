@@ -106,7 +106,7 @@ public class LetterTrainController : BaseMiniGame
         isEndless = true;
         playConfettiOnRoundWin = false; // we trigger confetti manually before train exit
         playWinSound = true;
-        delayBeforeNextRound = 2.5f;
+        delayBeforeNextRound = JourneyManager.IsJourneyActive ? 2.5f : 0.5f;
     }
 
     protected override string GetFallbackGameId() => "lettertrain";
@@ -162,7 +162,8 @@ public class LetterTrainController : BaseMiniGame
         for (int i = 0; i < _wagonObjects.Count; i++)
             StartCoroutine(BounceWagon(i));
 
-        yield return new WaitForSeconds(0.8f);
+        float bounceWait = JourneyManager.IsJourneyActive ? 0.8f : 0.3f;
+        yield return new WaitForSeconds(bounceWait);
 
         // Train exits
         yield return StartCoroutine(TrainExit());
@@ -664,7 +665,7 @@ public class LetterTrainController : BaseMiniGame
         // RTL: exit to the left
         Vector2 target = new Vector2(-screenW * 1.5f, 0);
 
-        float dur = 2.4f;
+        float dur = JourneyManager.IsJourneyActive ? 2.4f : 1.2f;
         for (float t = 0; t < dur; t += Time.deltaTime)
         {
             float p = t / dur;
