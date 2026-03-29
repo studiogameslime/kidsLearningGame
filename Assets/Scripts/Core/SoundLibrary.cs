@@ -61,7 +61,7 @@ public static class SoundLibrary
         if (Random.value > 0.3f) return; // 30% chance to play
         string path = FeedbackClips[Random.Range(0, FeedbackClips.Length)];
         var clip = Resources.Load<AudioClip>(path);
-        if (clip != null) BackgroundMusicManager.PlayOneShot(clip);
+        if (clip != null) BackgroundMusicManager.PlayFeedback(clip);
     }
 
     // ── Specific Feedbacks ──
@@ -69,7 +69,7 @@ public static class SoundLibrary
     public static void PlayGreatPainting()
     {
         var clip = Resources.Load<AudioClip>("Sounds/Feedbacks/What a great painting");
-        if (clip != null) BackgroundMusicManager.PlayOneShot(clip);
+        if (clip != null) BackgroundMusicManager.PlayFeedback(clip);
     }
 
     // ── World ──

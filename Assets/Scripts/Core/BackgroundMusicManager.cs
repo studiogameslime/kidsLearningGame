@@ -53,6 +53,9 @@ public class BackgroundMusicManager : MonoBehaviour
         source.Play();
     }
 
+    private AudioSource feedbackSource; // Alin voice feedback (lower priority)
+    private float contentEndTime;       // when current content clip finishes
+
     private AudioSource GetSfxSource()
     {
         if (sfxSource == null)
@@ -63,9 +66,23 @@ public class BackgroundMusicManager : MonoBehaviour
         return sfxSource;
     }
 
+    private AudioSource GetFeedbackSource()
+    {
+        if (feedbackSource == null)
+        {
+            feedbackSource = gameObject.AddComponent<AudioSource>();
+            feedbackSource.playOnAwake = false;
+        }
+        return feedbackSource;
+    }
+
     /// <summary>
     /// Play a one-shot audio clip that survives scene transitions.
     /// Respects AppSettings.VoiceEnabled — if voice is muted, does nothing.
+    /// </summary>
+    /// <summary>
+    /// Play a one-shot content clip (animal name, color name, number).
+    /// High priority — blocks feedback from playing until this finishes.
     /// </summary>
     public static void PlayOneShot(AudioClip clip, float volume = 1f)
     {
@@ -78,7 +95,24 @@ public class BackgroundMusicManager : MonoBehaviour
 
         _instance._lastClip = clip;
         _instance._lastClipTime = Time.time;
+        _instance.contentEndTime = Time.time + clip.length;
         _instance.GetSfxSource().PlayOneShot(clip, volume);
+    }
+
+    /// <summary>
+    /// Play a feedback clip (Alin voice, praise).
+    /// Lower priority — skipped if a content clip is currently playing.
+    /// </summary>
+    public static void PlayFeedback(AudioClip clip, float volume = 1f)
+    {
+        if (clip == null || _instance == null) return;
+        if (!AppSettings.VoiceEnabled) return;
+
+        // Don't play feedback if content sound is still playing
+        if (Time.time < _instance.contentEndTime)
+            return;
+
+        _instance.GetFeedbackSource().PlayOneShot(clip, volume);
     }
 
     /// <summary>
