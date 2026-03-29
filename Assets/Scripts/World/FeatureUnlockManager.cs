@@ -9,15 +9,13 @@ public static class FeatureUnlockManager
 {
     public enum Feature
     {
-        Journey,         // always unlocked
-        GameCollection,  // 5 stars
+        GameCollection,  // always unlocked
         Gallery,         // 10 stars
         StickerTree,     // 15 stars
     }
 
     private static readonly Dictionary<Feature, int> Thresholds = new Dictionary<Feature, int>
     {
-        { Feature.Journey,        0 },
         { Feature.GameCollection, 0 },
         { Feature.Gallery,        10 },
         { Feature.StickerTree,    15 },

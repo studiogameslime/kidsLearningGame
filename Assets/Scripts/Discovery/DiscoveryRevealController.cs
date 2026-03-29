@@ -39,11 +39,17 @@ public class DiscoveryRevealController : MonoBehaviour
 
     private void Start()
     {
-        var discovery = JourneyManager.Instance?.ActiveDiscovery;
+        // Get the latest discovery from profile queue
+        var profile = ProfileManager.ActiveProfile;
+        var queue = profile?.journey?.discoveryQueue;
+        DiscoveryEntry discovery = null;
+        if (queue != null && queue.Count > 0)
+            discovery = queue[queue.Count - 1];
+
         if (discovery == null)
         {
             Debug.LogError("DiscoveryReveal: No active discovery.");
-            JourneyManager.Instance?.ContinueAfterDiscovery();
+            NavigationManager.GoToHome();
             return;
         }
 
@@ -413,8 +419,12 @@ public class DiscoveryRevealController : MonoBehaviour
         if (revealImage != null)
             StartCoroutine(BounceReveal(revealImage.rectTransform));
 
-        // Play sound
-        var discovery = JourneyManager.Instance?.ActiveDiscovery;
+        // Play sound — get discovery from profile queue
+        var profile2 = ProfileManager.ActiveProfile;
+        var queue2 = profile2?.journey?.discoveryQueue;
+        DiscoveryEntry discovery = null;
+        if (queue2 != null && queue2.Count > 0)
+            discovery = queue2[queue2.Count - 1];
         if (discovery != null)
         {
             switch (discovery.type)
@@ -439,11 +449,11 @@ public class DiscoveryRevealController : MonoBehaviour
         if (ConfettiController.Instance != null)
             ConfettiController.Instance.PlayBig();
 
-        // Wait then continue journey
+        // Wait then return to world (gift box will appear there)
         yield return new WaitForSeconds(3f);
 
         isComplete = true;
-        JourneyManager.Instance?.ContinueAfterDiscovery();
+        NavigationManager.GoToHome();
     }
 
     private IEnumerator BounceReveal(RectTransform rt)

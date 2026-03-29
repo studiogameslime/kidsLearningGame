@@ -42,11 +42,6 @@ public static class NavigationManager
     /// <summary>Go to the World scene (main hub after profile selection).</summary>
     public static void GoToHome()
     {
-        if (JourneyManager.IsJourneyActive)
-        {
-            JourneyManager.Instance?.EndJourney();
-            return;
-        }
         GameContext.Clear();
         BubbleTransition.LoadScene(WorldSceneName);
     }
@@ -64,18 +59,11 @@ public static class NavigationManager
         BubbleTransition.LoadScene(ProfileCreationScene);
     }
 
-    /// <summary>Go back to the World scene (main hub). If a journey is active, ends it first.
+    /// <summary>Go back to the World scene (main hub).
     /// Blocked while celebration is playing to prevent premature exit.</summary>
     public static void GoToMainMenu()
     {
-        // Block exit during celebration
         if (GameCompletionBridge.IsCelebrating) return;
-
-        if (JourneyManager.IsJourneyActive)
-        {
-            JourneyManager.Instance?.EndJourney();
-            return;
-        }
         GameContext.Clear();
         BubbleTransition.LoadScene(WorldSceneName);
     }

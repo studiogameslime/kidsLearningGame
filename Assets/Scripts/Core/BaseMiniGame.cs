@@ -258,30 +258,15 @@ public abstract class BaseMiniGame : MonoBehaviour
 
         if (isEndless)
         {
-            if (GameCompletionBridge.WillJourneyNavigate)
-            {
-                // Journey is active — wait for celebration to finish,
-                // then let the bridge decide: discovery scene or next game
-                CurrentState = GameState.WaitingForTransition;
-            }
-            else
-            {
-                // Free play — advance to next round
-                yield return new WaitForSeconds(delayBeforeNextRound);
-                OnRoundCleanup();
-                SetupNewRound();
-                CurrentState = GameState.Playing;
-            }
+            // Advance to next round
+            yield return new WaitForSeconds(delayBeforeNextRound);
+            OnRoundCleanup();
+            SetupNewRound();
+            CurrentState = GameState.Playing;
         }
         else if (CurrentRound >= totalRounds)
         {
             // Session complete
-            if (GameCompletionBridge.WillJourneyNavigate)
-            {
-                // Bridge handles navigation after confetti finishes
-                CurrentState = GameState.WaitingForTransition;
-            }
-            else
             {
                 // Free play: restart from round 0
                 yield return new WaitForSeconds(delayAfterFinalRound);

@@ -600,15 +600,7 @@ public class ColoringGameController : BaseMiniGame
 
         SoundLibrary.PlayGreatPainting();
 
-        // During journey: save and advance to next game/discovery
-        if (JourneyManager.IsJourneyActive)
-        {
-            Stats?.RecordCorrect();
-            CompleteRound();
-            return;
-        }
-
-        // Free play: brief visual feedback — disable button momentarily
+        // Brief visual feedback — disable button momentarily
         if (saveDrawingButton != null)
         {
             saveDrawingButton.interactable = false;

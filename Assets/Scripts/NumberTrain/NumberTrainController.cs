@@ -81,7 +81,7 @@ public class NumberTrainController : BaseMiniGame
         isEndless = true;
         playConfettiOnRoundWin = false; // we trigger confetti manually before train exit
         playWinSound = true;
-        delayBeforeNextRound = JourneyManager.IsJourneyActive ? 2.5f : 0.5f;
+        delayBeforeNextRound = 0.5f;
     }
 
     protected override string GetFallbackGameId() => "numbertrain";
@@ -139,7 +139,7 @@ public class NumberTrainController : BaseMiniGame
         for (int i = 0; i < _wagonObjects.Count; i++)
             StartCoroutine(BounceWagon(i));
 
-        float bounceWait = JourneyManager.IsJourneyActive ? 0.8f : 0.3f;
+        float bounceWait = 0.3f;
         yield return new WaitForSeconds(bounceWait);
 
         // Train exits to the right
@@ -676,7 +676,7 @@ public class NumberTrainController : BaseMiniGame
         Vector2 start = _trainGroupRT.anchoredPosition;
         Vector2 target = new Vector2(screenW * 1.5f, 0);
 
-        float dur = JourneyManager.IsJourneyActive ? 2.4f : 1.2f;
+        float dur = 1.2f;
         for (float t = 0; t < dur; t += Time.deltaTime)
         {
             float p = t / dur;

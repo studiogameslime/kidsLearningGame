@@ -614,8 +614,7 @@ public class WorldController : MonoBehaviour
         // Balloons on RIGHT screen (above animals)
         SpawnBalloons(jp.unlockedColorIds, viewportWidth, rightOffset);
 
-        // Game shelf on CENTER screen
-        SpawnGameShelf(viewportWidth, centerOffset);
+        // Game shelf removed — ToyBox opens game collection directly
 
     }
 

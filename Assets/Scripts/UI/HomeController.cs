@@ -31,9 +31,7 @@ public class HomeController : MonoBehaviour
         if (allGamesButton != null) allGamesButton.onClick.AddListener(OnAllGamesPressed);
         if (parentAreaButton != null) parentAreaButton.onClick.AddListener(OnParentAreaPressed);
 
-        // Wire game database to JourneyManager
-        if (gameDatabase != null && JourneyManager.Instance != null)
-            JourneyManager.Instance.SetGameDatabase(gameDatabase);
+        // Game database available for visibility checks
 
         UpdateProfileAvatar();
         StartCoroutine(PulsePlayButton());
@@ -122,7 +120,7 @@ public class HomeController : MonoBehaviour
 
     public void OnPlayPressed()
     {
-        JourneyManager.Instance?.StartJourney();
+        NavigationManager.GoToGamesCollection();
     }
 
     public void OnWorldPressed()
