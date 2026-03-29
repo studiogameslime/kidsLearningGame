@@ -557,19 +557,18 @@ public class WorldController : MonoBehaviour
             ProfileManager.Instance.Save();
         }
 
-        // Size the world — fills viewport by default, expands only when needed
-        int animalCount = jp.unlockedAnimalIds.Count;
+        // Size the world — 3x viewport width for cylindrical scrolling
         float viewportWidth = 1920f;
         var viewportParent = worldContent.parent as RectTransform;
         if (viewportParent != null && viewportParent.rect.width > 0)
             viewportWidth = viewportParent.rect.width;
 
-        // Always fit viewport — no horizontal scrolling, animals squeeze to fit
-        worldContent.anchorMin = Vector2.zero;
-        worldContent.anchorMax = Vector2.one;
-        worldContent.offsetMin = Vector2.zero;
-        worldContent.offsetMax = Vector2.zero;
-        float worldWidth = viewportWidth;
+        float worldWidth = viewportWidth * 3f;
+        worldContent.anchorMin = new Vector2(0, 0);
+        worldContent.anchorMax = new Vector2(0, 1);
+        worldContent.pivot = new Vector2(0, 0.5f);
+        worldContent.sizeDelta = new Vector2(worldWidth, 0);
+        worldContent.anchoredPosition = Vector2.zero;
 
         // Update cloud system with world width
         if (cloudSystem != null)
