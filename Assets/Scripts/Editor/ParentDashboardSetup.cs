@@ -231,12 +231,12 @@ public class ParentDashboardSetup : EditorWindow
         var infoCenterLE = infoCenterGO.AddComponent<LayoutElement>();
         infoCenterLE.flexibleWidth = 1;
         var infoCenterLayout = infoCenterGO.AddComponent<VerticalLayoutGroup>();
-        infoCenterLayout.spacing = 2;
+        infoCenterLayout.spacing = 3;
         infoCenterLayout.childAlignment = TextAnchor.MiddleCenter;
         infoCenterLayout.childForceExpandWidth = true;
         infoCenterLayout.childForceExpandHeight = false;
         infoCenterLayout.childControlHeight = true;
-        infoCenterLayout.padding = new RectOffset(0, 0, 12, 8);
+        infoCenterLayout.padding = new RectOffset(2, 2, 15, 10);
 
         // Title
         var titleGO = new GameObject("Title");
@@ -244,27 +244,27 @@ public class ParentDashboardSetup : EditorWindow
         titleGO.AddComponent<RectTransform>();
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
         HebrewText.SetText(titleTMP, "\u05D0\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD"); // אזור הורים
-        titleTMP.fontSize = 24;
+        titleTMP.fontSize = 34;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.raycastTarget = false;
         titleTMP.enableWordWrapping = false;
         titleTMP.overflowMode = TextOverflowModes.Overflow;
-        titleGO.AddComponent<LayoutElement>().preferredHeight = 32;
+        titleGO.AddComponent<LayoutElement>().preferredHeight = 43;
 
         // Subtitle row: name | age | sessions
         var subRowGO = new GameObject("SubRow");
         subRowGO.transform.SetParent(infoCenterGO.transform, false);
         subRowGO.AddComponent<RectTransform>();
         var subRowLayout = subRowGO.AddComponent<HorizontalLayoutGroup>();
-        subRowLayout.spacing = 8;
+        subRowLayout.spacing = 10;
         subRowLayout.childAlignment = TextAnchor.MiddleCenter;
         subRowLayout.childForceExpandWidth = false;
         subRowLayout.childForceExpandHeight = true;
         subRowLayout.childControlWidth = false;
         subRowLayout.childControlHeight = false;
-        subRowGO.AddComponent<LayoutElement>().preferredHeight = 28;
+        subRowGO.AddComponent<LayoutElement>().preferredHeight = 38;
 
         // RTL order: rightmost child is first in hierarchy when using MiddleCenter + ContentSizeFitter
         // Visual order (right to left): Name • Age • Sessions
@@ -329,8 +329,8 @@ public class ParentDashboardSetup : EditorWindow
             contentRT.offsetMax = Vector2.zero;
 
             var contentLayout = contentGO.AddComponent<VerticalLayoutGroup>();
-            contentLayout.spacing = 16;
-            contentLayout.padding = new RectOffset(20, 20, 16, 120); // extra bottom for banner ad
+            contentLayout.spacing = 21;
+            contentLayout.padding = new RectOffset(25, 25, 20, 150); // extra bottom for banner ad
             contentLayout.childForceExpandWidth = true;
             contentLayout.childForceExpandHeight = false;
             contentLayout.childControlWidth = true;
@@ -389,7 +389,7 @@ public class ParentDashboardSetup : EditorWindow
         rt.pivot = new Vector2(0.5f, 0.5f);
         var tmp = go.AddComponent<TextMeshProUGUI>();
         HebrewText.SetText(tmp, text);
-        tmp.fontSize = 16;
+        tmp.fontSize = 22;
         tmp.color = new Color(1, 1, 1, 0.75f);
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.raycastTarget = false;
@@ -408,7 +408,7 @@ public class ParentDashboardSetup : EditorWindow
         go.AddComponent<RectTransform>();
         var tmp = go.AddComponent<TextMeshProUGUI>();
         tmp.text = "\u2022"; // •
-        tmp.fontSize = 14;
+        tmp.fontSize = 20;
         tmp.color = new Color(1, 1, 1, 0.5f);
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.enableWordWrapping = false;

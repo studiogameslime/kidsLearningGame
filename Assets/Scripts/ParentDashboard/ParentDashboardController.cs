@@ -330,7 +330,7 @@ public class ParentDashboardController : MonoBehaviour
         // Layout
         var barLayout = _statsTabBar.AddComponent<HorizontalLayoutGroup>();
         barLayout.spacing = 0;
-        barLayout.padding = new RectOffset(20, 20, 4, 4);
+        barLayout.padding = new RectOffset(25, 25, 6, 6);
         barLayout.childAlignment = TextAnchor.MiddleCenter;
         barLayout.childForceExpandWidth = true;
         barLayout.childForceExpandHeight = true;
@@ -393,7 +393,7 @@ public class ParentDashboardController : MonoBehaviour
         labelRT.offsetMax = Vector2.zero;
         var tmp = labelGO.AddComponent<TextMeshProUGUI>();
         HebrewText.SetText(tmp, label);
-        tmp.fontSize = 17;
+        tmp.fontSize = 24;
         tmp.fontStyle = FontStyles.Bold;
         tmp.color = active ? Primary : TextMedium;
         tmp.alignment = TextAlignmentOptions.Center;
@@ -475,7 +475,7 @@ public class ParentDashboardController : MonoBehaviour
         addTextRT.offsetMax = Vector2.zero;
         var addTMP = addTextGO.AddComponent<TextMeshProUGUI>();
         HebrewText.SetText(addTMP, "+ \u05D4\u05D5\u05E1\u05E3 \u05EA\u05DE\u05D5\u05E0\u05D4"); // + הוסף תמונה
-        addTMP.fontSize = 22;
+        addTMP.fontSize = 31;
         addTMP.fontStyle = FontStyles.Bold;
         addTMP.color = Color.white;
         addTMP.alignment = TextAlignmentOptions.Center;
@@ -488,7 +488,7 @@ public class ParentDashboardController : MonoBehaviour
         var gridLayout = gridGO.AddComponent<GridLayoutGroup>();
         gridLayout.cellSize = new Vector2(200, 200);
         gridLayout.spacing = new Vector2(16, 16);
-        gridLayout.padding = new RectOffset(8, 8, 8, 8);
+        gridLayout.padding = new RectOffset(10, 10, 10, 10);
         gridLayout.childAlignment = TextAnchor.UpperCenter;
         gridLayout.startCorner = GridLayoutGroup.Corner.UpperRight; // RTL
         var gridCSF = gridGO.AddComponent<ContentSizeFitter>();
@@ -527,7 +527,7 @@ public class ParentDashboardController : MonoBehaviour
             HebrewText.SetText(emptyTMP,
                 "\u05D0\u05D9\u05DF \u05E2\u05D3\u05D9\u05D9\u05DF \u05EA\u05DE\u05D5\u05E0\u05D5\u05EA.\n\u05D4\u05D5\u05E1\u05D9\u05E4\u05D5 \u05EA\u05DE\u05D5\u05E0\u05D5\u05EA \u05DC\u05D9\u05DC\u05D3 \u05DC\u05E9\u05D7\u05E7 \u05D0\u05D9\u05EA\u05DF.");
             // אין עדיין תמונות.\nהוסיפו תמונות לילד לשחק איתן.
-            emptyTMP.fontSize = 22;
+            emptyTMP.fontSize = 31;
             emptyTMP.color = TextMedium;
             emptyTMP.alignment = TextAlignmentOptions.Center;
             emptyTMP.raycastTarget = false;
@@ -579,7 +579,7 @@ public class ParentDashboardController : MonoBehaviour
         dtRT.offsetMax = Vector2.zero;
         var dtTMP = delTextGO.AddComponent<TextMeshProUGUI>();
         dtTMP.text = "\u00D7"; // ×
-        dtTMP.fontSize = 20;
+        dtTMP.fontSize = 28;
         dtTMP.fontStyle = FontStyles.Bold;
         dtTMP.color = Color.white;
         dtTMP.alignment = TextAlignmentOptions.Center;
@@ -740,16 +740,16 @@ public class ParentDashboardController : MonoBehaviour
         var scoreTitleTMP = AddChildTMP(scoreInfoGO.transform, H("\u05E6\u05D9\u05D5\u05DF \u05DB\u05DC\u05DC\u05D9"), // ציון כללי
             36, TextDark, TextAlignmentOptions.Right);
         scoreTitleTMP.fontStyle = FontStyles.Bold;
-        scoreTitleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 44;
+        scoreTitleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 59;
 
         var statusTMP = AddChildTMP(scoreInfoGO.transform, H(_data.overallScoreLabel),
             28, TextMedium, TextAlignmentOptions.Right);
-        statusTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 36;
+        statusTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 49;
 
         var trendTMP2 = AddChildTMP(scoreInfoGO.transform,
             H($"{ParentDashboardViewModel.TrendArrow(_data.overallTrend)} {_data.overallTrendLabel}"),
             24, TextMedium, TextAlignmentOptions.Right);
-        trendTMP2.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
+        trendTMP2.gameObject.AddComponent<LayoutElement>().preferredHeight = 43;
 
         FitCard(scoreCard);
 
@@ -829,7 +829,7 @@ public class ParentDashboardController : MonoBehaviour
         MakeSectionTitle(card, "\u05D7\u05DC\u05D5\u05E7\u05EA \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD"); // חלוקת משחקים
 
         var row = MakeHRow(card, 0, TextAnchor.MiddleCenter);
-        row.GetComponent<HorizontalLayoutGroup>().spacing = 24;
+        row.GetComponent<HorizontalLayoutGroup>().spacing = 31;
         row.AddComponent<LayoutElement>().preferredHeight = 240;
 
         // ── Pie chart (left side) ──
@@ -875,7 +875,7 @@ public class ParentDashboardController : MonoBehaviour
         // ── Legend (right side) ──
         var legend = MakeVCol(row.transform);
         legend.AddComponent<LayoutElement>().flexibleWidth = 1;
-        legend.GetComponent<VerticalLayoutGroup>().spacing = 6;
+        legend.GetComponent<VerticalLayoutGroup>().spacing = 8;
         legend.GetComponent<VerticalLayoutGroup>().childAlignment = TextAnchor.UpperRight;
 
         int maxLegendItems = played.Count < 8 ? played.Count : 8;
@@ -886,7 +886,7 @@ public class ParentDashboardController : MonoBehaviour
             Color sliceColor = PieColors[i % PieColors.Length];
 
             var legendRow = MakeHRow(legend.transform, 26, TextAnchor.MiddleRight);
-            legendRow.GetComponent<HorizontalLayoutGroup>().spacing = 6;
+            legendRow.GetComponent<HorizontalLayoutGroup>().spacing = 8;
 
             // Percentage + count
             var pctTMP = AddChildTMP(legendRow.transform, $"({g.sessionsPlayed}) %{pct:F0}",
@@ -907,7 +907,7 @@ public class ParentDashboardController : MonoBehaviour
             dotImg.raycastTarget = false;
             var dotLE = dotGO.AddComponent<LayoutElement>();
             dotLE.preferredWidth = 16;
-            dotLE.preferredHeight = 16;
+            dotLE.preferredHeight = 22;
         }
 
         // Show "others" if more than 8
@@ -919,7 +919,7 @@ public class ParentDashboardController : MonoBehaviour
             float otherPct = (float)otherSessions / totalSessions * 100f;
 
             var otherRow = MakeHRow(legend.transform, 26, TextAnchor.MiddleRight);
-            otherRow.GetComponent<HorizontalLayoutGroup>().spacing = 6;
+            otherRow.GetComponent<HorizontalLayoutGroup>().spacing = 8;
             AddChildTMP(otherRow.transform, $"%{otherPct:F0}",
                 20, TextMedium, TextAlignmentOptions.Left)
                 .gameObject.AddComponent<LayoutElement>().preferredWidth = 52;
@@ -935,7 +935,7 @@ public class ParentDashboardController : MonoBehaviour
             dotImg2.raycastTarget = false;
             var dotLE2 = dotGO2.AddComponent<LayoutElement>();
             dotLE2.preferredWidth = 16;
-            dotLE2.preferredHeight = 16;
+            dotLE2.preferredHeight = 22;
         }
 
         FitCard(card);
@@ -963,7 +963,7 @@ public class ParentDashboardController : MonoBehaviour
         MakeSectionTitle(card, "\u05D6\u05DE\u05DF \u05DE\u05E9\u05D7\u05E7 \u05DC\u05E4\u05D9 \u05DE\u05E9\u05D7\u05E7"); // זמן משחק לפי משחק
 
         var row = MakeHRow(card, 0, TextAnchor.MiddleCenter);
-        row.GetComponent<HorizontalLayoutGroup>().spacing = 24;
+        row.GetComponent<HorizontalLayoutGroup>().spacing = 31;
         row.AddComponent<LayoutElement>().preferredHeight = 240;
 
         // Pie chart
@@ -1017,7 +1017,7 @@ public class ParentDashboardController : MonoBehaviour
         // Legend
         var legend = MakeVCol(row.transform);
         legend.AddComponent<LayoutElement>().flexibleWidth = 1;
-        legend.GetComponent<VerticalLayoutGroup>().spacing = 6;
+        legend.GetComponent<VerticalLayoutGroup>().spacing = 8;
         legend.GetComponent<VerticalLayoutGroup>().childAlignment = TextAnchor.UpperRight;
 
         for (int i = 0; i < maxSlices; i++)
@@ -1027,7 +1027,7 @@ public class ParentDashboardController : MonoBehaviour
             string timeStr = ParentDashboardViewModel.FormatPlayTime(g.totalPlayTime);
 
             var legendRow = MakeHRow(legend.transform, 26, TextAnchor.MiddleRight);
-            legendRow.GetComponent<HorizontalLayoutGroup>().spacing = 6;
+            legendRow.GetComponent<HorizontalLayoutGroup>().spacing = 8;
 
             var timeTMP = AddChildTMP(legendRow.transform, timeStr,
                 18, TextMedium, TextAlignmentOptions.Left);
@@ -1045,14 +1045,14 @@ public class ParentDashboardController : MonoBehaviour
             dotImg.raycastTarget = false;
             var dotLE = dotGO.AddComponent<LayoutElement>();
             dotLE.preferredWidth = 16;
-            dotLE.preferredHeight = 16;
+            dotLE.preferredHeight = 22;
         }
 
         if (otherTime > 0f)
         {
             string otherTimeStr = ParentDashboardViewModel.FormatPlayTime(otherTime);
             var otherRow = MakeHRow(legend.transform, 26, TextAnchor.MiddleRight);
-            otherRow.GetComponent<HorizontalLayoutGroup>().spacing = 6;
+            otherRow.GetComponent<HorizontalLayoutGroup>().spacing = 8;
             AddChildTMP(otherRow.transform, otherTimeStr,
                 18, TextMedium, TextAlignmentOptions.Left)
                 .gameObject.AddComponent<LayoutElement>().preferredWidth = 120;
@@ -1068,7 +1068,7 @@ public class ParentDashboardController : MonoBehaviour
             dotImg2.raycastTarget = false;
             var dotLE2 = dotGO2.AddComponent<LayoutElement>();
             dotLE2.preferredWidth = 16;
-            dotLE2.preferredHeight = 16;
+            dotLE2.preferredHeight = 22;
         }
 
         FitCard(card);
@@ -1084,10 +1084,10 @@ public class ParentDashboardController : MonoBehaviour
         if (!string.IsNullOrEmpty(story.childIntro))
         {
             var introCard = MakeInlineCard(parent, HexColor("#E8EAF6")); // soft indigo
-            introCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(24, 24, 16, 16);
+            introCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(30, 30, 20, 20);
             var introTMP = AddChildTMP(introCard.transform, H(story.childIntro), 28, TextDark, TextAlignmentOptions.Right);
             introTMP.fontStyle = FontStyles.Bold;
-            introTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 40;
+            introTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 54;
             FitCard(introCard.transform);
         }
 
@@ -1095,7 +1095,7 @@ public class ParentDashboardController : MonoBehaviour
         {
             var heroCard = MakeCard(parent);
             var heroTMP = AddChildTMP(heroCard, H(story.weeklySummary), 26, TextDark, TextAlignmentOptions.Right);
-            heroTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 70;
+            heroTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 95;
             heroTMP.lineSpacing = 8;
             FitCard(heroCard);
         }
@@ -1105,11 +1105,11 @@ public class ParentDashboardController : MonoBehaviour
         {
             var focusCard = MakeInlineCard(parent, HexColor("#FFF3E0")); // warm orange bg
             var focusLayout = focusCard.GetComponent<VerticalLayoutGroup>();
-            focusLayout.padding = new RectOffset(24, 24, 16, 16);
+            focusLayout.padding = new RectOffset(30, 30, 20, 20);
 
             var focusTMP = AddChildTMP(focusCard.transform, H(story.focusNow), 24, HexColor("#E65100"), TextAlignmentOptions.Right);
             focusTMP.fontStyle = FontStyles.Bold;
-            focusTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 36;
+            focusTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 49;
             FitCard(focusCard.transform);
         }
 
@@ -1132,7 +1132,7 @@ public class ParentDashboardController : MonoBehaviour
             MakeSectionTitle(confCard, "\u05DE\u05EA\u05D1\u05DC\u05D1\u05DC \u05DC\u05E2\u05D9\u05EA\u05D9\u05DD \u05D1\u05D9\u05DF");
             foreach (var pair in story.confusionPairs)
                 AddChildTMP(confCard, $"\u2022 {pair}", 22, TextDark, TextAlignmentOptions.Right)
-                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 41;
             FitCard(confCard);
         }
 
@@ -1147,10 +1147,10 @@ public class ParentDashboardController : MonoBehaviour
             MakeSectionTitle(letterCard, "\u05D0\u05D5\u05EA\u05D9\u05D5\u05EA");
             if (!string.IsNullOrEmpty(story.strongLetters))
                 AddChildTMP(letterCard, $"\u05E9\u05D5\u05DC\u05D8 \u05D1: {story.strongLetters}", 22, AccentGreen, TextAlignmentOptions.Right)
-                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 41;
             if (!string.IsNullOrEmpty(story.weakLetters))
                 AddChildTMP(letterCard, $"\u05E6\u05E8\u05D9\u05DA \u05EA\u05E8\u05D2\u05D5\u05DC: {story.weakLetters}", 22, AccentOrange, TextAlignmentOptions.Right)
-                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 41;
             FitCard(letterCard);
         }
 
@@ -1162,17 +1162,17 @@ public class ParentDashboardController : MonoBehaviour
             {
                 var upTMP = AddChildTMP(diffCard, "\u05DE\u05D5\u05DB\u05DF \u05DC\u05D4\u05E2\u05DC\u05D5\u05EA \u05E8\u05DE\u05D4:", 20, AccentGreen, TextAlignmentOptions.Right);
                 upTMP.fontStyle = FontStyles.Bold;
-                upTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+                upTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 38;
                 AddChildTMP(diffCard, H(string.Join(", ", story.levelUpGames)), 22, TextDark, TextAlignmentOptions.Right)
-                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 38;
             }
             if (story.easierLevelGames.Count > 0)
             {
                 var dnTMP = AddChildTMP(diffCard, "\u05E6\u05E8\u05D9\u05DA \u05E8\u05DE\u05D4 \u05E7\u05DC\u05D4 \u05D9\u05D5\u05EA\u05E8:", 20, AccentOrange, TextAlignmentOptions.Right);
                 dnTMP.fontStyle = FontStyles.Bold;
-                dnTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+                dnTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 38;
                 AddChildTMP(diffCard, H(string.Join(", ", story.easierLevelGames)), 22, TextDark, TextAlignmentOptions.Right)
-                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 38;
             }
             FitCard(diffCard);
         }
@@ -1194,7 +1194,7 @@ public class ParentDashboardController : MonoBehaviour
         if (story.strengths.Count > 0 || story.practiceAreas.Count > 0)
         {
             var dualRow = MakeHRow(parent, 0, TextAnchor.UpperCenter);
-            dualRow.GetComponent<HorizontalLayoutGroup>().spacing = 12;
+            dualRow.GetComponent<HorizontalLayoutGroup>().spacing = 16;
             dualRow.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
             dualRow.GetComponent<HorizontalLayoutGroup>().childForceExpandHeight = true;
             dualRow.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
@@ -1202,30 +1202,30 @@ public class ParentDashboardController : MonoBehaviour
             if (story.strengths.Count > 0)
             {
                 var sCard = MakeInlineCard(dualRow.transform, StrengthBg);
-                sCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(20, 20, 16, 16);
-                sCard.GetComponent<VerticalLayoutGroup>().spacing = 6;
+                sCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(25, 25, 20, 20);
+                sCard.GetComponent<VerticalLayoutGroup>().spacing = 8;
                 var sTitle = AddChildTMP(sCard.transform, H("\u05D7\u05D6\u05E7\u05D5\u05EA"), 28, AccentGreen, TextAlignmentOptions.Right);
                 sTitle.fontStyle = FontStyles.Bold;
-                sTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 36;
+                sTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 49;
                 foreach (var s in story.strengths)
                 {
                     var sTMP = AddChildTMP(sCard.transform, H(s), 22, TextDark, TextAlignmentOptions.Right);
-                    sTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+                    sTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 41;
                 }
             }
 
             if (story.practiceAreas.Count > 0)
             {
                 var pCard = MakeInlineCard(dualRow.transform, PracticeBg);
-                pCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(20, 20, 16, 16);
-                pCard.GetComponent<VerticalLayoutGroup>().spacing = 6;
+                pCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(25, 25, 20, 20);
+                pCard.GetComponent<VerticalLayoutGroup>().spacing = 8;
                 var pTitle = AddChildTMP(pCard.transform, H("\u05E6\u05E8\u05D9\u05DA \u05EA\u05E8\u05D2\u05D5\u05DC"), 28, AccentOrange, TextAlignmentOptions.Right);
                 pTitle.fontStyle = FontStyles.Bold;
-                pTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 36;
+                pTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 49;
                 foreach (var p in story.practiceAreas)
                 {
                     var pTMP = AddChildTMP(pCard.transform, H(p), 22, TextDark, TextAlignmentOptions.Right);
-                    pTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+                    pTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 41;
                 }
             }
         }
@@ -1240,7 +1240,7 @@ public class ParentDashboardController : MonoBehaviour
             foreach (var (catName, score) in story.categoryBars)
             {
                 var row = MakeHRow(barCard, 28, TextAnchor.MiddleRight);
-                row.GetComponent<HorizontalLayoutGroup>().spacing = 8;
+                row.GetComponent<HorizontalLayoutGroup>().spacing = 10;
                 // Score number
                 var scoreTMP = AddChildTMP(row.transform, $"{score}", 20, Primary, TextAlignmentOptions.Center);
                 scoreTMP.fontStyle = FontStyles.Bold;
@@ -1263,15 +1263,15 @@ public class ParentDashboardController : MonoBehaviour
         else if (story.improvements.Count > 0)
         {
             var impCard = MakeInlineCard(parent, HexColor("#E8F5E9"));
-            impCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(20, 20, 14, 14);
-            impCard.GetComponent<VerticalLayoutGroup>().spacing = 4;
+            impCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(25, 25, 18, 18);
+            impCard.GetComponent<VerticalLayoutGroup>().spacing = 5;
             var impTitle = AddChildTMP(impCard.transform, H("\u05DE\u05D4 \u05D4\u05E9\u05EA\u05E4\u05E8"), 24, AccentGreen, TextAlignmentOptions.Right);
             // מה השתפר
             impTitle.fontStyle = FontStyles.Bold;
-            impTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
+            impTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 43;
             foreach (var imp in story.improvements)
                 AddChildTMP(impCard.transform, $"\u2022 {H(imp)}", 20, TextDark, TextAlignmentOptions.Right)
-                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 26;
+                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 35;
             FitCard(impCard.transform);
         }
 
@@ -1286,7 +1286,7 @@ public class ParentDashboardController : MonoBehaviour
             MakeSectionTitle(recCard, "\u05DE\u05D4 \u05DC\u05E9\u05D7\u05E7 \u05D4\u05DC\u05D0\u05D4"); // מה לשחק הלאה
             foreach (var g in story.recommendedGames)
                 AddChildTMP(recCard, $"\u2022 {H(g)}", 22, TextDark, TextAlignmentOptions.Right)
-                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 38;
             FitCard(recCard);
         }
 
@@ -1297,10 +1297,10 @@ public class ParentDashboardController : MonoBehaviour
             MakeSectionTitle(snapCard, "\u05DE\u05D2\u05DE\u05EA \u05D4\u05EA\u05E7\u05D3\u05DE\u05D5\u05EA"); // מגמת התקדמות
             if (!string.IsNullOrEmpty(story.accuracyTrend))
                 AddChildTMP(snapCard, $"\u05D3\u05D9\u05D5\u05E7: {story.accuracyTrend}", 22, Primary, TextAlignmentOptions.Right)
-                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 38;
             if (!string.IsNullOrEmpty(story.lastScores))
                 AddChildTMP(snapCard, $"\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05D0\u05D7\u05E8\u05D5\u05E0\u05D9\u05DD: {story.lastScores}", 20, TextMedium, TextAlignmentOptions.Right)
-                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 26;
+                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 35;
             FitCard(snapCard);
         }
 
@@ -1308,10 +1308,10 @@ public class ParentDashboardController : MonoBehaviour
         if (!string.IsNullOrEmpty(story.progressHighlight))
         {
             var progressCard = MakeInlineCard(parent, HexColor("#E8F5E9"));
-            progressCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(24, 24, 14, 14);
+            progressCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(30, 30, 18, 18);
             var progTMP = AddChildTMP(progressCard.transform, H(story.progressHighlight), 22, AccentGreen, TextAlignmentOptions.Right);
             progTMP.fontStyle = FontStyles.Bold;
-            progTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
+            progTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 43;
             FitCard(progressCard.transform);
         }
 
@@ -1319,13 +1319,13 @@ public class ParentDashboardController : MonoBehaviour
         if (!string.IsNullOrEmpty(story.suggestedNextStep))
         {
             var nextCard = MakeInlineCard(parent, HexColor("#E3F2FD"));
-            nextCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(24, 24, 14, 14);
+            nextCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(30, 30, 18, 18);
             var nextTitle = AddChildTMP(nextCard.transform, H("\u05D4\u05E6\u05E2\u05D3 \u05D4\u05D1\u05D0"), 20, TextMedium, TextAlignmentOptions.Right);
             // הצעד הבא
-            nextTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+            nextTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 38;
             var nextTMP = AddChildTMP(nextCard.transform, H(story.suggestedNextStep), 24, Primary, TextAlignmentOptions.Right);
             nextTMP.fontStyle = FontStyles.Bold;
-            nextTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 34;
+            nextTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 46;
             FitCard(nextCard.transform);
         }
 
@@ -1345,8 +1345,8 @@ public class ParentDashboardController : MonoBehaviour
     {
         var card = MakeCard(parent);
         var cardLayout = card.GetComponent<VerticalLayoutGroup>();
-        cardLayout.padding = new RectOffset(28, 28, 24, 24);
-        cardLayout.spacing = 12;
+        cardLayout.padding = new RectOffset(35, 35, 30, 30);
+        cardLayout.spacing = 16;
         cardLayout.childAlignment = TextAnchor.MiddleCenter;
 
         // Card background — soft gradient feel
@@ -1357,19 +1357,19 @@ public class ParentDashboardController : MonoBehaviour
             // אהבתם את האפליקציה? ספרו לחברים!
             24, Primary, TextAlignmentOptions.Center);
         titleTMP.fontStyle = FontStyles.Bold;
-        titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 34;
+        titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 46;
 
         // Subtitle with child stats
         string statsLine = BuildShareStatsLine();
         var subtitleTMP = AddChildTMP(card, H(statsLine),
             20, TextMedium, TextAlignmentOptions.Center);
-        subtitleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+        subtitleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 38;
 
         // Share button
         var btnGO = new GameObject("ShareButton");
         btnGO.transform.SetParent(card, false);
         var btnLE = btnGO.AddComponent<LayoutElement>();
-        btnLE.preferredHeight = 56;
+        btnLE.preferredHeight = 76;
         btnLE.preferredWidth = 280;
 
         var btnImg = btnGO.AddComponent<Image>();
@@ -1394,7 +1394,7 @@ public class ParentDashboardController : MonoBehaviour
         labelRT.offsetMax = Vector2.zero;
         var labelTMP = labelGO.AddComponent<TextMeshProUGUI>();
         HebrewText.SetText(labelTMP, "\u05E9\u05EA\u05E4\u05D5 \u05E2\u05DD \u05D7\u05D1\u05E8\u05D9\u05DD"); // שתפו עם חברים
-        labelTMP.fontSize = 24;
+        labelTMP.fontSize = 34;
         labelTMP.color = Color.white;
         labelTMP.alignment = TextAlignmentOptions.Center;
         labelTMP.enableWordWrapping = false;
@@ -1434,7 +1434,7 @@ public class ParentDashboardController : MonoBehaviour
         {
             var noData = AddChildTMP(parent, H("\u05E2\u05D5\u05D3 \u05D0\u05D9\u05DF \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD"), // עוד אין נתונים
                 20, TextMedium, TextAlignmentOptions.Center);
-            noData.gameObject.AddComponent<LayoutElement>().preferredHeight = 60;
+            noData.gameObject.AddComponent<LayoutElement>().preferredHeight = 81;
             return;
         }
 
@@ -1443,7 +1443,7 @@ public class ParentDashboardController : MonoBehaviour
         {
             var pairRow = MakeHRow(parent, 70, TextAnchor.MiddleRight);
             var pairLayout = pairRow.GetComponent<HorizontalLayoutGroup>();
-            pairLayout.spacing = 12;
+            pairLayout.spacing = 16;
             pairLayout.childForceExpandWidth = true;
             pairLayout.childControlWidth = true;
 
@@ -1469,7 +1469,7 @@ public class ParentDashboardController : MonoBehaviour
 
         // Single horizontal row inside the card
         var row = MakeHRow(card, 50, TextAnchor.MiddleRight);
-        row.GetComponent<HorizontalLayoutGroup>().spacing = 12;
+        row.GetComponent<HorizontalLayoutGroup>().spacing = 16;
 
         // ── Score badge ──
         var badgeGO = new GameObject("Badge");
@@ -1484,7 +1484,7 @@ public class ParentDashboardController : MonoBehaviour
         badgeLE.minWidth = 36;
         badgeLE.preferredWidth = 36;
         badgeLE.flexibleWidth = 0;
-        badgeLE.preferredHeight = 36;
+        badgeLE.preferredHeight = 49;
 
         // Score text inside badge
         var btTMP = AddChildTMP(badgeGO.transform,
@@ -1528,7 +1528,7 @@ public class ParentDashboardController : MonoBehaviour
         toggleLE.minWidth = 50;
         toggleLE.preferredWidth = 50;
         toggleLE.flexibleWidth = 0;
-        toggleLE.preferredHeight = 26;
+        toggleLE.preferredHeight = 35;
 
         // Toggle knob
         var knobGO = new GameObject("Knob");
@@ -1581,7 +1581,7 @@ public class ParentDashboardController : MonoBehaviour
         manageLE.minWidth = 52;
         manageLE.preferredWidth = 52;
         manageLE.flexibleWidth = 0;
-        manageLE.preferredHeight = 28;
+        manageLE.preferredHeight = 38;
 
         var manageTMP = AddChildTMP(manageBtnGO.transform, H("\u05E0\u05D9\u05D4\u05D5\u05DC"), 12, Color.white, TextAlignmentOptions.Center); // ניהול
         manageTMP.fontStyle = FontStyles.Bold;
@@ -1607,7 +1607,7 @@ public class ParentDashboardController : MonoBehaviour
             thumbLE.minWidth = 42;
             thumbLE.preferredWidth = 42;
             thumbLE.flexibleWidth = 0;
-            thumbLE.preferredHeight = 42;
+            thumbLE.preferredHeight = 57;
         }
 
         // ── "Too hard" recommendation if game is visible but above age bucket ──
@@ -1617,7 +1617,7 @@ public class ParentDashboardController : MonoBehaviour
                 H("\u26A0 \u05DE\u05E9\u05D7\u05E7 \u05D6\u05D4 \u05E7\u05E6\u05EA \u05E7\u05E9\u05D4 \u05DC\u05D9\u05DC\u05D3. \u05DE\u05D5\u05DE\u05DC\u05E5 \u05DC\u05D4\u05E1\u05EA\u05D9\u05E8."),
                 // ⚠ משחק זה קצת קשה לילד. מומלץ להסתיר.
                 11, AccentOrange, TextAlignmentOptions.Right);
-            warnTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 18;
+            warnTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
         }
     }
 
@@ -1667,8 +1667,8 @@ public class ParentDashboardController : MonoBehaviour
         contentRT.pivot = new Vector2(0.5f, 1);
         contentRT.sizeDelta = Vector2.zero;
         var contentVL = contentGO.AddComponent<VerticalLayoutGroup>();
-        contentVL.spacing = 12;
-        contentVL.padding = new RectOffset(12, 12, 12, 12);
+        contentVL.spacing = 16;
+        contentVL.padding = new RectOffset(15, 15, 15, 15);
         contentVL.childForceExpandWidth = true;
         contentVL.childForceExpandHeight = false;
         contentVL.childControlWidth = true;
@@ -1685,7 +1685,7 @@ public class ParentDashboardController : MonoBehaviour
         headerRT.offsetMin = new Vector2(12, 0);
         headerRT.offsetMax = new Vector2(-12, -8);
         var headerHL = headerGO.AddComponent<HorizontalLayoutGroup>();
-        headerHL.spacing = 12;
+        headerHL.spacing = 16;
         headerHL.childAlignment = TextAnchor.MiddleRight;
         headerHL.childForceExpandWidth = false;
         headerHL.childControlWidth = false;
@@ -1697,7 +1697,7 @@ public class ParentDashboardController : MonoBehaviour
         nameGO.AddComponent<LayoutElement>().flexibleWidth = 1;
         var nameTMP = nameGO.AddComponent<TextMeshProUGUI>();
         HebrewText.SetText(nameTMP, game.gameName);
-        nameTMP.fontSize = 26;
+        nameTMP.fontSize = 36;
         nameTMP.fontStyle = FontStyles.Bold;
         nameTMP.color = TextDark;
         nameTMP.alignment = TextAlignmentOptions.Right;
@@ -1720,7 +1720,7 @@ public class ParentDashboardController : MonoBehaviour
         bkRT.offsetMin = Vector2.zero; bkRT.offsetMax = Vector2.zero;
         var bkTMP = backTextGO.AddComponent<TextMeshProUGUI>();
         HebrewText.SetText(bkTMP, "\u2190 \u05D7\u05D6\u05E8\u05D4"); // ← חזרה
-        bkTMP.fontSize = 16;
+        bkTMP.fontSize = 22;
         bkTMP.color = TextDark;
         bkTMP.alignment = TextAlignmentOptions.Center;
         bkTMP.raycastTarget = false;
@@ -1733,7 +1733,7 @@ public class ParentDashboardController : MonoBehaviour
     {
         // Title row
         var titleRow = MakeHRow(card, 28, TextAnchor.MiddleRight);
-        titleRow.GetComponent<HorizontalLayoutGroup>().spacing = 6;
+        titleRow.GetComponent<HorizontalLayoutGroup>().spacing = 8;
         var titleTMP = AddChildTMP(titleRow.transform,
             H("\u05E1\u05D2\u05E0\u05D5\u05DF \u05E6\u05D1\u05D9\u05E2\u05D4"), // סגנון צביעה
             15, TextMedium, TextAlignmentOptions.Right);
@@ -1785,7 +1785,7 @@ public class ParentDashboardController : MonoBehaviour
             lblRT.offsetMin = Vector2.zero; lblRT.offsetMax = Vector2.zero;
             var lblTMP = lblGO.AddComponent<TextMeshProUGUI>();
             HebrewText.SetText(lblTMP, labels[i]);
-            lblTMP.fontSize = 14;
+            lblTMP.fontSize = 20;
             lblTMP.fontStyle = active ? FontStyles.Bold : FontStyles.Normal;
             lblTMP.color = active ? Color.white : TextDark;
             lblTMP.alignment = TextAlignmentOptions.Center;
@@ -1816,7 +1816,7 @@ public class ParentDashboardController : MonoBehaviour
                 ? H("\u05DC\u05D7\u05D9\u05E6\u05D4 \u05E2\u05DC \u05D0\u05D6\u05D5\u05E8 \u05DE\u05DE\u05DC\u05D0\u05EA \u05D0\u05D5\u05EA\u05D5 \u05D1\u05E6\u05D1\u05E2") // לחיצה על אזור ממלאת אותו בצבע
                 : H("\u05E6\u05D9\u05D5\u05E8 \u05D7\u05D5\u05E4\u05E9\u05D9 \u05E2\u05DD \u05DE\u05D1\u05E8\u05E9\u05D5\u05EA"); // ציור חופשי עם מברשות
         var explainTMP = AddChildTMP(card, explain, 12, TextLight, TextAlignmentOptions.Right);
-        explainTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 18;
+        explainTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
     }
 
     private void MakeDrawingsGallery(Transform card)
@@ -1826,14 +1826,14 @@ public class ParentDashboardController : MonoBehaviour
         {
             AddChildTMP(card, H("\u05D0\u05D9\u05DF \u05E6\u05D9\u05D5\u05E8\u05D9\u05DD \u05E2\u05D3\u05D9\u05D9\u05DF"), // אין ציורים עדיין
                 14, TextLight, TextAlignmentOptions.Center)
-                .gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+                .gameObject.AddComponent<LayoutElement>().preferredHeight = 41;
             return;
         }
 
         var titleTMP = AddChildTMP(card, H("\u05E6\u05D9\u05D5\u05E8\u05D9\u05DD"), // ציורים
             16, TextDark, TextAlignmentOptions.Right);
         titleTMP.fontStyle = FontStyles.Bold;
-        titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
+        titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
 
         // Grid of recent drawings (last 6)
         var gridGO = new GameObject("DrawingsGrid");
@@ -1962,14 +1962,14 @@ public class ParentDashboardController : MonoBehaviour
 
         // ── Header row: score badge + name + visibility chip ──
         var headerRow = MakeHRow(card, 60, TextAnchor.MiddleRight);
-        headerRow.GetComponent<HorizontalLayoutGroup>().spacing = 12;
+        headerRow.GetComponent<HorizontalLayoutGroup>().spacing = 16;
 
         // Score badge
         var badgeGO = new GameObject("Badge");
         badgeGO.transform.SetParent(headerRow.transform, false);
         var badgeLE = badgeGO.AddComponent<LayoutElement>();
         badgeLE.preferredWidth = 48;
-        badgeLE.preferredHeight = 48;
+        badgeLE.preferredHeight = 65;
         var badgeImg = badgeGO.AddComponent<Image>();
         if (circleSprite != null) badgeImg.sprite = circleSprite;
         badgeImg.color = game.sessionsPlayed > 0
@@ -1990,18 +1990,18 @@ public class ParentDashboardController : MonoBehaviour
         var infoCol = MakeVCol(headerRow.transform);
         var infoLE = infoCol.AddComponent<LayoutElement>();
         infoLE.flexibleWidth = 1;
-        infoLE.preferredHeight = 50;
+        infoLE.preferredHeight = 68;
 
         var nameTMP = AddChildTMP(infoCol.transform, H(game.gameName), 19, TextDark, TextAlignmentOptions.Right);
         nameTMP.fontStyle = FontStyles.Bold;
-        nameTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 26;
+        nameTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 35;
 
         string sub = game.sessionsPlayed > 0
             ? $"{ParentDashboardViewModel.TrendArrow(game.trend)} " +
                 H($"{game.sessionsPlayed} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD") // X משחקים
             : H("\u05E2\u05D5\u05D3 \u05DC\u05D0 \u05E9\u05D5\u05D7\u05E7"); // עוד לא שוחק
         var subTMP = AddChildTMP(infoCol.transform, sub, 14, TextMedium, TextAlignmentOptions.Right);
-        subTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 20;
+        subTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 27;
 
         // Visibility status chip
         bool finalVisible = rec != null ? rec.finalVisible : game.systemVisibility;
@@ -2009,7 +2009,7 @@ public class ParentDashboardController : MonoBehaviour
         visChipGO.transform.SetParent(headerRow.transform, false);
         var visChipLE = visChipGO.AddComponent<LayoutElement>();
         visChipLE.preferredWidth = 72;
-        visChipLE.preferredHeight = 28;
+        visChipLE.preferredHeight = 38;
         var visChipImg = visChipGO.AddComponent<Image>();
         visChipImg.sprite = roundedRect;
         visChipImg.type = Image.Type.Sliced;
@@ -2031,7 +2031,7 @@ public class ParentDashboardController : MonoBehaviour
             ? H("\u05DE\u05D5\u05DE\u05DC\u05E5 \u05E2\u05DC \u05D9\u05D3\u05D9 \u05D4\u05DE\u05E2\u05E8\u05DB\u05EA") // מומלץ על ידי המערכת
             : H("\u05DC\u05D0 \u05DE\u05D5\u05DE\u05DC\u05E5 \u05DB\u05E8\u05D2\u05E2"); // לא מומלץ כרגע
         var sysAccessRow = MakeHRow(card, 24, TextAnchor.MiddleRight);
-        sysAccessRow.GetComponent<HorizontalLayoutGroup>().spacing = 6;
+        sysAccessRow.GetComponent<HorizontalLayoutGroup>().spacing = 8;
         var sysAccessIcon = AddChildTMP(sysAccessRow.transform,
             sysVisible ? "\u25CF" : "\u25CB", // ● or ○
             12, sysVisible ? AccentGreen : TextLight, TextAlignmentOptions.Center);
@@ -2042,7 +2042,7 @@ public class ParentDashboardController : MonoBehaviour
 
         // Access control: 3 toggle buttons (Auto / On / Off)
         var accessRow = MakeHRow(card, 38, TextAnchor.MiddleCenter);
-        accessRow.GetComponent<HorizontalLayoutGroup>().spacing = 8;
+        accessRow.GetComponent<HorizontalLayoutGroup>().spacing = 10;
         accessRow.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
 
         ParentGameAccessMode currentMode = rec != null
@@ -2063,7 +2063,7 @@ public class ParentDashboardController : MonoBehaviour
             ? ParentDashboardViewModel.GetExplanationLabel(rec.accessExplanation)
             : game.visibilityReasonDisplay;
         var accessExplainTMP = AddChildTMP(card, H(accessExplain), 12, TextLight, TextAlignmentOptions.Right);
-        accessExplainTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 18;
+        accessExplainTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
 
         // Wire access toggle buttons
         var capturedCard = card;
@@ -2105,7 +2105,7 @@ public class ParentDashboardController : MonoBehaviour
         {
             // Baseline by age
             var baseRow = MakeHRow(card, 22, TextAnchor.MiddleRight);
-            baseRow.GetComponent<HorizontalLayoutGroup>().spacing = 6;
+            baseRow.GetComponent<HorizontalLayoutGroup>().spacing = 8;
             AddChildTMP(baseRow.transform, "\u25B8", 10, TextLight, TextAlignmentOptions.Center) // ▸
                 .gameObject.AddComponent<LayoutElement>().preferredWidth = 14;
             AddChildTMP(baseRow.transform,
@@ -2117,7 +2117,7 @@ public class ParentDashboardController : MonoBehaviour
             if (rec.systemRecommendedDifficulty != rec.baselineDifficulty)
             {
                 var sysRow = MakeHRow(card, 22, TextAnchor.MiddleRight);
-                sysRow.GetComponent<HorizontalLayoutGroup>().spacing = 6;
+                sysRow.GetComponent<HorizontalLayoutGroup>().spacing = 8;
                 AddChildTMP(sysRow.transform, "\u25B8", 10, Primary, TextAlignmentOptions.Center) // ▸
                     .gameObject.AddComponent<LayoutElement>().preferredWidth = 14;
                 string sysLabel = rec.recommendationSource == ContentRecommendationSource.Adaptive
@@ -2131,15 +2131,15 @@ public class ParentDashboardController : MonoBehaviour
             // Content explanation
             string contentExplain = ParentDashboardViewModel.GetExplanationLabel(rec.contentExplanation);
             AddChildTMP(card, H(contentExplain), 12, TextLight, TextAlignmentOptions.Right)
-                .gameObject.AddComponent<LayoutElement>().preferredHeight = 18;
+                .gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
         }
 
         MakeSpacer(card, 4f);
 
         // ── Difficulty control row ──
         var diffRow = MakeHRow(card, 50, TextAnchor.MiddleRight);
-        diffRow.GetComponent<HorizontalLayoutGroup>().spacing = 8;
-        diffRow.GetComponent<HorizontalLayoutGroup>().padding = new RectOffset(0, 0, 4, 4);
+        diffRow.GetComponent<HorizontalLayoutGroup>().spacing = 10;
+        diffRow.GetComponent<HorizontalLayoutGroup>().padding = new RectOffset(2, 2, 6, 6);
 
         // Minus button
         var minusBtn = MakeSmallButton(diffRow.transform, "\u2212", 28); // −
@@ -2148,7 +2148,7 @@ public class ParentDashboardController : MonoBehaviour
         diffDisplayGO.transform.SetParent(diffRow.transform, false);
         var diffDisplayLE = diffDisplayGO.AddComponent<LayoutElement>();
         diffDisplayLE.preferredWidth = 60;
-        diffDisplayLE.preferredHeight = 40;
+        diffDisplayLE.preferredHeight = 54;
         var diffBgImg = diffDisplayGO.AddComponent<Image>();
         diffBgImg.sprite = roundedRect;
         diffBgImg.type = Image.Type.Sliced;
@@ -2176,7 +2176,7 @@ public class ParentDashboardController : MonoBehaviour
         string finalLabel = hasRec ? rec.finalVariantLabel
             : (game.activeDifficultyImpact ?? "");
         var finalRow = MakeHRow(card, 28, TextAnchor.MiddleRight);
-        finalRow.GetComponent<HorizontalLayoutGroup>().spacing = 6;
+        finalRow.GetComponent<HorizontalLayoutGroup>().spacing = 8;
         var finalIcon = AddChildTMP(finalRow.transform, "\u25BA", 12, Primary, TextAlignmentOptions.Center); // ►
         finalIcon.gameObject.AddComponent<LayoutElement>().preferredWidth = 16;
         string finalPrefix = H("\u05D4\u05E2\u05E8\u05DA \u05D1\u05E4\u05D5\u05E2\u05DC:"); // הערך בפועל:
@@ -2197,12 +2197,12 @@ public class ParentDashboardController : MonoBehaviour
             if (hasRec)
             {
                 var recCard = MakeInlineCard(card, HexColor("#F0FFF0"));
-                recCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(12, 12, 8, 8);
-                recCard.GetComponent<VerticalLayoutGroup>().spacing = 2;
+                recCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(15, 15, 10, 10);
+                recCard.GetComponent<VerticalLayoutGroup>().spacing = 3;
 
                 string recLabel = H($"\u05D4\u05DE\u05DC\u05E6\u05EA \u05D4\u05DE\u05E2\u05E8\u05DB\u05EA: {rec.systemRecommendedVariantLabel}"); // המלצת המערכת: X
                 AddChildTMP(recCard.transform, recLabel, 14, AccentGreen, TextAlignmentOptions.Right)
-                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 20;
+                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 27;
             }
 
             MakeSpacer(card, 4f);
@@ -2211,7 +2211,7 @@ public class ParentDashboardController : MonoBehaviour
             resetBtnGO = new GameObject("ResetBtn");
             resetBtnGO.transform.SetParent(card, false);
             var resetLE2 = resetBtnGO.AddComponent<LayoutElement>();
-            resetLE2.preferredHeight = 36;
+            resetLE2.preferredHeight = 49;
             var resetImg = resetBtnGO.AddComponent<Image>();
             if (roundedRect != null) resetImg.sprite = roundedRect;
             resetImg.type = Image.Type.Sliced;
@@ -2232,7 +2232,7 @@ public class ParentDashboardController : MonoBehaviour
             resetLabelRT.offsetMax = Vector2.zero;
             var resetLabelTMP = resetLabelGO.AddComponent<TextMeshProUGUI>();
             HebrewText.SetText(resetLabelTMP, "\u05D7\u05D6\u05E8\u05D4 \u05DC\u05E8\u05DE\u05D4 \u05D4\u05DE\u05D5\u05DE\u05DC\u05E6\u05EA"); // חזרה לרמה המומלצת
-            resetLabelTMP.fontSize = 14;
+            resetLabelTMP.fontSize = 20;
             resetLabelTMP.color = AccentGreen;
             resetLabelTMP.alignment = TextAlignmentOptions.Center;
             resetLabelTMP.enableWordWrapping = false;
@@ -2276,7 +2276,7 @@ public class ParentDashboardController : MonoBehaviour
         {
             MakeDivider(card);
             var quickRow = MakeHRow(card, 28, TextAnchor.MiddleCenter);
-            quickRow.GetComponent<HorizontalLayoutGroup>().spacing = 16;
+            quickRow.GetComponent<HorizontalLayoutGroup>().spacing = 21;
             quickRow.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
 
             AddMiniStat(quickRow.transform, $"{game.accuracy:P0}",
@@ -2296,8 +2296,8 @@ public class ParentDashboardController : MonoBehaviour
             detailsGO.transform.SetParent(card, false);
             detailsGO.SetActive(false);
             var detailsLayout = detailsGO.AddComponent<VerticalLayoutGroup>();
-            detailsLayout.spacing = 6;
-            detailsLayout.padding = new RectOffset(0, 0, 8, 8);
+            detailsLayout.spacing = 8;
+            detailsLayout.padding = new RectOffset(2, 2, 10, 10);
             detailsLayout.childForceExpandWidth = true;
             detailsLayout.childForceExpandHeight = false;
             detailsGO.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
@@ -2330,7 +2330,7 @@ public class ParentDashboardController : MonoBehaviour
             {
                 var insight = AddChildTMP(detailsGO.transform, H(game.insightText), 15, Primary, TextAlignmentOptions.Right);
                 insight.fontStyle = FontStyles.Italic;
-                insight.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
+                insight.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
             }
 
             if (game.recentSessions.Count > 0)
@@ -2340,7 +2340,7 @@ public class ParentDashboardController : MonoBehaviour
                     H("\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05D0\u05D7\u05E8\u05D5\u05E0\u05D9\u05DD"), // משחקים אחרונים
                     16, TextDark, TextAlignmentOptions.Right);
                 sessTitle.fontStyle = FontStyles.Bold;
-                sessTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
+                sessTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
 
                 int showCount = Mathf.Min(5, game.recentSessions.Count);
                 for (int i = game.recentSessions.Count - 1; i >= game.recentSessions.Count - showCount; i--)
@@ -2350,7 +2350,7 @@ public class ParentDashboardController : MonoBehaviour
                     string line = $"{status} {ParentDashboardViewModel.FormatDate(s.timestamp)} | " +
                         $"\u05E8\u05DE\u05D4 {s.difficulty} | {s.accuracy:P0} | {s.mistakes} \u05E9\u05D2\u05D9\u05D0\u05D5\u05EA";
                     var sessTMP = AddChildTMP(detailsGO.transform, line, 13, TextMedium, TextAlignmentOptions.Right);
-                    sessTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 20;
+                    sessTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 27;
                 }
             }
 
@@ -2388,7 +2388,7 @@ public class ParentDashboardController : MonoBehaviour
 
             var domainRow = MakeHRow(parent, 0, TextAnchor.UpperRight);
             var domainLayout = domainRow.GetComponent<HorizontalLayoutGroup>();
-            domainLayout.spacing = 16;
+            domainLayout.spacing = 21;
             domainLayout.childForceExpandWidth = true;
             domainLayout.childControlWidth = true;
             domainLayout.childForceExpandHeight = false;
@@ -2415,18 +2415,18 @@ public class ParentDashboardController : MonoBehaviour
         var accentImg = accent.AddComponent<Image>();
         accentImg.color = cat.color;
         accentImg.raycastTarget = false;
-        accent.AddComponent<LayoutElement>().preferredHeight = 4;
+        accent.AddComponent<LayoutElement>().preferredHeight = 5;
 
         // Header row
         var headerRow = MakeHRow(card, 56, TextAnchor.MiddleRight);
-        headerRow.GetComponent<HorizontalLayoutGroup>().spacing = 12;
+        headerRow.GetComponent<HorizontalLayoutGroup>().spacing = 16;
 
         // Score pill
         var scoreGO = new GameObject("Score");
         scoreGO.transform.SetParent(headerRow.transform, false);
         var scoreLEComp = scoreGO.AddComponent<LayoutElement>();
         scoreLEComp.preferredWidth = 52;
-        scoreLEComp.preferredHeight = 30;
+        scoreLEComp.preferredHeight = 41;
         var scoreImg = scoreGO.AddComponent<Image>();
         if (roundedRect != null) scoreImg.sprite = roundedRect;
         scoreImg.type = Image.Type.Sliced;
@@ -2440,11 +2440,11 @@ public class ParentDashboardController : MonoBehaviour
 
         var catNameTMP = AddChildTMP(nameCol.transform, H(cat.categoryName), 18, TextDark, TextAlignmentOptions.Right);
         catNameTMP.fontStyle = FontStyles.Bold;
-        catNameTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
+        catNameTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
 
         string trendStr = $"{ParentDashboardViewModel.TrendArrow(cat.trend)} {H(cat.trendLabel)}";
         var trendTMP = AddChildTMP(nameCol.transform, trendStr, 13, TextMedium, TextAlignmentOptions.Right);
-        trendTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 18;
+        trendTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
 
         // Progress bar
         MakeProgressBar(card, cat.score / 100f, cat.color, 10f);
@@ -2452,15 +2452,15 @@ public class ParentDashboardController : MonoBehaviour
         // Confidence + summary
         var confLine = $"{H(cat.confidenceLabel)} | {H(cat.insightText)}";
         var confTMP = AddChildTMP(card, confLine, 12, TextLight, TextAlignmentOptions.Right);
-        confTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 18;
+        confTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
 
         // Details (hidden)
         var detailsGO = new GameObject("Details");
         detailsGO.transform.SetParent(card, false);
         detailsGO.SetActive(false);
         var detailsL = detailsGO.AddComponent<VerticalLayoutGroup>();
-        detailsL.spacing = 6;
-        detailsL.padding = new RectOffset(0, 0, 8, 8);
+        detailsL.spacing = 8;
+        detailsL.padding = new RectOffset(2, 2, 10, 10);
         detailsL.childForceExpandWidth = true;
         detailsL.childForceExpandHeight = false;
         detailsGO.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
@@ -2473,7 +2473,7 @@ public class ParentDashboardController : MonoBehaviour
             var summaryTMP = AddChildTMP(detailsGO.transform, H(cat.summaryText),
                 14, TextDark, TextAlignmentOptions.Right);
             summaryTMP.fontStyle = FontStyles.Italic;
-            summaryTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
+            summaryTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
         }
 
         if (cat.contributions.Count > 0)
@@ -2482,12 +2482,12 @@ public class ParentDashboardController : MonoBehaviour
                 H("\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05EA\u05D5\u05E8\u05DE\u05D9\u05DD"), // משחקים תורמים
                 16, TextDark, TextAlignmentOptions.Right);
             gTitle.fontStyle = FontStyles.Bold;
-            gTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
+            gTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
 
             foreach (var contrib in cat.contributions)
             {
                 var cRow = MakeHRow(detailsGO.transform, 24, TextAnchor.MiddleRight);
-                cRow.GetComponent<HorizontalLayoutGroup>().spacing = 8;
+                cRow.GetComponent<HorizontalLayoutGroup>().spacing = 10;
 
                 var cScTMP = AddChildTMP(cRow.transform, $"{contrib.gameScore:F0}",
                     14, cat.color, TextAlignmentOptions.Center);
@@ -2533,7 +2533,7 @@ public class ParentDashboardController : MonoBehaviour
         string overallTrend = $"{ParentDashboardViewModel.TrendArrow(_data.overallTrend)} {H(_data.overallTrendLabel)}";
         var trendTMP = AddChildTMP(overallCard, overallTrend, 22, Primary, TextAlignmentOptions.Center);
         trendTMP.fontStyle = FontStyles.Bold;
-        trendTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
+        trendTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 43;
 
         MakeStatRow(overallCard, "\u05E1\u05D4\"\u05DB \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD", $"{_data.totalSessions}"); // סה"כ משחקים
         MakeStatRow(overallCard, "\u05D6\u05DE\u05DF \u05DE\u05E9\u05D7\u05E7 \u05DB\u05D5\u05DC\u05DC", H(_data.totalPlayTimeDisplay)); // זמן משחק כולל
@@ -2575,7 +2575,7 @@ public class ParentDashboardController : MonoBehaviour
         {
             if (cat.contributingGamesCount == 0) continue;
             var row = MakeHRow(catCard, 30, TextAnchor.MiddleRight);
-            row.GetComponent<HorizontalLayoutGroup>().spacing = 8;
+            row.GetComponent<HorizontalLayoutGroup>().spacing = 10;
 
             var arrTMP = AddChildTMP(row.transform, ParentDashboardViewModel.TrendArrow(cat.trend),
                 14, cat.color, TextAlignmentOptions.Center);
@@ -2607,7 +2607,7 @@ public class ParentDashboardController : MonoBehaviour
         foreach (var g in games)
         {
             var row = MakeHRow(card, 30, TextAnchor.MiddleRight);
-            row.GetComponent<HorizontalLayoutGroup>().spacing = 8;
+            row.GetComponent<HorizontalLayoutGroup>().spacing = 10;
 
             var scTMP = AddChildTMP(row.transform, $"{g.score:F0}", 15, color, TextAlignmentOptions.Center);
             scTMP.fontStyle = FontStyles.Bold;
@@ -2789,7 +2789,7 @@ public class ParentDashboardController : MonoBehaviour
         var card = MakeCard(parent);
         MakeSectionTitle(card, title);
         AddChildTMP(card, H(detail), 20, NeedDataColor, TextAlignmentOptions.Right)
-            .gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+            .gameObject.AddComponent<LayoutElement>().preferredHeight = 38;
         FitCard(card);
     }
 
@@ -2797,14 +2797,14 @@ public class ParentDashboardController : MonoBehaviour
     {
         if (items == null || items.Count == 0) return;
         var card = MakeInlineCard(parent, bg);
-        card.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(20, 20, 14, 14);
-        card.GetComponent<VerticalLayoutGroup>().spacing = 6;
+        card.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(25, 25, 18, 18);
+        card.GetComponent<VerticalLayoutGroup>().spacing = 8;
         var tTMP = AddChildTMP(card.transform, H(title), 24, titleColor, TextAlignmentOptions.Right);
         tTMP.fontStyle = FontStyles.Bold;
-        tTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
+        tTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 43;
         foreach (var item in items)
             AddChildTMP(card.transform, H(item), 20, TextDark, TextAlignmentOptions.Right)
-                .gameObject.AddComponent<LayoutElement>().preferredHeight = 26;
+                .gameObject.AddComponent<LayoutElement>().preferredHeight = 35;
         FitCard(card.transform);
     }
 
@@ -2832,8 +2832,8 @@ public class ParentDashboardController : MonoBehaviour
         go.AddComponent<Shadow>().effectColor = new Color(0, 0, 0, 0.06f);
 
         var layout = go.AddComponent<VerticalLayoutGroup>();
-        layout.spacing = 8;
-        layout.padding = new RectOffset(20, 20, 16, 16);
+        layout.spacing = 10;
+        layout.padding = new RectOffset(25, 25, 20, 20);
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
         layout.childControlWidth = true;
@@ -2852,8 +2852,8 @@ public class ParentDashboardController : MonoBehaviour
         img.color = bgColor;
 
         var layout = go.AddComponent<VerticalLayoutGroup>();
-        layout.spacing = 4;
-        layout.padding = new RectOffset(12, 12, 10, 10);
+        layout.spacing = 5;
+        layout.padding = new RectOffset(15, 15, 13, 13);
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
         layout.childControlWidth = true;
@@ -2876,7 +2876,7 @@ public class ParentDashboardController : MonoBehaviour
         var go = new GameObject("HRow");
         go.transform.SetParent(parent, false);
         var layout = go.AddComponent<HorizontalLayoutGroup>();
-        layout.spacing = 8;
+        layout.spacing = 10;
         layout.childAlignment = align;
         layout.childForceExpandWidth = false;
         layout.childForceExpandHeight = false;
@@ -2892,7 +2892,7 @@ public class ParentDashboardController : MonoBehaviour
         var go = new GameObject("VCol");
         go.transform.SetParent(parent, false);
         var layout = go.AddComponent<VerticalLayoutGroup>();
-        layout.spacing = 2;
+        layout.spacing = 3;
         layout.childAlignment = TextAnchor.MiddleRight;
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
@@ -2924,10 +2924,10 @@ public class ParentDashboardController : MonoBehaviour
 
         var valTMP = AddChildTMP(col.transform, value, 14, TextDark, TextAlignmentOptions.Center);
         valTMP.fontStyle = FontStyles.Bold;
-        valTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 16;
+        valTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 22;
 
         AddChildTMP(col.transform, label, 10, TextLight, TextAlignmentOptions.Center)
-            .gameObject.AddComponent<LayoutElement>().preferredHeight = 14;
+            .gameObject.AddComponent<LayoutElement>().preferredHeight = 19;
     }
 
     private void MakeSectionDivider(Transform parent, string rawHebrew)
@@ -2935,20 +2935,20 @@ public class ParentDashboardController : MonoBehaviour
         MakeSpacer(parent, 8f);
         var tmp = AddChildTMP(parent, H(rawHebrew), 38, TextDark, TextAlignmentOptions.Right);
         tmp.fontStyle = FontStyles.Bold;
-        tmp.gameObject.AddComponent<LayoutElement>().preferredHeight = 50;
+        tmp.gameObject.AddComponent<LayoutElement>().preferredHeight = 68;
     }
 
     private void MakeSectionTitle(Transform parent, string rawHebrew)
     {
         var tmp = AddChildTMP(parent, H(rawHebrew), 36, TextDark, TextAlignmentOptions.Right);
         tmp.fontStyle = FontStyles.Bold;
-        tmp.gameObject.AddComponent<LayoutElement>().preferredHeight = 48;
+        tmp.gameObject.AddComponent<LayoutElement>().preferredHeight = 65;
     }
 
     private void MakeStatRow(Transform parent, string rawLabel, string value)
     {
         var row = MakeHRow(parent, 30, TextAnchor.MiddleRight);
-        row.GetComponent<HorizontalLayoutGroup>().spacing = 8;
+        row.GetComponent<HorizontalLayoutGroup>().spacing = 10;
 
         var valTMP = AddChildTMP(row.transform, value, 16, Primary, TextAlignmentOptions.Left);
         valTMP.fontStyle = FontStyles.Bold;
@@ -2974,18 +2974,18 @@ public class ParentDashboardController : MonoBehaviour
         img.raycastTarget = false;
 
         var layout = go.AddComponent<VerticalLayoutGroup>();
-        layout.spacing = 2;
-        layout.padding = new RectOffset(8, 8, 8, 8);
+        layout.spacing = 3;
+        layout.padding = new RectOffset(10, 10, 10, 10);
         layout.childAlignment = TextAnchor.MiddleCenter;
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
 
         var valTMP = AddChildTMP(go.transform, value, 38, TextDark, TextAlignmentOptions.Center);
         valTMP.fontStyle = FontStyles.Bold;
-        valTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 48;
+        valTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 65;
 
         var lblTMP = AddChildTMP(go.transform, H(rawLabel), 24, TextMedium, TextAlignmentOptions.Center);
-        lblTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 34;
+        lblTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 46;
     }
 
     private void MakeProgressBar(Transform parent, float fill, Color barColor, float height)
@@ -3026,21 +3026,21 @@ public class ParentDashboardController : MonoBehaviour
         cardImg.raycastTarget = false;
 
         var layout = go.AddComponent<VerticalLayoutGroup>();
-        layout.spacing = 6;
+        layout.spacing = 8;
         layout.childAlignment = TextAnchor.MiddleCenter;
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
-        layout.padding = new RectOffset(8, 8, 10, 10);
+        layout.padding = new RectOffset(10, 10, 13, 13);
 
         // Category name on top
         var nmTMP = AddChildTMP(go.transform, H(cat.categoryName), 20, TextDark, TextAlignmentOptions.Center);
         nmTMP.fontStyle = FontStyles.Bold;
-        nmTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+        nmTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 38;
 
         // Score circle below (fixed 50x50 inside a centered container)
         var circContainer = new GameObject("CircleContainer");
         circContainer.transform.SetParent(go.transform, false);
-        circContainer.AddComponent<LayoutElement>().preferredHeight = 54;
+        circContainer.AddComponent<LayoutElement>().preferredHeight = 73;
 
         var circGO = new GameObject("ScoreCircle");
         circGO.transform.SetParent(circContainer.transform, false);
@@ -3061,7 +3061,7 @@ public class ParentDashboardController : MonoBehaviour
     private void MakeMiniChip(Transform parent, CategoryDashboardData cat, Color accentColor)
     {
         var row = MakeHRow(parent, 42, TextAnchor.MiddleRight);
-        row.GetComponent<HorizontalLayoutGroup>().spacing = 10;
+        row.GetComponent<HorizontalLayoutGroup>().spacing = 13;
 
         var scTMP = AddChildTMP(row.transform, $"{cat.score:F0}", 28, accentColor, TextAlignmentOptions.Center);
         scTMP.fontStyle = FontStyles.Bold;
@@ -3106,7 +3106,7 @@ public class ParentDashboardController : MonoBehaviour
         go.transform.SetParent(parent, false);
         var le = go.AddComponent<LayoutElement>();
         le.preferredWidth = 42;
-        le.preferredHeight = 42;
+        le.preferredHeight = 57;
 
         var img = go.AddComponent<Image>();
         img.sprite = roundedRect;
@@ -3193,8 +3193,8 @@ public class ParentDashboardController : MonoBehaviour
         headerBg.color = HexColor("#2C3E50");
 
         var headerLayout = headerGO.AddComponent<HorizontalLayoutGroup>();
-        headerLayout.padding = new RectOffset(16, 16, 8, 8);
-        headerLayout.spacing = 12;
+        headerLayout.padding = new RectOffset(20, 20, 10, 10);
+        headerLayout.spacing = 16;
         headerLayout.childAlignment = TextAnchor.MiddleCenter;
         headerLayout.childForceExpandWidth = false;
         headerLayout.childForceExpandHeight = true;
@@ -3220,7 +3220,7 @@ public class ParentDashboardController : MonoBehaviour
             trophyGO.transform.SetParent(headerGO.transform, false);
             var trLE = trophyGO.AddComponent<LayoutElement>();
             trLE.preferredWidth = 36;
-            trLE.preferredHeight = 36;
+            trLE.preferredHeight = 49;
             var trImg = trophyGO.AddComponent<Image>();
             trImg.sprite = trophySprite;
             trImg.preserveAspect = true;
@@ -3254,8 +3254,8 @@ public class ParentDashboardController : MonoBehaviour
         contentRT.offsetMax = Vector2.zero;
 
         var contentLayout = contentGO.AddComponent<VerticalLayoutGroup>();
-        contentLayout.spacing = 20;
-        contentLayout.padding = new RectOffset(16, 16, 16, 30);
+        contentLayout.spacing = 26;
+        contentLayout.padding = new RectOffset(20, 20, 20, 38);
         contentLayout.childForceExpandWidth = true;
         contentLayout.childForceExpandHeight = false;
         contentLayout.childControlWidth = true;
@@ -3286,19 +3286,19 @@ public class ParentDashboardController : MonoBehaviour
     {
         var card = MakeCard(parent);
         var cardLayout = card.GetComponent<VerticalLayoutGroup>();
-        cardLayout.spacing = 6;
-        cardLayout.padding = new RectOffset(16, 16, 14, 14);
+        cardLayout.spacing = 8;
+        cardLayout.padding = new RectOffset(20, 20, 18, 18);
 
         // Game title
         var titleTMP = AddChildTMP(card, H(gameBoard.gameName), 20, TextDark, TextAlignmentOptions.Right);
         titleTMP.fontStyle = FontStyles.Bold;
-        titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+        titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 41;
 
         MakeDivider(card);
 
         // Column headers
         var headerRow = MakeHRow(card, 24, TextAnchor.MiddleRight);
-        headerRow.GetComponent<HorizontalLayoutGroup>().spacing = 6;
+        headerRow.GetComponent<HorizontalLayoutGroup>().spacing = 8;
         AddLbHeaderCell(headerRow.transform, "#", 30);
         AddLbHeaderCell(headerRow.transform, "\u05E9\u05DD", 0, true); // שם
         AddLbHeaderCell(headerRow.transform, "\u05E6\u05D9\u05D5\u05DF", 50); // ציון
@@ -3336,8 +3336,8 @@ public class ParentDashboardController : MonoBehaviour
         rowGO.AddComponent<LayoutElement>().preferredHeight = entry.hasPlayedGame ? 44 : 36;
 
         var rowLayout = rowGO.AddComponent<HorizontalLayoutGroup>();
-        rowLayout.spacing = 6;
-        rowLayout.padding = new RectOffset(8, 8, 4, 4);
+        rowLayout.spacing = 8;
+        rowLayout.padding = new RectOffset(10, 10, 6, 6);
         rowLayout.childAlignment = TextAnchor.MiddleRight;
         rowLayout.childForceExpandWidth = false;
         rowLayout.childForceExpandHeight = true;
@@ -3359,14 +3359,14 @@ public class ParentDashboardController : MonoBehaviour
         nameCol.AddComponent<LayoutElement>().flexibleWidth = 1;
         var nameTMP = AddChildTMP(nameCol.transform, H(entry.profileName), fontSize, textColor, TextAlignmentOptions.Right);
         nameTMP.fontStyle = FontStyles.Bold;
-        nameTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 20;
+        nameTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 27;
 
         if (entry.isCurrentProfile)
         {
             var badgeTMP = AddChildTMP(nameCol.transform,
                 H("\u05D4\u05E4\u05E8\u05D5\u05E4\u05D9\u05DC \u05D4\u05E0\u05D5\u05DB\u05D7\u05D9"), // הפרופיל הנוכחי
                 10, Primary, TextAlignmentOptions.Right);
-            badgeTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 14;
+            badgeTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 19;
         }
         else if (!entry.hasPlayedGame)
         {
@@ -3374,7 +3374,7 @@ public class ParentDashboardController : MonoBehaviour
                 H("\u05E2\u05D3\u05D9\u05D9\u05DF \u05DC\u05D0 \u05E9\u05D9\u05D7\u05E7"), // עדיין לא שיחק
                 10, TextLight, TextAlignmentOptions.Right);
             statusTMP.fontStyle = FontStyles.Italic;
-            statusTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 14;
+            statusTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 19;
         }
 
         if (entry.hasPlayedGame)
@@ -3454,7 +3454,7 @@ public class ParentDashboardController : MonoBehaviour
         var cardRT = cardGO.AddComponent<RectTransform>();
         cardRT.anchorMin = cardRT.anchorMax = new Vector2(0.5f, 0.5f);
         cardRT.pivot = new Vector2(0.5f, 0.5f);
-        cardRT.sizeDelta = new Vector2(500, 380);
+        cardRT.sizeDelta = new Vector2(600, 500);
 
         var cardImg = cardGO.AddComponent<Image>();
         if (roundedRect != null) { cardImg.sprite = roundedRect; cardImg.type = Image.Type.Sliced; }
@@ -3463,7 +3463,7 @@ public class ParentDashboardController : MonoBehaviour
 
         var cardLayout = cardGO.AddComponent<VerticalLayoutGroup>();
         cardLayout.spacing = 0;
-        cardLayout.padding = new RectOffset(0, 0, 0, 0);
+        cardLayout.padding = new RectOffset(2, 2, 2, 2);
         cardLayout.childForceExpandWidth = true;
         cardLayout.childForceExpandHeight = false;
         cardLayout.childControlWidth = true;
@@ -3476,11 +3476,11 @@ public class ParentDashboardController : MonoBehaviour
         var headerImg = headerGO.AddComponent<Image>();
         if (roundedRect != null) { headerImg.sprite = roundedRect; headerImg.type = Image.Type.Sliced; }
         headerImg.color = HexColor("#2C3E50");
-        headerGO.AddComponent<LayoutElement>().preferredHeight = 60;
+        headerGO.AddComponent<LayoutElement>().preferredHeight = 81;
 
         var headerLayout = headerGO.AddComponent<HorizontalLayoutGroup>();
-        headerLayout.padding = new RectOffset(16, 16, 8, 8);
-        headerLayout.spacing = 12;
+        headerLayout.padding = new RectOffset(20, 20, 10, 10);
+        headerLayout.spacing = 16;
         headerLayout.childAlignment = TextAnchor.MiddleCenter;
         headerLayout.childForceExpandWidth = false;
         headerLayout.childForceExpandHeight = true;
@@ -3493,7 +3493,7 @@ public class ParentDashboardController : MonoBehaviour
         closeBtnGO.AddComponent<RectTransform>();
         var closeTMP = closeBtnGO.AddComponent<TextMeshProUGUI>();
         closeTMP.text = "\u2715"; // ✕
-        closeTMP.fontSize = 26;
+        closeTMP.fontSize = 36;
         closeTMP.color = Color.white;
         closeTMP.alignment = TextAlignmentOptions.Center;
         closeBtnGO.AddComponent<LayoutElement>().preferredWidth = 40;
@@ -3507,7 +3507,7 @@ public class ParentDashboardController : MonoBehaviour
         titleGO.AddComponent<RectTransform>();
         var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
         HebrewText.SetText(titleTMP, "\u05D4\u05D2\u05D3\u05E8\u05D5\u05EA"); // הגדרות
-        titleTMP.fontSize = 22;
+        titleTMP.fontSize = 31;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = Color.white;
         titleTMP.alignment = TextAlignmentOptions.Center;
@@ -3526,7 +3526,7 @@ public class ParentDashboardController : MonoBehaviour
         contentGO.AddComponent<RectTransform>();
         var contentLayout = contentGO.AddComponent<VerticalLayoutGroup>();
         contentLayout.spacing = 0;
-        contentLayout.padding = new RectOffset(24, 24, 16, 16);
+        contentLayout.padding = new RectOffset(30, 30, 20, 20);
         contentLayout.childForceExpandWidth = true;
         contentLayout.childForceExpandHeight = false;
         contentLayout.childControlWidth = true;
@@ -3566,14 +3566,14 @@ public class ParentDashboardController : MonoBehaviour
         rowGO.transform.SetParent(parent, false);
         rowGO.AddComponent<RectTransform>();
         var rowLayout = rowGO.AddComponent<HorizontalLayoutGroup>();
-        rowLayout.spacing = 12;
-        rowLayout.padding = new RectOffset(0, 0, 10, 10);
+        rowLayout.spacing = 16;
+        rowLayout.padding = new RectOffset(2, 2, 13, 13);
         rowLayout.childAlignment = TextAnchor.MiddleRight;
         rowLayout.childForceExpandWidth = false;
         rowLayout.childForceExpandHeight = false;
         rowLayout.childControlWidth = true;
         rowLayout.childControlHeight = false;
-        rowGO.AddComponent<LayoutElement>().preferredHeight = 70;
+        rowGO.AddComponent<LayoutElement>().preferredHeight = 95;
 
         // Toggle (right side in RTL = first in hierarchy)
         var toggleGO = new GameObject("Toggle");
@@ -3584,7 +3584,7 @@ public class ParentDashboardController : MonoBehaviour
         toggleBgGO.transform.SetParent(toggleGO.transform, false);
         var toggleBgRT = toggleBgGO.AddComponent<RectTransform>();
         toggleBgRT.anchorMin = toggleBgRT.anchorMax = new Vector2(0.5f, 0.5f);
-        toggleBgRT.sizeDelta = new Vector2(60, 32);
+        toggleBgRT.sizeDelta = new Vector2(80, 42);
         var toggleBgImg = toggleBgGO.AddComponent<Image>();
         if (roundedRect != null) { toggleBgImg.sprite = roundedRect; toggleBgImg.type = Image.Type.Sliced; }
         toggleBgImg.color = currentValue ? Primary : BarBg;
@@ -3594,7 +3594,7 @@ public class ParentDashboardController : MonoBehaviour
         knobGO.transform.SetParent(toggleBgGO.transform, false);
         var knobRT = knobGO.AddComponent<RectTransform>();
         knobRT.anchorMin = knobRT.anchorMax = new Vector2(currentValue ? 0.8f : 0.2f, 0.5f);
-        knobRT.sizeDelta = new Vector2(24, 24);
+        knobRT.sizeDelta = new Vector2(32, 32);
         var knobImg = knobGO.AddComponent<Image>();
         if (circleSprite != null) knobImg.sprite = circleSprite;
         knobImg.color = Color.white;
@@ -3619,7 +3619,7 @@ public class ParentDashboardController : MonoBehaviour
         textCol.transform.SetParent(rowGO.transform, false);
         textCol.AddComponent<RectTransform>();
         var textLayout = textCol.AddComponent<VerticalLayoutGroup>();
-        textLayout.spacing = 2;
+        textLayout.spacing = 3;
         textLayout.childAlignment = TextAnchor.MiddleRight;
         textLayout.childForceExpandWidth = true;
         textLayout.childForceExpandHeight = false;
@@ -3632,23 +3632,23 @@ public class ParentDashboardController : MonoBehaviour
         titleText.AddComponent<RectTransform>();
         var titleTMP = titleText.AddComponent<TextMeshProUGUI>();
         HebrewText.SetText(titleTMP, title);
-        titleTMP.fontSize = 20;
+        titleTMP.fontSize = 28;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = TextDark;
         titleTMP.alignment = TextAlignmentOptions.Right;
         titleTMP.raycastTarget = false;
-        titleText.AddComponent<LayoutElement>().preferredHeight = 28;
+        titleText.AddComponent<LayoutElement>().preferredHeight = 38;
 
         var subtitleText = new GameObject("Subtitle");
         subtitleText.transform.SetParent(textCol.transform, false);
         subtitleText.AddComponent<RectTransform>();
         var subTMP = subtitleText.AddComponent<TextMeshProUGUI>();
         HebrewText.SetText(subTMP, subtitle);
-        subTMP.fontSize = 15;
+        subTMP.fontSize = 21;
         subTMP.color = TextMedium;
         subTMP.alignment = TextAlignmentOptions.Right;
         subTMP.raycastTarget = false;
-        subtitleText.AddComponent<LayoutElement>().preferredHeight = 22;
+        subtitleText.AddComponent<LayoutElement>().preferredHeight = 30;
     }
 
     private void MakeSettingsDivider(Transform parent)
