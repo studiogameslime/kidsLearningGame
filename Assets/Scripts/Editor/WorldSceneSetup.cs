@@ -441,10 +441,10 @@ public class WorldSceneSetup : EditorWindow
             new Vector2(0, 0.25f), new Vector2(1, 0.5f), DayHills);
 
         // ── Sun (top-right corner, equal padding from top and right) ──
-        // Sun inside WorldContent, between sky and hills (behind ground, in front of sky)
+        // Sun fixed to safeArea (doesn't scroll), placed before TopBar in sibling order
         var sunGO = new GameObject("Sun");
-        sunGO.transform.SetParent(worldContent.transform, false);
-        sunGO.transform.SetSiblingIndex(2); // after SkyBackground(0) and Stars(1), before Hills
+        sunGO.transform.SetParent(safeArea.transform, false);
+        sunGO.transform.SetSiblingIndex(0); // first child = behind everything else in safeArea
         var sunRT = sunGO.AddComponent<RectTransform>();
         sunRT.anchorMin = new Vector2(1, 1);
         sunRT.anchorMax = new Vector2(1, 1);
@@ -473,9 +473,9 @@ public class WorldSceneSetup : EditorWindow
 
         // ── Moon (same corner as sun, starts hidden below) ──
         var moonGO = new GameObject("Moon");
-        // Moon inside WorldContent, same layer as sun (behind ground)
-        moonGO.transform.SetParent(worldContent.transform, false);
-        moonGO.transform.SetSiblingIndex(3); // after sun
+        // Moon fixed to safeArea (doesn't scroll)
+        moonGO.transform.SetParent(safeArea.transform, false);
+        moonGO.transform.SetSiblingIndex(1); // after sun, before other safeArea children
         var moonRT = moonGO.AddComponent<RectTransform>();
         moonRT.anchorMin = new Vector2(1, 1);
         moonRT.anchorMax = new Vector2(1, 1);
@@ -612,8 +612,11 @@ public class WorldSceneSetup : EditorWindow
             var alinShadowGO = new GameObject("AlinShadow");
             alinShadowGO.transform.SetParent(grassAreaGO.transform, false);
             var alinShadowRT = alinShadowGO.AddComponent<RectTransform>();
-            alinShadowRT.anchorMin = new Vector2(0.94f, 0);
-            alinShadowRT.anchorMax = new Vector2(0.94f, 0);
+            // Center screen: X anchor ~0.31+0.31 = center-screen right side
+            // With 3 screens, center screen spans anchors 0.333-0.666
+            // Place Alin at right side of center screen: ~0.62
+            alinShadowRT.anchorMin = new Vector2(0.62f, 0);
+            alinShadowRT.anchorMax = new Vector2(0.62f, 0);
             alinShadowRT.pivot = new Vector2(0.5f, 0.5f);
             alinShadowRT.sizeDelta = new Vector2(120, 30);
             alinShadowRT.anchoredPosition = new Vector2(0, 148);
@@ -626,8 +629,8 @@ public class WorldSceneSetup : EditorWindow
             // Alin character
             var alinGO = (GameObject)PrefabUtility.InstantiatePrefab(alinPrefab, grassAreaGO.transform);
             var alinRT = alinGO.GetComponent<RectTransform>();
-            alinRT.anchorMin = new Vector2(0.94f, 0);
-            alinRT.anchorMax = new Vector2(0.94f, 0);
+            alinRT.anchorMin = new Vector2(0.62f, 0);
+            alinRT.anchorMax = new Vector2(0.62f, 0);
             alinRT.pivot = new Vector2(0.5f, 0);
             alinRT.sizeDelta = new Vector2(160, 360);
             alinRT.anchoredPosition = new Vector2(0, 150);

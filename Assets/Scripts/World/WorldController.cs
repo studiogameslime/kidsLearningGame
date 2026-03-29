@@ -830,8 +830,8 @@ public class WorldController : MonoBehaviour
         var shadowGO = new GameObject("ShelfShadow");
         shadowGO.transform.SetParent(grassArea, false);
         var shadowRT = shadowGO.AddComponent<RectTransform>();
-        shadowRT.anchorMin = new Vector2(0.5f, 0.5f);
-        shadowRT.anchorMax = new Vector2(0.5f, 0.5f);
+        shadowRT.anchorMin = Vector2.zero;
+        shadowRT.anchorMax = Vector2.zero;
         shadowRT.pivot = new Vector2(0.5f, 0.5f);
         shadowRT.sizeDelta = new Vector2(shelfSize * 0.75f, shelfSize * 0.18f);
         shadowRT.anchoredPosition = new Vector2(xOffset + screenWidth * 0.6f, 134f);
@@ -840,12 +840,12 @@ public class WorldController : MonoBehaviour
         shadowImg.color = new Color(0f, 0f, 0f, 0.12f);
         shadowImg.raycastTarget = false;
 
-        // Game shelf — anchored at center, lower on the grass
+        // Game shelf — absolute positioning on grass
         var go = new GameObject("GameShelf");
         go.transform.SetParent(grassArea, false);
         var rt = go.AddComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0.5f, 0.5f);
-        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.zero;
         rt.pivot = new Vector2(0.5f, 0f);
         rt.sizeDelta = new Vector2(shelfSize, shelfSize);
         rt.anchoredPosition = new Vector2(xOffset + screenWidth * 0.6f, 139f);
