@@ -18,7 +18,7 @@ public static class FeatureUnlockManager
     private static readonly Dictionary<Feature, int> Thresholds = new Dictionary<Feature, int>
     {
         { Feature.Journey,        0 },
-        { Feature.GameCollection, 30 },
+        { Feature.GameCollection, 0 },
         { Feature.Gallery,        10 },
         { Feature.StickerTree,    15 },
     };
