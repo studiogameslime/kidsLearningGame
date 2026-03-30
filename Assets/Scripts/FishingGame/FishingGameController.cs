@@ -252,10 +252,11 @@ public class FishingGameController : BaseMiniGame
         // Cast line toward the fish
         Vector2 fishPos = fish.rt.anchoredPosition;
 
-        // Convert fish position to line's coordinate space
-        Vector2 fishWorldPos = GetPositionInParent(fish.rt, fishingLine.lineImage.parent as RectTransform);
-        Vector2 rodPos = GetPositionInParent(rodTipRT, fishingLine.lineImage.parent as RectTransform);
-        fishingLine.rodTip.anchoredPosition = rodPos;
+        // Convert positions to line's coordinate space
+        var lineParent = fishingLine.lineImage.parent as RectTransform;
+        Vector2 fishWorldPos = GetPositionInParent(fish.rt, lineParent);
+        Vector2 rodPos = GetPositionInParent(rodTipRT, lineParent);
+        fishingLine.SetRodPosition(rodPos);
 
         bool isCorrect = fish.fishId == fishIds[currentTargetIndex];
 

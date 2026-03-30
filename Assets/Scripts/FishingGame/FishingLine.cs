@@ -12,6 +12,20 @@ public class FishingLine : MonoBehaviour
     public RectTransform rodTip;
 
     private Coroutine activeRoutine;
+    private Vector2 _rodPosOverride;
+    private bool _hasRodPosOverride;
+
+    /// <summary>Sets the rod position in the line's coordinate space without moving the actual rodTip anchor.</summary>
+    public void SetRodPosition(Vector2 posInLineSpace)
+    {
+        _rodPosOverride = posInLineSpace;
+        _hasRodPosOverride = true;
+    }
+
+    private Vector2 GetRodPosition()
+    {
+        return _hasRodPosOverride ? _rodPosOverride : rodTip.anchoredPosition;
+    }
 
     public void Init(RectTransform canvasParent)
     {
@@ -57,6 +71,7 @@ public class FishingLine : MonoBehaviour
     {
         if (activeRoutine != null) { StopCoroutine(activeRoutine); activeRoutine = null; }
         if (lineImage != null) lineImage.gameObject.SetActive(false);
+        _hasRodPosOverride = false;
     }
 
     // ── Routines ──
@@ -64,7 +79,7 @@ public class FishingLine : MonoBehaviour
     private IEnumerator CastRoutine(Vector2 target, float duration, System.Action onReached)
     {
         lineImage.gameObject.SetActive(true);
-        Vector2 start = rodTip.anchoredPosition;
+        Vector2 start = GetRodPosition();
 
         float t = 0;
         while (t < duration)
@@ -88,7 +103,7 @@ public class FishingLine : MonoBehaviour
             yield break;
         }
 
-        Vector2 start = rodTip.anchoredPosition;
+        Vector2 start = GetRodPosition();
         // Current end position from the line's current state
         Vector2 currentEnd = GetLineEndPosition();
 
@@ -109,7 +124,7 @@ public class FishingLine : MonoBehaviour
     private IEnumerator PullRoutine(RectTransform fishRT, float duration, System.Action onDone)
     {
         Vector2 start = fishRT.anchoredPosition;
-        Vector2 target = rodTip.anchoredPosition;
+        Vector2 target = GetRodPosition();
 
         float t = 0;
         while (t < duration)
@@ -123,7 +138,7 @@ public class FishingLine : MonoBehaviour
             float scale = Mathf.Lerp(1f, 0.3f, p);
             fishRT.localScale = new Vector3(scale, scale, 1f);
 
-            UpdateLineVisual(rodTip.anchoredPosition, fishPos);
+            UpdateLineVisual(GetRodPosition(), fishPos);
             yield return null;
         }
 
