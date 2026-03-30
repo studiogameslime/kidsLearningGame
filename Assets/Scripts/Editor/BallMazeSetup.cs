@@ -144,9 +144,29 @@ public class BallMazeSetup : EditorWindow
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
         leaderboard.gameId = "ballmaze";
 
-        // Tutorial hand
-        TutorialHandHelper.Create(safeArea.transform, TutorialHandHelper.Anim.Tap,
-            new Vector2(0, 0), new Vector2(450, 450), "ballmaze");
+        // Tutorial — tilt icon (single image, rotates side-to-side)
+        var tiltSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Tutorial Hand/Tilt.png");
+        if (tiltSprite != null)
+        {
+            var tutGO = new GameObject("TutorialHand");
+            tutGO.transform.SetParent(safeArea.transform, false);
+            var tutRT = tutGO.AddComponent<RectTransform>();
+            tutRT.anchorMin = tutRT.anchorMax = new Vector2(0.5f, 0.5f);
+            tutRT.anchoredPosition = Vector2.zero;
+            tutRT.sizeDelta = new Vector2(350, 350);
+            var tutImg = tutGO.AddComponent<Image>();
+            tutImg.sprite = tiltSprite;
+            tutImg.preserveAspect = true;
+            tutImg.raycastTarget = false;
+            var tutCG = tutGO.AddComponent<CanvasGroup>();
+            tutCG.blocksRaycasts = false;
+            tutCG.interactable = false;
+            var hand = tutGO.AddComponent<TutorialHand>();
+            hand.frames = new[] { tiltSprite };
+            hand.tutorialKey = "ballmaze_tilt";
+            hand.SetTiltMode(15f, 1.3f);
+            tutGO.transform.SetAsLastSibling();
+        }
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/BallMaze.unity");
     }

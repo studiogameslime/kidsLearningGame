@@ -36,6 +36,11 @@ public class TutorialHand : MonoBehaviour
     private Vector2 _moveTo;
     private float _moveDuration = 1f;
 
+    // Tilt animation (optional — rotates in place like a steering wheel)
+    private bool _isTiltMode;
+    private float _tiltAngle = 15f;
+    private float _tiltDuration = 1.3f;
+
     void Awake()
     {
         _image = GetComponent<Image>();
@@ -106,13 +111,28 @@ public class TutorialHand : MonoBehaviour
         if (!_dismissed) Show();
     }
 
+    /// <summary>Enable tilt animation — rotates the icon side-to-side in a loop.</summary>
+    public void SetTiltMode(float angle = 15f, float duration = 1.3f)
+    {
+        _isTiltMode = true;
+        _hasMovePath = false;
+        _tiltAngle = angle;
+        _tiltDuration = duration;
+        if (!_dismissed) Show();
+    }
+
     public void Show()
     {
         if (_dismissed || frames == null || frames.Length == 0) return;
         gameObject.SetActive(true);
         _group.alpha = 1f;
         if (_animCoroutine != null) StopCoroutine(_animCoroutine);
-        _animCoroutine = StartCoroutine(_hasMovePath ? AnimateMoveLoop() : AnimateLoop());
+        if (_isTiltMode)
+            _animCoroutine = StartCoroutine(AnimateTiltLoop());
+        else if (_hasMovePath)
+            _animCoroutine = StartCoroutine(AnimateMoveLoop());
+        else
+            _animCoroutine = StartCoroutine(AnimateLoop());
     }
 
     public void Dismiss()
@@ -171,6 +191,29 @@ public class TutorialHand : MonoBehaviour
             yield return new WaitForSeconds(loopDelay);
             _group.alpha = 1f;
         }
+    }
+
+    /// <summary>Tilt animation — rotates icon side-to-side like tilting a device.</summary>
+    private IEnumerator AnimateTiltLoop()
+    {
+        if (frames.Length > 0)
+            _image.sprite = frames[0];
+
+        // Smooth tilt: center → left → center → right → center
+        while (!_dismissed)
+        {
+            float elapsed = 0f;
+            while (elapsed < _tiltDuration && !_dismissed)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / _tiltDuration;
+                // Sine wave: 0→-1→0→1→0 over one cycle
+                float angle = Mathf.Sin(t * Mathf.PI * 2f) * _tiltAngle;
+                _rt.localEulerAngles = new Vector3(0, 0, angle);
+                yield return null;
+            }
+        }
+        _rt.localEulerAngles = Vector3.zero;
     }
 
     private IEnumerator FadeOut()

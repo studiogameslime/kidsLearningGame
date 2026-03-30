@@ -258,36 +258,11 @@ public class BallMazeController : BaseMiniGame
 
         StartCoroutine(BallIdlePulse());
 
-        // Position tutorial hand: show dragging ball toward the hole
-        PositionTutorialHand(startPos, holePos);
+        // Show tilt tutorial (centered, rotates in place)
+        if (TutorialHand != null)
+            TutorialHand.SetTiltMode(15f, 1.3f);
 
         _levelLoading = false;
-    }
-
-    private void PositionTutorialHand(Vector2 ballStartLocal, Vector2 holeLocal)
-    {
-        if (TutorialHand == null || boardRT == null) return;
-
-        var handParent = TutorialHand.transform.parent as RectTransform;
-
-        // Convert ball start position from boardRT local space to hand parent space
-        Vector3 worldFrom = boardRT.TransformPoint(ballStartLocal);
-        Vector2 screenFrom = RectTransformUtility.WorldToScreenPoint(null, worldFrom);
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            handParent, screenFrom, null, out Vector2 fromPos);
-
-        // Convert hole position from boardRT local space to hand parent space
-        Vector3 worldTo = boardRT.TransformPoint(holeLocal);
-        Vector2 screenTo = RectTransformUtility.WorldToScreenPoint(null, worldTo);
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            handParent, screenTo, null, out Vector2 toPos);
-
-        // Show path from ball to partway toward hole (not all the way — just hint the direction)
-        Vector2 direction = (toPos - fromPos).normalized;
-        float hintDist = Mathf.Min(Vector2.Distance(fromPos, toPos) * 0.5f, 200f);
-        Vector2 hintTo = fromPos + direction * hintDist;
-
-        TutorialHand.SetMovePath(fromPos, hintTo, 1.2f);
     }
 
     private void CreateBoardShadow(float offset, float alpha, float expand)
