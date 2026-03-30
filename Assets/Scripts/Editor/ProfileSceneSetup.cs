@@ -465,13 +465,13 @@ public class ProfileSceneSetup : EditorWindow
         var stepName = CreateStepPanel(contentArea.transform, "StepTypeName");
         CreateText(stepName.transform, "NameTitle",
             "\u05DE\u05D4 \u05D4\u05E9\u05DD \u05E9\u05DC\u05DA?", 42, DarkText, // ?מה השם שלך
-            new Vector2(0, 0.72f), new Vector2(1, 0.95f));
+            new Vector2(0, 0.82f), new Vector2(1, 0.98f));
 
         // Name input field
         var inputGO = new GameObject("NameInput");
         inputGO.transform.SetParent(stepName.transform, false);
         var inputRT = inputGO.AddComponent<RectTransform>();
-        inputRT.anchorMin = new Vector2(0.15f, 0.62f);
+        inputRT.anchorMin = new Vector2(0.15f, 0.65f);
         inputRT.anchorMax = new Vector2(0.85f, 0.82f);
         inputRT.offsetMin = Vector2.zero;
         inputRT.offsetMax = Vector2.zero;
