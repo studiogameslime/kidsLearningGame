@@ -21,7 +21,7 @@ public class ThemeHeader : MonoBehaviour
         foreach (var tmp in GetComponentsInChildren<TextMeshProUGUI>(true))
             tmp.color = textColor;
 
-        // Tint icon-only buttons (buttons whose Image has no child TMP label)
+        // Icon-only buttons always stay white (icons are designed for colored header backgrounds)
         foreach (Transform child in transform)
         {
             var btn = child.GetComponent<Button>();
@@ -30,10 +30,9 @@ public class ThemeHeader : MonoBehaviour
             var btnImg = child.GetComponent<Image>();
             if (btnImg == null) continue;
 
-            // Only tint icon buttons (no text label child = pure icon)
             var label = child.GetComponentInChildren<TextMeshProUGUI>();
             if (label == null)
-                btnImg.color = textColor;
+                btnImg.color = Color.white;
         }
     }
 }

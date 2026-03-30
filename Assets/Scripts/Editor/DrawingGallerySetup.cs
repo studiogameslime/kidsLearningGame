@@ -101,7 +101,7 @@ public class DrawingGallerySetup : EditorWindow
         titleTMP.raycastTarget = false;
 
         // Home button
-        var homeIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/home.png");
+        var homeIcon = UISheetHelper.HomeIcon;
         var homeGO = CreateIconButton(topBar.transform, "HomeButton", homeIcon,
             new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f),
             new Vector2(24, 0), new Vector2(90, 90));

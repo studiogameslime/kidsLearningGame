@@ -104,7 +104,7 @@ public class NumberTrainSetup : EditorWindow
         titleTMP.raycastTarget = false;
 
         // Home button
-        var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
+        var homeIcon = UISheetHelper.HomeIcon;
         var homeGO = Btn(bar.transform, "HomeButton", homeIcon, 16, -12, 76);
 
         // Trophy

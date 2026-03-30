@@ -332,8 +332,8 @@ public class WorldSceneSetup : EditorWindow
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.raycastTarget = false;
 
-        // Home button
-        var homeIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/home.png");
+        // Home button (UI_1_2, white silhouette)
+        var homeIcon = UISheetHelper.HomeIcon;
         var homeGO = CreateIconButton(topBar.transform, "HomeButton", homeIcon,
             new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f),
             new Vector2(24, 0), new Vector2(90, 90));
@@ -344,14 +344,14 @@ public class WorldSceneSetup : EditorWindow
             new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f),
             new Vector2(-100, 0), new Vector2(90, 90));
 
-        // Album button (top-right, before parent button)
-        var albumIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/star.png");
+        // Album button (UI_1_1, white silhouette)
+        var albumIcon = UISheetHelper.AlbumIcon;
         var albumBtn = CreateIconButton(topBar.transform, "AlbumButton", albumIcon,
             new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f),
             new Vector2(-235, 0), new Vector2(90, 90));
 
-        // Parent dashboard button (top-right, icon + label "איזור הורים")
-        var parentIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/multiplayer.png");
+        // Parent dashboard button (UI_1_4 gear, top-right, icon + label "איזור הורים")
+        var parentIcon = UISheetHelper.GearIcon;
         var roundedRect = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/RoundedRect.png");
 
         var parentDashBtn = new GameObject("ParentDashboardButton");
@@ -378,8 +378,10 @@ public class WorldSceneSetup : EditorWindow
         pdIconRT.anchoredPosition = new Vector2(-8, 0);
         pdIconRT.sizeDelta = new Vector2(36, 36);
         var pdIconImg = pdIconGO.AddComponent<Image>();
-        pdIconImg.sprite = parentIcon; pdIconImg.preserveAspect = true;
-        pdIconImg.color = new Color(0.15f, 0.15f, 0.15f, 1f); pdIconImg.raycastTarget = false;
+        pdIconImg.sprite = parentIcon;
+        pdIconImg.preserveAspect = true;
+        pdIconImg.color = Color.white;
+        pdIconImg.raycastTarget = false;
 
         // Label
         var pdLabelGO = new GameObject("Label");
@@ -390,7 +392,7 @@ public class WorldSceneSetup : EditorWindow
         var pdLabelTMP = pdLabelGO.AddComponent<TextMeshProUGUI>();
         HebrewText.SetText(pdLabelTMP, "\u05D0\u05D9\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD"); // איזור הורים
         pdLabelTMP.fontSize = 20; pdLabelTMP.fontStyle = FontStyles.Bold;
-        pdLabelTMP.color = new Color(0.15f, 0.15f, 0.15f, 1f);
+        pdLabelTMP.color = Color.white;
         pdLabelTMP.alignment = TextAlignmentOptions.Center;
         pdLabelTMP.raycastTarget = false;
 
@@ -1069,6 +1071,12 @@ public class WorldSceneSetup : EditorWindow
         img.raycastTarget = true;
         var btn = go.AddComponent<Button>();
         btn.targetGraphic = img;
+        var colors = btn.colors;
+        colors.normalColor = Color.white;
+        colors.highlightedColor = Color.white;
+        colors.pressedColor = new Color(0.85f, 0.85f, 0.85f, 1f);
+        colors.selectedColor = Color.white;
+        btn.colors = colors;
         return go;
     }
 
@@ -1092,6 +1100,15 @@ public class WorldSceneSetup : EditorWindow
                 AssetDatabase.CreateFolder(current, parts[i]);
             current = next;
         }
+    }
+
+    private static Sprite LoadSpriteFromSheet(string sheetPath, string spriteName)
+    {
+        var allAssets = AssetDatabase.LoadAllAssetsAtPath(sheetPath);
+        if (allAssets != null)
+            foreach (var asset in allAssets)
+                if (asset is Sprite spr && spr.name == spriteName) return spr;
+        return null;
     }
 
     private static Color HexColor(string hex)

@@ -171,7 +171,7 @@ public class LaundrySortingSetup : EditorWindow
         titleTMP.raycastTarget = false;
 
         // Home button
-        var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
+        var homeIcon = UISheetHelper.HomeIcon;
         var homeGO = IconBtn(bar.transform, "HomeButton", homeIcon, 24, 0, 90);
 
         // ── Play Area (below header) ──

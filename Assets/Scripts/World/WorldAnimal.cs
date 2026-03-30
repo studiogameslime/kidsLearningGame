@@ -18,6 +18,7 @@ public class WorldAnimal : MonoBehaviour
     private bool isTouchActive;
     private bool isDragging;
     private bool isFalling;
+    public bool IsFalling => isFalling;
     private Vector2 dragOffset; // offset between finger and animal position at drag start
 
     // Shadow scaling based on height

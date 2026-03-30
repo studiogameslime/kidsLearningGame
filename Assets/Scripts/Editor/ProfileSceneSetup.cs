@@ -389,7 +389,7 @@ public class ProfileSceneSetup : EditorWindow
         safeArea.AddComponent<SafeAreaHandler>();
 
         // Back button (left-center, home icon)
-        var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
+        var homeIcon = UISheetHelper.HomeIcon;
         var backBtnGO = CreateIconButton(safeArea.transform, "BackButton", homeIcon,
             new Vector2(24, 0), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(90, 90));
 

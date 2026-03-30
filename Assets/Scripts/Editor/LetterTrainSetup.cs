@@ -96,7 +96,7 @@ public class LetterTrainSetup : EditorWindow
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.raycastTarget = false;
 
-        var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
+        var homeIcon = UISheetHelper.HomeIcon;
         var homeGO = Btn(bar.transform, "HomeButton", homeIcon, 16, -12, 76);
         var trophyIcon = LoadSprite("Assets/Art/Icons/trophy.png");
         var trophyGO = BtnRight(bar.transform, "TrophyButton", trophyIcon, -16, -12, 62);

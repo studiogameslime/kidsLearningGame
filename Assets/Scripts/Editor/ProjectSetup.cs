@@ -1206,7 +1206,7 @@ public class ProjectSetup : EditorWindow
         // Back button (if needed) — uses home icon matching all game scenes
         if (showBack)
         {
-            var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
+            var homeIcon = UISheetHelper.HomeIcon;
             var backGO = new GameObject("BackButton");
             backGO.transform.SetParent(headerGO.transform, false);
             var backRT = backGO.AddComponent<RectTransform>();
@@ -1264,7 +1264,7 @@ public class ProjectSetup : EditorWindow
         titleTMP.raycastTarget = false;
 
         // Home button (left) — sprite icon matching all other games
-        var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
+        var homeIcon = UISheetHelper.HomeIcon;
         CreateIconHeaderButton(headerGO.transform, "HomeButton", homeIcon,
             new Vector2(24, 0), new Vector2(0, 0.5f));
 

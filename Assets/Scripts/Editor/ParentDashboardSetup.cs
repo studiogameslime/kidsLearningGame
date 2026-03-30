@@ -14,9 +14,9 @@ public class ParentDashboardSetup : EditorWindow
     private static readonly Vector2 Ref = new Vector2(1920, 1080);
 
     // Palette
-    private static readonly Color BgColor = HexColor("#F0F2F5");
+    private static readonly Color BgColor = HexColor("#0F1923");
     private static readonly Color HeaderBg = HexColor("#2C3E50");
-    private static readonly Color CardColor = HexColor("#FFFFFF");
+    private static readonly Color CardColor = HexColor("#1E2A3A");
     private static readonly Color Primary = HexColor("#3498DB");
     private static readonly Color GateBg = HexColor("#2C3E50");
     private static readonly Color AnswerBg = HexColor("#ECF0F1");
@@ -43,7 +43,7 @@ public class ParentDashboardSetup : EditorWindow
         var roundedRect = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/RoundedRect.png");
         var circleSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/Circle.png");
         var trophySprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/trophy.png");
-        var gearSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/gear.png");
+        var gearSprite = UISheetHelper.GearIcon;
 
         // ── Camera ──
         var camGO = new GameObject("Main Camera");
@@ -168,7 +168,7 @@ public class ParentDashboardSetup : EditorWindow
         }
 
         // Gate home button (top-left)
-        var homeIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/home.png");
+        var homeIcon = UISheetHelper.HomeIcon;
         var gateBackGO = new GameObject("GateHomeButton");
         gateBackGO.transform.SetParent(gateGO.transform, false);
         var gateBackRT = gateBackGO.AddComponent<RectTransform>();
@@ -179,7 +179,8 @@ public class ParentDashboardSetup : EditorWindow
         gateBackRT.sizeDelta = new Vector2(76, 76);
         var gateBackImg = gateBackGO.AddComponent<Image>();
         gateBackImg.sprite = homeIcon;
-        gateBackImg.color = new Color(1, 1, 1, 0.7f);
+        gateBackImg.preserveAspect = true;
+        gateBackImg.color = Color.white;
         gateBackImg.raycastTarget = true;
         var gateBackBtn = gateBackGO.AddComponent<Button>();
         gateBackBtn.targetGraphic = gateBackImg;
@@ -381,6 +382,9 @@ public class ParentDashboardSetup : EditorWindow
         ctrl.uiBarGreen = LoadSpriteFromSheet("Assets/Art/UI/UI_1.png", "UI_1_34");
         ctrl.uiBarYellow = LoadSpriteFromSheet("Assets/Art/UI/UI_1.png", "UI_1_35");
         ctrl.uiSectionBg = LoadSpriteFromSheet("Assets/Art/UI/UI_1.png", "UI_1_49");
+        ctrl.uiCheckIcon = LoadSpriteFromSheet("Assets/Art/UI/UI_1.png", "UI_1_5");
+        ctrl.uiBarGray = LoadSpriteFromSheet("Assets/Art/UI/UI_1.png", "UI_1_44");
+        ctrl.uiPlaceholder = LoadSpriteFromSheet("Assets/Art/UI/UI_2.png", "UI_2_6");
 
         // Wire gate back button
         UnityEditor.Events.UnityEventTools.AddPersistentListener(

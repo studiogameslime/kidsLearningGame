@@ -163,7 +163,7 @@ public class ConnectTheDotsSetup : EditorWindow
         titleTMP.raycastTarget = false;
 
         // Home button
-        var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
+        var homeIcon = UISheetHelper.HomeIcon;
         var homeGO = IconBtn(topBar.transform, "HomeButton", homeIcon,
             new Vector2(0, 1), new Vector2(0, 1),
             new Vector2(16, -20), new Vector2(90, 90));

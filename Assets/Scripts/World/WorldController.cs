@@ -71,7 +71,8 @@ public class WorldController : MonoBehaviour
 
     private void Start()
     {
-        if (homeButton != null) homeButton.onClick.AddListener(OnHomePressed);
+        // Home button removed from world header — profile switch is in parent dashboard settings
+        if (homeButton != null) homeButton.gameObject.SetActive(false);
         if (gamesButton != null) gamesButton.onClick.AddListener(OnGamesPressed);
         if (parentAreaButton != null) parentAreaButton.onClick.AddListener(OnParentAreaPressed);
         if (albumButton != null) albumButton.onClick.AddListener(OnAlbumPressed);

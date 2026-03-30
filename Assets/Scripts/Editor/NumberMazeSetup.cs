@@ -98,7 +98,7 @@ public class NumberMazeSetup : EditorWindow
         titleTMP.raycastTarget = false;
 
         // Home button
-        var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
+        var homeIcon = UISheetHelper.HomeIcon;
         var homeGO = Btn(bar.transform, "HomeButton", homeIcon, 24, 0, 90);
 
         // Trophy button

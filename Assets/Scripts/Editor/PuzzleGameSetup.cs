@@ -241,7 +241,7 @@ public class PuzzleGameSetup : EditorWindow
         titleTMP.raycastTarget = false;
 
         // Home button — matches Shadow Match exactly
-        var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
+        var homeIcon = UISheetHelper.HomeIcon;
         var homeGO = Btn(bar.transform, "HomeButton", homeIcon, 24, 0, 90);
 
         // Trophy button (top-right)

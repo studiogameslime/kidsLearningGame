@@ -112,7 +112,7 @@ public class ColorVoiceGameSetup : EditorWindow
         titleTMP.raycastTarget = false;
 
         // Home button (top-left)
-        var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
+        var homeIcon = UISheetHelper.HomeIcon;
         var homeGO = CreateIconButton(topBar.transform, "HomeButton", homeIcon,
             new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f),
             new Vector2(24, 0), new Vector2(90, 90));
@@ -251,7 +251,7 @@ public class ColorVoiceGameSetup : EditorWindow
         debugGO.SetActive(false);
 
         // ── Restart button (bottom-right of top bar) ──
-        var restartIcon = LoadSprite("Assets/Art/Icons/home.png"); // reuse icon
+        var restartIcon = UISheetHelper.HomeIcon; // reuse icon
         var restartGO = CreateIconButton(topBar.transform, "RestartButton", restartIcon,
             new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1),
             new Vector2(-16, -15), new Vector2(80, 80));

@@ -179,9 +179,9 @@ public class WorldInputHandler : MonoBehaviour
                 return;
             }
 
-            // Check for animal
+            // Check for animal (skip if mid-fall — prevents freezing in air)
             var animal = go.GetComponent<WorldAnimal>();
-            if (animal != null)
+            if (animal != null && !animal.IsFalling)
             {
                 draggedAnimal = animal;
                 animal.OnTouchStart(screenPos);

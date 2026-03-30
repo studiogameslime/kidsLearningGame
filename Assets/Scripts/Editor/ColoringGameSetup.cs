@@ -239,7 +239,7 @@ public class ColoringGameSetup : EditorWindow
         titleTMP.alignment = TextAlignmentOptions.Center; titleTMP.raycastTarget = false;
 
         // Home button (top-left)
-        var homeIcon = LoadSprite("Assets/Art/Icons/home.png");
+        var homeIcon = UISheetHelper.HomeIcon;
         var homeGO = IconBtn(bar.transform, "HomeButton", homeIcon,
             new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(24, 0), new Vector2(90, 90));
 
