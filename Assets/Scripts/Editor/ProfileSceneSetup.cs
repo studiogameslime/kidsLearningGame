@@ -16,10 +16,10 @@ public class ProfileSceneSetup : EditorWindow
 {
     private static readonly Vector2 Ref = new Vector2(1920, 1080);
 
-    // Colors
-    private static readonly Color BgColor = HexColor("#F5F0EB");
-    private static readonly Color AccentColor = HexColor("#90CAF9");
-    private static readonly Color DarkText = HexColor("#4A4A4A");
+    // Colors (dark mode — matches parent dashboard)
+    private static readonly Color BgColor = HexColor("#0F1923");
+    private static readonly Color AccentColor = HexColor("#4FC3F7");
+    private static readonly Color DarkText = HexColor("#E8EDF2");
     private static readonly Color LightText = Color.white;
 
     private static readonly string[] AvatarColors = {
@@ -388,10 +388,10 @@ public class ProfileSceneSetup : EditorWindow
         StretchFull(safeRT);
         safeArea.AddComponent<SafeAreaHandler>();
 
-        // Back button (left-center, home icon)
-        var homeIcon = UISheetHelper.HomeIcon;
-        var backBtnGO = CreateIconButton(safeArea.transform, "BackButton", homeIcon,
-            new Vector2(24, 0), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(90, 90));
+        // Back button (top-left, arrow left icon)
+        var arrowLeftIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/arrowLeft.png");
+        var backBtnGO = CreateIconButton(safeArea.transform, "BackButton", arrowLeftIcon,
+            new Vector2(24, -24), new Vector2(0, 1), new Vector2(0, 1), new Vector2(80, 80));
 
         // ── Content area (landscape — wider, shorter) ──
         var contentArea = new GameObject("ContentArea");
@@ -470,8 +470,8 @@ public class ProfileSceneSetup : EditorWindow
         var inputGO = new GameObject("NameInput");
         inputGO.transform.SetParent(stepName.transform, false);
         var inputRT = inputGO.AddComponent<RectTransform>();
-        inputRT.anchorMin = new Vector2(0.15f, 0.45f);
-        inputRT.anchorMax = new Vector2(0.85f, 0.65f);
+        inputRT.anchorMin = new Vector2(0.15f, 0.55f);
+        inputRT.anchorMax = new Vector2(0.85f, 0.75f);
         inputRT.offsetMin = Vector2.zero;
         inputRT.offsetMax = Vector2.zero;
 
@@ -479,7 +479,7 @@ public class ProfileSceneSetup : EditorWindow
         var inputBgImg = inputGO.AddComponent<Image>();
         inputBgImg.sprite = roundedRect;
         inputBgImg.type = Image.Type.Sliced;
-        inputBgImg.color = Color.white;
+        inputBgImg.color = HexColor("#1E2A3A"); // dark card color
 
         // Input shadow
         var inputShadow = inputGO.AddComponent<Shadow>();
@@ -513,7 +513,7 @@ public class ProfileSceneSetup : EditorWindow
         placeholderTMP.text = "\u05DB\u05EA\u05D1\u05D5 \u05DB\u05D0\u05DF..."; // ...כתבו כאן (no RTL flag for input fields)
         placeholderTMP.fontSize = 40;
         placeholderTMP.fontStyle = FontStyles.Italic;
-        placeholderTMP.color = new Color(0.6f, 0.6f, 0.6f, 0.8f);
+        placeholderTMP.color = new Color(0.5f, 0.6f, 0.7f, 0.6f); // subtle on dark bg
         placeholderTMP.alignment = TextAlignmentOptions.Center;
 
         // TMP_InputField component
