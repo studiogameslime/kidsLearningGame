@@ -125,6 +125,7 @@ public class FishingLine : MonoBehaviour
     {
         Vector2 start = fishRT.anchoredPosition;
         Vector2 target = targetInFishSpace;
+        RectTransform lineParent = lineImage.parent as RectTransform;
 
         float t = 0;
         while (t < duration)
@@ -138,13 +139,23 @@ public class FishingLine : MonoBehaviour
             float scale = Mathf.Lerp(1f, 0.3f, p);
             fishRT.localScale = new Vector3(scale, scale, 1f);
 
-            UpdateLineVisual(GetRodPosition(), fishPos);
+            // Convert fish world position to line's coordinate space so line shortens correctly
+            Vector2 fishInLineSpace = WorldToLocal(fishRT, lineParent);
+            UpdateLineVisual(GetRodPosition(), fishInLineSpace);
             yield return null;
         }
 
         lineImage.gameObject.SetActive(false);
         fishRT.gameObject.SetActive(false);
         onDone?.Invoke();
+    }
+
+    /// <summary>Converts a RectTransform's world position to local position in a target parent.</summary>
+    private static Vector2 WorldToLocal(RectTransform source, RectTransform targetParent)
+    {
+        Vector2 screenPos = RectTransformUtility.WorldToScreenPoint(null, source.position);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(targetParent, screenPos, null, out Vector2 localPos);
+        return localPos;
     }
 
     private void UpdateLineVisual(Vector2 from, Vector2 to)
