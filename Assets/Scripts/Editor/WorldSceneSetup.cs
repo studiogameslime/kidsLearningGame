@@ -883,10 +883,10 @@ public class WorldSceneSetup : EditorWindow
         var alRT = arrowLeftGO.AddComponent<RectTransform>();
         alRT.anchorMin = new Vector2(0, 0.5f); alRT.anchorMax = new Vector2(0, 0.5f);
         alRT.pivot = new Vector2(0, 0.5f);
-        alRT.anchoredPosition = new Vector2(16, 0); alRT.sizeDelta = new Vector2(80, 80);
+        alRT.anchoredPosition = new Vector2(16, 0); alRT.sizeDelta = new Vector2(160, 160);
         var alImg = arrowLeftGO.AddComponent<Image>();
         alImg.sprite = arrowLeftSprite; alImg.preserveAspect = true;
-        alImg.color = Color.white; alImg.raycastTarget = true;
+        alImg.color = new Color(1f, 1f, 1f, 0.5f); alImg.raycastTarget = true;
         var alBtn = arrowLeftGO.AddComponent<Button>(); alBtn.targetGraphic = alImg;
 
         var arrowRightGO = new GameObject("ArrowRight");
@@ -894,10 +894,10 @@ public class WorldSceneSetup : EditorWindow
         var arRT = arrowRightGO.AddComponent<RectTransform>();
         arRT.anchorMin = new Vector2(1, 0.5f); arRT.anchorMax = new Vector2(1, 0.5f);
         arRT.pivot = new Vector2(1, 0.5f);
-        arRT.anchoredPosition = new Vector2(-16, 0); arRT.sizeDelta = new Vector2(80, 80);
+        arRT.anchoredPosition = new Vector2(-16, 0); arRT.sizeDelta = new Vector2(160, 160);
         var arImg = arrowRightGO.AddComponent<Image>();
         arImg.sprite = arrowRightSprite; arImg.preserveAspect = true;
-        arImg.color = Color.white; arImg.raycastTarget = true;
+        arImg.color = new Color(1f, 1f, 1f, 0.5f); arImg.raycastTarget = true;
         var arBtn = arrowRightGO.AddComponent<Button>(); arBtn.targetGraphic = arImg;
 
         controller.arrowLeftButton = alBtn;
