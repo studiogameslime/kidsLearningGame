@@ -4957,7 +4957,7 @@ public class ParentDashboardController : MonoBehaviour
         // Sticker tree notifications toggle
         MakeSettingsToggle(contentGO.transform,
             H("\u05D4\u05EA\u05E8\u05D0\u05D5\u05EA \u05E2\u05E5 \u05D4\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA"), // התראות עץ המדבקות
-            H("\u05EA\u05D6\u05DB\u05D5\u05E8\u05EA \u05DB\u05E9\u05DE\u05D3\u05D1\u05E7\u05D4 \u05D7\u05D3\u05E9\u05D4 \u05DE\u05D5\u05DB\u05E0\u05D4 \u05DC\u05D0\u05D9\u05E1\u05D5\u05E3 (\u05DB\u05DC 6 \u05E9\u05E2\u05D5\u05EA)"), // תזכורת כשמדבקה חדשה מוכנה לאיסוף (כל 6 שעות)
+            H("\u05EA\u05D6\u05DB\u05D5\u05E8\u05EA \u05DB\u05E9\u05DE\u05D3\u05D1\u05E7\u05D4 \u05D7\u05D3\u05E9\u05D4 \u05DE\u05D5\u05DB\u05E0\u05D4 \u05DC\u05D0\u05D9\u05E1\u05D5\u05E3 )\u05DB\u05DC 6 \u05E9\u05E2\u05D5\u05EA("), // תזכורת כשמדבקה חדשה מוכנה לאיסוף )כל 6 שעות( — reversed parens for RTL
             AppSettings.NotificationsEnabled,
             val => AppSettings.NotificationsEnabled = val);
     }
