@@ -40,16 +40,17 @@ public class BallMazeController : BaseMiniGame
 
     // Physics state
     private Vector2 ballVelocity;
-    private bool isDragging;
     private bool isComplete;
-    private Vector2 fingerTarget; // current finger position in board-local coords
 
-    // Physics constants
-    private const float FOLLOW_SPEED = 18f;     // how quickly ball follows finger
-    private const float FRICTION = 8f;           // deceleration when released
+    // Physics constants — tilt (accelerometer) based
+    private const float TILT_ACCEL = 2400f;      // acceleration force from full tilt
+    private const float TILT_FRICTION = 3.5f;    // rolling friction (deceleration)
+    private const float TILT_DEAD_ZONE = 0.06f;  // ignore tilt below this threshold
+    private const float TILT_SMOOTHING = 8f;     // input smoothing factor
     private const float BOUNCE_REFLECT = 1.4f;   // velocity reflection multiplier on collision
-    private const float BOUNCE_DAMPEN = 0.25f;    // velocity retention after bounce
-    private const float MAX_SPEED = 1200f;
+    private const float BOUNCE_DAMPEN = 0.25f;   // velocity retention after bounce
+    private const float MAX_SPEED = 900f;        // lower max for controllability with tilt
+    private Vector2 smoothedTilt;                 // smoothed accelerometer reading
 
     // Visual constants
     private static readonly Color TABLE_COLOR = new Color(0.91f, 0.87f, 0.82f);   // warm cream
@@ -123,8 +124,8 @@ public class BallMazeController : BaseMiniGame
         int levelDifficulty = Mathf.Clamp(currentLevelIndex / 2, 0, 2); // 0-1=easy, 2-3=medium, 4+=hard
         currentLevel = BallMazeLevels.GenerateLevel(levelDifficulty);
         isComplete = false;
-        isDragging = false;
         ballVelocity = Vector2.zero;
+        smoothedTilt = Vector2.zero;
 
         float areaW = playArea.rect.width;
         float areaH = playArea.rect.height;
@@ -255,7 +256,6 @@ public class BallMazeController : BaseMiniGame
         ballGO.GetComponent<Image>().raycastTarget = false;
         ballRT.SetAsLastSibling();
 
-        fingerTarget = startPos;
         StartCoroutine(BallIdlePulse());
 
         // Position tutorial hand: show dragging ball toward the hole
@@ -424,62 +424,29 @@ public class BallMazeController : BaseMiniGame
         }
     }
 
-    // ── input ────────────────────────────────────────────────────
+    // ── input (accelerometer / tilt) ────────────────────────────
     private void HandleInput()
     {
-        if (Input.touchCount > 0)
-        {
-            Touch touch = Input.GetTouch(0);
-            if (touch.phase == TouchPhase.Began)
-            {
-                if (IsTouchOnBall(touch.position))
-                {
-                    isDragging = true;
-                    DismissTutorial();
-                }
-            }
-            else if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
-            {
-                isDragging = false;
-            }
+        // Dismiss tutorial on first tilt
+        Vector3 accel = Input.acceleration;
+        if (Mathf.Abs(accel.x) > 0.15f || Mathf.Abs(accel.y) > 0.15f)
+            DismissTutorial();
 
-            if (isDragging)
-                UpdateFingerTarget(touch.position);
-        }
-        else
-        {
-            if (Input.GetMouseButtonDown(0) && IsTouchOnBall(Input.mousePosition))
-            {
-                isDragging = true;
-                DismissTutorial();
-            }
-            else if (Input.GetMouseButtonUp(0))
-                isDragging = false;
+        // Landscape orientation: device X = screen Y, device Y = -screen X
+        // When holding phone in landscape-left (home button right):
+        //   tilt right (accel.y < 0) → ball moves right (+X on screen)
+        //   tilt forward (accel.x > 0) → ball moves up (+Y on screen)
+        Vector2 rawTilt = new Vector2(-accel.y, accel.x);
 
-            if (isDragging)
-                UpdateFingerTarget(Input.mousePosition);
-        }
+        // Dead zone — ignore tiny tilts when device is nearly flat
+        if (Mathf.Abs(rawTilt.x) < TILT_DEAD_ZONE) rawTilt.x = 0f;
+        if (Mathf.Abs(rawTilt.y) < TILT_DEAD_ZONE) rawTilt.y = 0f;
+
+        // Smooth to prevent jitter
+        smoothedTilt = Vector2.Lerp(smoothedTilt, rawTilt, Time.deltaTime * TILT_SMOOTHING);
     }
 
-    private bool IsTouchOnBall(Vector2 screenPos)
-    {
-        if (ballRT == null || boardRT == null) return false;
-        Camera cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
-        Vector2 localPoint;
-        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(boardRT, screenPos, cam, out localPoint))
-            return false;
-        return Vector2.Distance(localPoint, ballRT.anchoredPosition) < ballRadiusPx * 3f;
-    }
-
-    private void UpdateFingerTarget(Vector2 screenPos)
-    {
-        Camera cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
-        Vector2 local;
-        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(boardRT, screenPos, cam, out local))
-            fingerTarget = local;
-    }
-
-    // ── ball physics ─────────────────────────────────────────────
+    // ── ball physics (tilt / accelerometer) ─────────────────────
     private void UpdateBallPhysics()
     {
         if (ballRT == null) return;
@@ -488,19 +455,14 @@ public class BallMazeController : BaseMiniGame
 
         Vector2 pos = ballRT.anchoredPosition;
 
-        if (isDragging)
-        {
-            // Smooth follow toward finger with spring-like behavior
-            Vector2 diff = fingerTarget - pos;
-            ballVelocity = Vector2.Lerp(ballVelocity, diff * FOLLOW_SPEED, dt * 12f);
-        }
-        else
-        {
-            // Friction when not dragging
-            ballVelocity *= Mathf.Max(0f, 1f - FRICTION * dt);
-            if (ballVelocity.sqrMagnitude < 1f)
-                ballVelocity = Vector2.zero;
-        }
+        // Apply tilt as acceleration (like gravity on a tilted surface)
+        ballVelocity += smoothedTilt * TILT_ACCEL * dt;
+
+        // Rolling friction — always decelerates, stronger when tilt is small
+        float frictionMul = Mathf.Max(0f, 1f - TILT_FRICTION * dt);
+        ballVelocity *= frictionMul;
+        if (ballVelocity.sqrMagnitude < 0.5f)
+            ballVelocity = Vector2.zero;
 
         // Clamp max speed
         if (ballVelocity.magnitude > MAX_SPEED)
@@ -559,7 +521,7 @@ public class BallMazeController : BaseMiniGame
         if (holeDist < currentLevel.holeRadius * unitSize * 0.9f)
         {
             isComplete = true;
-            isDragging = false;
+            ballVelocity = Vector2.zero;
             StartCoroutine(CompletionSequence());
         }
     }
@@ -775,14 +737,14 @@ public class BallMazeController : BaseMiniGame
             while (t < 1.5f && !isComplete)
             {
                 t += Time.deltaTime;
-                if (ballRT != null && !isDragging)
+                if (ballRT != null)
                 {
                     float pulse = 1f + 0.03f * Mathf.Sin(t / 1.5f * Mathf.PI * 2f);
                     ballRT.localScale = Vector3.one * pulse;
                 }
                 yield return null;
             }
-            if (ballRT != null && !isDragging) ballRT.localScale = Vector3.one;
+            if (ballRT != null) ballRT.localScale = Vector3.one;
         }
     }
 
