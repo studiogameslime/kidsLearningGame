@@ -874,39 +874,31 @@ public class WorldSceneSetup : EditorWindow
         controller.moonRT = moonRT;
 
         // ── Arrow Navigation Buttons (left/right screen switch) ──
+        // Arrow buttons with icon sprites
+        var arrowLeftSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/arrowLeft.png");
+        var arrowRightSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/arrowRight.png");
+
         var arrowLeftGO = new GameObject("ArrowLeft");
         arrowLeftGO.transform.SetParent(safeArea.transform, false);
         var alRT = arrowLeftGO.AddComponent<RectTransform>();
         alRT.anchorMin = new Vector2(0, 0.5f); alRT.anchorMax = new Vector2(0, 0.5f);
         alRT.pivot = new Vector2(0, 0.5f);
-        alRT.anchoredPosition = new Vector2(10, 0); alRT.sizeDelta = new Vector2(70, 70);
+        alRT.anchoredPosition = new Vector2(16, 0); alRT.sizeDelta = new Vector2(80, 80);
         var alImg = arrowLeftGO.AddComponent<Image>();
-        alImg.color = new Color(0, 0, 0, 0.3f); alImg.raycastTarget = true;
+        alImg.sprite = arrowLeftSprite; alImg.preserveAspect = true;
+        alImg.color = Color.white; alImg.raycastTarget = true;
         var alBtn = arrowLeftGO.AddComponent<Button>(); alBtn.targetGraphic = alImg;
-        var alLbl = new GameObject("Label");
-        alLbl.transform.SetParent(arrowLeftGO.transform, false);
-        var alLblRT = alLbl.AddComponent<RectTransform>();
-        StretchFull(alLblRT);
-        var alTMP = alLbl.AddComponent<TextMeshProUGUI>();
-        alTMP.text = "\u25C0"; alTMP.fontSize = 36; alTMP.color = Color.white;
-        alTMP.alignment = TextAlignmentOptions.Center; alTMP.raycastTarget = false;
 
         var arrowRightGO = new GameObject("ArrowRight");
         arrowRightGO.transform.SetParent(safeArea.transform, false);
         var arRT = arrowRightGO.AddComponent<RectTransform>();
         arRT.anchorMin = new Vector2(1, 0.5f); arRT.anchorMax = new Vector2(1, 0.5f);
         arRT.pivot = new Vector2(1, 0.5f);
-        arRT.anchoredPosition = new Vector2(-10, 0); arRT.sizeDelta = new Vector2(70, 70);
+        arRT.anchoredPosition = new Vector2(-16, 0); arRT.sizeDelta = new Vector2(80, 80);
         var arImg = arrowRightGO.AddComponent<Image>();
-        arImg.color = new Color(0, 0, 0, 0.3f); arImg.raycastTarget = true;
+        arImg.sprite = arrowRightSprite; arImg.preserveAspect = true;
+        arImg.color = Color.white; arImg.raycastTarget = true;
         var arBtn = arrowRightGO.AddComponent<Button>(); arBtn.targetGraphic = arImg;
-        var arLbl = new GameObject("Label");
-        arLbl.transform.SetParent(arrowRightGO.transform, false);
-        var arLblRT = arLbl.AddComponent<RectTransform>();
-        StretchFull(arLblRT);
-        var arTMP = arLbl.AddComponent<TextMeshProUGUI>();
-        arTMP.text = "\u25B6"; arTMP.fontSize = 36; arTMP.color = Color.white;
-        arTMP.alignment = TextAlignmentOptions.Center; arTMP.raycastTarget = false;
 
         controller.arrowLeftButton = alBtn;
         controller.arrowRightButton = arBtn;
