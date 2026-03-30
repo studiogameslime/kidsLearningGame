@@ -283,8 +283,9 @@ public class FishingGameController : BaseMiniGame
 
         SoundLibrary.PlayRandomFeedback();
 
-        // Pull fish to Elroey
-        fishingLine.PullFish(fish.rt, 0.8f, () =>
+        // Pull fish to rod tip (convert rod position to fish's parent space)
+        Vector2 rodInFishSpace = GetPositionInParent(rodTipRT, swimArea);
+        fishingLine.PullFish(fish.rt, rodInFishSpace, 0.8f, () =>
         {
             successfulCatches++;
             UpdateProgress();

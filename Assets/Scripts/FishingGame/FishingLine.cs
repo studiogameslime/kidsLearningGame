@@ -61,10 +61,10 @@ public class FishingLine : MonoBehaviour
     /// <summary>
     /// Pulls fish along the line back to the rod, with the line shortening.
     /// </summary>
-    public void PullFish(RectTransform fishRT, float duration, System.Action onDone)
+    public void PullFish(RectTransform fishRT, Vector2 targetInFishSpace, float duration, System.Action onDone)
     {
         if (activeRoutine != null) StopCoroutine(activeRoutine);
-        activeRoutine = StartCoroutine(PullRoutine(fishRT, duration, onDone));
+        activeRoutine = StartCoroutine(PullRoutine(fishRT, targetInFishSpace, duration, onDone));
     }
 
     public void Hide()
@@ -121,10 +121,10 @@ public class FishingLine : MonoBehaviour
         onDone?.Invoke();
     }
 
-    private IEnumerator PullRoutine(RectTransform fishRT, float duration, System.Action onDone)
+    private IEnumerator PullRoutine(RectTransform fishRT, Vector2 targetInFishSpace, float duration, System.Action onDone)
     {
         Vector2 start = fishRT.anchoredPosition;
-        Vector2 target = GetRodPosition();
+        Vector2 target = targetInFishSpace;
 
         float t = 0;
         while (t < duration)
