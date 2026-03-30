@@ -72,9 +72,11 @@ public class TutorialHand : MonoBehaviour
             gameObject.SetActive(false);
             return;
         }
-        // If Show() was already called (by game controller before our Start),
-        // don't hide. Otherwise hide until SetPosition/SetMovePath triggers Show.
-        if (_animCoroutine == null)
+        // If a mode was configured during setup but Show() was deferred, trigger it now
+        if (_animCoroutine == null && (_isTiltMode || _hasMovePath))
+            Show();
+        // Otherwise hide until SetPosition/SetMovePath triggers Show
+        else if (_animCoroutine == null)
             _group.alpha = 0f;
     }
 
@@ -118,7 +120,8 @@ public class TutorialHand : MonoBehaviour
         _hasMovePath = false;
         _tiltAngle = angle;
         _tiltDuration = duration;
-        if (!_dismissed) Show();
+        // Only call Show() if Awake() has already run (runtime). During editor setup, Show() is deferred to Start().
+        if (!_dismissed && _group != null) Show();
     }
 
     public void Show()
