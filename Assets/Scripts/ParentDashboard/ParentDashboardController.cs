@@ -797,7 +797,7 @@ public class ParentDashboardController : MonoBehaviour
         //  ROW 2: CHART (left 50%) + MOST PLAYED (right 50%)
         // ═══════════════════════════════════════════════════════════
         var midRow = MakeHRow(parent, 0, TextAnchor.UpperCenter);
-        midRow.AddComponent<LayoutElement>().flexibleHeight = 1; // stretch to fill remaining space
+        midRow.AddComponent<LayoutElement>().flexibleHeight = 3; // takes most space but not all
         var mrHL = midRow.GetComponent<HorizontalLayoutGroup>();
         mrHL.spacing = 14;
         mrHL.childForceExpandWidth = true;
@@ -806,7 +806,10 @@ public class ParentDashboardController : MonoBehaviour
         BuildWeeklyChart(midRow.transform);
         BuildMostPlayedList(midRow.transform);
 
-        // No more sections below — 2 rows only
+        // ═══════════════════════════════════════════════════════════
+        //  ROW 3: SHARE CARD
+        // ═══════════════════════════════════════════════════════════
+        BuildStatsShareCard(parent);
     }
 
     // ── Summary stat block (compact, large text) ──
@@ -1103,6 +1106,97 @@ public class ParentDashboardController : MonoBehaviour
             nameTMP.enableAutoSizing = true; nameTMP.fontSizeMin = 22; nameTMP.fontSizeMax = 32;
             nameTMP.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
         }
+    }
+
+    // ── Share card (dark mode, with share icon) ──
+    private void BuildStatsShareCard(Transform parent)
+    {
+        var go = new GameObject("ShareCard");
+        go.transform.SetParent(parent, false);
+        var bgImg = go.AddComponent<Image>();
+        bgImg.sprite = uiSectionBg != null ? uiSectionBg : roundedRect;
+        bgImg.type = Image.Type.Sliced;
+        bgImg.color = CardColor;
+        bgImg.raycastTarget = false;
+        go.AddComponent<Shadow>().effectColor = new Color(0, 0, 0, 0.15f);
+        var goLE = go.AddComponent<LayoutElement>();
+        goLE.flexibleHeight = 1; // takes remaining space below chart
+
+        var hl = go.AddComponent<HorizontalLayoutGroup>();
+        hl.spacing = 16;
+        hl.padding = new RectOffset(24, 24, 14, 14);
+        hl.childAlignment = TextAnchor.MiddleCenter;
+        hl.childForceExpandWidth = false;
+        hl.childForceExpandHeight = false;
+        hl.childControlWidth = true;
+        hl.childControlHeight = true;
+
+        // Share icon (UI_1_69)
+        var shareIcon = UISheetHelper.LoadSpriteFromSheet("Assets/Art/UI/UI_1.png", "UI_1_69");
+        if (shareIcon != null)
+        {
+            var iconGO = new GameObject("ShareIcon");
+            iconGO.transform.SetParent(go.transform, false);
+            var iconLE = iconGO.AddComponent<LayoutElement>();
+            iconLE.preferredWidth = 48;
+            iconLE.preferredHeight = 48;
+            var iconImg = iconGO.AddComponent<Image>();
+            iconImg.sprite = shareIcon;
+            iconImg.preserveAspect = true;
+            iconImg.color = Color.white;
+            iconImg.raycastTarget = false;
+        }
+
+        // Text column
+        var textCol = new GameObject("TextCol");
+        textCol.transform.SetParent(go.transform, false);
+        textCol.AddComponent<RectTransform>();
+        var textVL = textCol.AddComponent<VerticalLayoutGroup>();
+        textVL.spacing = 4;
+        textVL.childForceExpandWidth = true;
+        textVL.childForceExpandHeight = false;
+        textVL.childControlWidth = true;
+        textVL.childControlHeight = true;
+        textVL.childAlignment = TextAnchor.MiddleRight;
+        textCol.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+        var titleTMP = AddChildTMP(textCol.transform,
+            H("\u05E1\u05E4\u05E8\u05D5 \u05DC\u05D7\u05D1\u05E8\u05D9\u05DD!"), // ספרו לחברים!
+            22, TextDark, TextAlignmentOptions.Right);
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+
+        string statsLine = BuildShareStatsLine();
+        var subTMP = AddChildTMP(textCol.transform, H(statsLine),
+            16, TextMedium, TextAlignmentOptions.Right);
+        subTMP.enableAutoSizing = true; subTMP.fontSizeMin = 13; subTMP.fontSizeMax = 16;
+        subTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 22;
+
+        // Share button
+        var btnGO = new GameObject("ShareBtn");
+        btnGO.transform.SetParent(go.transform, false);
+        var btnLE = btnGO.AddComponent<LayoutElement>();
+        btnLE.preferredWidth = 160;
+        btnLE.preferredHeight = 50;
+        btnLE.minHeight = 44;
+
+        var btnImg = btnGO.AddComponent<Image>();
+        btnImg.sprite = uiBarGreen != null ? uiBarGreen : roundedRect;
+        btnImg.type = Image.Type.Sliced;
+        btnImg.color = AccentGreen;
+        btnImg.raycastTarget = true;
+
+        var btnLabelTMP = AddChildTMP(btnGO.transform,
+            H("\u05E9\u05EA\u05E4\u05D5"), // שתפו
+            22, Color.white, TextAlignmentOptions.Center);
+        btnLabelTMP.fontStyle = FontStyles.Bold;
+        var blrt = btnLabelTMP.GetComponent<RectTransform>();
+        blrt.anchorMin = Vector2.zero; blrt.anchorMax = Vector2.one;
+        blrt.offsetMin = Vector2.zero; blrt.offsetMax = Vector2.zero;
+
+        var btn = btnGO.AddComponent<Button>();
+        btn.targetGraphic = btnImg;
+        btn.onClick.AddListener(OnSharePressed);
     }
 
     // ── Recent activity (clear list) ──
