@@ -1665,8 +1665,11 @@ public class ParentDashboardController : MonoBehaviour
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  GAMES TAB
+    //  GAMES TAB — 3-column grid (75%) + persistent settings panel (25%)
     // ═══════════════════════════════════════════════════════════════
+
+    private GameObject _settingsPanelContent; // right panel content (updated on game select)
+    private int _selectedGameIndex = -1;
 
     private void BuildGamesTabContent()
     {
@@ -1681,40 +1684,147 @@ public class ParentDashboardController : MonoBehaviour
             return;
         }
 
-        // 2-column grid of large game cards (matching mockup)
+        // ── Main horizontal split: Grid (75%) | Settings Panel (25%) ──
+        var splitRow = new GameObject("SplitLayout");
+        splitRow.transform.SetParent(parent, false);
+        var splitRT = splitRow.AddComponent<RectTransform>();
+        splitRT.anchorMin = Vector2.zero; splitRT.anchorMax = Vector2.one;
+        splitRT.offsetMin = Vector2.zero; splitRT.offsetMax = Vector2.zero;
+        var splitHL = splitRow.AddComponent<HorizontalLayoutGroup>();
+        splitHL.spacing = 12;
+        splitHL.childForceExpandHeight = true;
+        splitHL.childControlWidth = true;
+        splitHL.childControlHeight = true;
+        splitHL.padding = new RectOffset(8, 8, 8, 8);
+
+        // ── LEFT: Games grid (75%) ──
+        var gridContainer = new GameObject("GridContainer");
+        gridContainer.transform.SetParent(splitRow.transform, false);
+        gridContainer.AddComponent<RectTransform>();
+        var gridContainerLE = gridContainer.AddComponent<LayoutElement>();
+        gridContainerLE.flexibleWidth = 3; // 75%
+
+        // Scroll for grid
+        var gridScrollGO = new GameObject("GridScroll");
+        gridScrollGO.transform.SetParent(gridContainer.transform, false);
+        var gsRT = gridScrollGO.AddComponent<RectTransform>();
+        gsRT.anchorMin = Vector2.zero; gsRT.anchorMax = Vector2.one;
+        gsRT.offsetMin = Vector2.zero; gsRT.offsetMax = Vector2.zero;
+        gridScrollGO.AddComponent<Image>().color = Color.clear;
+        gridScrollGO.GetComponent<Image>().raycastTarget = true;
+        gridScrollGO.AddComponent<RectMask2D>();
+        var gridScroll = gridScrollGO.AddComponent<ScrollRect>();
+        gridScroll.horizontal = false; gridScroll.vertical = true;
+
+        var gridContentGO = new GameObject("GridContent");
+        gridContentGO.transform.SetParent(gridScrollGO.transform, false);
+        var gcRT = gridContentGO.AddComponent<RectTransform>();
+        gcRT.anchorMin = new Vector2(0, 1); gcRT.anchorMax = new Vector2(1, 1);
+        gcRT.pivot = new Vector2(0.5f, 1);
+        gcRT.sizeDelta = Vector2.zero;
+        gridContentGO.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        gridScroll.content = gcRT;
+
         var gridGO = new GameObject("GamesGrid");
-        gridGO.transform.SetParent(parent, false);
+        gridGO.transform.SetParent(gridContentGO.transform, false);
         gridGO.AddComponent<RectTransform>();
         var grid = gridGO.AddComponent<GridLayoutGroup>();
         grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = 2;
-        grid.cellSize = new Vector2(800, 340);
-        grid.spacing = new Vector2(20, 20);
+        grid.constraintCount = 3;
+        grid.cellSize = new Vector2(420, 320);
+        grid.spacing = new Vector2(14, 14);
         grid.childAlignment = TextAnchor.UpperCenter;
-        grid.padding = new RectOffset(12, 12, 12, 12);
+        grid.padding = new RectOffset(6, 6, 6, 6);
+        gridGO.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-        // Auto-size the grid height
-        var csf = gridGO.AddComponent<ContentSizeFitter>();
-        csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-        // Game card colors for variety
         Color[] cardColors = {
-            HexColor("#E74C3C"), HexColor("#8E44AD"), HexColor("#27AE60"),
-            HexColor("#D4AC0D"), HexColor("#7D3C98"), HexColor("#E91E63"),
-            HexColor("#2ECC71"), HexColor("#E67E22"), HexColor("#95A5A6"),
-            HexColor("#3498DB"), HexColor("#1ABC9C"), HexColor("#F39C12"),
+            HexColor("#3498DB"), HexColor("#8E44AD"), HexColor("#27AE60"),
+            HexColor("#E74C3C"), HexColor("#D4AC0D"), HexColor("#E91E63"),
+            HexColor("#1ABC9C"), HexColor("#E67E22"), HexColor("#7D3C98"),
+            HexColor("#2ECC71"), HexColor("#F39C12"), HexColor("#95A5A6"),
         };
 
         for (int i = 0; i < _data.games.Count; i++)
         {
-            var game = _data.games[i];
-            MakeGameCard3Col(gridGO.transform, game, cardColors[i % cardColors.Length]);
+            int idx = i;
+            MakeGameCard3Col(gridGO.transform, _data.games[i], cardColors[i % cardColors.Length], idx);
         }
 
-        MakeSpacer(parent, 20f);
+        // ── RIGHT: Persistent settings panel (25%) ──
+        var settingsPanel = new GameObject("SettingsPanel");
+        settingsPanel.transform.SetParent(splitRow.transform, false);
+        settingsPanel.AddComponent<RectTransform>();
+        var spLE = settingsPanel.AddComponent<LayoutElement>();
+        spLE.flexibleWidth = 1; // 25%
+        var spImg = settingsPanel.AddComponent<Image>();
+        if (roundedRect != null) { spImg.sprite = roundedRect; spImg.type = Image.Type.Sliced; }
+        spImg.color = new Color(0.96f, 0.96f, 0.98f, 1f);
+        spImg.raycastTarget = true;
+
+        // Settings panel scroll
+        var spScrollGO = new GameObject("SPScroll");
+        spScrollGO.transform.SetParent(settingsPanel.transform, false);
+        var spScrollRT = spScrollGO.AddComponent<RectTransform>();
+        spScrollRT.anchorMin = Vector2.zero; spScrollRT.anchorMax = Vector2.one;
+        spScrollRT.offsetMin = new Vector2(4, 4); spScrollRT.offsetMax = new Vector2(-4, -4);
+        spScrollGO.AddComponent<Image>().color = Color.clear;
+        spScrollGO.GetComponent<Image>().raycastTarget = false;
+        spScrollGO.AddComponent<RectMask2D>();
+        var spScroll = spScrollGO.AddComponent<ScrollRect>();
+        spScroll.horizontal = false; spScroll.vertical = true;
+
+        var spContentGO = new GameObject("SPContent");
+        spContentGO.transform.SetParent(spScrollGO.transform, false);
+        var spContentRT = spContentGO.AddComponent<RectTransform>();
+        spContentRT.anchorMin = new Vector2(0, 1); spContentRT.anchorMax = new Vector2(1, 1);
+        spContentRT.pivot = new Vector2(0.5f, 1);
+        spContentRT.sizeDelta = Vector2.zero;
+        var spContentVL = spContentGO.AddComponent<VerticalLayoutGroup>();
+        spContentVL.spacing = 10;
+        spContentVL.padding = new RectOffset(10, 10, 14, 14);
+        spContentVL.childForceExpandWidth = true;
+        spContentVL.childForceExpandHeight = false;
+        spContentVL.childControlWidth = true;
+        spContentVL.childControlHeight = true;
+        spContentGO.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        spScroll.content = spContentRT;
+
+        _settingsPanelContent = spContentGO;
+
+        // Default: show hint to select a game
+        var hintTMP = AddChildTMP(spContentGO.transform,
+            H("\u05DC\u05D7\u05E6\u05D5 \u05E2\u05DC \u05DE\u05E9\u05D7\u05E7 \u05DC\u05E0\u05D9\u05D4\u05D5\u05DC"), // לחצו על משחק לניהול
+            22, TextMedium, TextAlignmentOptions.Center);
+        hintTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 100;
+
+        // Select first game by default if available
+        if (_data.games.Count > 0)
+            UpdateSettingsPanel(_data.games[0]);
     }
 
-    private void MakeGameCard3Col(Transform parent, GameDashboardData game, Color topColor)
+    /// <summary>Updates the persistent right settings panel with the selected game's controls.</summary>
+    private void UpdateSettingsPanel(GameDashboardData game)
+    {
+        if (_settingsPanelContent == null) return;
+
+        // Clear previous content
+        for (int i = _settingsPanelContent.transform.childCount - 1; i >= 0; i--)
+            Destroy(_settingsPanelContent.transform.GetChild(i).gameObject);
+
+        var parent = _settingsPanelContent.transform;
+
+        // Game title
+        var titleTMP = AddChildTMP(parent, H(game.gameName), 28, TextDark, TextAlignmentOptions.Center);
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 40;
+
+        MakeDivider(parent);
+
+        // Use the existing MakeGameCard method for detailed controls
+        MakeGameCard(parent, game);
+    }
+
+    private void MakeGameCard3Col(Transform parent, GameDashboardData game, Color topColor, int index)
     {
         string gameId = game.gameId;
         bool isVisible = game.recommendation != null ? game.recommendation.finalVisible : game.systemVisibility;
@@ -1814,7 +1924,13 @@ public class ParentDashboardController : MonoBehaviour
         mrt.offsetMin = Vector2.zero; mrt.offsetMax = Vector2.zero;
 
         GameDashboardData capturedGame = game;
-        manageBtn.onClick.AddListener(() => ShowGameDetails(capturedGame));
+        manageBtn.onClick.AddListener(() => UpdateSettingsPanel(capturedGame));
+
+        // Also make tapping the card itself select it
+        var cardBtn = cardGO.AddComponent<Button>();
+        cardBtn.targetGraphic = cardImg;
+        cardBtn.transition = Selectable.Transition.None;
+        cardBtn.onClick.AddListener(() => UpdateSettingsPanel(capturedGame));
 
         // Visibility label
         AddChildTMP(cardGO.transform,
@@ -2306,15 +2422,16 @@ public class ParentDashboardController : MonoBehaviour
             Destroy(_gameDetailsOverlay);
             _gameDetailsOverlay = null;
         }
+    }
 
-        // Rebuild games tab to reflect any difficulty changes
+    /// <summary>Refreshes the games tab to reflect changes (called after difficulty/visibility changes).</summary>
+    private void RefreshGamesTab()
+    {
         if (tabContents != null && tabContents.Length > 1)
         {
             var parent = tabContents[1];
-            // Clear existing content
             for (int i = parent.childCount - 1; i >= 0; i--)
                 Destroy(parent.GetChild(i).gameObject);
-            // Rebuild data and content
             _data = ParentDashboardViewModel.Build();
             BuildGamesTabContent();
         }
