@@ -132,11 +132,12 @@ public class FishingGameSetup : EditorWindow
         safeGO.AddComponent<SafeAreaHandler>();
 
         // ════════════════════════════════════════════════════
-        //  LAYER 1: SKY BACKGROUND (full canvas)
+        //  LAYER 1: SKY BACKGROUND (full screen, OUTSIDE safe area to cover notches)
         // ════════════════════════════════════════════════════
 
-        var skyGO = StretchImage(safeGO.transform, "skyLayer", SkyColor);
+        var skyGO = StretchImage(canvasGO.transform, "skyLayer", SkyColor);
         skyGO.GetComponent<Image>().raycastTarget = false;
+        skyGO.transform.SetAsFirstSibling(); // behind SafeArea
 
         // ════════════════════════════════════════════════════
         //  LAYER 2: CLOUD LAYERS (using existing world cloud assets)
