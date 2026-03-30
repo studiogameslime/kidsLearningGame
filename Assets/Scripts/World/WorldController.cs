@@ -167,13 +167,7 @@ public class WorldController : MonoBehaviour
             toyBox != null ? toyBox.gameObject : null,
             SoundLibrary.WorldAllGames()));
 
-        // ── Step 5: Highlight Easel — "Here your paintings" ──
-        var easel = FindObjectOfType<WorldEasel>();
-        yield return StartCoroutine(LiftObjectStep(
-            easel != null ? easel.gameObject : null,
-            SoundLibrary.WorldSavedPaintings()));
-
-        // ── Step 6: Spawn first gift, then "Let's open your first gift!" ──
+        // ── Step 5: Spawn first gift, then "Let's open your first gift!" ──
         if (rewardReveal != null)
         {
             // Spawn gift first (behind dark overlay)
@@ -208,23 +202,39 @@ public class WorldController : MonoBehaviour
         // Wait for reveal animation
         yield return new WaitForSeconds(2.5f);
 
-        // ── Step 7: "You have another gift!" ──
-        // Overlay stays active — DarkOverlayStep won't hide it at the end
-        yield return StartCoroutine(DarkOverlayStepKeepActive(SoundLibrary.WorldAnotherGift()));
+        // ── Step 6: "You have another gift!" ──
+        // Play audio while simultaneously watching for the second gift to appear.
+        // Spotlight it the instant it spawns — no delay.
+        {
+            var alinRef2 = AlinGuide.Instance;
+            var clip2 = SoundLibrary.WorldAnotherGift();
+            EnsureSpotlightOverlay();
+            ShowOverlayDark();
 
-        // Second gift — wait for it to appear then spotlight immediately
-        GiftBoxController gift2 = null;
-        float waitTime = 0f;
-        while (gift2 == null && waitTime < 5f)
-        {
-            gift2 = FindObjectOfType<GiftBoxController>();
-            if (gift2 == null) { yield return null; waitTime += Time.deltaTime; }
-        }
-        if (gift2 != null)
-        {
-            ShowSpotlightOnTarget(gift2.GetComponent<RectTransform>(), 180f);
-            while (FindObjectOfType<GiftBoxController>() != null)
-                yield return null;
+            if (clip2 != null)
+            {
+                if (alinRef2 != null) alinRef2.PlayTalking();
+                BackgroundMusicManager.PlayOneShot(clip2);
+            }
+
+            // Wait for second gift to appear (check every frame), spotlight immediately
+            GiftBoxController gift2 = null;
+            float waitTime = 0f;
+            float maxWait = (clip2 != null ? clip2.length + 2f : 5f);
+            while (gift2 == null && waitTime < maxWait)
+            {
+                gift2 = FindObjectOfType<GiftBoxController>();
+                if (gift2 == null) { yield return null; waitTime += Time.deltaTime; }
+            }
+
+            if (alinRef2 != null) alinRef2.StopTalking();
+
+            if (gift2 != null)
+            {
+                ShowSpotlightOnTarget(gift2.GetComponent<RectTransform>(), 180f);
+                while (FindObjectOfType<GiftBoxController>() != null)
+                    yield return null;
+            }
         }
 
         // Clean up
