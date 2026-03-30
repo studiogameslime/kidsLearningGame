@@ -247,8 +247,8 @@ public class FishingGameSetup : EditorWindow
         rodTipGO.transform.SetParent(elroeyGO.transform, false);
         var rodTipRT = rodTipGO.AddComponent<RectTransform>();
         // Rod tip is at ~80% X (right side) and ~95% Y (top) of the Elroey sprite
-        rodTipRT.anchorMin = new Vector2(0.78f, 0.95f);
-        rodTipRT.anchorMax = new Vector2(0.78f, 0.95f);
+        rodTipRT.anchorMin = new Vector2(0.88f, 0.74f);
+        rodTipRT.anchorMax = new Vector2(0.88f, 0.74f);
         rodTipRT.sizeDelta = Vector2.zero;
         rodTipRT.anchoredPosition = Vector2.zero;
 
