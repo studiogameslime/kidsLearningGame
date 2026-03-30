@@ -54,6 +54,7 @@ public class ParentDashboardController : MonoBehaviour
     public Sprite uiCheckIcon;      // UI_1_5  — checkmark icon (active indicator)
     public Sprite uiBarGray;        // UI_1_44 — gray bar/button
     public Sprite uiPlaceholder;    // UI_2_6  — question mark card (fallback thumbnail)
+    public Sprite uiShareIcon;      // UI_1_69 — share icon
 
     [Header("Assets")]
     public Sprite roundedRect;
@@ -1131,8 +1132,8 @@ public class ParentDashboardController : MonoBehaviour
         hl.childControlWidth = true;
         hl.childControlHeight = true;
 
-        // Share icon (UI_1_69)
-        var shareIcon = UISheetHelper.LoadSpriteFromSheet("Assets/Art/UI/UI_1.png", "UI_1_69");
+        // Share icon
+        var shareIcon = uiShareIcon;
         if (shareIcon != null)
         {
             var iconGO = new GameObject("ShareIcon");

@@ -385,6 +385,7 @@ public class ParentDashboardSetup : EditorWindow
         ctrl.uiCheckIcon = LoadSpriteFromSheet("Assets/Art/UI/UI_1.png", "UI_1_5");
         ctrl.uiBarGray = LoadSpriteFromSheet("Assets/Art/UI/UI_1.png", "UI_1_44");
         ctrl.uiPlaceholder = LoadSpriteFromSheet("Assets/Art/UI/UI_2.png", "UI_2_6");
+        ctrl.uiShareIcon = LoadSpriteFromSheet("Assets/Art/UI/UI_1.png", "UI_1_69");
 
         // Wire gate back button
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
