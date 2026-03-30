@@ -37,6 +37,20 @@ public class ParentDashboardController : MonoBehaviour
     public Button settingsButton;
     public Sprite gearSprite;
 
+    [Header("UI Kit Sprites")]
+    public Sprite uiCardBlue;       // UI_2_0 — blue card background
+    public Sprite uiCardPurple;     // UI_2_2 — purple card background
+    public Sprite uiToggleGreen;    // UI_2_14
+    public Sprite uiToggleRed;      // UI_2_15
+    public Sprite uiBtnRounded;     // UI_1_41 — rounded button
+    public Sprite uiBtnRoundedAlt;  // UI_1_42
+    public Sprite uiPlus;           // UI_1_16
+    public Sprite uiMinus;          // UI_1_30
+    public Sprite uiBarBlue;        // UI_1_33
+    public Sprite uiBarGreen;       // UI_1_34
+    public Sprite uiBarYellow;      // UI_1_35
+    public Sprite uiSectionBg;      // UI_1_49 — section background
+
     [Header("Assets")]
     public Sprite roundedRect;
     public Sprite circleSprite;
@@ -1667,17 +1681,17 @@ public class ParentDashboardController : MonoBehaviour
             return;
         }
 
-        // 3-column grid of game cards (matching mockup)
+        // 2-column grid of large game cards (matching mockup)
         var gridGO = new GameObject("GamesGrid");
         gridGO.transform.SetParent(parent, false);
         gridGO.AddComponent<RectTransform>();
         var grid = gridGO.AddComponent<GridLayoutGroup>();
         grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = 3;
-        grid.cellSize = new Vector2(580, 300);
-        grid.spacing = new Vector2(16, 16);
+        grid.constraintCount = 2;
+        grid.cellSize = new Vector2(800, 340);
+        grid.spacing = new Vector2(20, 20);
         grid.childAlignment = TextAnchor.UpperCenter;
-        grid.padding = new RectOffset(8, 8, 8, 8);
+        grid.padding = new RectOffset(12, 12, 12, 12);
 
         // Auto-size the grid height
         var csf = gridGO.AddComponent<ContentSizeFitter>();
@@ -1703,33 +1717,35 @@ public class ParentDashboardController : MonoBehaviour
     private void MakeGameCard3Col(Transform parent, GameDashboardData game, Color topColor)
     {
         string gameId = game.gameId;
+        bool isVisible = game.recommendation != null ? game.recommendation.finalVisible : game.systemVisibility;
 
         var cardGO = new GameObject($"GameCard_{gameId}");
         cardGO.transform.SetParent(parent, false);
         cardGO.AddComponent<RectTransform>();
         var cardImg = cardGO.AddComponent<Image>();
-        if (roundedRect != null) { cardImg.sprite = roundedRect; cardImg.type = Image.Type.Sliced; }
-        cardImg.color = CardColor;
+        // Alternate card backgrounds using UI kit
+        cardImg.sprite = uiCardBlue != null ? uiCardBlue : roundedRect;
+        cardImg.type = Image.Type.Sliced;
+        cardImg.color = Color.white;
         cardImg.raycastTarget = false;
 
         var cardVL = cardGO.AddComponent<VerticalLayoutGroup>();
-        cardVL.spacing = 0;
+        cardVL.spacing = 6;
         cardVL.childForceExpandWidth = true;
         cardVL.childForceExpandHeight = false;
         cardVL.childControlWidth = true;
         cardVL.childControlHeight = true;
-        cardVL.padding = new RectOffset(0, 0, 0, 12);
+        cardVL.padding = new RectOffset(12, 12, 0, 14);
 
-        // ── Top colored area with icon/thumbnail ──
+        // ── Top colored area with game thumbnail ──
         var topGO = new GameObject("TopArea");
         topGO.transform.SetParent(cardGO.transform, false);
         topGO.AddComponent<RectTransform>();
-        topGO.AddComponent<LayoutElement>().preferredHeight = 130;
+        topGO.AddComponent<LayoutElement>().preferredHeight = 150;
         var topImg = topGO.AddComponent<Image>();
         topImg.color = topColor;
         topImg.raycastTarget = false;
 
-        // Game thumbnail centered
         var gameItem = FindGameItemFromDb(gameId);
         if (gameItem != null && gameItem.thumbnail != null)
         {
@@ -1737,63 +1753,61 @@ public class ParentDashboardController : MonoBehaviour
             thumbGO.transform.SetParent(topGO.transform, false);
             var thumbRT = thumbGO.AddComponent<RectTransform>();
             thumbRT.anchorMin = new Vector2(0.5f, 0.5f); thumbRT.anchorMax = new Vector2(0.5f, 0.5f);
-            thumbRT.sizeDelta = new Vector2(100, 100);
+            thumbRT.sizeDelta = new Vector2(120, 120);
             var thumbImg = thumbGO.AddComponent<Image>();
             thumbImg.sprite = gameItem.thumbnail;
             thumbImg.preserveAspect = true;
             thumbImg.raycastTarget = false;
         }
 
-        // ── Game name ──
-        var nameTMP = AddChildTMP(cardGO.transform, H(game.gameName), 24, TextDark, TextAlignmentOptions.Center);
+        // ── Game name (large, bold) ──
+        var nameTMP = AddChildTMP(cardGO.transform, H(game.gameName), 28, TextDark, TextAlignmentOptions.Center);
         nameTMP.fontStyle = FontStyles.Bold;
-        nameTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 36;
+        nameTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 40;
 
         // ── Play count ──
         string playText = game.sessionsPlayed > 0
-            ? H($"\u05E9\u05D5\u05D7\u05E7 {game.sessionsPlayed} \u05E4\u05E2\u05DE\u05D9\u05DD") // שוחק X פעמים
-            : H("\u05E2\u05D3\u05D9\u05D9\u05DF \u05DC\u05D0 \u05E9\u05D5\u05D7\u05E7"); // עדיין לא שוחק
-        AddChildTMP(cardGO.transform, playText, 18, TextMedium, TextAlignmentOptions.Center)
-            .gameObject.AddComponent<LayoutElement>().preferredHeight = 26;
+            ? H($"\u05E9\u05D5\u05D7\u05E7 {game.sessionsPlayed} \u05E4\u05E2\u05DE\u05D9\u05DD")
+            : H("\u05E2\u05D3\u05D9\u05D9\u05DF \u05DC\u05D0 \u05E9\u05D5\u05D7\u05E7");
+        AddChildTMP(cardGO.transform, playText, 20, TextMedium, TextAlignmentOptions.Center)
+            .gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
 
-        // ── Bottom row: ON/OFF toggle + Manage button ──
-        var bottomRow = MakeHRow(cardGO.transform, 50, TextAnchor.MiddleCenter);
-        bottomRow.GetComponent<HorizontalLayoutGroup>().spacing = 16;
-        bottomRow.GetComponent<HorizontalLayoutGroup>().padding = new RectOffset(16, 16, 4, 4);
+        // ── Bottom row: Toggle + Manage button ──
+        var bottomRow = MakeHRow(cardGO.transform, 60, TextAnchor.MiddleCenter);
+        bottomRow.GetComponent<HorizontalLayoutGroup>().spacing = 20;
+        bottomRow.GetComponent<HorizontalLayoutGroup>().padding = new RectOffset(20, 20, 4, 4);
 
-        // Toggle
-        bool isVisible = game.recommendation != null ? game.recommendation.finalVisible : game.systemVisibility;
+        // Toggle (using UI kit green/red toggle sprites)
         var toggleGO = new GameObject("Toggle");
         toggleGO.transform.SetParent(bottomRow.transform, false);
         toggleGO.AddComponent<RectTransform>();
-        toggleGO.AddComponent<LayoutElement>().preferredWidth = 110;
+        var toggleLE = toggleGO.AddComponent<LayoutElement>();
+        toggleLE.preferredWidth = 100;
+        toggleLE.preferredHeight = 44;
+        var toggleImg = toggleGO.AddComponent<Image>();
+        toggleImg.sprite = isVisible
+            ? (uiToggleGreen != null ? uiToggleGreen : roundedRect)
+            : (uiToggleRed != null ? uiToggleRed : roundedRect);
+        toggleImg.preserveAspect = true;
+        toggleImg.raycastTarget = true;
 
-        var toggleBg = toggleGO.AddComponent<Image>();
-        if (roundedRect != null) { toggleBg.sprite = roundedRect; toggleBg.type = Image.Type.Sliced; }
-        toggleBg.color = isVisible ? HexColor("#66BB6A") : HexColor("#BDBDBD");
-        toggleBg.raycastTarget = true;
-
-        var toggleLabel = AddChildTMP(toggleGO.transform,
-            isVisible ? "ON" : "OFF", 20, Color.white, TextAlignmentOptions.Center);
-        toggleLabel.fontStyle = FontStyles.Bold;
-        var toggleLabelRT = toggleLabel.GetComponent<RectTransform>();
-        toggleLabelRT.anchorMin = Vector2.zero; toggleLabelRT.anchorMax = Vector2.one;
-        toggleLabelRT.offsetMin = Vector2.zero; toggleLabelRT.offsetMax = Vector2.zero;
-
-        // Manage button
+        // Manage button (using UI kit rounded button)
         var manageBtnGO = new GameObject("ManageBtn");
         manageBtnGO.transform.SetParent(bottomRow.transform, false);
         manageBtnGO.AddComponent<RectTransform>();
-        manageBtnGO.AddComponent<LayoutElement>().flexibleWidth = 1;
+        var manageLE = manageBtnGO.AddComponent<LayoutElement>();
+        manageLE.flexibleWidth = 1;
+        manageLE.preferredHeight = 50;
         var manageBgImg = manageBtnGO.AddComponent<Image>();
-        if (roundedRect != null) { manageBgImg.sprite = roundedRect; manageBgImg.type = Image.Type.Sliced; }
-        manageBgImg.color = Primary;
+        manageBgImg.sprite = uiBtnRounded != null ? uiBtnRounded : roundedRect;
+        manageBgImg.type = Image.Type.Sliced;
+        manageBgImg.color = Color.white;
         manageBgImg.raycastTarget = true;
         var manageBtn = manageBtnGO.AddComponent<Button>();
         manageBtn.targetGraphic = manageBgImg;
 
         var manageLabelTMP = AddChildTMP(manageBtnGO.transform,
-            H("\u05E0\u05D9\u05D4\u05D5\u05DC"), 22, Color.white, TextAlignmentOptions.Center); // ניהול
+            H("\u05E0\u05D9\u05D4\u05D5\u05DC"), 24, Color.white, TextAlignmentOptions.Center);
         manageLabelTMP.fontStyle = FontStyles.Bold;
         var mrt = manageLabelTMP.GetComponent<RectTransform>();
         mrt.anchorMin = Vector2.zero; mrt.anchorMax = Vector2.one;
@@ -1802,11 +1816,11 @@ public class ParentDashboardController : MonoBehaviour
         GameDashboardData capturedGame = game;
         manageBtn.onClick.AddListener(() => ShowGameDetails(capturedGame));
 
-        // Visibility label below toggle
+        // Visibility label
         AddChildTMP(cardGO.transform,
-            isVisible ? H("\u05DE\u05D5\u05E6\u05D2") : H("\u05DE\u05D5\u05E1\u05EA\u05E8"), // מוצג / מוסתר
-            16, isVisible ? AccentGreen : AccentRed, TextAlignmentOptions.Center)
-            .gameObject.AddComponent<LayoutElement>().preferredHeight = 22;
+            isVisible ? H("\u05DE\u05D5\u05E6\u05D2") : H("\u05DE\u05D5\u05E1\u05EA\u05E8"),
+            18, isVisible ? AccentGreen : AccentRed, TextAlignmentOptions.Center)
+            .gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
     }
 
     private void MakeGameListRow(Transform parent, GameDashboardData game)

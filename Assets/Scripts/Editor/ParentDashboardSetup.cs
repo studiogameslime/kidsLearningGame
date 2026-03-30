@@ -368,6 +368,20 @@ public class ParentDashboardSetup : EditorWindow
         ctrl.circleSprite = circleSprite;
         ctrl.gameDatabase = AssetDatabase.LoadAssetAtPath<GameDatabase>("Assets/Data/Games/GameDatabase.asset");
 
+        // UI Kit sprites
+        ctrl.uiCardBlue = LoadSpriteFromSheet("Assets/Art/UI/UI_2.png", "UI_2_0");
+        ctrl.uiCardPurple = LoadSpriteFromSheet("Assets/Art/UI/UI_2.png", "UI_2_2");
+        ctrl.uiToggleGreen = LoadSpriteFromSheet("Assets/Art/UI/UI_2.png", "UI_2_14");
+        ctrl.uiToggleRed = LoadSpriteFromSheet("Assets/Art/UI/UI_2.png", "UI_2_15");
+        ctrl.uiBtnRounded = LoadSpriteFromSheet("Assets/Art/UI/UI_1.png", "UI_1_41");
+        ctrl.uiBtnRoundedAlt = LoadSpriteFromSheet("Assets/Art/UI/UI_1.png", "UI_1_42");
+        ctrl.uiPlus = LoadSpriteFromSheet("Assets/Art/UI/UI_1.png", "UI_1_16");
+        ctrl.uiMinus = LoadSpriteFromSheet("Assets/Art/UI/UI_1.png", "UI_1_30");
+        ctrl.uiBarBlue = LoadSpriteFromSheet("Assets/Art/UI/UI_1.png", "UI_1_33");
+        ctrl.uiBarGreen = LoadSpriteFromSheet("Assets/Art/UI/UI_1.png", "UI_1_34");
+        ctrl.uiBarYellow = LoadSpriteFromSheet("Assets/Art/UI/UI_1.png", "UI_1_35");
+        ctrl.uiSectionBg = LoadSpriteFromSheet("Assets/Art/UI/UI_1.png", "UI_1_49");
+
         // Wire gate back button
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
             gateBackBtn.onClick, ctrl.OnBackPressed);
@@ -452,6 +466,15 @@ public class ParentDashboardSetup : EditorWindow
                 AssetDatabase.CreateFolder(cur, parts[i]);
             cur = next;
         }
+    }
+
+    private static Sprite LoadSpriteFromSheet(string sheetPath, string spriteName)
+    {
+        var allAssets = AssetDatabase.LoadAllAssetsAtPath(sheetPath);
+        if (allAssets != null)
+            foreach (var asset in allAssets)
+                if (asset is Sprite spr && spr.name == spriteName) return spr;
+        return null;
     }
 
     private static Color HexColor(string hex)
