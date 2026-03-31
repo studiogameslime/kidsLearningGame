@@ -2274,115 +2274,47 @@ public class ParentDashboardController : MonoBehaviour
             capturedCard, capturedScrollContent));
 
         // ═══════════════════════════════════════════════════════════
-        //  SECTION 2: DIFFICULTY — mini-card style
+        //  SECTION 2: DIFFICULTY — 3 tiers (easy/medium/hard)
         // ═══════════════════════════════════════════════════════════
         bool hasRec = rec != null;
-        bool isManual = game.manualDifficultyOverride;
+        int currentDiff = hasRec ? rec.finalDifficulty : game.currentDifficulty;
+        // Map 1-10 to tier: 0=easy(1-3), 1=medium(4-6), 2=hard(7-10)
+        int currentTier = currentDiff <= 3 ? 0 : currentDiff <= 6 ? 1 : 2;
 
         var diffSection = MakePanelSection(parent, H("\u05E8\u05DE\u05EA \u05E7\u05D5\u05E9\u05D9")); // רמת קושי
 
-        // Recommendation chain (compact)
-        if (hasRec)
-        {
-            string recInfo = H($"\u05D1\u05E8\u05D9\u05E8\u05EA \u05DE\u05D7\u05D3\u05DC: {rec.baselineVariantLabel}");
-            var recInfoTMP = AddChildTMP(diffSection, recInfo, 15,
-                new Color(1f, 1f, 1f, 0.5f), TextAlignmentOptions.Center);
-            recInfoTMP.enableAutoSizing = true; recInfoTMP.fontSizeMin = 12; recInfoTMP.fontSizeMax = 15;
-            recInfoTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
-
-            if (rec.systemRecommendedDifficulty != rec.baselineDifficulty)
-            {
-                string sysRec = H($"\u05D4\u05DE\u05DC\u05E6\u05EA \u05D4\u05DE\u05E2\u05E8\u05DB\u05EA: {rec.systemRecommendedVariantLabel}");
-                var sysRecTMP = AddChildTMP(diffSection, sysRec, 15,
-                    new Color(0.6f, 0.85f, 1f, 1f), TextAlignmentOptions.Center);
-                sysRecTMP.enableAutoSizing = true; sysRecTMP.fontSizeMin = 12; sysRecTMP.fontSizeMax = 15;
-                sysRecTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
-            }
-        }
-
-        // Stepper: [−] NUMBER [+]
-        var diffRow = MakeHRow(diffSection, 54, TextAnchor.MiddleCenter);
+        // 3 tier buttons
+        var diffRow = MakeHRow(diffSection, 46, TextAnchor.MiddleCenter);
         var drHL = diffRow.GetComponent<HorizontalLayoutGroup>();
-        drHL.spacing = 10;
-        drHL.padding = new RectOffset(8, 8, 4, 4);
+        drHL.spacing = 8;
+        drHL.childForceExpandWidth = true;
+        drHL.childForceExpandHeight = true;
 
-        var minusBtn = MakePanelStepperButton(diffRow.transform, false);
-        // Large number display
-        int displayDiff = hasRec ? rec.finalDifficulty : game.currentDifficulty;
-        var diffDisplayGO = new GameObject("DiffDisplay");
-        diffDisplayGO.transform.SetParent(diffRow.transform, false);
-        var diffDisplayLE = diffDisplayGO.AddComponent<LayoutElement>();
-        diffDisplayLE.preferredWidth = 50;
-        diffDisplayLE.preferredHeight = 50;
-        var diffBgImg = diffDisplayGO.AddComponent<Image>();
-        diffBgImg.sprite = roundedRect;
-        diffBgImg.type = Image.Type.Sliced;
-        diffBgImg.color = new Color(1f, 1f, 1f, 0.15f);
-        var diffValTMP = AddChildTMP(diffDisplayGO.transform, $"{displayDiff}",
-            32, Color.white, TextAlignmentOptions.Center);
-        diffValTMP.fontStyle = FontStyles.Bold;
-        var dvrt = diffValTMP.GetComponent<RectTransform>();
-        dvrt.anchorMin = Vector2.zero; dvrt.anchorMax = Vector2.one;
-        dvrt.offsetMin = Vector2.zero; dvrt.offsetMax = Vector2.zero;
+        var easyBtn = MakePanelToggleButton(diffRow.transform,
+            H("\u05E7\u05DC"), currentTier == 0); // קל
+        var medBtn = MakePanelToggleButton(diffRow.transform,
+            H("\u05D1\u05D9\u05E0\u05D5\u05E0\u05D9"), currentTier == 1); // בינוני
+        var hardBtn = MakePanelToggleButton(diffRow.transform,
+            H("\u05E7\u05E9\u05D4"), currentTier == 2); // קשה
 
-        var plusBtn = MakePanelStepperButton(diffRow.transform, true);
+        // Description of what this tier means for this game
+        string tierDesc = GetDifficultyDescription(gameId, currentTier);
+        var descTMP = AddChildTMP(diffSection, H(tierDesc), 14,
+            new Color(1f, 1f, 1f, 0.6f), TextAlignmentOptions.Center);
+        descTMP.enableAutoSizing = true; descTMP.fontSizeMin = 11; descTMP.fontSizeMax = 14;
+        descTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 22;
 
-        // Mode label (auto/manual)
-        var modeLabelTMP = AddChildTMP(diffSection,
-            isManual ? H("\u05D9\u05D3\u05E0\u05D9") : H("\u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9"),
-            16, isManual ? AccentOrange : HexColor("#A5D6A7"), TextAlignmentOptions.Center);
-        modeLabelTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
-
-        // Final value label (separate from the stepper number display)
-        string finalLabel = hasRec ? rec.finalVariantLabel : (game.activeDifficultyImpact ?? "");
-        TextMeshProUGUI finalValTMP = null; // declared outside if-block so reset can reference it
-        if (!string.IsNullOrEmpty(finalLabel))
-        {
-            string finalPrefix = H("\u05D4\u05E2\u05E8\u05DA \u05D1\u05E4\u05D5\u05E2\u05DC:");
-            finalValTMP = AddChildTMP(diffSection, $"{finalPrefix} {H(finalLabel)}",
-                16, Color.white, TextAlignmentOptions.Center);
-            finalValTMP.fontStyle = FontStyles.Bold;
-            finalValTMP.enableAutoSizing = true; finalValTMP.fontSizeMin = 13; finalValTMP.fontSizeMax = 16;
-            finalValTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 26;
-        }
-
-        // Wire difficulty +/- buttons
-        var capturedFinalValTMP = finalValTMP; // may be null if no finalLabel
-        minusBtn.onClick.AddListener(() => ChangeDifficultyFull(
-            gameId, -1, diffValTMP, modeLabelTMP, capturedFinalValTMP,
+        // Wire tier buttons
+        var capturedDescTMP = descTMP;
+        easyBtn.onClick.AddListener(() => OnDifficultyTierChanged(
+            gameId, 0, easyBtn, medBtn, hardBtn, capturedDescTMP,
             diffSection, capturedScrollContent));
-        plusBtn.onClick.AddListener(() => ChangeDifficultyFull(
-            gameId, +1, diffValTMP, modeLabelTMP, capturedFinalValTMP,
+        medBtn.onClick.AddListener(() => OnDifficultyTierChanged(
+            gameId, 1, easyBtn, medBtn, hardBtn, capturedDescTMP,
             diffSection, capturedScrollContent));
-
-        // Reset button (if manual override active)
-        if (isManual)
-        {
-            var resetBtnGO = new GameObject("ResetBtn");
-            resetBtnGO.transform.SetParent(diffSection, false);
-            var resetLE = resetBtnGO.AddComponent<LayoutElement>();
-            resetLE.preferredHeight = 36;
-            var resetImg = resetBtnGO.AddComponent<Image>();
-            resetImg.sprite = roundedRect;
-            resetImg.type = Image.Type.Sliced;
-            resetImg.color = new Color(1f, 1f, 1f, 0.15f);
-            var resetBtn = resetBtnGO.AddComponent<Button>();
-            resetBtn.targetGraphic = resetImg;
-            var rlTMP = AddChildTMP(resetBtnGO.transform,
-                H("\u05D7\u05D6\u05E8\u05D4 \u05DC\u05E8\u05DE\u05D4 \u05D4\u05DE\u05D5\u05DE\u05DC\u05E6\u05EA"),
-                15, HexColor("#A5D6A7"), TextAlignmentOptions.Center);
-            rlTMP.enableAutoSizing = true; rlTMP.fontSizeMin = 12; rlTMP.fontSizeMax = 15;
-            var rlrt = rlTMP.GetComponent<RectTransform>();
-            rlrt.anchorMin = Vector2.zero; rlrt.anchorMax = Vector2.one;
-            rlrt.offsetMin = Vector2.zero; rlrt.offsetMax = Vector2.zero;
-
-            var capturedResetGO = resetBtnGO;
-            resetBtn.onClick.AddListener(() => ResetDifficultyOverride(
-                gameId, diffValTMP, modeLabelTMP,
-                capturedFinalValTMP,  // the separate final-value label, NOT the stepper number
-                capturedResetGO, null,
-                diffSection, capturedScrollContent));
-        }
+        hardBtn.onClick.AddListener(() => OnDifficultyTierChanged(
+            gameId, 2, easyBtn, medBtn, hardBtn, capturedDescTMP,
+            diffSection, capturedScrollContent));
 
         // ═══════════════════════════════════════════════════════════
         //  SECTION 2.5: COLORING MODE (only for coloring game)
@@ -3879,6 +3811,132 @@ public class ParentDashboardController : MonoBehaviour
     // ═══════════════════════════════════════════════════════════════
     //  DIFFICULTY CONTROL
     // ═══════════════════════════════════════════════════════════════
+
+    private void OnDifficultyTierChanged(string gameId, int tier,
+        Button easyBtn, Button medBtn, Button hardBtn,
+        TextMeshProUGUI descTMP, Transform card, Transform scrollContent)
+    {
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null) return;
+
+        // Map tier to difficulty value: easy=2, medium=5, hard=8
+        int newDiff = tier == 0 ? 2 : tier == 1 ? 5 : 8;
+
+        var gp = profile.analytics.GetOrCreateGame(gameId);
+        if (!gp.manualDifficultyOverride)
+            gp.lastAutoDifficulty = gp.currentDifficulty;
+
+        gp.currentDifficulty = newDiff;
+        gp.manualDifficultyOverride = true;
+        gp.consecutiveStrongResults = 0;
+        gp.consecutiveWeakResults = 0;
+        ProfileManager.Instance.Save();
+
+        // Update button states
+        UpdateToggleButton(easyBtn, tier == 0);
+        UpdateToggleButton(medBtn, tier == 1);
+        UpdateToggleButton(hardBtn, tier == 2);
+
+        // Update description
+        string desc = GetDifficultyDescription(gameId, tier);
+        HebrewText.SetText(descTMP, H(desc));
+
+        // Sync stale data
+        SyncGameDifficulty(gameId, newDiff, true);
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(card.GetComponent<RectTransform>());
+        LayoutRebuilder.ForceRebuildLayoutImmediate(scrollContent.GetComponent<RectTransform>());
+    }
+
+    private static string GetDifficultyDescription(string gameId, int tier)
+    {
+        // tier: 0=easy, 1=medium, 2=hard
+        switch (gameId)
+        {
+            case "memory":
+                return tier == 0 ? "4\u00D72 \u05DB\u05E8\u05D8\u05D9\u05E1\u05D9\u05DD"   // 4×2 כרטיסים
+                     : tier == 1 ? "4\u00D73 \u05DB\u05E8\u05D8\u05D9\u05E1\u05D9\u05DD"   // 4×3 כרטיסים
+                     :              "4\u00D74 \u05DB\u05E8\u05D8\u05D9\u05E1\u05D9\u05DD";  // 4×4 כרטיסים
+            case "puzzle":
+                return tier == 0 ? "3\u00D73 \u05D7\u05DC\u05E7\u05D9\u05DD"  // 3×3 חלקים
+                     : tier == 1 ? "4\u00D74 \u05D7\u05DC\u05E7\u05D9\u05DD"  // 4×4 חלקים
+                     :              "5\u00D75 \u05D7\u05DC\u05E7\u05D9\u05DD"; // 5×5 חלקים
+            case "shadows":
+                return tier == 0 ? "3 \u05D7\u05D9\u05D5\u05EA"   // 3 חיות
+                     : tier == 1 ? "4 \u05D7\u05D9\u05D5\u05EA"   // 4 חיות
+                     :              "5 \u05D7\u05D9\u05D5\u05EA";  // 5 חיות
+            case "fishing":
+                return tier == 0 ? "4 \u05D3\u05D2\u05D9\u05DD, \u05D0\u05D9\u05D8\u05D9"     // 4 דגים, איטי
+                     : tier == 1 ? "6 \u05D3\u05D2\u05D9\u05DD, \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9" // 6 דגים, בינוני
+                     :              "8 \u05D3\u05D2\u05D9\u05DD, \u05DE\u05D4\u05D9\u05E8";   // 8 דגים, מהיר
+            case "laundrysorting":
+                return tier == 0 ? "9 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD"   // 9 פריטים
+                     : tier == 1 ? "15 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD"  // 15 פריטים
+                     :              "21 \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD"; // 21 פריטים
+            case "oddoneout":
+                return tier == 0 ? "4 \u05D7\u05D9\u05D5\u05EA"   // 4 חיות
+                     : tier == 1 ? "6 \u05D7\u05D9\u05D5\u05EA"   // 6 חיות
+                     :              "8 \u05D7\u05D9\u05D5\u05EA";  // 8 חיות
+            case "quantitymatch":
+                return tier == 0 ? "\u05DE\u05E1\u05E4\u05E8\u05D9\u05DD 1-3"  // מספרים 1-3
+                     : tier == 1 ? "\u05DE\u05E1\u05E4\u05E8\u05D9\u05DD 1-5"  // מספרים 1-5
+                     :              "\u05DE\u05E1\u05E4\u05E8\u05D9\u05DD 1-8"; // מספרים 1-8
+            case "numbertrain":
+                return tier == 0 ? "6 \u05E7\u05E8\u05D5\u05E0\u05D5\u05EA, 3 \u05D7\u05E1\u05E8\u05D9\u05DD"  // 6 קרונות, 3 חסרים
+                     : tier == 1 ? "8 \u05E7\u05E8\u05D5\u05E0\u05D5\u05EA, 5 \u05D7\u05E1\u05E8\u05D9\u05DD"  // 8 קרונות, 5 חסרים
+                     :              "10 \u05E7\u05E8\u05D5\u05E0\u05D5\u05EA, 7 \u05D7\u05E1\u05E8\u05D9\u05DD"; // 10 קרונות, 7 חסרים
+            case "lettertrain":
+                return tier == 0 ? "6 \u05E7\u05E8\u05D5\u05E0\u05D5\u05EA, 3 \u05D7\u05E1\u05E8\u05D5\u05EA"  // 6 קרונות, 3 חסרות
+                     : tier == 1 ? "8 \u05E7\u05E8\u05D5\u05E0\u05D5\u05EA, 5 \u05D7\u05E1\u05E8\u05D5\u05EA"  // 8 קרונות, 5 חסרות
+                     :              "10 \u05E7\u05E8\u05D5\u05E0\u05D5\u05EA, 7 \u05D7\u05E1\u05E8\u05D5\u05EA"; // 10 קרונות, 7 חסרות
+            case "flappybird":
+                return tier == 0 ? "\u05E8\u05D5\u05D5\u05D7 \u05E8\u05D7\u05D1, \u05D0\u05D9\u05D8\u05D9"  // רווח רחב, איטי
+                     : tier == 1 ? "\u05E8\u05D5\u05D5\u05D7 \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9"           // רווח בינוני
+                     :              "\u05E8\u05D5\u05D5\u05D7 \u05E6\u05E8, \u05DE\u05D4\u05D9\u05E8";       // רווח צר, מהיר
+            case "towerstack":
+                return tier == 0 ? "\u05D0\u05D9\u05D8\u05D9, \u05E7\u05D5\u05D1\u05D9\u05D5\u05EA \u05E8\u05D7\u05D1\u05D5\u05EA" // איטי, קוביות רחבות
+                     : tier == 1 ? "\u05DE\u05D4\u05D9\u05E8\u05D5\u05EA \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9\u05EA"                // מהירות בינונית
+                     :              "\u05DE\u05D4\u05D9\u05E8, \u05E7\u05D5\u05D1\u05D9\u05D5\u05EA \u05E6\u05E8\u05D5\u05EA";      // מהיר, קוביות צרות
+            case "colorvoice":
+                return tier == 0 ? "5 \u05E1\u05D9\u05D1\u05D5\u05D1\u05D9\u05DD"   // 5 סיבובים
+                     : tier == 1 ? "7 \u05E1\u05D9\u05D1\u05D5\u05D1\u05D9\u05DD"   // 7 סיבובים
+                     :              "10 \u05E1\u05D9\u05D1\u05D5\u05D1\u05D9\u05DD"; // 10 סיבובים
+            case "simonsays":
+                return tier == 0 ? "\u05E8\u05E6\u05E3 \u05E7\u05E6\u05E8"   // רצף קצר
+                     : tier == 1 ? "\u05E8\u05E6\u05E3 \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9" // רצף בינוני
+                     :              "\u05E8\u05E6\u05E3 \u05D0\u05E8\u05D5\u05DA";            // רצף ארוך
+            case "bakery":
+                return tier == 0 ? "4 \u05E2\u05D5\u05D2\u05D9\u05D5\u05EA"  // 4 עוגיות
+                     : tier == 1 ? "6 \u05E2\u05D5\u05D2\u05D9\u05D5\u05EA"  // 6 עוגיות
+                     :              "8 \u05E2\u05D5\u05D2\u05D9\u05D5\u05EA"; // 8 עוגיות
+            case "sockmatch":
+                return tier == 0 ? "4 \u05D6\u05D5\u05D2\u05D5\u05EA \u05D2\u05E8\u05D1\u05D9\u05D9\u05DD"  // 4 זוגות גרביים
+                     : tier == 1 ? "6 \u05D6\u05D5\u05D2\u05D5\u05EA"                                          // 6 זוגות
+                     :              "10 \u05D6\u05D5\u05D2\u05D5\u05EA";                                         // 10 זוגות
+            case "ballmaze":
+                return tier == 0 ? "\u05DE\u05D1\u05D5\u05DA \u05E4\u05E9\u05D5\u05D8"           // מבוך פשוט
+                     : tier == 1 ? "\u05DE\u05D1\u05D5\u05DA \u05E2\u05DD \u05DE\u05DB\u05E9\u05D5\u05DC\u05D9\u05DD" // מבוך עם מכשולים
+                     :              "\u05DE\u05D1\u05D5\u05DA \u05DE\u05D5\u05E8\u05DB\u05D1";   // מבוך מורכב
+            case "patterncopy":
+                return tier == 0 ? "\u05D3\u05D5\u05D2\u05DE\u05D4 \u05E7\u05D8\u05E0\u05D4"   // דוגמה קטנה
+                     : tier == 1 ? "\u05D3\u05D5\u05D2\u05DE\u05D4 \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9\u05EA" // דוגמה בינונית
+                     :              "\u05D3\u05D5\u05D2\u05DE\u05D4 \u05D2\u05D3\u05D5\u05DC\u05D4"; // דוגמה גדולה
+            case "numbermaze":
+                return tier == 0 ? "\u05DC\u05D5\u05D7 \u05E7\u05D8\u05DF"   // לוח קטן
+                     : tier == 1 ? "\u05DC\u05D5\u05D7 \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9" // לוח בינוני
+                     :              "\u05DC\u05D5\u05D7 \u05D2\u05D3\u05D5\u05DC"; // לוח גדול
+            case "connectmatch":
+                return tier == 0 ? "\u05DE\u05E1\u05DC\u05D5\u05DC \u05E7\u05E6\u05E8"   // מסלול קצר
+                     : tier == 1 ? "\u05DE\u05E1\u05DC\u05D5\u05DC \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9" // מסלול בינוני
+                     :              "\u05DE\u05E1\u05DC\u05D5\u05DC \u05D0\u05E8\u05D5\u05DA"; // מסלול ארוך
+            case "towerbuilder":
+                return tier == 0 ? "3-4 \u05DC\u05D1\u05E0\u05D9\u05DD"   // 3-4 לבנים
+                     : tier == 1 ? "6-8 \u05DC\u05D1\u05E0\u05D9\u05DD"   // 6-8 לבנים
+                     :              "10+ \u05DC\u05D1\u05E0\u05D9\u05DD";  // 10+ לבנים
+            default:
+                return tier == 0 ? "\u05E7\u05DC" : tier == 1 ? "\u05D1\u05D9\u05E0\u05D5\u05E0\u05D9" : "\u05E7\u05E9\u05D4"; // קל/בינוני/קשה
+        }
+    }
 
     private void ChangeDifficultyFull(string gameId, int delta,
         TextMeshProUGUI displayTMP, TextMeshProUGUI modeTMP, TextMeshProUGUI finalValTMP,
