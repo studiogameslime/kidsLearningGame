@@ -3,7 +3,8 @@ using UnityEngine;
 
 /// <summary>
 /// A slot on the baking tray where a specific cookie shape belongs.
-/// Displays a faded cookie silhouette and pulses gently until matched.
+/// Slots are static (no idle animation) — they look like indented shapes.
+/// Only reacts with a subtle hint pulse when the correct cookie is dragged near.
 /// </summary>
 public class BakerySlot : MonoBehaviour
 {
@@ -11,46 +12,20 @@ public class BakerySlot : MonoBehaviour
     public bool isMatched;
 
     private RectTransform rt;
-    private Coroutine pulseCoroutine;
-    private float phaseOffset;
 
     private void Awake()
     {
         rt = GetComponent<RectTransform>();
-        phaseOffset = Random.Range(0f, Mathf.PI * 2f);
     }
 
     public RectTransform RT => rt;
 
-    public void StartIdlePulse()
-    {
-        if (pulseCoroutine != null) StopCoroutine(pulseCoroutine);
-        pulseCoroutine = StartCoroutine(PulseLoop());
-    }
-
-    public void StopIdlePulse()
-    {
-        if (pulseCoroutine != null) { StopCoroutine(pulseCoroutine); pulseCoroutine = null; }
-        if (rt != null) rt.localScale = Vector3.one;
-    }
-
+    /// <summary>Quick scale pulse when the correct cookie hovers nearby.</summary>
     public void ShowProximityHint()
     {
         if (isMatched) return;
+        StopAllCoroutines();
         StartCoroutine(HintPulse());
-    }
-
-    private IEnumerator PulseLoop()
-    {
-        float t = phaseOffset;
-        while (!isMatched)
-        {
-            t += Time.deltaTime;
-            float s = 1f + 0.04f * Mathf.Sin(t * 2.5f);
-            rt.localScale = new Vector3(s, s, 1f);
-            yield return null;
-        }
-        rt.localScale = Vector3.one;
     }
 
     private IEnumerator HintPulse()
@@ -60,7 +35,7 @@ public class BakerySlot : MonoBehaviour
         while (t < dur)
         {
             t += Time.deltaTime;
-            float s = 1f + 0.12f * Mathf.Sin(t / dur * Mathf.PI);
+            float s = 1f + 0.1f * Mathf.Sin(t / dur * Mathf.PI);
             rt.localScale = new Vector3(s, s, 1f);
             yield return null;
         }
