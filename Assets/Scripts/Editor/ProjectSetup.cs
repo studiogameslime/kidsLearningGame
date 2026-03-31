@@ -175,6 +175,9 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Tower Stack…", 0.971f);
             TowerStackSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Bakery Game…", 0.972f);
+            BakeryGameSetup.RunSetupSilent();
+
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Shared Sticker…", 0.973f);
             SharedStickerSetup.RunSetupSilent();
 
@@ -828,6 +831,16 @@ public class ProjectSetup : EditorWindow
         laundrySorting.hasSubItems = false;
         EditorUtility.SetDirty(laundrySorting);
 
+        // ── Bakery Game ──
+        var bakery = CreateSO<GameItemData>($"{DataPath}/Bakery.asset");
+        bakery.id = "bakery";
+        bakery.title = "Bakery";
+        bakery.cardColor = HexColor("#FFAB91");
+        bakery.targetSceneName = "BakeryGame";
+        bakery.hasSubItems = false;
+        bakery.thumbnail = LoadSprite($"{previewPath}/Bakery.png");
+        EditorUtility.SetDirty(bakery);
+
         // ── Pizza Maker ──
         var pizzaMaker = CreateSO<GameItemData>($"{DataPath}/PizzaMaker.asset");
         pizzaMaker.id = "pizzamaker";
@@ -840,7 +853,7 @@ public class ProjectSetup : EditorWindow
         // ── Scratch Card ──
         // ── Game Database ──
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, /* towerStack hidden for v1 */ sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, /* pizzaMaker hidden for v1 */ };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, /* towerStack hidden for v1 */ sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, /* pizzaMaker hidden for v1 */ };
         EditorUtility.SetDirty(db);
 
         // Validate age baseline configuration
