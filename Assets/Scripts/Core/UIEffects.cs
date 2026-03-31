@@ -87,10 +87,7 @@ public static class UIEffects
         img.color = SparkleColors[index % SparkleColors.Length];
         img.raycastTarget = false;
         if (_cachedStar == null)
-        {
-            foreach (var s in Resources.FindObjectsOfTypeAll<Sprite>())
-                if (s.name == "star") { _cachedStar = s; break; }
-        }
+            _cachedStar = Resources.Load<Sprite>("Particles/star");
         if (_cachedStar != null) img.sprite = _cachedStar;
 
         return go;
