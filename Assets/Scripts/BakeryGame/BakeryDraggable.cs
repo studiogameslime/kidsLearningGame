@@ -82,7 +82,6 @@ public class BakeryDraggable : MonoBehaviour,
     {
         if (isPlaced) return;
         rt.anchoredPosition += eventData.delta / canvas.scaleFactor;
-        controller.CheckProximity(this);
     }
 
     public void OnEndDrag(PointerEventData eventData)
@@ -92,11 +91,31 @@ public class BakeryDraggable : MonoBehaviour,
         canvasGroup.alpha = 1f;
         rt.localScale = Vector3.one;
 
-        if (!controller.TryMatch(this))
-            StartCoroutine(ReturnToStart());
+        int result = controller.TryMatch(this);
+        if (result == 0)
+            StartCoroutine(ShakeThenReturn()); // wrong slot — shake first
+        else if (result < 0)
+            StartCoroutine(ReturnToStart());   // no slot — smooth return
     }
 
     // ── Animations ──
+
+    private IEnumerator ShakeThenReturn()
+    {
+        // Quick horizontal shake to indicate wrong placement
+        Vector2 pos = rt.anchoredPosition;
+        float shakeDur = 0.35f;
+        float t = 0f;
+        while (t < shakeDur)
+        {
+            t += Time.deltaTime;
+            float offset = Mathf.Sin(t * 40f) * 12f * (1f - t / shakeDur); // decaying oscillation
+            rt.anchoredPosition = new Vector2(pos.x + offset, pos.y);
+            yield return null;
+        }
+        rt.anchoredPosition = pos;
+        yield return StartCoroutine(ReturnToStart());
+    }
 
     private IEnumerator ReturnToStart()
     {

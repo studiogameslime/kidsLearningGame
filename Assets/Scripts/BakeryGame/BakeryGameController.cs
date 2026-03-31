@@ -234,18 +234,8 @@ public class BakeryGameController : BaseMiniGame
 
     public void OnCookiePickedUp() => DismissTutorial();
 
-    public void CheckProximity(BakeryDraggable cookie)
-    {
-        foreach (var slot in slots)
-        {
-            if (slot.isMatched || slot.cookieId != cookie.cookieId) continue;
-            float dist = ScreenDistance(cookie.RT, slot.RT);
-            float threshold = slot.RT.sizeDelta.x * canvas.scaleFactor * 1.5f;
-            if (dist < threshold) slot.ShowProximityHint();
-        }
-    }
-
-    public bool TryMatch(BakeryDraggable cookie)
+    /// <summary>Returns: 1=correct, 0=wrong slot (shake), -1=no slot nearby.</summary>
+    public int TryMatch(BakeryDraggable cookie)
     {
         BakerySlot best = null;
         float bestDist = float.MaxValue;
@@ -258,12 +248,12 @@ public class BakeryGameController : BaseMiniGame
             if (dist < threshold && dist < bestDist) { bestDist = dist; best = slot; }
         }
 
-        if (best == null) return false;
+        if (best == null) return -1; // no slot nearby
 
         if (best.cookieId != cookie.cookieId)
         {
             RecordMistake();
-            return false;
+            return 0; // wrong slot — shake
         }
 
         // Correct match
@@ -285,7 +275,7 @@ public class BakeryGameController : BaseMiniGame
         if (matchedCount >= cookieCount)
             StartCoroutine(CompletionSequence());
 
-        return true;
+        return 1; // correct
     }
 
     private IEnumerator CompletionSequence()
