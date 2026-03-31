@@ -27,6 +27,7 @@ public class BakeryGameController : BaseMiniGame
     private List<BakerySlot> slots = new List<BakerySlot>();
     private int matchedCount;
     private int cookieCount;
+    private Material silhouetteMat;
 
     private const float MATCH_THRESHOLD = 0.8f;
 
@@ -35,6 +36,9 @@ public class BakeryGameController : BaseMiniGame
     protected override void Start()
     {
         canvas = GetComponentInParent<Canvas>();
+        // Silhouette shader: replaces sprite RGB with solid tint color, keeps alpha shape
+        var shader = Shader.Find("UI/Silhouette");
+        if (shader != null) silhouetteMat = new Material(shader);
         base.Start();
     }
 
@@ -124,13 +128,15 @@ public class BakeryGameController : BaseMiniGame
             if (shapeSprite != null) shImg.sprite = shapeSprite;
             shImg.preserveAspect = true;
             shImg.color = slotEdgeDark;
+            if (silhouetteMat != null) shImg.material = silhouetteMat;
             shImg.raycastTarget = false;
 
-            // Main indented fill — cookie silhouette, darker than tray
+            // Main indented fill — solid black silhouette via UI/Silhouette shader
             var fillImg = slotGO.AddComponent<Image>();
             if (shapeSprite != null) fillImg.sprite = shapeSprite;
             fillImg.preserveAspect = true;
             fillImg.color = slotColor;
+            if (silhouetteMat != null) fillImg.material = silhouetteMat;
             fillImg.raycastTarget = false;
 
             // Edge highlight layer (top-left offset) — renders LAST (on top)
@@ -143,6 +149,7 @@ public class BakeryGameController : BaseMiniGame
             if (shapeSprite != null) hlImg.sprite = shapeSprite;
             hlImg.preserveAspect = true;
             hlImg.color = slotEdgeLight;
+            if (silhouetteMat != null) hlImg.material = silhouetteMat;
             hlImg.raycastTarget = false;
 
             var slot = slotGO.AddComponent<BakerySlot>();
