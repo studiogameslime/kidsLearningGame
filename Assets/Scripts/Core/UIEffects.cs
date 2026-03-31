@@ -39,15 +39,10 @@ public static class UIEffects
         Canvas rootCanvas = target.GetComponentInParent<Canvas>();
         if (rootCanvas == null) return;
 
-        // Create sparkles on the root canvas at the VERY TOP of sibling order
-        // so they render above everything (cookies, slots, panels, etc.)
+        // Create sparkles on the root canvas, on top of everything
         var runner = new GameObject("_SparkleRunner").AddComponent<SparkleRunner>();
         runner.transform.SetParent(rootCanvas.transform, false);
         runner.transform.SetAsLastSibling();
-        // Override sorting to guarantee rendering above all other UI
-        var sortCanvas = runner.gameObject.AddComponent<Canvas>();
-        sortCanvas.overrideSorting = true;
-        sortCanvas.sortingOrder = 100;
 
         // Convert target center to root canvas space
         Vector3[] corners = new Vector3[4];
@@ -73,25 +68,23 @@ public static class UIEffects
         var go = new GameObject($"Sparkle_{index}");
         go.transform.SetParent(parent, false);
 
+        float size = Random.Range(18f, 32f);
         var rt = go.AddComponent<RectTransform>();
         rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = center;
-        rt.sizeDelta = new Vector2(30f, 30f);
-        rt.localScale = Vector3.one * Random.Range(0.6f, 1.2f);
+        rt.sizeDelta = new Vector2(size, size);
+        rt.localScale = Vector3.one;
         rt.localRotation = Quaternion.Euler(0, 0, Random.Range(0f, 360f));
 
         var cg = go.AddComponent<CanvasGroup>();
         cg.interactable = false;
         cg.blocksRaycasts = false;
 
-        var tmp = go.AddComponent<TextMeshProUGUI>();
-        tmp.text = "\u2605"; // ★
-        tmp.fontSize = 36;
-        tmp.alignment = TextAlignmentOptions.Center;
-        tmp.color = SparkleColors[index % SparkleColors.Length];
-        tmp.raycastTarget = false;
-        tmp.enableWordWrapping = false;
-        tmp.overflowMode = TextOverflowModes.Overflow;
+        // Simple colored Image particle — no sprite/font dependency
+        var img = go.AddComponent<Image>();
+        img.color = SparkleColors[index % SparkleColors.Length];
+        img.raycastTarget = false;
+        // Default Unity Image = solid white square; with small size + rotation it reads as a sparkle
 
         return go;
     }
