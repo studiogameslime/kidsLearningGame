@@ -324,8 +324,11 @@ public class RewardRevealController : MonoBehaviour
 
         yield return new WaitForSeconds(0.8f);
 
-        // Move to permanent position on the grass (shadow follows)
-        float targetX = grassWidth * Random.Range(0.2f, 0.8f);
+        // Move to permanent position on the RIGHT screen (animals live there)
+        float rightScreenStart = grassWidth * 2f / 3f; // 3 screens total, right = last third
+        float rightScreenEnd = grassWidth;
+        float margin = 100f;
+        float targetX = Random.Range(rightScreenStart + margin, rightScreenEnd - margin);
         float targetY = grassHeight * Random.Range(0.18f, 0.32f);
         yield return MoveToPosition(rt, new Vector2(targetX, targetY), 0.6f, shadowRT);
 
@@ -424,11 +427,12 @@ public class RewardRevealController : MonoBehaviour
 
         yield return new WaitForSeconds(0.3f);
 
-        // Float upward smoothly to final sky position — no reparenting, no jump
+        // Float upward smoothly to final sky position on RIGHT screen
         float floatDur = 2f;
         t = 0f;
         Vector2 floatStart = rt.anchoredPosition;
-        float finalX = Random.Range(200f, skyWidth - 200f);
+        float rightSkyStart = skyWidth * 2f / 3f; // right screen = last third
+        float finalX = Random.Range(rightSkyStart + 150f, skyWidth - 150f);
         float finalY = skyHeight * Random.Range(0.2f, 0.6f);
         Vector2 floatEnd = new Vector2(finalX, finalY);
 

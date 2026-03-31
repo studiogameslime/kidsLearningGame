@@ -90,7 +90,7 @@ public class WorldController : MonoBehaviour
         // Wire screen navigation arrows
         if (arrowLeftButton != null) arrowLeftButton.onClick.AddListener(GoScreenLeft);
         if (arrowRightButton != null) arrowRightButton.onClick.AddListener(GoScreenRight);
-        currentScreen = 2; // start on right screen (animals & balloons)
+        currentScreen = 1; // start on center screen
         SnapToScreen(currentScreen, false);
         UpdateArrowVisibility();
 
@@ -110,29 +110,10 @@ public class WorldController : MonoBehaviour
 
     private IEnumerator PlayWorldIntroThenGifts()
     {
-        var profile = ProfileManager.ActiveProfile;
-        bool isFirstVisit = profile != null && !profile.journey.hasPlayedWorldIntroSound;
-
-        if (isFirstVisit)
-        {
-            // First visit: start on center screen for intro (ToyBox is there)
-            currentScreen = 1;
-            SnapToScreen(currentScreen, false);
-            UpdateArrowVisibility();
-        }
-
         yield return StartCoroutine(PlayWorldIntro());
 
-        if (isFirstVisit)
-        {
-            // After intro, navigate to right screen to show animals
-            yield return new WaitForSeconds(0.5f);
-            currentScreen = 2;
-            SnapToScreen(currentScreen, true);
-            UpdateArrowVisibility();
-        }
-
         // For returning visits (not first time), show gifts immediately
+        var profile = ProfileManager.ActiveProfile;
         if (profile != null && profile.journey.hasPlayedWorldIntroSound)
         {
             if (rewardReveal != null)
@@ -620,7 +601,7 @@ public class WorldController : MonoBehaviour
         worldContent.anchorMax = new Vector2(0, 1);
         worldContent.pivot = new Vector2(0, 0.5f);
         worldContent.sizeDelta = new Vector2(worldWidth, 0);
-        worldContent.anchoredPosition = new Vector2(-viewportWidth * 2, 0); // initial pos; SnapToScreen overrides
+        worldContent.anchoredPosition = new Vector2(-viewportWidth, 0); // center screen
 
         if (cloudSystem != null)
             cloudSystem.worldWidth = worldWidth;
