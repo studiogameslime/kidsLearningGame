@@ -15,9 +15,15 @@ public static class UIEffects
     private static readonly Color[] SparkleColors = new[]
     {
         new Color(1f, 0.84f, 0f),       // gold
-        new Color(1f, 0.95f, 0.4f),     // light yellow
+        new Color(1f, 0.4f, 0.6f),      // pink
+        new Color(0.4f, 0.8f, 1f),      // sky blue
+        new Color(0.5f, 1f, 0.5f),      // mint green
+        new Color(0.7f, 0.5f, 1f),      // purple
+        new Color(1f, 0.6f, 0.2f),      // orange
+        new Color(1f, 0.95f, 0.3f),     // yellow
         Color.white,
-        new Color(1f, 0.7f, 0.2f),      // orange-gold
+        new Color(1f, 0.3f, 0.3f),      // red
+        new Color(0.3f, 0.9f, 0.8f),    // teal
     };
 
     /// <summary>
@@ -26,7 +32,7 @@ public static class UIEffects
     /// </summary>
     /// <param name="target">The RectTransform to sparkle around.</param>
     /// <param name="count">Number of sparkle particles (default 8).</param>
-    public static void SpawnSparkles(RectTransform target, int count = 8)
+    public static void SpawnSparkles(RectTransform target, int count = 12)
     {
         if (target == null) return;
 

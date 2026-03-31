@@ -183,7 +183,6 @@ public abstract class BaseMiniGame : MonoBehaviour
     protected void PlayCorrectEffect(RectTransform target)
     {
         UIEffects.SpawnSparkles(target);
-        FloatingScore.Show(target);
     }
 
     /// <summary>
