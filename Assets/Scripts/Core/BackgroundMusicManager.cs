@@ -107,6 +107,15 @@ public class BackgroundMusicManager : MonoBehaviour
     /// Play a feedback clip (Alin voice, praise).
     /// If content is playing, waits for it to finish + 0.5s gap, then plays.
     /// </summary>
+    /// <summary>Returns how many seconds a feedback clip would be delayed (waiting for content to finish).</summary>
+    public static float GetFeedbackDelay()
+    {
+        if (_instance == null) return 0f;
+        if (Time.time < _instance.contentEndTime)
+            return _instance.contentEndTime - Time.time + 0.5f;
+        return 0f;
+    }
+
     public static void PlayFeedback(AudioClip clip, float volume = 1f)
     {
         if (clip == null || _instance == null) return;

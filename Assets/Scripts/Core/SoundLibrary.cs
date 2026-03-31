@@ -61,7 +61,8 @@ public static class SoundLibrary
         PlayRandomFeedbackWithDuration();
     }
 
-    /// <summary>Plays a random feedback clip (30% chance). Returns clip length or 0.</summary>
+    /// <summary>Plays a random feedback clip (30% chance). Returns TOTAL wait time
+    /// (including delay if another sound is still playing) or 0.</summary>
     public static float PlayRandomFeedbackWithDuration()
     {
         if (Random.value > 0.3f) return 0f;
@@ -69,8 +70,11 @@ public static class SoundLibrary
         var clip = Resources.Load<AudioClip>(path);
         if (clip != null)
         {
+            // Calculate how long until this feedback actually finishes,
+            // accounting for any delay from BackgroundMusicManager.PlayFeedback
+            float delay = BackgroundMusicManager.GetFeedbackDelay();
             BackgroundMusicManager.PlayFeedback(clip);
-            return clip.length;
+            return delay + clip.length;
         }
         return 0f;
     }
