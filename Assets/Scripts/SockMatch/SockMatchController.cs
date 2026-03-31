@@ -49,7 +49,7 @@ public class SockMatchController : BaseMiniGame
         isEndless = true;
         playWinSound = true;
         playConfettiOnRoundWin = true;
-        delayBeforeNextRound = 2.5f; // longer pause before next round to avoid stutter
+        delayBeforeNextRound = 0.8f;
     }
 
     protected override void OnRoundSetup()

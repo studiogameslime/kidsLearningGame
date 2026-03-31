@@ -264,40 +264,37 @@ public abstract class BaseMiniGame : MonoBehaviour
         // Game-specific post-completion visuals (exit animations, cleanup)
         yield return StartCoroutine(OnAfterComplete());
 
-        // Alin voice feedback — wait for it to finish before moving on
+        // ── Wait for ALL sounds and effects to finish before advancing ──
+        // 1. Wait a moment for win level sound to be audible
+        yield return new WaitForSeconds(0.8f);
+
+        // 2. Alin voice feedback — wait for full clip to finish
         float feedbackDuration = 0f;
         if (playWinSound)
             feedbackDuration = SoundLibrary.PlayRandomFeedbackWithDuration();
         if (feedbackDuration > 0f)
-            yield return new WaitForSeconds(feedbackDuration + 0.3f);
+            yield return new WaitForSeconds(feedbackDuration + 0.4f);
+        else
+            yield return new WaitForSeconds(0.3f); // brief pause even without feedback
 
-        // Determine next step
+        // ── Everything finished — NOW advance to next round ──
         CurrentRound++;
 
         if (isEndless)
         {
-            // Advance to next round
-            yield return new WaitForSeconds(delayBeforeNextRound);
             OnRoundCleanup();
             SetupNewRound();
             CurrentState = GameState.Playing;
         }
         else if (CurrentRound >= totalRounds)
         {
-            // Session complete
-            {
-                // Free play: restart from round 0
-                yield return new WaitForSeconds(delayAfterFinalRound);
-                CurrentRound = 0;
-                OnRoundCleanup();
-                SetupNewRound();
-                CurrentState = GameState.Playing;
-            }
+            CurrentRound = 0;
+            OnRoundCleanup();
+            SetupNewRound();
+            CurrentState = GameState.Playing;
         }
         else
         {
-            // More rounds to go
-            yield return new WaitForSeconds(delayBeforeNextRound);
             OnRoundCleanup();
             SetupNewRound();
             CurrentState = GameState.Playing;
