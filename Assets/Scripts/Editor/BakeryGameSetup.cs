@@ -170,8 +170,8 @@ public class BakeryGameSetup : EditorWindow
         ctrl.roundedRect = roundedRect;
 
         // Wire home button
-        var homeBtn = homeGO.GetComponent<Button>();
-        homeBtn.onClick.AddListener(() => ctrl.OnHomePressed());
+        UnityEditor.Events.UnityEventTools.AddPersistentListener(
+            homeGO.GetComponent<Button>().onClick, ctrl.OnHomePressed);
 
         // Leaderboard
         var trophyIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/trophy.png");
@@ -184,11 +184,10 @@ public class BakeryGameSetup : EditorWindow
             var leaderboard = canvasGO.AddComponent<InGameLeaderboard>();
             leaderboard.gameId = "bakery";
             leaderboard.trophyButton = trophyGO.GetComponent<Button>();
-            leaderboard.canvas = canvas;
         }
 
         // Tutorial hand
-        TutorialHandHelper.Create(safeGO.transform, TutorialHandHelper.Anim.Drag,
+        TutorialHandHelper.Create(safeGO.transform, TutorialHandHelper.Anim.SlideRight,
             Vector2.zero, new Vector2(400, 400), "bakery");
 
         // Save scene
