@@ -4,14 +4,15 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Sock Match Game — tap pairs of matching socks, they fly to the clothesline.
-/// Tap-to-select: first tap selects, second tap on matching sock = match.
+/// Sock Match Game — socks hang on two clotheslines with pins.
+/// Tap two matching socks → they detach, fly to center, sparkle, and disappear.
 /// </summary>
 public class SockMatchController : BaseMiniGame
 {
     [Header("References")]
-    public RectTransform clotheslineArea;  // top — where matched pairs hang
-    public RectTransform socksArea;        // bottom — scattered socks
+    public RectTransform line1Area;        // upper clothesline row
+    public RectTransform line2Area;        // lower clothesline row
+    public RectTransform meetingPoint;     // bottom-center where matched socks fly to
     public Sprite[] sockSprites;           // Socks_0..11
     public Sprite[] clothespinSprites;     // Clothespins_0..3
     public Sprite circleSprite;
@@ -21,7 +22,6 @@ public class SockMatchController : BaseMiniGame
     private SockItem selectedSock;
     private int pairCount;
     private int matchedPairs;
-    private int nextLineSlot;
     private bool inputLocked;
 
     private class SockItem
@@ -29,10 +29,10 @@ public class SockMatchController : BaseMiniGame
         public GameObject go;
         public RectTransform rt;
         public Image img;
+        public GameObject pinGO;
         public int sockId;
         public bool isMatched;
-        public Vector2 startPos;
-        public Coroutine wiggle;
+        public Coroutine sway;
     }
 
     protected override string GetFallbackGameId() => "sockmatch";
@@ -55,16 +55,15 @@ public class SockMatchController : BaseMiniGame
     protected override void OnRoundSetup()
     {
         matchedPairs = 0;
-        nextLineSlot = 0;
         selectedSock = null;
         inputLocked = false;
 
         pairCount = SockMatchLevels.PairCount(Difficulty);
         int[] indices = SockMatchLevels.PickSockIndices(pairCount);
 
-        SpawnSocks(indices);
+        SpawnHangingSocks(indices);
 
-        // Tutorial hint: highlight first pair
+        // Tutorial hint
         if (allSocks.Count >= 2 && TutorialHand != null)
         {
             SockItem first = allSocks[0];
@@ -74,100 +73,114 @@ public class SockMatchController : BaseMiniGame
             if (match != null)
             {
                 var hp = TutorialHand.transform.parent as RectTransform;
-                TutorialHand.SetMovePath(
-                    WorldToLocal(first.rt, hp),
-                    WorldToLocal(match.rt, hp), 1.5f);
+                TutorialHand.SetMovePath(WToL(first.rt, hp), WToL(match.rt, hp), 1.5f);
             }
         }
     }
 
     protected override void OnRoundCleanup()
     {
-        foreach (var s in allSocks) if (s.go != null) Destroy(s.go);
+        foreach (var s in allSocks)
+        {
+            if (s.go != null) Destroy(s.go);
+            if (s.pinGO != null) Destroy(s.pinGO);
+        }
         allSocks.Clear();
         selectedSock = null;
-        // Clear clothesline children (hung pairs)
-        for (int i = clotheslineArea.childCount - 1; i >= 0; i--)
-            Destroy(clotheslineArea.GetChild(i).gameObject);
     }
 
-    // ── Spawn socks ──
+    // ═══════════════════════════════════════════════════════════
+    //  SPAWN — hang socks on two clotheslines with clothespins
+    // ═══════════════════════════════════════════════════════════
 
-    private void SpawnSocks(int[] pairIndices)
+    private void SpawnHangingSocks(int[] pairIndices)
     {
-        // Create two of each sock index
+        // Two of each → shuffled
         var sockIds = new List<int>();
         foreach (int id in pairIndices) { sockIds.Add(id); sockIds.Add(id); }
-
-        // Shuffle
         for (int i = sockIds.Count - 1; i > 0; i--)
         {
             int j = Random.Range(0, i + 1);
             var tmp = sockIds[i]; sockIds[i] = sockIds[j]; sockIds[j] = tmp;
         }
 
-        float areaW = socksArea.rect.width;
-        float areaH = socksArea.rect.height;
-        if (areaW <= 0) areaW = 1600f;
-        if (areaH <= 0) areaH = 400f;
-
         int total = sockIds.Count;
-        int cols = Mathf.CeilToInt(total / 2f);
-        int rows = 2;
-        float padding = 20f;
-        float cellW = (areaW - padding * 2) / cols;
-        float cellH = (areaH - padding * 2) / rows;
-        float sockSize = Mathf.Min(cellW, cellH) * 0.8f;
+        int perLine1 = Mathf.CeilToInt(total / 2f);
+        int perLine2 = total - perLine1;
 
-        for (int i = 0; i < total; i++)
-        {
-            int col = i % cols;
-            int row = i / cols;
+        // Spawn on line 1
+        for (int i = 0; i < perLine1; i++)
+            CreateHangingSock(line1Area, sockIds[i], i, perLine1);
 
-            float cx = -areaW * 0.5f + padding + cellW * (col + 0.5f) + Random.Range(-8f, 8f);
-            float cy = areaH * 0.5f - padding - cellH * (row + 0.5f) + Random.Range(-5f, 5f);
-
-            var go = new GameObject($"Sock_{sockIds[i]}_{i}");
-            go.transform.SetParent(socksArea, false);
-
-            var rt = go.AddComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(sockSize, sockSize);
-            rt.anchoredPosition = new Vector2(cx, cy);
-
-            var img = go.AddComponent<Image>();
-            int spriteIdx = sockIds[i] % sockSprites.Length;
-            img.sprite = sockSprites[spriteIdx];
-            img.preserveAspect = true;
-            img.raycastTarget = true;
-
-            var btn = go.AddComponent<Button>();
-            btn.targetGraphic = img;
-            btn.transition = Selectable.Transition.None;
-
-            var item = new SockItem
-            {
-                go = go, rt = rt, img = img,
-                sockId = sockIds[i],
-                startPos = rt.anchoredPosition
-            };
-
-            // Idle wiggle
-            item.wiggle = StartCoroutine(IdleWiggle(item));
-
-            int capturedIdx = allSocks.Count;
-            btn.onClick.AddListener(() => OnSockTapped(capturedIdx));
-
-            allSocks.Add(item);
-        }
+        // Spawn on line 2
+        for (int i = 0; i < perLine2; i++)
+            CreateHangingSock(line2Area, sockIds[perLine1 + i], i, perLine2);
     }
 
-    // ── Tap logic ──
+    private void CreateHangingSock(RectTransform lineArea, int sockId, int slotIndex, int totalInLine)
+    {
+        float lineW = lineArea.rect.width;
+        if (lineW <= 0) lineW = 1600f;
+        float lineH = lineArea.rect.height;
+        if (lineH <= 0) lineH = 250f;
+
+        float spacing = lineW / (totalInLine + 1);
+        float x = -lineW * 0.5f + spacing * (slotIndex + 1);
+        float sockSize = Mathf.Min(spacing * 0.75f, lineH * 0.7f, 140f);
+        float tilt = Random.Range(-6f, 6f); // slight random tilt
+
+        // ── Clothespin (on top, attached to rope) ──
+        var pinGO = new GameObject($"Pin_{sockId}_{allSocks.Count}");
+        pinGO.transform.SetParent(lineArea, false);
+        var pinRT = pinGO.AddComponent<RectTransform>();
+        pinRT.sizeDelta = new Vector2(28, 45);
+        pinRT.anchoredPosition = new Vector2(x, lineH * 0.5f - 5f); // near top of area
+        var pinImg = pinGO.AddComponent<Image>();
+        if (clothespinSprites != null && clothespinSprites.Length > 0)
+            pinImg.sprite = clothespinSprites[allSocks.Count % clothespinSprites.Length];
+        pinImg.preserveAspect = true;
+        pinImg.raycastTarget = false;
+
+        // ── Sock (hanging below pin) ──
+        var go = new GameObject($"Sock_{sockId}_{allSocks.Count}");
+        go.transform.SetParent(lineArea, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(sockSize, sockSize);
+        rt.pivot = new Vector2(0.5f, 1f); // pivot at top for natural hang
+        rt.anchoredPosition = new Vector2(x, lineH * 0.5f - 30f); // below pin
+        rt.localEulerAngles = new Vector3(0, 0, tilt);
+
+        var img = go.AddComponent<Image>();
+        img.sprite = sockSprites[sockId % sockSprites.Length];
+        img.preserveAspect = true;
+        img.raycastTarget = true;
+
+        var btn = go.AddComponent<Button>();
+        btn.targetGraphic = img;
+        btn.transition = Selectable.Transition.None;
+
+        var item = new SockItem
+        {
+            go = go, rt = rt, img = img, pinGO = pinGO,
+            sockId = sockId
+        };
+
+        // Gentle breeze sway
+        item.sway = StartCoroutine(BreezeSway(item, tilt));
+
+        int idx = allSocks.Count;
+        btn.onClick.AddListener(() => OnSockTapped(idx));
+        allSocks.Add(item);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  TAP LOGIC
+    // ═══════════════════════════════════════════════════════════
 
     private void OnSockTapped(int index)
     {
         if (inputLocked) return;
         if (index < 0 || index >= allSocks.Count) return;
-
         var sock = allSocks[index];
         if (sock.isMatched) return;
 
@@ -175,19 +188,16 @@ public class SockMatchController : BaseMiniGame
 
         if (selectedSock == null)
         {
-            // First selection
             selectedSock = sock;
             StartCoroutine(SelectAnim(sock, true));
         }
         else if (selectedSock == sock)
         {
-            // Deselect
             StartCoroutine(SelectAnim(sock, false));
             selectedSock = null;
         }
         else
         {
-            // Second selection — check match
             if (selectedSock.sockId == sock.sockId)
                 StartCoroutine(CorrectMatch(selectedSock, sock));
             else
@@ -196,22 +206,23 @@ public class SockMatchController : BaseMiniGame
         }
     }
 
-    // ── Animations ──
+    // ═══════════════════════════════════════════════════════════
+    //  ANIMATIONS
+    // ═══════════════════════════════════════════════════════════
 
     private IEnumerator SelectAnim(SockItem sock, bool selected)
     {
         float target = selected ? 1.2f : 1f;
-        float dur = 0.15f;
-        float t = 0f;
+        float dur = 0.15f, t = 0f;
         float from = sock.rt.localScale.x;
         while (t < dur)
         {
             t += Time.deltaTime;
             float s = Mathf.Lerp(from, target, Mathf.SmoothStep(0, 1, t / dur));
-            sock.rt.localScale = Vector3.one * s;
+            sock.rt.localScale = new Vector3(s, s, 1f);
             yield return null;
         }
-        sock.rt.localScale = Vector3.one * target;
+        sock.rt.localScale = new Vector3(target, target, 1f);
     }
 
     private IEnumerator CorrectMatch(SockItem a, SockItem b)
@@ -220,31 +231,94 @@ public class SockMatchController : BaseMiniGame
         a.isMatched = true;
         b.isMatched = true;
 
-        // Stop wiggles
-        if (a.wiggle != null) StopCoroutine(a.wiggle);
-        if (b.wiggle != null) StopCoroutine(b.wiggle);
-        a.rt.localEulerAngles = Vector3.zero;
-        b.rt.localEulerAngles = Vector3.zero;
+        // Stop sway
+        if (a.sway != null) StopCoroutine(a.sway);
+        if (b.sway != null) StopCoroutine(b.sway);
 
         matchedPairs++;
         bool isLast = matchedPairs >= pairCount;
         RecordCorrect(isLast: isLast);
+
+        // Fade out clothespins
+        StartCoroutine(FadeAndDestroy(a.pinGO, 0.2f));
+        StartCoroutine(FadeAndDestroy(b.pinGO, 0.2f));
+
+        // Reparent socks to canvas for free movement
+        a.go.transform.SetParent(canvas.transform, true);
+        b.go.transform.SetParent(canvas.transform, true);
+        a.go.transform.SetAsLastSibling();
+        b.go.transform.SetAsLastSibling();
+
+        // Fly both socks to meeting point (bottom-center) with slight curve
+        Vector2 target = meetingPoint != null ? WToL(meetingPoint, canvas.transform as RectTransform) : Vector2.zero;
+
+        yield return StartCoroutine(FlyToMeetingPoint(a, b, target));
+
+        // Sparkle at meeting point
         PlayCorrectEffect(a.rt);
 
-        // Bounce toward each other
-        Vector2 midpoint = (a.rt.anchoredPosition + b.rt.anchoredPosition) * 0.5f;
-        yield return StartCoroutine(MoveSock(a, midpoint + new Vector2(-30, 0), 0.25f));
-        StartCoroutine(MoveSock(b, midpoint + new Vector2(30, 0), 0.01f)); // instant snap
-
-        yield return new WaitForSeconds(0.15f);
-
-        // Fly to clothesline
-        yield return StartCoroutine(FlyToClothesline(a, b));
+        // Soft pop — scale down and destroy
+        yield return StartCoroutine(PopDisappear(a, b));
 
         inputLocked = false;
 
         if (isLast)
-            StartCoroutine(CompletionBounce());
+        {
+            yield return new WaitForSeconds(0.2f);
+            CompleteRound();
+        }
+    }
+
+    private IEnumerator FlyToMeetingPoint(SockItem a, SockItem b, Vector2 target)
+    {
+        Vector2 startA = a.rt.anchoredPosition;
+        Vector2 startB = b.rt.anchoredPosition;
+        // Reset rotation and scale
+        a.rt.localEulerAngles = Vector3.zero;
+        b.rt.localEulerAngles = Vector3.zero;
+        a.rt.localScale = Vector3.one;
+        b.rt.localScale = Vector3.one;
+
+        float dur = 0.45f, t = 0f;
+        while (t < dur)
+        {
+            t += Time.deltaTime;
+            float p = Mathf.SmoothStep(0, 1, t / dur);
+            // Slight curve via vertical overshoot
+            float curve = Mathf.Sin(p * Mathf.PI) * 40f;
+            a.rt.anchoredPosition = Vector2.Lerp(startA, target + new Vector2(-25, 0), p) + new Vector2(0, curve);
+            b.rt.anchoredPosition = Vector2.Lerp(startB, target + new Vector2(25, 0), p) + new Vector2(0, curve);
+            // Gentle spin during flight
+            float spin = p * 180f;
+            a.rt.localEulerAngles = new Vector3(0, 0, spin);
+            b.rt.localEulerAngles = new Vector3(0, 0, -spin);
+            yield return null;
+        }
+    }
+
+    private IEnumerator PopDisappear(SockItem a, SockItem b)
+    {
+        // Quick scale up then shrink to zero
+        float t = 0f;
+        while (t < 0.12f)
+        {
+            t += Time.deltaTime;
+            float s = Mathf.Lerp(1f, 1.3f, t / 0.12f);
+            a.rt.localScale = Vector3.one * s;
+            b.rt.localScale = Vector3.one * s;
+            yield return null;
+        }
+        t = 0f;
+        while (t < 0.15f)
+        {
+            t += Time.deltaTime;
+            float s = Mathf.Lerp(1.3f, 0f, Mathf.SmoothStep(0, 1, t / 0.15f));
+            a.rt.localScale = Vector3.one * s;
+            b.rt.localScale = Vector3.one * s;
+            yield return null;
+        }
+        a.go.SetActive(false);
+        b.go.SetActive(false);
     }
 
     private IEnumerator WrongMatch(SockItem a, SockItem b)
@@ -252,201 +326,68 @@ public class SockMatchController : BaseMiniGame
         inputLocked = true;
         RecordMistake();
 
-        // Shake both
-        yield return StartCoroutine(ShakeSock(a));
-        StartCoroutine(ShakeSock(b));
-        yield return new WaitForSeconds(0.15f);
+        StartCoroutine(ShakeSock(a));
+        yield return StartCoroutine(ShakeSock(b));
 
-        // Deselect
         a.rt.localScale = Vector3.one;
         b.rt.localScale = Vector3.one;
-
         inputLocked = false;
-    }
-
-    private IEnumerator MoveSock(SockItem sock, Vector2 target, float dur)
-    {
-        Vector2 from = sock.rt.anchoredPosition;
-        float t = 0f;
-        while (t < dur)
-        {
-            t += Time.deltaTime;
-            sock.rt.anchoredPosition = Vector2.Lerp(from, target, Mathf.SmoothStep(0, 1, t / dur));
-            yield return null;
-        }
-        sock.rt.anchoredPosition = target;
-    }
-
-    private IEnumerator FlyToClothesline(SockItem a, SockItem b)
-    {
-        // Calculate target position on clothesline
-        float lineW = clotheslineArea.rect.width;
-        if (lineW <= 0) lineW = 1600f;
-        float slotSpacing = lineW / (pairCount + 1);
-        float targetX = -lineW * 0.5f + slotSpacing * (nextLineSlot + 1);
-        nextLineSlot++;
-
-        // Convert clothesline slot to socksArea space
-        Vector3 worldTarget = clotheslineArea.TransformPoint(new Vector3(targetX, 0, 0));
-        Vector2 screenTarget = RectTransformUtility.WorldToScreenPoint(null, worldTarget);
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            socksArea, screenTarget, null, out Vector2 localTarget);
-
-        // Fly both socks up together
-        Vector2 startA = a.rt.anchoredPosition;
-        Vector2 startB = b.rt.anchoredPosition;
-        float dur = 0.5f;
-        float t = 0f;
-
-        while (t < dur)
-        {
-            t += Time.deltaTime;
-            float p = Mathf.SmoothStep(0, 1, t / dur);
-            a.rt.anchoredPosition = Vector2.Lerp(startA, localTarget + new Vector2(-25, 0), p);
-            b.rt.anchoredPosition = Vector2.Lerp(startB, localTarget + new Vector2(25, 0), p);
-
-            // Shrink slightly during flight
-            float scale = Mathf.Lerp(1f, 0.7f, p);
-            a.rt.localScale = Vector3.one * scale;
-            b.rt.localScale = Vector3.one * scale;
-            yield return null;
-        }
-
-        // Hide originals, create hung pair on clothesline
-        a.go.SetActive(false);
-        b.go.SetActive(false);
-
-        CreateHungPair(a.sockId, targetX);
-    }
-
-    private void CreateHungPair(int sockId, float x)
-    {
-        // Container
-        var pairGO = new GameObject("HungPair");
-        pairGO.transform.SetParent(clotheslineArea, false);
-        var pairRT = pairGO.AddComponent<RectTransform>();
-        pairRT.anchoredPosition = new Vector2(x, -30);
-        pairRT.sizeDelta = new Vector2(120, 100);
-
-        // Clothespin
-        if (clothespinSprites != null && clothespinSprites.Length > 0)
-        {
-            var pinGO = new GameObject("Pin");
-            pinGO.transform.SetParent(pairGO.transform, false);
-            var pinRT = pinGO.AddComponent<RectTransform>();
-            pinRT.anchorMin = pinRT.anchorMax = new Vector2(0.5f, 1f);
-            pinRT.sizeDelta = new Vector2(30, 50);
-            pinRT.anchoredPosition = new Vector2(0, 10);
-            var pinImg = pinGO.AddComponent<Image>();
-            pinImg.sprite = clothespinSprites[sockId % clothespinSprites.Length];
-            pinImg.preserveAspect = true;
-            pinImg.raycastTarget = false;
-        }
-
-        // Left sock
-        var leftGO = new GameObject("SockL");
-        leftGO.transform.SetParent(pairGO.transform, false);
-        var lrt = leftGO.AddComponent<RectTransform>();
-        lrt.anchorMin = lrt.anchorMax = new Vector2(0.3f, 0.3f);
-        lrt.sizeDelta = new Vector2(55, 55);
-        var limg = leftGO.AddComponent<Image>();
-        limg.sprite = sockSprites[sockId % sockSprites.Length];
-        limg.preserveAspect = true;
-        limg.raycastTarget = false;
-
-        // Right sock (flipped)
-        var rightGO = new GameObject("SockR");
-        rightGO.transform.SetParent(pairGO.transform, false);
-        var rrt = rightGO.AddComponent<RectTransform>();
-        rrt.anchorMin = rrt.anchorMax = new Vector2(0.7f, 0.3f);
-        rrt.sizeDelta = new Vector2(55, 55);
-        rrt.localScale = new Vector3(-1, 1, 1); // flip horizontal
-        var rimg = rightGO.AddComponent<Image>();
-        rimg.sprite = sockSprites[sockId % sockSprites.Length];
-        rimg.preserveAspect = true;
-        rimg.raycastTarget = false;
-
-        // Pop-in animation
-        StartCoroutine(PopIn(pairRT));
-    }
-
-    private IEnumerator PopIn(RectTransform rt)
-    {
-        rt.localScale = Vector3.zero;
-        float t = 0f;
-        while (t < 0.3f)
-        {
-            t += Time.deltaTime;
-            float p = t / 0.3f;
-            float s = p < 0.7f ? Mathf.Lerp(0, 1.15f, p / 0.7f) : Mathf.Lerp(1.15f, 1f, (p - 0.7f) / 0.3f);
-            rt.localScale = Vector3.one * s;
-            yield return null;
-        }
-        rt.localScale = Vector3.one;
     }
 
     private IEnumerator ShakeSock(SockItem sock)
     {
-        Vector2 pos = sock.rt.anchoredPosition;
+        float baseAngle = sock.rt.localEulerAngles.z;
         float t = 0f;
         while (t < 0.3f)
         {
             t += Time.deltaTime;
-            float offset = Mathf.Sin(t * 45f) * 10f * (1f - t / 0.3f);
-            sock.rt.anchoredPosition = new Vector2(pos.x + offset, pos.y);
+            float shake = Mathf.Sin(t * 40f) * 8f * (1f - t / 0.3f);
+            sock.rt.localEulerAngles = new Vector3(0, 0, baseAngle + shake);
             yield return null;
         }
-        sock.rt.anchoredPosition = pos;
-        sock.rt.localScale = Vector3.one;
     }
 
-    private IEnumerator IdleWiggle(SockItem sock)
+    private IEnumerator BreezeSway(SockItem sock, float baseTilt)
     {
         float phase = Random.Range(0f, Mathf.PI * 2f);
+        float speed = Random.Range(1.5f, 2.5f);
+        float amplitude = Random.Range(3f, 5f);
         while (!sock.isMatched)
         {
-            phase += Time.deltaTime;
-            sock.rt.localEulerAngles = new Vector3(0, 0, Mathf.Sin(phase * 2.5f) * 4f);
+            phase += Time.deltaTime * speed;
+            sock.rt.localEulerAngles = new Vector3(0, 0, baseTilt + Mathf.Sin(phase) * amplitude);
             yield return null;
         }
-        sock.rt.localEulerAngles = Vector3.zero;
     }
 
-    private IEnumerator CompletionBounce()
+    private IEnumerator FadeAndDestroy(GameObject go, float dur)
     {
-        yield return new WaitForSeconds(0.3f);
-        // Bounce all hung pairs
-        for (int i = 0; i < clotheslineArea.childCount; i++)
-        {
-            var child = clotheslineArea.GetChild(i);
-            StartCoroutine(BounceOnce(child.GetComponent<RectTransform>(), i * 0.08f));
-        }
-        yield return new WaitForSeconds(0.5f);
-        CompleteRound();
-    }
-
-    private IEnumerator BounceOnce(RectTransform rt, float delay)
-    {
-        if (rt == null) yield break;
-        yield return new WaitForSeconds(delay);
-        Vector2 orig = rt.anchoredPosition;
+        if (go == null) yield break;
+        var img = go.GetComponent<Image>();
+        if (img == null) { Destroy(go); yield break; }
+        Color c = img.color;
         float t = 0f;
-        while (t < 0.3f)
+        while (t < dur)
         {
             t += Time.deltaTime;
-            float bounce = Mathf.Abs(Mathf.Sin(t / 0.3f * Mathf.PI)) * 20f;
-            rt.anchoredPosition = orig + new Vector2(0, bounce);
+            img.color = new Color(c.r, c.g, c.b, Mathf.Lerp(1f, 0f, t / dur));
             yield return null;
         }
-        rt.anchoredPosition = orig;
+        Destroy(go);
     }
 
     public void OnHomePressed() => NavigationManager.GoToWorld();
 
-    private static Vector2 WorldToLocal(RectTransform source, RectTransform parent)
+    private static Vector2 WToL(RectTransform src, RectTransform par)
     {
-        Vector2 screen = RectTransformUtility.WorldToScreenPoint(null, source.position);
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, screen, null, out Vector2 local);
-        return local;
+        Vector2 scr = RectTransformUtility.WorldToScreenPoint(null, src.position);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(par, scr, null, out Vector2 l);
+        return l;
+    }
+    private static Vector2 WToL(Transform src, RectTransform par)
+    {
+        Vector2 scr = RectTransformUtility.WorldToScreenPoint(null, src.position);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(par, scr, null, out Vector2 l);
+        return l;
     }
 }

@@ -6,12 +6,15 @@ using UnityEngine.EventSystems;
 using TMPro;
 using System.Collections.Generic;
 
+/// <summary>
+/// Builds SockMatch scene: two clotheslines with hanging socks, meeting point at bottom.
+/// </summary>
 public class SockMatchSetup : EditorWindow
 {
     private static readonly Vector2 Ref = new Vector2(1920, 1080);
     private static readonly Color BgColor = HexColor("#E8F4FD");
     private static readonly Color TopBarColor = HexColor("#7BAFD4");
-    private static readonly Color LineColor = HexColor("#8B6B4A");
+    private static readonly Color RopeColor = HexColor("#8B6B4A");
 
     public static void RunSetupSilent()
     {
@@ -40,18 +43,19 @@ public class SockMatchSetup : EditorWindow
     private static void BuildScene()
     {
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-        var roundedRect = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/RoundedRect.png");
-        var circleSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/Circle.png");
 
+        // Camera
         var camGO = new GameObject("Main Camera");
         var cam = camGO.AddComponent<Camera>();
         cam.orthographic = true; cam.orthographicSize = 5;
         cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = BgColor;
         camGO.AddComponent<AudioListener>(); camGO.tag = "MainCamera";
 
+        // EventSystem
         var esGO = new GameObject("EventSystem");
         esGO.AddComponent<EventSystem>(); esGO.AddComponent<StandaloneInputModule>();
 
+        // Canvas
         var canvasGO = new GameObject("Canvas");
         var canvas = canvasGO.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -61,14 +65,15 @@ public class SockMatchSetup : EditorWindow
         canvasGO.AddComponent<GraphicRaycaster>();
 
         // Background
-        var bg = Fill(canvasGO.transform, "Background", BgColor);
-        bg.transform.SetAsFirstSibling();
+        Fill(canvasGO.transform, "Background", BgColor).transform.SetAsFirstSibling();
 
         // SafeArea
         var safeGO = new GameObject("SafeArea");
         safeGO.transform.SetParent(canvasGO.transform, false);
         Full(safeGO.AddComponent<RectTransform>());
         safeGO.AddComponent<SafeAreaHandler>();
+
+        float headerFrac = (float)SetupConstants.HeaderHeight / Ref.y;
 
         // TopBar
         var topBar = new GameObject("TopBar");
@@ -92,38 +97,52 @@ public class SockMatchSetup : EditorWindow
             new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f),
             new Vector2(24, 0), new Vector2(90, 90));
 
-        // Clothesline area (top portion)
-        var lineGO = new GameObject("ClotheslineArea");
-        lineGO.transform.SetParent(safeGO.transform, false);
-        var lineRT = lineGO.AddComponent<RectTransform>();
-        lineRT.anchorMin = new Vector2(0.05f, 0.65f);
-        lineRT.anchorMax = new Vector2(0.95f, 0.88f);
-        lineRT.offsetMin = Vector2.zero; lineRT.offsetMax = Vector2.zero;
+        // ═══════════════════════════════════════════════════════════
+        //  TWO CLOTHESLINES — upper half
+        // ═══════════════════════════════════════════════════════════
 
-        // Visual clothesline (thin horizontal bar)
-        var ropeGO = new GameObject("Rope");
-        ropeGO.transform.SetParent(lineGO.transform, false);
-        var ropeRT = ropeGO.AddComponent<RectTransform>();
-        ropeRT.anchorMin = new Vector2(0, 0.9f); ropeRT.anchorMax = new Vector2(1, 0.95f);
-        ropeRT.offsetMin = Vector2.zero; ropeRT.offsetMax = Vector2.zero;
-        ropeGO.AddComponent<Image>().color = LineColor;
+        // Line 1 (upper)
+        var line1GO = new GameObject("Line1Area");
+        line1GO.transform.SetParent(safeGO.transform, false);
+        var l1RT = line1GO.AddComponent<RectTransform>();
+        l1RT.anchorMin = new Vector2(0.04f, 0.58f);
+        l1RT.anchorMax = new Vector2(0.96f, 0.88f);
+        l1RT.offsetMin = l1RT.offsetMax = Vector2.zero;
 
-        // Socks area (bottom portion)
-        var socksGO = new GameObject("SocksArea");
-        socksGO.transform.SetParent(safeGO.transform, false);
-        var socksRT = socksGO.AddComponent<RectTransform>();
-        socksRT.anchorMin = new Vector2(0.05f, 0.03f);
-        socksRT.anchorMax = new Vector2(0.95f, 0.60f);
-        socksRT.offsetMin = Vector2.zero; socksRT.offsetMax = Vector2.zero;
+        // Rope visual for line 1
+        CreateRope(line1GO.transform);
 
-        // Load sprites
+        // Line 2 (lower)
+        var line2GO = new GameObject("Line2Area");
+        line2GO.transform.SetParent(safeGO.transform, false);
+        var l2RT = line2GO.AddComponent<RectTransform>();
+        l2RT.anchorMin = new Vector2(0.04f, 0.25f);
+        l2RT.anchorMax = new Vector2(0.96f, 0.55f);
+        l2RT.offsetMin = l2RT.offsetMax = Vector2.zero;
+
+        // Rope visual for line 2
+        CreateRope(line2GO.transform);
+
+        // ═══════════════════════════════════════════════════════════
+        //  MEETING POINT — bottom-center
+        // ═══════════════════════════════════════════════════════════
+        var meetGO = new GameObject("MeetingPoint");
+        meetGO.transform.SetParent(safeGO.transform, false);
+        var meetRT = meetGO.AddComponent<RectTransform>();
+        meetRT.anchorMin = meetRT.anchorMax = new Vector2(0.5f, 0.08f);
+        meetRT.sizeDelta = Vector2.zero; // just a position marker
+
+        // ═══════════════════════════════════════════════════════════
+        //  SPRITES + CONTROLLER
+        // ═══════════════════════════════════════════════════════════
         var sockSprites = LoadAllSprites("Assets/Art/SocksSorting/Socks.png");
         var pinSprites = LoadAllSprites("Assets/Art/SocksSorting/Clothespins.png");
+        var circleSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/Circle.png");
 
-        // Controller
         var ctrl = canvasGO.AddComponent<SockMatchController>();
-        ctrl.clotheslineArea = lineRT;
-        ctrl.socksArea = socksRT;
+        ctrl.line1Area = l1RT;
+        ctrl.line2Area = l2RT;
+        ctrl.meetingPoint = meetRT;
         ctrl.sockSprites = sockSprites;
         ctrl.clothespinSprites = pinSprites;
         ctrl.circleSprite = circleSprite;
@@ -131,6 +150,7 @@ public class SockMatchSetup : EditorWindow
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
             homeGO.GetComponent<Button>().onClick, ctrl.OnHomePressed);
 
+        // Leaderboard
         var trophyIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Icons/trophy.png");
         if (trophyIcon != null)
         {
@@ -144,6 +164,7 @@ public class SockMatchSetup : EditorWindow
         TutorialHandHelper.Create(safeGO.transform, TutorialHandHelper.Anim.Tap,
             Vector2.zero, new Vector2(400, 400), "sockmatch");
 
+        // Save
         EnsureFolder("Assets/Scenes");
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/SockMatch.unity");
         var builds = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
@@ -151,6 +172,19 @@ public class SockMatchSetup : EditorWindow
         bool found = false;
         foreach (var s in builds) if (s.path == sp) { found = true; break; }
         if (!found) { builds.Add(new EditorBuildSettingsScene(sp, true)); EditorBuildSettings.scenes = builds.ToArray(); }
+    }
+
+    private static void CreateRope(Transform parent)
+    {
+        var ropeGO = new GameObject("Rope");
+        ropeGO.transform.SetParent(parent, false);
+        var rt = ropeGO.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0, 0.92f);
+        rt.anchorMax = new Vector2(1, 0.96f);
+        rt.offsetMin = rt.offsetMax = Vector2.zero;
+        var img = ropeGO.AddComponent<Image>();
+        img.color = RopeColor;
+        img.raycastTarget = false;
     }
 
     // ── Helpers ──
@@ -166,7 +200,7 @@ public class SockMatchSetup : EditorWindow
     {
         var go = new GameObject(n); go.transform.SetParent(p, false);
         Full(go.AddComponent<RectTransform>());
-        var img = go.AddComponent<Image>(); img.color = c; img.raycastTarget = false;
+        go.AddComponent<Image>().color = c; go.GetComponent<Image>().raycastTarget = false;
         return go;
     }
     private static void Full(RectTransform rt)
