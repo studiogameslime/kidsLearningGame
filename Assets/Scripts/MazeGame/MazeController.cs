@@ -458,7 +458,7 @@ public class MazeController : BaseMiniGame
             isComplete = true;
             if (idleBounceRoutine != null) StopCoroutine(idleBounceRoutine);
             PlayCorrectEffect(playerRT);
-            RecordCorrect("reachedGoal");
+            RecordCorrect("reachedGoal", isLast: true);
             StartCoroutine(OnReachedGoal());
         }
     }

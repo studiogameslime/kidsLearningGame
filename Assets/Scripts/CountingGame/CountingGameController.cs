@@ -534,7 +534,7 @@ public class CountingGameController : BaseMiniGame
 
         if (number == correctAnswer)
         {
-            RecordCorrect();
+            RecordCorrect(isLast: true);
             PlayCorrectEffect(btnGO.GetComponent<RectTransform>());
             btnGO.GetComponent<Image>().color = CorrectColor;
             // Don't CompleteRound yet — start counting animation first

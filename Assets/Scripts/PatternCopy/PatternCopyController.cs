@@ -253,12 +253,14 @@ public class PatternCopyController : BaseMiniGame
         bool shouldBeOn = _sourcePattern[row, col];
 
         var cellRT = _playerCellImages[row, col].rectTransform;
+        bool patternComplete = CheckPatternMatch();
+
         if (!wasOn && _playerGrid[row, col])
         {
             if (shouldBeOn)
             {
                 PlayCorrectEffect(cellRT);
-                RecordCorrect("fill", $"{row},{col}");
+                RecordCorrect("fill", $"{row},{col}", isLast: patternComplete);
             }
             else
             {
@@ -277,14 +279,14 @@ public class PatternCopyController : BaseMiniGame
             else
             {
                 PlayCorrectEffect(cellRT);
-                RecordCorrect("undo_wrong", $"{row},{col}");
+                RecordCorrect("undo_wrong", $"{row},{col}", isLast: patternComplete);
             }
         }
 
         UpdateScoreText();
 
         // Check for auto-win
-        if (CheckPatternMatch())
+        if (patternComplete)
             CompleteRound();
     }
 

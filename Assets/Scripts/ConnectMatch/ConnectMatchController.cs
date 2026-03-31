@@ -435,7 +435,7 @@ public class ConnectMatchController : BaseMiniGame
             {
                 _isDragging = false;
                 if (_liveLineGO != null) _liveLineGO.SetActive(false);
-                RecordCorrect("path_complete");
+                RecordCorrect("path_complete", isLast: true);
 
                 CompleteRound();
             }

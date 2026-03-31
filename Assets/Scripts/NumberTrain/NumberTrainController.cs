@@ -551,11 +551,11 @@ public class NumberTrainController : BaseMiniGame
 
     private void PlaceNumberInWagon(int wagonIndex, int value, GameObject option)
     {
-        RecordCorrect("number_placed", value.ToString());
+        _placedCount++;
+        RecordCorrect("number_placed", value.ToString(), isLast: _placedCount >= _totalMissing);
         if (_wagonObjects[wagonIndex] != null)
             PlayCorrectEffect(_wagonObjects[wagonIndex].GetComponent<RectTransform>());
         SoundLibrary.PlayNumberName(value);
-        _placedCount++;
 
         // Update wagon text
         if (_emptyTexts.ContainsKey(wagonIndex))

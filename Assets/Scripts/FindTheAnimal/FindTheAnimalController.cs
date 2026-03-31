@@ -736,9 +736,9 @@ public class FindTheAnimalController : BaseMiniGame
 
         if (animalId == targetAnimal.id)
         {
-            RecordCorrect();
-            PlayCorrectEffect(go.GetComponent<RectTransform>());
             targetsFound++;
+            RecordCorrect(isLast: targetsFound >= targetCount);
+            PlayCorrectEffect(go.GetComponent<RectTransform>());
             foundIndices.Add(index);
             UpdateRemainingText();
             StartCoroutine(CorrectTapAnimation(go));

@@ -551,10 +551,10 @@ public class LetterTrainController : BaseMiniGame
 
     private void PlaceLetterInWagon(int wagonIndex, char letter, GameObject option)
     {
-        RecordCorrect("letter_placed", letter.ToString());
+        _placedCount++;
+        RecordCorrect("letter_placed", letter.ToString(), isLast: _placedCount >= _totalMissing);
         if (_wagonObjects[wagonIndex] != null)
             PlayCorrectEffect(_wagonObjects[wagonIndex].GetComponent<RectTransform>());
-        _placedCount++;
 
         if (_emptyTexts.ContainsKey(wagonIndex))
         {

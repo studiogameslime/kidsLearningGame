@@ -884,7 +884,7 @@ public class ConnectTheDotsController : BaseMiniGame
 
         currentDotIndex++;
         PlayCorrectEffect(dot.GetComponent<RectTransform>());
-        RecordCorrect();
+        RecordCorrect(isLast: currentDotIndex >= totalDots);
 
         if (currentDotIndex < totalDots)
         {

@@ -301,7 +301,7 @@ public class NumberMazeController : BaseMiniGame
         if (cell.isOnPath && cell.pathOrder == _expectedNext - 1)
         {
             // Correct!
-            RecordCorrect("number_tap", _expectedNext.ToString());
+            RecordCorrect("number_tap", _expectedNext.ToString(), isLast: _expectedNext >= _board.pathLength);
             PlayCorrectEffect(view.GetComponent<RectTransform>());
             view.SetCompleted();
 

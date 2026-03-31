@@ -149,12 +149,20 @@ public abstract class BaseMiniGame : MonoBehaviour
         StartCoroutine(CompletionSequence());
     }
 
-    /// <summary>Shorthand: record a correct action + play correct sound.</summary>
-    protected void RecordCorrect(string tag = null, string targetId = null)
+    /// <summary>Record a correct action. If isLast=true, plays Win Level sound instead of Correct.</summary>
+    protected void RecordCorrect(string tag = null, string targetId = null, bool isLast = false)
     {
         Stats?.RecordCorrect(tag, targetId);
-        if (_correctClip == null) _correctClip = Resources.Load<AudioClip>("Sounds/Correct");
-        if (_correctClip != null) BackgroundMusicManager.PlayOneShot(_correctClip);
+        if (isLast)
+        {
+            if (_winLevelClip == null) _winLevelClip = Resources.Load<AudioClip>("Sounds/WinLevel");
+            if (_winLevelClip != null) BackgroundMusicManager.PlayOneShot(_winLevelClip);
+        }
+        else
+        {
+            if (_correctClip == null) _correctClip = Resources.Load<AudioClip>("Sounds/Correct");
+            if (_correctClip != null) BackgroundMusicManager.PlayOneShot(_correctClip);
+        }
     }
 
     /// <summary>Shorthand: record a mistake + play error sound.</summary>
@@ -186,6 +194,7 @@ public abstract class BaseMiniGame : MonoBehaviour
     /// </summary>
     private static AudioClip _correctClip;
     private static AudioClip _errorClip;
+    private static AudioClip _winLevelClip;
 
     protected void PlayCorrectEffect(RectTransform target)
     {
@@ -248,16 +257,19 @@ public abstract class BaseMiniGame : MonoBehaviour
         bool isFinalRound = !isEndless && (CurrentRound + 1 >= totalRounds);
         bool shouldPlayConfetti = isFinalRound ? playConfettiOnSessionWin : playConfettiOnRoundWin;
 
-        // Feedback sound
-        if (playWinSound)
-            SoundLibrary.PlayRandomFeedback();
-
         // Confetti BEFORE exit animations so player sees it with the game content still visible
         if (shouldPlayConfetti && ConfettiController.Instance != null)
             ConfettiController.Instance.Play();
 
         // Game-specific post-completion visuals (exit animations, cleanup)
         yield return StartCoroutine(OnAfterComplete());
+
+        // Alin voice feedback AFTER win level sound has had time to play
+        if (playWinSound)
+        {
+            yield return new WaitForSeconds(0.5f);
+            SoundLibrary.PlayRandomFeedback();
+        }
 
         // Determine next step
         CurrentRound++;

@@ -269,10 +269,11 @@ public class BakeryGameController : BaseMiniGame
         cookie.Lock();
         StartCoroutine(cookie.PlayMatchCelebration());
         PlayCorrectEffect(cookie.RT);
-        RecordCorrect();
-
         matchedCount++;
-        if (matchedCount >= cookieCount)
+        bool isLast = matchedCount >= cookieCount;
+        RecordCorrect(isLast: isLast);
+
+        if (isLast)
             StartCoroutine(CompletionSequence());
 
         return 1; // correct

@@ -267,7 +267,7 @@ public class OddOneOutController : BaseMiniGame
         if (slotIndex == _oddIndex)
         {
             // Correct! Play the odd animal's name
-            RecordCorrect("odd_found", _oddAnimal);
+            RecordCorrect("odd_found", _oddAnimal, isLast: true);
             SoundLibrary.PlayAnimalName(_oddAnimal);
             PlayCorrectEffect(_slotObjects[slotIndex].GetComponent<RectTransform>());
             StartCoroutine(OnCorrectSequence(slotIndex));

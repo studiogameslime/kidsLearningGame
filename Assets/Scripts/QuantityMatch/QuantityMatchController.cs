@@ -428,7 +428,7 @@ public class QuantityMatchController : BaseMiniGame
 
         if (tileIndex == _correctTileIndex)
         {
-            RecordCorrect("quantity_match", _targetNumber.ToString());
+            RecordCorrect("quantity_match", _targetNumber.ToString(), isLast: true);
             PlayCorrectEffect(_tileObjects[tileIndex].GetComponent<RectTransform>());
             StartCoroutine(OnCorrectSequence(tileIndex));
         }

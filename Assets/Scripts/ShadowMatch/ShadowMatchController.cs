@@ -297,8 +297,8 @@ public class ShadowMatchController : BaseMiniGame
                 if (!string.IsNullOrEmpty(animal.soundName))
                     SoundLibrary.PlayAnimalName(animal.soundName);
 
-                RecordCorrect();
                 matchedCount++;
+                RecordCorrect(isLast: matchedCount >= animalCount);
                 if (matchedCount >= animalCount)
                     CompleteRound();
                 else
