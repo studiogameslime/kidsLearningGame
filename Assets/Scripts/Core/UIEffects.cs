@@ -12,6 +12,8 @@ public static class UIEffects
 {
     // ── Sparkles ─────────────────────────────────────────────────────
 
+    private static Sprite _cachedCircle;
+
     private static readonly Color[] SparkleColors = new[]
     {
         new Color(1f, 0.84f, 0f),       // gold
@@ -80,11 +82,16 @@ public static class UIEffects
         cg.interactable = false;
         cg.blocksRaycasts = false;
 
-        // Simple colored Image particle — no sprite/font dependency
+        // Colored circle particle
         var img = go.AddComponent<Image>();
         img.color = SparkleColors[index % SparkleColors.Length];
         img.raycastTarget = false;
-        // Default Unity Image = solid white square; with small size + rotation it reads as a sparkle
+        if (_cachedCircle == null)
+        {
+            foreach (var s in Resources.FindObjectsOfTypeAll<Sprite>())
+                if (s.name == "Circle") { _cachedCircle = s; break; }
+        }
+        if (_cachedCircle != null) img.sprite = _cachedCircle;
 
         return go;
     }
