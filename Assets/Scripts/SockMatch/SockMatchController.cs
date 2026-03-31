@@ -49,7 +49,7 @@ public class SockMatchController : BaseMiniGame
         isEndless = true;
         playWinSound = true;
         playConfettiOnRoundWin = true;
-        delayBeforeNextRound = 0.8f;
+        delayBeforeNextRound = 2.5f; // longer pause before next round to avoid stutter
     }
 
     protected override void OnRoundSetup()
@@ -76,6 +76,12 @@ public class SockMatchController : BaseMiniGame
                 TutorialHand.SetMovePath(WToL(first.rt, hp), WToL(match.rt, hp), 1.5f);
             }
         }
+    }
+
+    protected override IEnumerator OnAfterComplete()
+    {
+        // Brief pause to enjoy the win before any cleanup
+        yield return new WaitForSeconds(0.5f);
     }
 
     protected override void OnRoundCleanup()

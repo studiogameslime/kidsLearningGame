@@ -48,7 +48,7 @@ public class BakeryGameController : BaseMiniGame
         isEndless = true;
         playWinSound = true;
         playConfettiOnRoundWin = true;
-        delayBeforeNextRound = 0.8f;
+        delayBeforeNextRound = 2.5f;
     }
 
     protected override void OnRoundSetup()
