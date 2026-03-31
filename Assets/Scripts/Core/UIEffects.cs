@@ -39,10 +39,15 @@ public static class UIEffects
         Canvas rootCanvas = target.GetComponentInParent<Canvas>();
         if (rootCanvas == null) return;
 
-        // Create sparkles on the root canvas — NOT as siblings of the target
-        // This prevents layout groups (Grid/Vertical/Horizontal) from recalculating
+        // Create sparkles on the root canvas at the VERY TOP of sibling order
+        // so they render above everything (cookies, slots, panels, etc.)
         var runner = new GameObject("_SparkleRunner").AddComponent<SparkleRunner>();
         runner.transform.SetParent(rootCanvas.transform, false);
+        runner.transform.SetAsLastSibling();
+        // Override sorting to guarantee rendering above all other UI
+        var sortCanvas = runner.gameObject.AddComponent<Canvas>();
+        sortCanvas.overrideSorting = true;
+        sortCanvas.sortingOrder = 100;
 
         // Convert target center to root canvas space
         Vector3[] corners = new Vector3[4];
