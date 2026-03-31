@@ -149,16 +149,20 @@ public abstract class BaseMiniGame : MonoBehaviour
         StartCoroutine(CompletionSequence());
     }
 
-    /// <summary>Shorthand: record a correct action in the stats collector.</summary>
+    /// <summary>Shorthand: record a correct action + play correct sound.</summary>
     protected void RecordCorrect(string tag = null, string targetId = null)
     {
         Stats?.RecordCorrect(tag, targetId);
+        if (_correctClip == null) _correctClip = Resources.Load<AudioClip>("Sounds/Correct");
+        if (_correctClip != null) BackgroundMusicManager.PlayOneShot(_correctClip);
     }
 
-    /// <summary>Shorthand: record a mistake in the stats collector.</summary>
+    /// <summary>Shorthand: record a mistake + play error sound.</summary>
     protected void RecordMistake(string tag = null, string targetId = null)
     {
         Stats?.RecordMistake(tag, targetId);
+        if (_errorClip == null) _errorClip = Resources.Load<AudioClip>("Sounds/Error");
+        if (_errorClip != null) BackgroundMusicManager.PlayOneShot(_errorClip);
     }
 
     /// <summary>Shorthand: record a hint usage.</summary>
@@ -180,6 +184,9 @@ public abstract class BaseMiniGame : MonoBehaviour
     /// Play a sparkle/stars effect on a UI element (use after correct answers).
     /// Also shows a floating "+1" score popup.
     /// </summary>
+    private static AudioClip _correctClip;
+    private static AudioClip _errorClip;
+
     protected void PlayCorrectEffect(RectTransform target)
     {
         UIEffects.SpawnSparkles(target);

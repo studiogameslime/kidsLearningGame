@@ -253,7 +253,7 @@ public class BakeryGameController : BaseMiniGame
         if (best.cookieId != cookie.cookieId)
         {
             RecordMistake();
-            return 0; // wrong slot — shake
+            return 0; // wrong slot — shake + error sound via RecordMistake
         }
 
         // Correct match
