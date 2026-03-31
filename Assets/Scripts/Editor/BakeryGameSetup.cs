@@ -19,9 +19,9 @@ public class BakeryGameSetup : EditorWindow
     private static readonly Color TopBarColor   = HexColor("#A0785A"); // warm brown header
     private static readonly Color TrayColor     = HexColor("#C9A87C"); // light wood tray surface
     private static readonly Color TrayRimColor  = HexColor("#8B6B4A"); // darker tray rim
-    private static readonly Color SlotColor     = HexColor("#8A6840"); // indented slot (noticeably darker than tray)
-    private static readonly Color SlotEdgeLight = new Color(1f, 1f, 1f, 0.22f); // top-left highlight edge
-    private static readonly Color SlotEdgeDark  = new Color(0f, 0f, 0f, 0.35f); // bottom-right inner shadow
+    private static readonly Color SlotColor     = new Color(0f, 0f, 0f, 1f); // solid black silhouette
+    private static readonly Color SlotEdgeLight = new Color(1f, 1f, 1f, 0.15f); // subtle top-left highlight
+    private static readonly Color SlotEdgeDark  = new Color(0f, 0f, 0f, 0.4f); // bottom-right inner shadow
     private static readonly Color CookiesPanel  = HexColor("#FFF8EF"); // light cream for cookies area
 
     private static readonly int TopBarHeight = SetupConstants.HeaderHeight;
