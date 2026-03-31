@@ -122,11 +122,14 @@ public class QuantityMatchController : BaseMiniGame
 
     private void GetTargetRange(int difficulty, out int min, out int max)
     {
-        if (difficulty <= 2)      { min = 1; max = 3; }
-        else if (difficulty <= 4) { min = 2; max = 4; }
-        else if (difficulty <= 6) { min = 2; max = 5; }
-        else if (difficulty <= 8) { min = 3; max = 6; }
-        else                      { min = 4; max = 8; }
+        // Difficulty scaling: easy(1-3)=1-3, medium(4-6)=1-5, hard(7-10)=1-8
+        int tier = difficulty <= 3 ? 0 : difficulty <= 6 ? 1 : 2;
+        switch (tier)
+        {
+            case 0:  min = 1; max = 3; break;
+            case 1:  min = 1; max = 5; break;
+            default: min = 1; max = 8; break;
+        }
     }
 
     private void GenerateQuantities()

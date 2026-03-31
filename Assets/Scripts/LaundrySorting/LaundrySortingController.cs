@@ -58,6 +58,15 @@ public class LaundrySortingController : BaseMiniGame
 
     protected override void OnRoundSetup()
     {
+        // Difficulty scaling: easy(1-3)=(6,3), medium(4-6)=(10,5), hard(7-10)=(14,7)
+        int tier = Difficulty <= 3 ? 0 : Difficulty <= 6 ? 1 : 2;
+        switch (tier)
+        {
+            case 0: clothesCount = 6;  fruitsCount = 3; break;
+            case 1: clothesCount = 10; fruitsCount = 5; break;
+            case 2: clothesCount = 14; fruitsCount = 7; break;
+        }
+
         nextBasketSlot = 0;
         nextMachineSlot = 0;
         basketSlots.Clear();

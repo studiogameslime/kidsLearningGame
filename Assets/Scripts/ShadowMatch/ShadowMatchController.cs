@@ -62,6 +62,15 @@ public class ShadowMatchController : BaseMiniGame
 
     protected override void OnRoundSetup()
     {
+        // Difficulty scaling: easy(1-3)=3, medium(4-6)=4, hard(7-10)=5
+        int tier = Difficulty <= 3 ? 0 : Difficulty <= 6 ? 1 : 2;
+        switch (tier)
+        {
+            case 0: animalCount = 3; break;
+            case 1: animalCount = 4; break;
+            case 2: animalCount = 5; break;
+        }
+
         matchedCount = 0;
 
         var game = GameContext.CurrentGame;

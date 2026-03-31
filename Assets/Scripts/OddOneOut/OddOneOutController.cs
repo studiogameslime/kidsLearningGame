@@ -35,18 +35,20 @@ public class OddOneOutController : BaseMiniGame
         { "Elephant", "Giraffe", "Horse", "Cow", "Lion", "Dog", "Cat",
           "Sheep", "Monkey", "Donkey", "Bear", "Zebra" };
 
+    private int _animalCount = 4; // total slots per round (scales with difficulty)
+
     private int _attemptsThisRound;
     private int _hintsUsed;
     private float _lastInteractionTime;
 
-    private int _oddIndex; // which of the 4 slots is the odd one
+    private int _oddIndex; // which slot is the odd one
     private string _majorAnimal;
     private string _oddAnimal;
     private string _lastMajor;
     private string _lastOdd;
 
     private List<GameObject> _slotObjects = new List<GameObject>();
-    private UISpriteAnimator[] _animators = new UISpriteAnimator[4];
+    private UISpriteAnimator[] _animators;
     private Coroutine _inactivityCoroutine;
 
     // ── BaseMiniGame Hooks ──
@@ -64,11 +66,21 @@ public class OddOneOutController : BaseMiniGame
 
     protected override void OnRoundSetup()
     {
+        // Difficulty scaling: easy(1-3)=4, medium(4-6)=6, hard(7-10)=8
+        int tier = Difficulty <= 3 ? 0 : Difficulty <= 6 ? 1 : 2;
+        switch (tier)
+        {
+            case 0: _animalCount = 4; break;
+            case 1: _animalCount = 6; break;
+            case 2: _animalCount = 8; break;
+        }
+        _animators = new UISpriteAnimator[_animalCount];
+
         _attemptsThisRound = 0;
         _hintsUsed = 0;
 
         PickAnimals();
-        _oddIndex = Random.Range(0, 4);
+        _oddIndex = Random.Range(0, _animalCount);
         BuildRow();
 
         _lastInteractionTime = Time.time;
@@ -94,8 +106,9 @@ public class OddOneOutController : BaseMiniGame
             if (go != null) Destroy(go);
         _slotObjects.Clear();
 
-        for (int i = 0; i < 4; i++)
-            _animators[i] = null;
+        if (_animators != null)
+            for (int i = 0; i < _animators.Length; i++)
+                _animators[i] = null;
     }
 
     protected override void OnBeforeComplete()
@@ -162,13 +175,13 @@ public class OddOneOutController : BaseMiniGame
         float areaH = rowArea.rect.height;
 
         float spacing = 30f;
-        float maxCardW = (areaW - 3 * spacing) / 4f;
+        float maxCardW = (areaW - (_animalCount - 1) * spacing) / _animalCount;
         float cardSize = Mathf.Min(maxCardW, areaH * 0.90f, 320f);
 
-        float totalW = 4 * cardSize + 3 * spacing;
+        float totalW = _animalCount * cardSize + (_animalCount - 1) * spacing;
         float startX = -totalW / 2f + cardSize / 2f;
 
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < _animalCount; i++)
         {
             string animalId = (i == _oddIndex) ? _oddAnimal : _majorAnimal;
             float x = startX + i * (cardSize + spacing);
@@ -301,8 +314,8 @@ public class OddOneOutController : BaseMiniGame
         if (_animators[correctSlot] != null)
             _animators[correctSlot].PlaySuccess();
 
-        // Dim the other 3 cards
-        for (int i = 0; i < 4; i++)
+        // Dim the other cards
+        for (int i = 0; i < _animalCount; i++)
         {
             if (i == correctSlot) continue;
             var img = _slotObjects[i].GetComponent<Image>();
@@ -399,7 +412,7 @@ public class OddOneOutController : BaseMiniGame
 
     private void PositionTutorialHand()
     {
-        if (TutorialHand == null || _slotObjects.Count < 4) return;
+        if (TutorialHand == null || _slotObjects.Count < _animalCount) return;
 
         // Point at the odd one — show the correct answer
         var slotRT = _slotObjects[_oddIndex].GetComponent<RectTransform>();

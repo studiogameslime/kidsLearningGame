@@ -47,7 +47,15 @@ public class ColorVoiceController : BaseMiniGame
 
     protected override void OnGameInit()
     {
-        totalRounds = 7;
+        // Difficulty scaling: easy(1-3)=5 rounds, medium(4-6)=7, hard(7-10)=10
+        int tier = Difficulty <= 3 ? 0 : Difficulty <= 6 ? 1 : 2;
+        switch (tier)
+        {
+            case 0: totalRounds = 5;  listenTimeout = 10f; break;
+            case 1: totalRounds = 7;  listenTimeout = 8f;  break;
+            case 2: totalRounds = 10; listenTimeout = 6f;  break;
+        }
+
         playConfettiOnRoundWin = true;
         playConfettiOnSessionWin = true;
         playWinSound = false; // we play our own successClip

@@ -57,6 +57,15 @@ public class FishingGameController : BaseMiniGame
 
     protected override void OnRoundSetup()
     {
+        // Difficulty scaling: easy(1-3), medium(4-6), hard(7-10)
+        int tier = Difficulty <= 3 ? 0 : Difficulty <= 6 ? 1 : 2;
+        switch (tier)
+        {
+            case 0: fishOnScreen = 4; fishSpeedMin = 40f; fishSpeedMax = 80f;  break;
+            case 1: fishOnScreen = 6; fishSpeedMin = 50f; fishSpeedMax = 100f; break;
+            case 2: fishOnScreen = 8; fishSpeedMin = 60f; fishSpeedMax = 130f; break;
+        }
+
         successfulCatches = 0;
         usedTargets.Clear();
 

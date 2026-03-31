@@ -150,15 +150,14 @@ public class NumberTrainController : BaseMiniGame
 
     private void GenerateLevel()
     {
-        // Wagon count based on difficulty
-        if (Difficulty <= 3)      _wagonCount = 5;
-        else if (Difficulty <= 6) _wagonCount = 6;
-        else                       _wagonCount = 7;
-
-        // Missing count based on difficulty
-        if (Difficulty <= 2)      _totalMissing = 1;
-        else if (Difficulty <= 5) _totalMissing = 2;
-        else                       _totalMissing = 3;
+        // Difficulty scaling: easy(1-3), medium(4-6), hard(7-10)
+        int tier = Difficulty <= 3 ? 0 : Difficulty <= 6 ? 1 : 2;
+        switch (tier)
+        {
+            case 0: _wagonCount = 6;  _totalMissing = 3; break;
+            case 1: _wagonCount = 8;  _totalMissing = 5; break;
+            case 2: _wagonCount = 10; _totalMissing = 7; break;
+        }
 
         // Start number — cap so last wagon doesn't exceed 10
         int maxStart = Mathf.Max(1, 11 - _wagonCount);

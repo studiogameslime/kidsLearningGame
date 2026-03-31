@@ -76,6 +76,15 @@ public class FlappyBirdController : BaseMiniGame
 
     protected override void OnRoundSetup()
     {
+        // Difficulty scaling: easy(1-3)=wider gaps+slower, medium(4-6)=default, hard(7-10)=narrower+faster
+        int tier = Difficulty <= 3 ? 0 : Difficulty <= 6 ? 1 : 2;
+        switch (tier)
+        {
+            case 0: gapSize = 620f; pipeSpeed = 180f; spawnInterval = 2.6f; break;
+            case 1: gapSize = 520f; pipeSpeed = 250f; spawnInterval = 2.2f; break;
+            case 2: gapSize = 420f; pipeSpeed = 320f; spawnInterval = 1.8f; break;
+        }
+
         // Load best score
         var profile = ProfileManager.ActiveProfile;
         if (profile != null)

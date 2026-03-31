@@ -173,14 +173,14 @@ public class LetterTrainController : BaseMiniGame
 
     private void GenerateLevel()
     {
-        // Wagon count
-        if (Difficulty <= 3)      _wagonCount = 5;
-        else if (Difficulty <= 6) _wagonCount = 6;
-        else                       _wagonCount = 7;
-
-        // Missing count (minimum 2 — one missing letter is too easy)
-        if (Difficulty <= 4)      _totalMissing = 2;
-        else                       _totalMissing = 3;
+        // Difficulty scaling: easy(1-3), medium(4-6), hard(7-10)
+        int tier = Difficulty <= 3 ? 0 : Difficulty <= 6 ? 1 : 2;
+        switch (tier)
+        {
+            case 0: _wagonCount = 6;  _totalMissing = 3; break;
+            case 1: _wagonCount = 8;  _totalMissing = 5; break;
+            case 2: _wagonCount = 10; _totalMissing = 7; break;
+        }
 
         // Start position in alphabet based on difficulty
         int maxStart;

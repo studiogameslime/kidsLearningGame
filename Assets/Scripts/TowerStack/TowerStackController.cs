@@ -41,6 +41,12 @@ public class TowerStackController : BaseMiniGame
 
     private static readonly Color SKY_TOP = new Color(0.53f, 0.81f, 0.98f);
 
+    // Difficulty-scaled values (override constants)
+    private float _baseSpeed = BASE_SPEED;
+    private float _speedStep = SPEED_STEP;
+    private float _maxSpeed = MAX_SPEED;
+    private float _initialW = INITIAL_W;
+
     // ── runtime state ────────────────────────────────────────────
     private Canvas canvas;
     private Dictionary<string, Sprite> spriteLookup;
@@ -103,6 +109,15 @@ public class TowerStackController : BaseMiniGame
 
     protected override void OnRoundSetup()
     {
+        // Difficulty scaling: easy(1-3)=slower+wider, medium(4-6)=default, hard(7-10)=faster+narrower
+        int tier = Difficulty <= 3 ? 0 : Difficulty <= 6 ? 1 : 2;
+        switch (tier)
+        {
+            case 0: _baseSpeed = 160f; _speedStep = 3f; _maxSpeed = 350f; _initialW = 450f; break;
+            case 1: _baseSpeed = 220f; _speedStep = 4f; _maxSpeed = 450f; _initialW = 400f; break;
+            case 2: _baseSpeed = 280f; _speedStep = 6f; _maxSpeed = 550f; _initialW = 350f; break;
+        }
+
         StartCoroutine(InitAfterLayout());
     }
 
@@ -244,13 +259,13 @@ public class TowerStackController : BaseMiniGame
         towerTopY = GROUND_H;
 
         // Place base block
-        float baseLeft = -INITIAL_W / 2f;
-        float baseRight = INITIAL_W / 2f;
+        float baseLeft = -_initialW / 2f;
+        float baseRight = _initialW / 2f;
         PlaceBlockVisual(baseLeft, baseRight, towerTopY, NextBlockSpriteKey());
         towerTopY += BLOCK_H;
 
         // Spawn first moving block
-        SpawnActiveBlock(INITIAL_W);
+        SpawnActiveBlock(_initialW);
         isStarted = true;
 
         PositionTutorialHand();
@@ -280,7 +295,7 @@ public class TowerStackController : BaseMiniGame
         float startX = moveDir > 0 ? (-playW / 2f + activeHalfW + 20f) : (playW / 2f - activeHalfW - 20f);
         activeCenterX = startX;
 
-        moveSpeed = Mathf.Min(BASE_SPEED + score * SPEED_STEP, MAX_SPEED);
+        moveSpeed = Mathf.Min(_baseSpeed + score * _speedStep, _maxSpeed);
 
         // Shadow
         var shadowGO = CreateBlockVisual(worldContainer, "ActiveShadow",
@@ -423,12 +438,12 @@ public class TowerStackController : BaseMiniGame
                 overlapLeft -= grow / 2f;
                 overlapRight += grow / 2f;
                 overlapW = overlapRight - overlapLeft;
-                if (overlapW > INITIAL_W)
+                if (overlapW > _initialW)
                 {
-                    float excess = overlapW - INITIAL_W;
+                    float excess = overlapW - _initialW;
                     overlapLeft += excess / 2f;
                     overlapRight -= excess / 2f;
-                    overlapW = INITIAL_W;
+                    overlapW = _initialW;
                 }
             }
         }
