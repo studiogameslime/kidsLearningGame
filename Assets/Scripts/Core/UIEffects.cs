@@ -12,7 +12,7 @@ public static class UIEffects
 {
     // ── Sparkles ─────────────────────────────────────────────────────
 
-    private static Sprite _cachedCircle;
+    private static Sprite _cachedStar;
 
     private static readonly Color[] SparkleColors = new[]
     {
@@ -86,12 +86,12 @@ public static class UIEffects
         var img = go.AddComponent<Image>();
         img.color = SparkleColors[index % SparkleColors.Length];
         img.raycastTarget = false;
-        if (_cachedCircle == null)
+        if (_cachedStar == null)
         {
             foreach (var s in Resources.FindObjectsOfTypeAll<Sprite>())
-                if (s.name == "Circle") { _cachedCircle = s; break; }
+                if (s.name == "star") { _cachedStar = s; break; }
         }
-        if (_cachedCircle != null) img.sprite = _cachedCircle;
+        if (_cachedStar != null) img.sprite = _cachedStar;
 
         return go;
     }
