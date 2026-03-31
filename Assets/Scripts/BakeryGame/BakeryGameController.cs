@@ -277,7 +277,7 @@ public class BakeryGameController : BaseMiniGame
 
     // ── Utility ──
 
-    public void OnHomePressed() => NavigationManager.GoToWorldScene();
+    public void OnHomePressed() => NavigationManager.GoToWorld();
 
     private static Vector2 WorldToLocal(RectTransform source, RectTransform parent)
     {
