@@ -129,7 +129,7 @@ public class SockMatchSetup : EditorWindow
         var meetGO = new GameObject("MeetingPoint");
         meetGO.transform.SetParent(safeGO.transform, false);
         var meetRT = meetGO.AddComponent<RectTransform>();
-        meetRT.anchorMin = meetRT.anchorMax = new Vector2(0.5f, 0.08f);
+        meetRT.anchorMin = meetRT.anchorMax = new Vector2(0.5f, 0.18f);
         meetRT.sizeDelta = Vector2.zero; // just a position marker
 
         // ═══════════════════════════════════════════════════════════

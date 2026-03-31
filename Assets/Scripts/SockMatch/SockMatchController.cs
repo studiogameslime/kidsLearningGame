@@ -130,25 +130,29 @@ public class SockMatchController : BaseMiniGame
         float sockSize = Mathf.Min(spacing * 0.7f, lineH * 0.65f, 120f);
         float tilt = Random.Range(-6f, 6f);
 
-        // Pin
+        // Pin — sits on top of the sock, overlapping the rope
+        float pinW = sockSize * 0.3f;
+        float pinH = sockSize * 0.45f;
+        float ropeY = lineH * 0.5f; // rope is near top of line area
+
         var pinGO = new GameObject($"Pin_{allSocks.Count}");
         pinGO.transform.SetParent(lineArea, false);
         var pinRT = pinGO.AddComponent<RectTransform>();
-        pinRT.sizeDelta = new Vector2(24, 40);
-        pinRT.anchoredPosition = new Vector2(x, lineH * 0.5f - 5f);
+        pinRT.sizeDelta = new Vector2(pinW, pinH);
+        pinRT.anchoredPosition = new Vector2(x, ropeY - pinH * 0.15f);
         var pinImg = pinGO.AddComponent<Image>();
         if (clothespinSprites != null && clothespinSprites.Length > 0)
             pinImg.sprite = clothespinSprites[allSocks.Count % clothespinSprites.Length];
         pinImg.preserveAspect = true;
         pinImg.raycastTarget = false;
 
-        // Sock
+        // Sock — hangs directly under the pin, top touching the pin bottom
         var go = new GameObject($"Sock_{sockId}_{allSocks.Count}");
         go.transform.SetParent(lineArea, false);
         var rt = go.AddComponent<RectTransform>();
         rt.sizeDelta = new Vector2(sockSize, sockSize);
         rt.pivot = new Vector2(0.5f, 1f);
-        rt.anchoredPosition = new Vector2(x, lineH * 0.5f - 25f);
+        rt.anchoredPosition = new Vector2(x, ropeY - pinH * 0.55f);
         rt.localEulerAngles = new Vector3(0, 0, tilt);
 
         var img = go.AddComponent<Image>();
