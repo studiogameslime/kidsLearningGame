@@ -264,12 +264,12 @@ public abstract class BaseMiniGame : MonoBehaviour
         // Game-specific post-completion visuals (exit animations, cleanup)
         yield return StartCoroutine(OnAfterComplete());
 
-        // Alin voice feedback AFTER win level sound has had time to play
+        // Alin voice feedback — wait for it to finish before moving on
+        float feedbackDuration = 0f;
         if (playWinSound)
-        {
-            yield return new WaitForSeconds(0.5f);
-            SoundLibrary.PlayRandomFeedback();
-        }
+            feedbackDuration = SoundLibrary.PlayRandomFeedbackWithDuration();
+        if (feedbackDuration > 0f)
+            yield return new WaitForSeconds(feedbackDuration + 0.3f);
 
         // Determine next step
         CurrentRound++;

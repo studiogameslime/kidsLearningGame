@@ -58,10 +58,21 @@ public static class SoundLibrary
 
     public static void PlayRandomFeedback()
     {
-        if (Random.value > 0.3f) return; // 30% chance to play
+        PlayRandomFeedbackWithDuration();
+    }
+
+    /// <summary>Plays a random feedback clip (30% chance). Returns clip length or 0.</summary>
+    public static float PlayRandomFeedbackWithDuration()
+    {
+        if (Random.value > 0.3f) return 0f;
         string path = FeedbackClips[Random.Range(0, FeedbackClips.Length)];
         var clip = Resources.Load<AudioClip>(path);
-        if (clip != null) BackgroundMusicManager.PlayFeedback(clip);
+        if (clip != null)
+        {
+            BackgroundMusicManager.PlayFeedback(clip);
+            return clip.length;
+        }
+        return 0f;
     }
 
     // ── Specific Feedbacks ──
