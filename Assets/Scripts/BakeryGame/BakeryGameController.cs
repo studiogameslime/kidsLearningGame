@@ -111,34 +111,37 @@ public class BakeryGameController : BaseMiniGame
             slotRT.sizeDelta = new Vector2(slotSize, slotSize);
             slotRT.anchoredPosition = new Vector2(cx, cy);
 
-            // Indented fill — darker than tray surface
-            var fillImg = slotGO.AddComponent<Image>();
-            if (circleSprite != null) fillImg.sprite = circleSprite; // round slot
-            else if (roundedRect != null) { fillImg.sprite = roundedRect; fillImg.type = Image.Type.Sliced; }
-            fillImg.color = slotColor;
-            fillImg.raycastTarget = false;
+            // Use the ACTUAL cookie sprite as the slot silhouette shape
+            Sprite shapeSprite = (indices[i] < cookieSprites.Length) ? cookieSprites[indices[i]] : null;
 
-            // Inner shadow (bottom-right) — creates depth
+            // Inner shadow layer (bottom-right offset) — renders FIRST (behind)
             var shadowGO = new GameObject("InnerShadow");
             shadowGO.transform.SetParent(slotGO.transform, false);
             var shRT = shadowGO.AddComponent<RectTransform>();
             shRT.anchorMin = Vector2.zero; shRT.anchorMax = Vector2.one;
-            shRT.offsetMin = new Vector2(3, 0); shRT.offsetMax = new Vector2(0, -3);
+            shRT.offsetMin = new Vector2(4, 0); shRT.offsetMax = new Vector2(0, -4);
             var shImg = shadowGO.AddComponent<Image>();
-            shImg.sprite = fillImg.sprite;
-            if (fillImg.type == Image.Type.Sliced) shImg.type = Image.Type.Sliced;
+            if (shapeSprite != null) shImg.sprite = shapeSprite;
+            shImg.preserveAspect = true;
             shImg.color = slotEdgeDark;
             shImg.raycastTarget = false;
 
-            // Edge highlight (top-left) — catches light
+            // Main indented fill — cookie silhouette, darker than tray
+            var fillImg = slotGO.AddComponent<Image>();
+            if (shapeSprite != null) fillImg.sprite = shapeSprite;
+            fillImg.preserveAspect = true;
+            fillImg.color = slotColor;
+            fillImg.raycastTarget = false;
+
+            // Edge highlight layer (top-left offset) — renders LAST (on top)
             var hlGO = new GameObject("EdgeHighlight");
             hlGO.transform.SetParent(slotGO.transform, false);
             var hlRT = hlGO.AddComponent<RectTransform>();
             hlRT.anchorMin = Vector2.zero; hlRT.anchorMax = Vector2.one;
-            hlRT.offsetMin = new Vector2(0, 3); hlRT.offsetMax = new Vector2(-3, 0);
+            hlRT.offsetMin = new Vector2(0, 4); hlRT.offsetMax = new Vector2(-4, 0);
             var hlImg = hlGO.AddComponent<Image>();
-            hlImg.sprite = fillImg.sprite;
-            if (fillImg.type == Image.Type.Sliced) hlImg.type = Image.Type.Sliced;
+            if (shapeSprite != null) hlImg.sprite = shapeSprite;
+            hlImg.preserveAspect = true;
             hlImg.color = slotEdgeLight;
             hlImg.raycastTarget = false;
 
