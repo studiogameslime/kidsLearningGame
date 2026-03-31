@@ -197,6 +197,7 @@ public static class ParentDashboardViewModel
         { "laundrysorting","\u05DE\u05D9\u05D9\u05DF \u05D1\u05D2\u05D3\u05D9\u05DD" },
         { "pizzamaker",    "\u05D4\u05E4\u05D9\u05E6\u05E8\u05D9\u05D9\u05D4" },
         { "bakery",        "\u05DE\u05D0\u05E4\u05D9\u05D9\u05D4" }, // מאפייה
+        { "sockmatch",    "\u05D2\u05E8\u05D1\u05D9\u05D9\u05DD" }, // גרביים
     };
 
     // ── Hebrew category names + colors ──
