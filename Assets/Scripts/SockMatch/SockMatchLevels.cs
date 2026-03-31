@@ -1,31 +1,22 @@
 /// <summary>
 /// Sock Match difficulty configuration.
-/// Maps difficulty (1-10) to pair count.
-/// 12 sock sprites = 6 unique pairs (each sock appears twice).
+/// 12 sock sprites available. More pairs = more socks on the lines.
 /// </summary>
 public static class SockMatchLevels
 {
-    /// <summary>Number of pairs for the given difficulty.</summary>
     public static int PairCount(int difficulty)
     {
-        if (difficulty <= 2) return 2;
-        if (difficulty <= 4) return 3;
-        if (difficulty <= 6) return 4;
-        if (difficulty <= 8) return 5;
-        return 6;
+        if (difficulty <= 2) return 4;
+        if (difficulty <= 4) return 5;
+        if (difficulty <= 6) return 6;
+        if (difficulty <= 8) return 8;
+        return 10;
     }
 
-    /// <summary>
-    /// Picks random sock indices for the given pair count.
-    /// Returns array of length pairCount — each value is a sock index (0-11).
-    /// The game should create TWO of each to form pairs.
-    /// Socks 0-11 are individual designs; pairs are created by using the same sprite twice.
-    /// </summary>
     public static int[] PickSockIndices(int pairCount)
     {
         var all = new System.Collections.Generic.List<int>();
         for (int i = 0; i < 12; i++) all.Add(i);
-        // Shuffle
         for (int i = all.Count - 1; i > 0; i--)
         {
             int j = UnityEngine.Random.Range(0, i + 1);
