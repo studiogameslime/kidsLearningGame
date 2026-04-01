@@ -473,6 +473,18 @@ public static class GameDifficultyConfig
             }
         }
 
+        // Tangram
+        if (id.Contains("tangram"))
+        {
+            int tier = TangramTier(difficulty);
+            switch (tier)
+            {
+                case 0: return "3\u20134 \u05E6\u05D5\u05E8\u05D5\u05EA";  // 3–4 צורות
+                case 1: return "5\u20136 \u05E6\u05D5\u05E8\u05D5\u05EA";  // 5–6 צורות
+                default: return "7 \u05E6\u05D5\u05E8\u05D5\u05EA";        // 7 צורות
+            }
+        }
+
         // Fallback
         return $"\u05E8\u05DE\u05D4 {difficulty}"; // רמה X
     }

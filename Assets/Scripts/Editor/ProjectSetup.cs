@@ -849,10 +849,18 @@ public class ProjectSetup : EditorWindow
         pizzaMaker.hasSubItems = false;
         EditorUtility.SetDirty(pizzaMaker);
 
-        // ── Scratch Card ──
+        // ── Tangram ──
+        var tangram = CreateSO<GameItemData>($"{DataPath}/Tangram.asset");
+        tangram.id = "tangram";
+        tangram.title = "Tangram";
+        tangram.cardColor = HexColor("#8D6E63");
+        tangram.targetSceneName = "TangramGame";
+        tangram.hasSubItems = false;
+        EditorUtility.SetDirty(tangram);
+
         // ── Game Database ──
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, /* pizzaMaker hidden for v1 */ };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, tangram, /* pizzaMaker hidden for v1 */ };
         EditorUtility.SetDirty(db);
 
         // Validate age baseline configuration

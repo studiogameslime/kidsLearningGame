@@ -177,6 +177,12 @@ public class AnalyticsSetup : EditorWindow
             W(SkillCategory.Attention, 0.30f),
             W(SkillCategory.ProblemSolving, 0.30f)));
 
+        // ── Tangram ──
+        mapping.entries.Add(Entry("tangram",
+            W(SkillCategory.SpatialReasoning, 0.50f),
+            W(SkillCategory.ProblemSolving, 0.30f),
+            W(SkillCategory.FineMotor, 0.20f)));
+
         EditorUtility.SetDirty(mapping);
     }
 
@@ -198,7 +204,7 @@ public class AnalyticsSetup : EditorWindow
             "ballmaze", "towerbuilder", "sharedsticker",
             "flappybird", "simonsays", "patterncopy", "letters", "numbermaze",
             "oddoneout", "quantitymatch", "connectmatch", "numbertrain",
-            "lettertrain", "laundrysorting", "pizzamaker"
+            "lettertrain", "laundrysorting", "pizzamaker", "tangram"
         };
 
         // ── Age 2–2.5 years (24–30 months) ──
