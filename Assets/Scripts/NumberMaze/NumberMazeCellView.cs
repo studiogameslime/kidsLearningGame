@@ -18,12 +18,12 @@ public class NumberMazeCellView : MonoBehaviour
     private static readonly Color DefaultBg      = HexColor("#FFFFFF");
     private static readonly Color DefaultBorder   = HexColor("#E0E0E0");
     private static readonly Color DefaultText     = HexColor("#37474F");
-    private static readonly Color CompletedBg     = HexColor("#C8E6C9");
+    private static Color CompletedBg => GameUIConstants.CorrectColor;
     private static readonly Color CompletedBorder = HexColor("#66BB6A");
     private static readonly Color CompletedText   = HexColor("#2E7D32");
     private static readonly Color NextTargetBg    = HexColor("#FFF9C4");
     private static readonly Color NextTargetBorder = HexColor("#FFB74D");
-    private static readonly Color ErrorBg         = HexColor("#FFCDD2");
+    private static Color ErrorBg => GameUIConstants.WrongColor;
     // Start cell (number 1): bright green
     private static readonly Color StartBg         = HexColor("#A5D6A7");
     private static readonly Color StartBorder     = HexColor("#43A047");

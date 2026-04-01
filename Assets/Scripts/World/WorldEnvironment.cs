@@ -83,6 +83,49 @@ public class WorldEnvironment : MonoBehaviour
         SetStarsAlpha(0f);
     }
 
+    private static Sprite _starSprite;
+
+    private static Sprite GetStarSprite()
+    {
+        if (_starSprite != null) return _starSprite;
+
+        const int size = 64;
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        var pixels = new Color[size * size];
+        float cx = size * 0.5f, cy = size * 0.5f;
+
+        // 4-point star with soft glow
+        for (int py = 0; py < size; py++)
+        {
+            for (int px = 0; px < size; px++)
+            {
+                float dx = (px + 0.5f - cx) / (size * 0.5f);
+                float dy = (py + 0.5f - cy) / (size * 0.5f);
+                float dist = Mathf.Sqrt(dx * dx + dy * dy);
+
+                // Cross/spike shape: brighter along axes
+                float ax = Mathf.Abs(dx);
+                float ay = Mathf.Abs(dy);
+                float spike = Mathf.Max(
+                    Mathf.Max(0f, 1f - ax * 4f) * Mathf.Max(0f, 1f - ay * 1.2f),
+                    Mathf.Max(0f, 1f - ay * 4f) * Mathf.Max(0f, 1f - ax * 1.2f)
+                );
+                // Soft radial glow
+                float glow = Mathf.Max(0f, 1f - dist * 1.8f);
+                float alpha = Mathf.Clamp01(spike + glow * 0.4f);
+
+                pixels[py * size + px] = new Color(1f, 1f, 1f, alpha);
+            }
+        }
+
+        tex.SetPixels(pixels);
+        tex.Apply();
+        tex.filterMode = FilterMode.Bilinear;
+
+        _starSprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+        return _starSprite;
+    }
+
     private void CreateStars()
     {
         if (starsContainer == null) return;
@@ -90,6 +133,8 @@ public class WorldEnvironment : MonoBehaviour
         starMaxAlphas = new float[StarCount];
         starTwinkleSpeed = new float[StarCount];
         starTwinkleOffset = new float[StarCount];
+
+        var sprite = GetStarSprite();
 
         for (int i = 0; i < StarCount; i++)
         {
@@ -104,12 +149,15 @@ public class WorldEnvironment : MonoBehaviour
             rt.anchorMax = new Vector2(x, y);
             rt.pivot = new Vector2(0.5f, 0.5f);
 
-            // Tiny size (2-8px) — more variety with denser field
-            float size = Random.Range(2f, 8f);
+            // Varied sizes — small stars and a few bigger bright ones
+            float size = Random.Range(6f, 20f);
             rt.sizeDelta = new Vector2(size, size);
 
             var img = go.AddComponent<Image>();
             img.raycastTarget = false;
+            img.sprite = sprite;
+            img.type = Image.Type.Simple;
+            img.preserveAspect = true;
 
             // Soft white, pale blue, or warm yellow tint
             float tint = Random.Range(0f, 1f);

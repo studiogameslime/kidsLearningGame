@@ -41,9 +41,20 @@ public class SockMatchController : BaseMiniGame
 
     protected override string GetFallbackGameId() => "sockmatch";
 
+    // Background — same palette as World scene
+    private static readonly Color SkyColor = new Color(0.56f, 0.83f, 0.96f);           // #8FD4F5
+    private static readonly Color HillsLargeColor = new Color(0.72f, 0.84f, 0.84f);    // #B7D7D6
+    private static readonly Color HillsColor = new Color(0.62f, 0.80f, 0.77f);         // #9FCBC5
+    private static readonly Color GroundBackColor = new Color(0.56f, 0.83f, 0.42f);    // #8ED36B
+    private static readonly Color GroundFrontColor = new Color(0.47f, 0.79f, 0.34f);   // #79C956
+    private static readonly Color CloudTint = new Color(0.96f, 0.98f, 1f, 0.85f);
+    private List<RectTransform> clouds = new List<RectTransform>();
+    private float[] cloudSpeeds;
+
     protected override void Start()
     {
         canvas = GetComponentInParent<Canvas>();
+        BuildBackground();
         base.Start();
     }
 
@@ -54,6 +65,124 @@ public class SockMatchController : BaseMiniGame
         playWinSound = true;
         playConfettiOnRoundWin = true;
         delayBeforeNextRound = 0.8f;
+    }
+
+    private void LateUpdate()
+    {
+        // Drift clouds continuously (even during completion animations)
+        for (int i = 0; i < clouds.Count; i++)
+        {
+            if (clouds[i] == null) continue;
+            var pos = clouds[i].anchoredPosition;
+            pos.x += cloudSpeeds[i] * Time.deltaTime;
+            if (pos.x > 2100f) pos.x = -300f;
+            if (pos.x < -300f) pos.x = 2100f;
+            clouds[i].anchoredPosition = pos;
+        }
+    }
+
+    private void BuildBackground()
+    {
+        // Find the existing Background object and repurpose it as sky
+        var bgTransform = canvas.transform.Find("Background");
+        if (bgTransform == null) return;
+
+        var bgImg = bgTransform.GetComponent<Image>();
+        if (bgImg != null)
+        {
+            bgImg.color = SkyColor;
+            bgImg.sprite = null; // solid color sky
+        }
+
+        var bgRT = bgTransform.GetComponent<RectTransform>();
+
+        // Load layer sprites (same assets as World scene)
+        var hillsLargeSprite = Resources.Load<Sprite>("WorldArt/hillsLarge");
+        var hillsSprite = Resources.Load<Sprite>("WorldArt/hills");
+        var groundBackSprite = Resources.Load<Sprite>("WorldArt/groundLayer1");
+        var groundFrontSprite = Resources.Load<Sprite>("WorldArt/groundLayer2");
+
+        // Layers at bottom of screen — same order/style as World scene (Image.Type.Simple)
+        // Hills large — distant hills peeking behind the lower content
+        CreateSpriteLayer(bgRT, "HillsLarge", hillsLargeSprite, HillsLargeColor,
+            new Vector2(0, 0.15f), new Vector2(1, 0.42f));
+
+        // Hills — closer hills
+        CreateSpriteLayer(bgRT, "Hills", hillsSprite, HillsColor,
+            new Vector2(0, 0.08f), new Vector2(1, 0.30f));
+
+        // Ground back layer — green field
+        CreateSpriteLayer(bgRT, "GroundBack", groundBackSprite, GroundBackColor,
+            new Vector2(0, 0), new Vector2(1, 0.20f));
+
+        // Ground front layer — darker foreground grass
+        CreateSpriteLayer(bgRT, "GroundFront", groundFrontSprite, GroundFrontColor,
+            new Vector2(0, 0), new Vector2(1, 0.10f));
+
+        // Clouds (decorative, drifting in the sky area)
+        SpawnClouds(bgRT);
+    }
+
+    private void SpawnClouds(RectTransform bgRT)
+    {
+        var cloudSprites = new Sprite[8];
+        for (int i = 1; i <= 8; i++)
+            cloudSprites[i - 1] = Resources.Load<Sprite>($"WorldArt/cloud{i}");
+
+        int cloudCount = 6;
+        clouds = new List<RectTransform>(cloudCount);
+        cloudSpeeds = new float[cloudCount];
+
+        for (int i = 0; i < cloudCount; i++)
+        {
+            var sprite = cloudSprites[Random.Range(0, cloudSprites.Length)];
+            if (sprite == null) continue;
+
+            var go = new GameObject($"Cloud_{i}");
+            go.transform.SetParent(bgRT, false);
+            var rt = go.AddComponent<RectTransform>();
+
+            float scale = Random.Range(0.5f, 1.0f);
+            rt.sizeDelta = new Vector2(sprite.rect.width * scale, sprite.rect.height * scale);
+            rt.anchorMin = rt.anchorMax = new Vector2(0, 1);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+
+            float x = Random.Range(100f, 1800f);
+            float y = Random.Range(-80f, -300f); // upper sky area
+            rt.anchoredPosition = new Vector2(x, y);
+
+            var img = go.AddComponent<Image>();
+            img.sprite = sprite;
+            img.preserveAspect = true;
+            img.raycastTarget = false;
+            img.color = CloudTint;
+
+            clouds.Add(rt);
+            cloudSpeeds[i] = Random.Range(8f, 22f) * (Random.value > 0.5f ? 1f : -1f);
+        }
+    }
+
+    /// <summary>Create a background layer with a sprite, Simple type (stretched), like World scene.</summary>
+    private static void CreateSpriteLayer(RectTransform parent, string name, Sprite sprite,
+        Color tint, Vector2 anchorMin, Vector2 anchorMax)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = anchorMin;
+        rt.anchorMax = anchorMax;
+        rt.sizeDelta = Vector2.zero;
+        rt.anchoredPosition = Vector2.zero;
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        var img = go.AddComponent<Image>();
+        img.raycastTarget = false;
+        img.color = tint;
+        if (sprite != null)
+        {
+            img.sprite = sprite;
+            img.type = Image.Type.Simple;
+            img.preserveAspect = false;
+        }
     }
 
     protected override void OnRoundSetup()

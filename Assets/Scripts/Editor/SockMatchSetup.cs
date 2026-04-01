@@ -37,6 +37,7 @@ public class SockMatchSetup : EditorWindow
         data.id = "sockmatch"; data.title = "Sock Match";
         data.targetSceneName = "SockMatch"; data.hasSubItems = false;
         data.cardColor = HexColor("#80DEEA");
+        data.thumbnail = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Games Preview/SocksSorting.png");
         EditorUtility.SetDirty(data); AssetDatabase.SaveAssets();
     }
 

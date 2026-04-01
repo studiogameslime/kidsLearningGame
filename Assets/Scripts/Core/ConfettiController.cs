@@ -138,8 +138,8 @@ public class ConfettiController : MonoBehaviour
     private IEnumerator PlayConfettiThenNotify(int count)
     {
         yield return StartCoroutine(PlayConfetti(count));
-        // Only notify the bridge AFTER the full celebration completes
-        GameCompletionBridge.Instance?.OnCelebrationFinished();
+        // Discovery/star logic is now handled by BaseMiniGame after waiting for confetti.
+        // Keep this as a no-op endpoint for safety.
     }
 
     private IEnumerator PlayConfetti(int count)

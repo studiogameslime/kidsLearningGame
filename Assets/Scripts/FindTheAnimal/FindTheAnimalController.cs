@@ -61,7 +61,7 @@ public class FindTheAnimalController : BaseMiniGame
     private const int NumSlots = 8;
 
     // Hint system
-    private const float HintDelay = 3.5f;
+    private const float HintDelay = 5f;
     private const float HintInterval = 3.0f;
 
     // ── Game State ──

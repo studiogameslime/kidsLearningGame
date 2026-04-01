@@ -211,7 +211,7 @@ public class OddOneOutController : BaseMiniGame
         brt.offsetMax = new Vector2(4, 4);
         var borderImg = borderGO.AddComponent<Image>();
         if (cellSprite != null) { borderImg.sprite = cellSprite; borderImg.type = Image.Type.Sliced; }
-        borderImg.color = HexColor("#E0E0E0");
+        borderImg.color = GameUIConstants.CardBorder;
         borderImg.raycastTarget = false;
 
         // Card background
@@ -308,7 +308,7 @@ public class OddOneOutController : BaseMiniGame
     {
         // Highlight correct card green
         var bg = _slotObjects[correctSlot].GetComponent<Image>();
-        if (bg != null) bg.color = HexColor("#C8E6C9");
+        if (bg != null) bg.color = GameUIConstants.CorrectColor;
 
         // Play success animation on the odd animal
         if (_animators[correctSlot] != null)
@@ -340,7 +340,7 @@ public class OddOneOutController : BaseMiniGame
         var rt = go.GetComponent<RectTransform>();
         var img = go.GetComponent<Image>();
         Color orig = img != null ? img.color : Color.white;
-        if (img != null) img.color = HexColor("#FFCDD2");
+        if (img != null) img.color = GameUIConstants.WrongColor;
 
         Vector2 origPos = rt.anchoredPosition;
         float dur = 0.3f;
@@ -398,7 +398,7 @@ public class OddOneOutController : BaseMiniGame
         while (CurrentState == GameState.Playing)
         {
             yield return new WaitForSeconds(1f);
-            if (CurrentState == GameState.Playing && Time.time - _lastInteractionTime >= 6f)
+            if (CurrentState == GameState.Playing && Time.time - _lastInteractionTime >= 5f)
             {
                 _hintsUsed++;
                 RecordHint();

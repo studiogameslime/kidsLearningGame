@@ -35,7 +35,7 @@ public class NumberTrainController : BaseMiniGame
     private static readonly Color OptionBg       = HexColor("#FFF9C4");
     private static readonly Color OptionBorder   = HexColor("#FFC107");
     private static readonly Color OptionText     = HexColor("#F57F17");
-    private static readonly Color CorrectBg      = HexColor("#C8E6C9");
+    private static Color CorrectBg => GameUIConstants.CorrectColor;
     private static readonly Color CorrectBorder  = HexColor("#66BB6A");
     private static readonly Color ConnectorColor = HexColor("#78909C");
 
@@ -736,7 +736,7 @@ public class NumberTrainController : BaseMiniGame
         while (!IsInputLocked)
         {
             yield return new WaitForSeconds(1f);
-            if (!IsInputLocked && _trainReady && Time.time - _lastInteractionTime >= 6f)
+            if (!IsInputLocked && _trainReady && Time.time - _lastInteractionTime >= 5f)
             {
                 _hintsUsed++;
                 RecordHint();

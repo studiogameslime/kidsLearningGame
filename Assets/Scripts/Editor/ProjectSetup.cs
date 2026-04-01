@@ -172,9 +172,6 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Ball Maze…", 0.969f);
             BallMazeSetup.RunSetupSilent();
 
-            EditorUtility.DisplayProgressBar("Setting up project…", "Building Tower Stack…", 0.971f);
-            TowerStackSetup.RunSetupSilent();
-
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Bakery Game…", 0.972f);
             BakeryGameSetup.RunSetupSilent();
 
@@ -694,16 +691,6 @@ public class ProjectSetup : EditorWindow
         tower.hasSubItems = false; // Direct launch — difficulty chosen by adaptive system
         EditorUtility.SetDirty(tower);
 
-        // ── Tower Stack ──
-        var towerStack = CreateSO<GameItemData>($"{DataPath}/TowerStack.asset");
-        towerStack.id = "towerstack";
-        towerStack.title = "Tower Stack";
-        towerStack.cardColor = HexColor("#FF7043");
-        towerStack.targetSceneName = "TowerStack";
-        towerStack.hasSubItems = false;
-        towerStack.thumbnail = LoadSprite($"{previewPath}/BlocksTower.png");
-        EditorUtility.SetDirty(towerStack);
-
         // ── Shared Sticker (Spot It) ──
         var sharedSticker = CreateSO<GameItemData>($"{DataPath}/SharedSticker.asset");
         sharedSticker.id = "sharedsticker";
@@ -865,7 +852,7 @@ public class ProjectSetup : EditorWindow
         // ── Scratch Card ──
         // ── Game Database ──
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, /* towerStack hidden for v1 */ sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, /* pizzaMaker hidden for v1 */ };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, /* pizzaMaker hidden for v1 */ };
         EditorUtility.SetDirty(db);
 
         // Validate age baseline configuration
@@ -1463,7 +1450,6 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/CountingGame.unity",
             $"{ScenesPath}/TowerBuilder.unity",
             $"{ScenesPath}/BallMaze.unity",
-            $"{ScenesPath}/TowerStack.unity",
             $"{ScenesPath}/SharedSticker.unity",
             $"{ScenesPath}/FlappyBird.unity",
             $"{ScenesPath}/SimonSays.unity",

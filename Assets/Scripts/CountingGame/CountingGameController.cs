@@ -36,11 +36,11 @@ public class CountingGameController : BaseMiniGame
     private int _minCount;
     private int _maxCount;
 
-    // Button colors
-    private static readonly Color ButtonColor = new Color(0.98f, 0.98f, 1f, 1f);
-    private static readonly Color ButtonBorderColor = new Color(0.75f, 0.82f, 0.92f, 1f);
-    private static readonly Color CorrectColor = new Color(0.55f, 0.88f, 0.55f, 1f);
-    private static readonly Color WrongColor = new Color(1f, 0.55f, 0.55f, 1f);
+    // Button colors (centralized)
+    private static Color ButtonColor => GameUIConstants.ButtonBackground;
+    private static Color ButtonBorderColor => GameUIConstants.ButtonBorder;
+    private static Color CorrectColor => GameUIConstants.CorrectColor;
+    private static Color WrongColor => GameUIConstants.WrongColor;
 
     // Counting label colors per number
     private static readonly Color[] NumberDarkColors = {

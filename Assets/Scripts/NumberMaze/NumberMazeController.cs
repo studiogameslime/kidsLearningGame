@@ -399,7 +399,7 @@ public class NumberMazeController : BaseMiniGame
         while (!IsInputLocked)
         {
             yield return new WaitForSeconds(1f);
-            if (!IsInputLocked && Time.time - _lastInteractionTime >= 6f)
+            if (!IsInputLocked && Time.time - _lastInteractionTime >= 5f)
             {
                 HintNextCell();
                 _lastInteractionTime = Time.time;

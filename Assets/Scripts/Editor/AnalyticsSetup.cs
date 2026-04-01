@@ -111,12 +111,6 @@ public class AnalyticsSetup : EditorWindow
             W(SkillCategory.SpatialReasoning, 0.35f),
             W(SkillCategory.ProblemSolving, 0.25f)));
 
-        // ── Tower Stack ──
-        mapping.entries.Add(Entry("towerstack",
-            W(SkillCategory.ReactionSpeed, 0.45f),
-            W(SkillCategory.Attention, 0.30f),
-            W(SkillCategory.FineMotor, 0.25f)));
-
         // ── Shared Sticker (Spot It) ──
         mapping.entries.Add(Entry("sharedsticker",
             W(SkillCategory.VisualMatching, 0.45f),
@@ -201,7 +195,7 @@ public class AnalyticsSetup : EditorWindow
         string[] allGames = {
             "memory", "puzzle", "coloring", "fillthedots", "findthecount",
             "findtheobject", "shadows", "colormixing",
-            "ballmaze", "towerbuilder", "towerstack", "sharedsticker",
+            "ballmaze", "towerbuilder", "sharedsticker",
             "flappybird", "simonsays", "patterncopy", "letters", "numbermaze",
             "oddoneout", "quantitymatch", "connectmatch", "numbertrain",
             "lettertrain", "laundrysorting", "pizzamaker"

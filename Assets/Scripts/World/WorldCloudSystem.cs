@@ -13,7 +13,7 @@ public class WorldCloudSystem : MonoBehaviour
     [Header("Settings")]
     public RectTransform skyArea;
     public float worldWidth = 2000f;
-    public int maxClouds = 10;
+    public int maxClouds = 30;
     public float minSpeed = 12f;
     public float maxSpeed = 35f;
     public float minScale = 0.6f;
@@ -41,7 +41,7 @@ public class WorldCloudSystem : MonoBehaviour
         float skyHeight = skyArea != null ? skyArea.rect.height : 600f;
         if (skyHeight <= 0) skyHeight = 600f;
 
-        int initial = Mathf.Min(maxClouds, 8);
+        int initial = Mathf.Min(maxClouds, 20);
         for (int i = 0; i < initial; i++)
         {
             // Distribute initial clouds evenly across the width

@@ -25,6 +25,7 @@ public abstract class BaseMiniGame : MonoBehaviour
     protected bool playConfettiOnRoundWin = false;   // confetti per round (most games: false)
     protected bool playConfettiOnSessionWin = true;   // confetti when all rounds done (most games: true)
     protected bool playWinSound = true;               // SoundLibrary.PlayRandomFeedback()
+    protected bool showSummaryOnComplete = true;      // show success panel after final round
     protected string contentCategory = "";            // SessionContent.Animals, etc.
 
     // Timing
@@ -245,6 +246,8 @@ public abstract class BaseMiniGame : MonoBehaviour
         OnRoundSetup();
     }
 
+    private bool _summaryPlayAgain;
+
     private IEnumerator CompletionSequence()
     {
         // Let game set final stats
@@ -256,6 +259,10 @@ public abstract class BaseMiniGame : MonoBehaviour
 
         bool isFinalRound = !isEndless && (CurrentRound + 1 >= totalRounds);
         bool shouldPlayConfetti = isFinalRound ? playConfettiOnSessionWin : playConfettiOnRoundWin;
+
+        // Lock navigation during celebration
+        if (shouldPlayConfetti && GameCompletionBridge.Instance != null)
+            GameCompletionBridge.Instance.LockNavigation();
 
         // Confetti BEFORE exit animations so player sees it with the game content still visible
         if (shouldPlayConfetti && ConfettiController.Instance != null)
@@ -277,7 +284,42 @@ public abstract class BaseMiniGame : MonoBehaviour
         else
             yield return new WaitForSeconds(0.3f); // brief pause even without feedback
 
-        // ── Everything finished — NOW advance to next round ──
+        // 3. Wait for confetti to finish BEFORE any round/discovery logic
+        while (ConfettiController.Instance != null && ConfettiController.Instance.IsPlaying)
+            yield return null;
+
+        // ── Award star + check discovery BEFORE advancing ──
+        if (shouldPlayConfetti && GameCompletionBridge.Instance != null)
+        {
+            bool discoveryLoaded = GameCompletionBridge.Instance.AwardAndCheckDiscovery();
+            if (discoveryLoaded)
+                yield break; // DiscoveryReveal scene is loading — do NOT start a new round
+        }
+
+        // ── Show summary panel on final round ──
+        if (isFinalRound && showSummaryOnComplete)
+        {
+            _summaryPlayAgain = false;
+            int mistakes = Stats != null ? Stats.Mistakes : 0;
+
+            yield return SuccessPanel.Instance.Show(
+                mistakes,
+                playAgainCallback: () => _summaryPlayAgain = true,
+                homeCallback: () => _summaryPlayAgain = false
+            );
+
+            if (!_summaryPlayAgain)
+            {
+                // Player chose Home — exit the game
+                OnGameExit();
+                NavigationManager.GoToWorld();
+                yield break;
+            }
+
+            // Player chose Play Again — fall through to restart
+        }
+
+        // ── Advance to next round ──
         CurrentRound++;
 
         if (isEndless)

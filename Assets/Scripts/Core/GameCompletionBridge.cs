@@ -4,11 +4,13 @@ using UnityEngine.SceneManagement;
 /// <summary>
 /// Bridges game completion to star/discovery systems.
 ///
-/// Flow:
-/// 1. Game calls ConfettiController.Play()
-/// 2. Confetti starts → OnConfettiPlayed() fires → registers analytics
-/// 3. Confetti animation finishes → OnCelebrationFinished() fires
-/// 4. Awards star, checks for discovery, returns to game selection
+/// Flow (controlled by BaseMiniGame.CompletionSequence):
+/// 1. Game round completes → confetti + sounds play
+/// 2. BaseMiniGame waits for confetti to finish
+/// 3. BaseMiniGame calls AwardAndCheckDiscovery()
+/// 4. Awards star, checks for discovery
+/// 5. If discovery: loads DiscoveryReveal (returns true)
+/// 6. If no discovery: returns false → game advances to next round
 ///
 /// DontDestroyOnLoad singleton.
 /// </summary>
@@ -16,7 +18,6 @@ public class GameCompletionBridge : MonoBehaviour
 {
     public static GameCompletionBridge Instance { get; private set; }
 
-    private bool _celebrationComplete;
     private bool _navigationLocked;
 
     public GameStatsCollector ActiveCollector { get; set; }
@@ -52,39 +53,31 @@ public class GameCompletionBridge : MonoBehaviour
             ActiveCollector = null;
         }
         _navigationLocked = false;
-        _celebrationComplete = false;
     }
 
     /// <summary>
-    /// Called immediately when confetti starts playing.
-    /// Blocks exit buttons and locks navigation.
+    /// Lock navigation during celebration (called by BaseMiniGame when confetti starts).
     /// </summary>
-    public void OnConfettiPlayed()
-    {
-        _navigationLocked = true;
-        _celebrationComplete = false;
-    }
+    public void LockNavigation() => _navigationLocked = true;
 
     /// <summary>
-    /// Called when the celebration animation finishes.
-    /// Awards star, checks discoveries, then returns to game selection.
+    /// Unlock navigation (called after celebration completes).
     /// </summary>
-    public void OnCelebrationFinished()
+    public void UnlockNavigation() => _navigationLocked = false;
+
+    /// <summary>
+    /// Award star and check for discovery. Called by BaseMiniGame AFTER confetti
+    /// and sounds have finished, BEFORE advancing to the next round.
+    /// Returns true if DiscoveryReveal was loaded (caller should yield break).
+    /// </summary>
+    public bool AwardAndCheckDiscovery()
     {
-        if (_celebrationComplete) return;
-        _celebrationComplete = true;
         _navigationLocked = false;
 
         string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : null;
-        StartCoroutine(OnGameCompleted(gameId));
-    }
-
-    private System.Collections.IEnumerator OnGameCompleted(string gameId)
-    {
-        yield return new WaitForSeconds(0.3f);
 
         var profile = ProfileManager.ActiveProfile;
-        if (profile == null) yield break;
+        if (profile == null) return false;
 
         var jp = profile.journey;
 
@@ -128,7 +121,7 @@ public class GameCompletionBridge : MonoBehaviour
 
                     // Show discovery reveal
                     BubbleTransition.LoadScene("DiscoveryReveal");
-                    yield break;
+                    return true; // Discovery loaded — caller should NOT advance
                 }
                 else
                 {
@@ -139,8 +132,15 @@ public class GameCompletionBridge : MonoBehaviour
         }
 
         ProfileManager.Instance.Save();
+        return false; // No discovery — caller may advance to next round
+    }
 
-        // No discovery — return to game selection (no auto-next-game)
-        // The game's own OnAfterComplete handles what happens next
+    /// <summary>
+    /// Legacy callback — kept for backward compatibility but no longer triggers discovery.
+    /// Discovery is now handled synchronously by BaseMiniGame via AwardAndCheckDiscovery().
+    /// </summary>
+    public void OnCelebrationFinished()
+    {
+        _navigationLocked = false;
     }
 }

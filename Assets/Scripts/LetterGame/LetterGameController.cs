@@ -383,7 +383,7 @@ public class LetterGameController : BaseMiniGame
         var img = go.AddComponent<Image>();
         img.sprite = cellSprite;
         img.type = Image.Type.Sliced;
-        img.color = HexColor("#E3F2FD"); // light blue
+        img.color = GameUIConstants.ButtonBackground;
         img.raycastTarget = true;
 
         // Border
@@ -398,7 +398,7 @@ public class LetterGameController : BaseMiniGame
         var bimg = borderGO.AddComponent<Image>();
         bimg.sprite = cellSprite;
         bimg.type = Image.Type.Sliced;
-        bimg.color = HexColor("#90CAF9"); // blue border
+        bimg.color = GameUIConstants.ButtonBorder;
         bimg.raycastTarget = false;
 
         // Letter text
@@ -411,9 +411,9 @@ public class LetterGameController : BaseMiniGame
         trt.offsetMax = Vector2.zero;
         var tmp = textGO.AddComponent<TextMeshProUGUI>();
         tmp.text = letter.ToString();
-        tmp.fontSize = 72;
+        tmp.fontSize = GameUIConstants.ButtonFontSize;
         tmp.fontStyle = FontStyles.Bold;
-        tmp.color = HexColor("#1565C0"); // dark blue
+        tmp.color = GameUIConstants.ButtonTextColor;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.raycastTarget = false;
         tmp.isRightToLeftText = true;
@@ -423,9 +423,9 @@ public class LetterGameController : BaseMiniGame
 
         // Color block for button states
         var colors = btn.colors;
-        colors.normalColor = HexColor("#E3F2FD");
-        colors.highlightedColor = HexColor("#BBDEFB");
-        colors.pressedColor = HexColor("#90CAF9");
+        colors.normalColor = GameUIConstants.ButtonBackground;
+        colors.highlightedColor = GameUIConstants.ButtonHighlighted;
+        colors.pressedColor = GameUIConstants.ButtonPressed;
         btn.colors = colors;
 
         char capturedLetter = letter;
@@ -469,7 +469,7 @@ public class LetterGameController : BaseMiniGame
     {
         // Flash button green
         var img = btnGO.GetComponent<Image>();
-        if (img != null) img.color = HexColor("#C8E6C9");
+        if (img != null) img.color = GameUIConstants.CorrectColor;
 
         // Reveal the missing letter with animation
         if (_missingTile != null)
@@ -488,7 +488,7 @@ public class LetterGameController : BaseMiniGame
     {
         var rt = go.GetComponent<RectTransform>();
         var img = go.GetComponent<Image>();
-        if (img != null) img.color = HexColor("#FFCDD2"); // red flash
+        if (img != null) img.color = GameUIConstants.WrongColor;
 
         Vector2 orig = rt.anchoredPosition;
         float dur = 0.3f;

@@ -86,7 +86,8 @@ public class BallMazeController : BaseMiniGame
         for (int i = 0; i < spriteKeys.Count && i < spriteValues.Count; i++)
             spriteLookup[spriteKeys[i]] = spriteValues[i];
 
-        currentLevelIndex = 0;
+        // Start at difficulty tier from central system (0=easy, 1=medium, 2=hard)
+        currentLevelIndex = GameDifficultyConfig.BallMazeTier(Difficulty);
     }
 
     protected override void OnRoundSetup()
@@ -121,7 +122,7 @@ public class BallMazeController : BaseMiniGame
 
         ClearAll();
         // Generate a fresh procedural level based on difficulty progression
-        int levelDifficulty = Mathf.Clamp(currentLevelIndex / 2, 0, 2); // 0-1=easy, 2-3=medium, 4+=hard
+        int levelDifficulty = Mathf.Clamp(currentLevelIndex, 0, 2);
         currentLevel = BallMazeLevels.GenerateLevel(levelDifficulty);
         isComplete = false;
         ballVelocity = Vector2.zero;

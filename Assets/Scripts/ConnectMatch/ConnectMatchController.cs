@@ -544,7 +544,7 @@ public class ConnectMatchController : BaseMiniGame
         var rt = dot.GetComponent<RectTransform>();
         var img = dot.GetComponent<Image>();
         Color orig = img.color;
-        img.color = HexColor("#FFCDD2");
+        img.color = GameUIConstants.WrongColor;
 
         Vector2 origPos = rt.anchoredPosition;
         float dur = 0.25f;

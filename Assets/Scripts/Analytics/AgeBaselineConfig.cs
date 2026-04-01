@@ -248,7 +248,7 @@ public static class AgeBaselineConfig
             new Entry(3, "oddoneout"),          // still easy pool
             new Entry(3, "quantitymatch", 3),   // quantities 1-3
             new Entry(3, "numbertrain",   5),   // 5 wagons, 1 missing
-            // towerstack hidden for v1
+
             new Entry(3, "laundrysorting"),
             // new Entry(3, "pizzamaker"), // hidden for v1
         };
@@ -278,7 +278,7 @@ public static class AgeBaselineConfig
             new Entry(4, "patterncopy",   3),   // 3x3 grid
             new Entry(4, "letters",       3),   // 2-3 letter words
             new Entry(4, "connectmatch",  2),   // 2x2 grid, short path
-            // towerstack hidden for v1
+
             new Entry(4, "laundrysorting"),
             // new Entry(4, "pizzamaker"), // hidden for v1
         };
@@ -307,7 +307,7 @@ public static class AgeBaselineConfig
             new Entry(5, "patterncopy",   5),   // 5x5 grid
             new Entry(5, "letters",       4),   // up to 4 letter words
             new Entry(5, "connectmatch",  3),   // 3x3 grid, longer path
-            // towerstack hidden for v1
+
             new Entry(5, "laundrysorting"),
             // new Entry(5, "pizzamaker"), // hidden for v1
         };

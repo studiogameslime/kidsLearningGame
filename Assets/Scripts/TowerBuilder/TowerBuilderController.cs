@@ -84,11 +84,8 @@ public class TowerBuilderController : BaseMiniGame
         for (int i = 0; i < spriteKeys.Count && i < spriteValues.Count; i++)
             spriteLookup[spriteKeys[i]] = spriteValues[i];
 
-        // Map 1-10 difficulty scale to 0-3 tower difficulty tiers
-        if (Difficulty <= 3)       difficulty = 0; // easy
-        else if (Difficulty <= 5)  difficulty = 1; // medium
-        else if (Difficulty <= 8)  difficulty = 2; // hard
-        else                       difficulty = 3; // very hard
+        // Map 1-10 difficulty scale to 0-3 tower difficulty tiers (centralized)
+        difficulty = GameDifficultyConfig.TowerBuilderTier(Difficulty);
 
         // Allow manual override if selection was passed (e.g. from journey)
         if (GameContext.CurrentSelection != null)

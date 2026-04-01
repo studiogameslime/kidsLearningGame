@@ -3893,14 +3893,6 @@ public class ParentDashboardController : MonoBehaviour
                 return tier == 0 ? "\u05E8\u05D5\u05D5\u05D7 \u05E8\u05D7\u05D1, \u05D0\u05D9\u05D8\u05D9"  // רווח רחב, איטי
                      : tier == 1 ? "\u05E8\u05D5\u05D5\u05D7 \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9"           // רווח בינוני
                      :              "\u05E8\u05D5\u05D5\u05D7 \u05E6\u05E8, \u05DE\u05D4\u05D9\u05E8";       // רווח צר, מהיר
-            case "towerstack":
-                return tier == 0 ? "\u05D0\u05D9\u05D8\u05D9, \u05E7\u05D5\u05D1\u05D9\u05D5\u05EA \u05E8\u05D7\u05D1\u05D5\u05EA" // איטי, קוביות רחבות
-                     : tier == 1 ? "\u05DE\u05D4\u05D9\u05E8\u05D5\u05EA \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9\u05EA"                // מהירות בינונית
-                     :              "\u05DE\u05D4\u05D9\u05E8, \u05E7\u05D5\u05D1\u05D9\u05D5\u05EA \u05E6\u05E8\u05D5\u05EA";      // מהיר, קוביות צרות
-            case "colorvoice":
-                return tier == 0 ? "5 \u05E1\u05D9\u05D1\u05D5\u05D1\u05D9\u05DD"   // 5 סיבובים
-                     : tier == 1 ? "7 \u05E1\u05D9\u05D1\u05D5\u05D1\u05D9\u05DD"   // 7 סיבובים
-                     :              "10 \u05E1\u05D9\u05D1\u05D5\u05D1\u05D9\u05DD"; // 10 סיבובים
             case "simonsays":
                 return tier == 0 ? "\u05E8\u05E6\u05E3 \u05E7\u05E6\u05E8"   // רצף קצר
                      : tier == 1 ? "\u05E8\u05E6\u05E3 \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9" // רצף בינוני

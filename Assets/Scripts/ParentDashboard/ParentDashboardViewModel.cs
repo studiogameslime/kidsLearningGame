@@ -180,12 +180,12 @@ public static class ParentDashboardViewModel
         { "colormixing",   "\u05E2\u05E8\u05D1\u05D5\u05D1 \u05E6\u05D1\u05E2\u05D9\u05DD" },
         { "ballmaze",      "\u05DE\u05D1\u05D5\u05DA \u05D4\u05DB\u05D3\u05D5\u05E8" },
         { "towerbuilder",  "\u05D1\u05E0\u05D4 \u05DE\u05D2\u05D3\u05DC" },
-        { "towerstack",    "\u05DE\u05D2\u05D3\u05DC \u05E7\u05D5\u05D1\u05D9\u05D5\u05EA" },
         { "sharedsticker", "\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05D6\u05D4\u05D4" },
         { "flappybird",    "\u05DE\u05E2\u05D5\u05E3 \u05D4\u05E6\u05D9\u05E4\u05D5\u05E8" },
         { "simonsays",     "\u05D6\u05DB\u05E8\u05D5 \u05D0\u05EA \u05D4\u05E6\u05D1\u05E2\u05D9\u05DD" },
         { "bubblepop",     "\u05E4\u05E7\u05E2 \u05D1\u05D5\u05E2\u05D5\u05EA" },
-        { "maze",          "\u05DE\u05D1\u05D5\u05DA" },
+
+
         { "letters",       "\u05D4\u05D0\u05D5\u05EA \u05D4\u05D7\u05E1\u05E8\u05D4" },
         { "patterncopy",   "\u05D4\u05E2\u05EA\u05E7\u05EA \u05E6\u05D5\u05E8\u05D4" },
         { "numbermaze",    "\u05DE\u05D1\u05D5\u05DA \u05D4\u05DE\u05E1\u05E4\u05E8\u05D9\u05DD" },

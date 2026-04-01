@@ -284,6 +284,53 @@ public static class GameDifficultyConfig
     }
 
     // ═══════════════════════════════════════════════════════════
+    //  TOWER BUILDER
+    // ═══════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Maps difficulty 1-10 to tower builder tiers.
+    /// 1-3 → 0 (easy, 3-4 bricks), 4-5 → 1 (medium, 5-8 bricks),
+    /// 6-8 → 2 (hard, 9-12 bricks), 9-10 → 3 (very hard, 13+ bricks)
+    /// </summary>
+    public static int TowerBuilderTier(int difficulty)
+    {
+        if (difficulty <= 3) return 0;
+        if (difficulty <= 5) return 1;
+        if (difficulty <= 8) return 2;
+        return 3;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  BALL MAZE
+    // ═══════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Maps difficulty 1-10 to ball maze tiers.
+    /// 1-3 → 0 (easy), 4-7 → 1 (medium), 8-10 → 2 (hard)
+    /// </summary>
+    public static int BallMazeTier(int difficulty)
+    {
+        if (difficulty <= 3) return 0;
+        if (difficulty <= 7) return 1;
+        return 2;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  TANGRAM
+    // ═══════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Maps difficulty 1-10 to tangram figure tier.
+    /// 1-3 → 0 (easy, 3-4 pieces), 4-6 → 1 (medium, 5-6 pieces), 7-10 → 2 (hard, 7 pieces)
+    /// </summary>
+    public static int TangramTier(int difficulty)
+    {
+        if (difficulty <= 3) return 0;
+        if (difficulty <= 6) return 1;
+        return 2;
+    }
+
+    // ═══════════════════════════════════════════════════════════
     //  DIFFICULTY IMPACT LABELS (Hebrew, raw unicode)
     // ═══════════════════════════════════════════════════════════
 
