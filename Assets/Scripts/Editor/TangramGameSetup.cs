@@ -98,7 +98,7 @@ public class TangramGameSetup : EditorWindow
         titleTMP.color = Color.white; titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.raycastTarget = false;
 
-        var homeGO = CreateIconButton(topBar.transform, "HomeButton", UISheetHelper.HomeIcon,
+        var homeGO = CreateIconButton(topBar.transform, "HomeButton",
             new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f),
             new Vector2(24, 0), new Vector2(90, 90));
 
@@ -175,7 +175,7 @@ public class TangramGameSetup : EditorWindow
         }
     }
 
-    private static GameObject CreateIconButton(Transform parent, string name, string iconChar,
+    private static GameObject CreateIconButton(Transform parent, string name,
         Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPos, Vector2 size)
     {
         var go = new GameObject(name);

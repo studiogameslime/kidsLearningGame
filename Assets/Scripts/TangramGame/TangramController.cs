@@ -65,8 +65,11 @@ public class TangramController : BaseMiniGame
         // Tutorial: point to first piece
         if (activePieces.Count > 0 && TutorialHand != null)
         {
-            var firstPiece = activePieces[0];
-            TutorialHand.PointAt(firstPiece.GetComponent<RectTransform>());
+            var hp = TutorialHand.transform.parent as RectTransform;
+            var pieceRT = activePieces[0].GetComponent<RectTransform>();
+            Vector3 worldPos = pieceRT.position;
+            Vector2 localPos = (Vector2)hp.InverseTransformPoint(worldPos);
+            TutorialHand.SetPosition(localPos);
         }
     }
 
