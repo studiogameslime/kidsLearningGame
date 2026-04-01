@@ -1473,6 +1473,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/ConnectMatch.unity",
             $"{ScenesPath}/LaundrySorting.unity",
             $"{ScenesPath}/PizzaMaker.unity",
+            $"{ScenesPath}/TangramGame.unity",
             $"{ScenesPath}/DiscoveryReveal.unity",
             $"{ScenesPath}/DrawingGallery.unity",
             $"{ScenesPath}/WorldScene.unity",
