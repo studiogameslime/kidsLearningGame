@@ -172,6 +172,9 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Ball Maze…", 0.969f);
             BallMazeSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Tangram Game…", 0.971f);
+            TangramGameSetup.RunSetupSilent();
+
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Bakery Game…", 0.972f);
             BakeryGameSetup.RunSetupSilent();
 
