@@ -154,16 +154,18 @@ public class TangramController : BaseMiniGame
             img.raycastTarget = true;
             img.preserveAspect = true;
 
+            // Set the piece's rotation to match its target (fixed, no player rotation)
+            rt.localEulerAngles = new Vector3(0, 0, -placement.rotation);
+
             var piece = go.AddComponent<TangramPiece>();
 
             // Correct position = silhouette position in canvas space
             Vector2 correctCanvasPos = BoardToCanvas(placement.position * GridUnit);
-            piece.Init(placement.pieceIndex, correctCanvasPos, placement.rotation, canvas, this);
+            piece.Init(placement.pieceIndex, correctCanvasPos, canvas, this);
 
-            // Scatter in pieces area
+            // Scatter in pieces area (rotation already fixed)
             Vector2 scatterPos = GetScatterPosition(i, placements.Length, areaW, areaH);
-            float scatterRot = Random.Range(0, 8) * 45f; // random rotation in 45° steps
-            piece.SetScatteredPosition(scatterPos, scatterRot);
+            piece.SetScatteredPosition(scatterPos);
 
             activePieces.Add(piece);
         }
