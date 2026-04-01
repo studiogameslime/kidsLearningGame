@@ -111,8 +111,8 @@ public class TangramGameSetup : EditorWindow
         var boardGO = new GameObject("BoardArea");
         boardGO.transform.SetParent(safeGO.transform, false);
         var boardRT = boardGO.AddComponent<RectTransform>();
-        boardRT.anchorMin = new Vector2(0.1f, 0.25f);
-        boardRT.anchorMax = new Vector2(0.9f, 0.92f - headerFrac);
+        boardRT.anchorMin = new Vector2(0.1f, 0.28f);
+        boardRT.anchorMax = new Vector2(0.9f, 0.90f);
         boardRT.sizeDelta = Vector2.zero;
         boardRT.anchoredPosition = Vector2.zero;
 
@@ -120,16 +120,10 @@ public class TangramGameSetup : EditorWindow
         var piecesGO = new GameObject("PiecesArea");
         piecesGO.transform.SetParent(safeGO.transform, false);
         var piecesRT = piecesGO.AddComponent<RectTransform>();
-        piecesRT.anchorMin = new Vector2(0.05f, 0.02f);
-        piecesRT.anchorMax = new Vector2(0.95f, 0.22f);
+        piecesRT.anchorMin = new Vector2(0.05f, 0.03f);
+        piecesRT.anchorMax = new Vector2(0.95f, 0.25f);
         piecesRT.sizeDelta = Vector2.zero;
         piecesRT.anchoredPosition = Vector2.zero;
-
-        // TutorialHand
-        var tutGO = new GameObject("TutorialHand");
-        tutGO.transform.SetParent(canvasGO.transform, false);
-        Full(tutGO.AddComponent<RectTransform>());
-        tutGO.AddComponent<TutorialHand>();
 
         // Controller
         var ctrl = canvasGO.AddComponent<TangramController>();

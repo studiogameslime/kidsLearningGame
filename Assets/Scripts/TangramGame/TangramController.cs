@@ -21,7 +21,7 @@ public class TangramController : BaseMiniGame
     private TangramFigures.Figure currentFigure;
 
     // Board layout
-    private const float GridUnit = 100f; // 1 grid unit = 100px
+    private const float GridUnit = 140f; // 1 grid unit = 140px
 
     // Wooden table colors (from MemoryGame)
     private static readonly Color TableBase = HexColor("#5C3D2E");
@@ -30,7 +30,7 @@ public class TangramController : BaseMiniGame
     private static readonly Color PlankSep = HexColor("#5A4030");
     private static readonly Color FrameEdge = HexColor("#6B4D38");
     private static readonly Color InnerRim = HexColor("#A08060");
-    private static readonly Color SilhouetteColor = new Color(0.35f, 0.25f, 0.18f, 0.3f);
+    private static readonly Color SilhouetteColor = new Color(0.25f, 0.18f, 0.12f, 0.45f);
 
     protected override string GetFallbackGameId() => "tangram";
 
@@ -150,7 +150,7 @@ public class TangramController : BaseMiniGame
 
             var img = go.AddComponent<Image>();
             img.sprite = sprite;
-            img.color = TangramShapeGen.PieceColors[placement.pieceIndex];
+            img.color = Color.white; // sprite has color baked in
             img.raycastTarget = true;
             img.preserveAspect = true;
 
@@ -196,11 +196,11 @@ public class TangramController : BaseMiniGame
     {
         switch (pieceIndex)
         {
-            case 0: case 1: return GridUnit * 1.8f;       // large triangles
-            case 2: return GridUnit * 1.3f;                 // medium triangle
-            case 3: case 4: return GridUnit * 0.9f;         // small triangles
-            case 5: return GridUnit * 0.9f;                 // square
-            case 6: return GridUnit * 1.3f;                 // parallelogram
+            case 0: case 1: return GridUnit * 2.0f;        // large triangles
+            case 2: return GridUnit * 1.5f;                 // medium triangle
+            case 3: case 4: return GridUnit * 1.1f;         // small triangles
+            case 5: return GridUnit * 1.1f;                 // square
+            case 6: return GridUnit * 1.5f;                 // parallelogram
             default: return GridUnit;
         }
     }
