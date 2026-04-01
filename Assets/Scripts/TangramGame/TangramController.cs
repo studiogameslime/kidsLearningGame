@@ -38,6 +38,7 @@ public class TangramController : BaseMiniGame
     {
         canvas = GetComponentInParent<Canvas>();
         BuildTableBackground();
+        WireHomeButton();
         base.Start();
     }
 
@@ -348,4 +349,15 @@ public class TangramController : BaseMiniGame
     }
 
     public void OnHomePressed() => ExitGame();
+
+    private void WireHomeButton()
+    {
+        var btn = GetComponentInChildren<Canvas>()?.transform.Find("SafeArea/TopBar/HomeButton");
+        if (btn != null)
+        {
+            var button = btn.GetComponent<Button>();
+            if (button != null)
+                button.onClick.AddListener(OnHomePressed);
+        }
+    }
 }

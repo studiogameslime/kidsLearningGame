@@ -28,6 +28,11 @@ public class TangramGameSetup : EditorWindow
             BuildScene();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+            Debug.Log("[TangramSetup] Setup complete.");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[TangramSetup] Failed: {e}");
         }
         finally { EditorUtility.ClearProgressBar(); }
     }
@@ -131,12 +136,10 @@ public class TangramGameSetup : EditorWindow
         ctrl.boardArea = boardRT;
         ctrl.piecesArea = piecesRT;
 
-        // Wire home button
-        var homeBtn = homeGO.GetComponent<Button>();
-        if (homeBtn != null)
-            homeBtn.onClick.AddListener(() => ctrl.OnHomePressed());
-
+        // Home button wired at runtime by TangramController
+        EnsureFolder("Assets/Scenes");
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/TangramGame.unity");
+        Debug.Log("[TangramSetup] Scene saved to Assets/Scenes/TangramGame.unity");
     }
 
     // ── Helpers ─────────────────────────────────────────────────
