@@ -316,21 +316,6 @@ public static class GameDifficultyConfig
     }
 
     // ═══════════════════════════════════════════════════════════
-    //  TANGRAM
-    // ═══════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// Maps difficulty 1-10 to tangram figure tier.
-    /// 1-3 → 0 (easy, 3-4 pieces), 4-6 → 1 (medium, 5-6 pieces), 7-10 → 2 (hard, 7 pieces)
-    /// </summary>
-    public static int TangramTier(int difficulty)
-    {
-        if (difficulty <= 3) return 0;
-        if (difficulty <= 6) return 1;
-        return 2;
-    }
-
-    // ═══════════════════════════════════════════════════════════
     //  DIFFICULTY IMPACT LABELS (Hebrew, raw unicode)
     // ═══════════════════════════════════════════════════════════
 
@@ -470,18 +455,6 @@ public static class GameDifficultyConfig
                 case 0: return "\u05E6\u05D5\u05E8\u05D4 \u05E4\u05E9\u05D5\u05D8\u05D4"; // צורה פשוטה
                 case 1: return "\u05E6\u05D5\u05E8\u05D4 \u05D1\u05E8\u05DE\u05EA \u05E7\u05D5\u05E9\u05D9 \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9\u05EA"; // צורה ברמת קושי בינונית
                 default: return "\u05E6\u05D5\u05E8\u05D4 \u05DE\u05D5\u05E8\u05DB\u05D1\u05EA"; // צורה מורכבת
-            }
-        }
-
-        // Tangram
-        if (id.Contains("tangram"))
-        {
-            int tier = TangramTier(difficulty);
-            switch (tier)
-            {
-                case 0: return "3\u20134 \u05E6\u05D5\u05E8\u05D5\u05EA";  // 3–4 צורות
-                case 1: return "5\u20136 \u05E6\u05D5\u05E8\u05D5\u05EA";  // 5–6 צורות
-                default: return "7 \u05E6\u05D5\u05E8\u05D5\u05EA";        // 7 צורות
             }
         }
 

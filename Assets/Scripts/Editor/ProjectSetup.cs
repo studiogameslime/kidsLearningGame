@@ -172,9 +172,6 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Ball Maze…", 0.969f);
             BallMazeSetup.RunSetupSilent();
 
-            EditorUtility.DisplayProgressBar("Setting up project…", "Building Tangram Game…", 0.971f);
-            TangramGameSetup.RunSetupSilent();
-
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Bakery Game…", 0.972f);
             BakeryGameSetup.RunSetupSilent();
 
@@ -852,18 +849,9 @@ public class ProjectSetup : EditorWindow
         pizzaMaker.hasSubItems = false;
         EditorUtility.SetDirty(pizzaMaker);
 
-        // ── Tangram ──
-        var tangram = CreateSO<GameItemData>($"{DataPath}/Tangram.asset");
-        tangram.id = "tangram";
-        tangram.title = "Tangram";
-        tangram.cardColor = HexColor("#8D6E63");
-        tangram.targetSceneName = "TangramGame";
-        tangram.hasSubItems = false;
-        EditorUtility.SetDirty(tangram);
-
         // ── Game Database ──
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, tangram, /* pizzaMaker hidden for v1 */ };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, /* pizzaMaker hidden for v1 */ };
         EditorUtility.SetDirty(db);
 
         // Validate age baseline configuration
@@ -1476,7 +1464,6 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/ConnectMatch.unity",
             $"{ScenesPath}/LaundrySorting.unity",
             $"{ScenesPath}/PizzaMaker.unity",
-            $"{ScenesPath}/TangramGame.unity",
             $"{ScenesPath}/DiscoveryReveal.unity",
             $"{ScenesPath}/DrawingGallery.unity",
             $"{ScenesPath}/WorldScene.unity",
