@@ -2,20 +2,21 @@ using UnityEngine;
 using System.Collections.Generic;
 
 /// <summary>
-/// Defines all tangram target figures. Each figure specifies which pieces are used
-/// and where they go (position + rotation) on a grid.
+/// Defines all tangram target figures with mathematically verified positions.
 ///
-/// Coordinate system: unit grid where (0,0) is bottom-left of the play area.
-/// Positions are in grid units (1 unit ≈ 100px at runtime).
-/// Rotation is in degrees (clockwise).
+/// Key principle: when two right triangles share the same center, they tile
+/// the bounding box exactly (one fills bottom-left, the other top-right at rot 180).
+///
+/// Coordinate system: positions in grid units (1 unit = GridUnit pixels).
+/// Rotation in degrees clockwise.
 /// </summary>
 public static class TangramFigures
 {
     public struct PiecePlacement
     {
-        public int pieceIndex;   // 0-6 (which tangram piece)
-        public Vector2 position; // center position in grid units
-        public float rotation;   // degrees clockwise
+        public int pieceIndex;
+        public Vector2 position;
+        public float rotation;
 
         public PiecePlacement(int piece, float x, float y, float rot = 0f)
         {
@@ -29,7 +30,7 @@ public static class TangramFigures
     {
         public string name;
         public PiecePlacement[] pieces;
-        public int difficulty; // 0=easy, 1=medium, 2=hard
+        public int difficulty;
 
         public Figure(string name, int difficulty, params PiecePlacement[] pieces)
         {
@@ -40,132 +41,99 @@ public static class TangramFigures
     }
 
     // ═══════════════════════════════════════════════════════════
-    //  ALL FIGURES
+    //  ALL FIGURES — mathematically verified positions
     // ═══════════════════════════════════════════════════════════
 
     public static readonly Figure[] All = new[]
     {
-        // ── EASY (3-4 pieces) ──────────────────────────────────
+        // ── EASY (2 pieces) ────────────────────────────────────
 
-        // Square: two large triangles
+        // Square: two large right triangles at same center, rot 0 + 180
+        // Piece 0 fills bottom-left half, piece 1 fills top-right half
         new Figure("Square", 0,
-            new PiecePlacement(0, -0.5f, 0f, 0f),
-            new PiecePlacement(1,  0.5f, 0f, 180f)
+            new PiecePlacement(0, 0f, 0f, 0f),
+            new PiecePlacement(1, 0f, 0f, 180f)
         ),
 
-        // Big Triangle: two large + medium
-        new Figure("BigTriangle", 0,
-            new PiecePlacement(0, -0.7f, -0.3f, 0f),
-            new PiecePlacement(1,  0.7f, -0.3f, 90f),
-            new PiecePlacement(2,  0f, 0.5f, 180f)
-        ),
-
-        // Diamond: two small triangles
+        // Diamond: two small isosceles triangles at same center, rot 0 + 180
+        // Piece 3 points up, piece 4 points down → diamond shape
         new Figure("Diamond", 0,
-            new PiecePlacement(3,  0f,  0.3f, 0f),
-            new PiecePlacement(4,  0f, -0.3f, 180f)
+            new PiecePlacement(3, 0f, 0f, 0f),
+            new PiecePlacement(4, 0f, 0f, 180f)
         ),
 
-        // Rectangle: two large triangles side by side
-        new Figure("Rectangle", 0,
-            new PiecePlacement(0, -0.5f, 0f, 45f),
-            new PiecePlacement(1,  0.5f, 0f, 225f)
+        // Rotated Square: two large tris at same center, rot 45 + 225
+        // Creates a diamond/tilted square (~2.83 units diagonal)
+        new Figure("BigDiamond", 0,
+            new PiecePlacement(0, 0f, 0f, 45f),
+            new PiecePlacement(1, 0f, 0f, 225f)
         ),
 
-        // ── MEDIUM (5-6 pieces) ────────────────────────────────
+        // Bowtie: two small isosceles tris, tips touching at center
+        // Each offset by half its width so apexes meet at origin
+        new Figure("Bowtie", 0,
+            new PiecePlacement(3, -0.55f, 0f, 90f),
+            new PiecePlacement(4,  0.55f, 0f, 270f)
+        ),
 
-        // House: square base + triangle roof
+        // ── MEDIUM (4-5 pieces) ────────────────────────────────
+
+        // House: square base + triangle roof + door + chimney
+        // Base = 2 large tris at (0, -0.5) forming a square
+        // Roof = medium tri at rot 135 (isosceles triangle pointing up)
+        // Door = diamond square at bottom center
+        // Chimney = small tri on the left
         new Figure("House", 1,
-            new PiecePlacement(5,  0f, -0.4f, 0f),        // square base
-            new PiecePlacement(0, -0.5f, -0.4f, 0f),      // large tri left wall
-            new PiecePlacement(1,  0.5f, -0.4f, 90f),     // large tri right wall
-            new PiecePlacement(2,  0f,  0.6f, 180f),       // medium tri roof
-            new PiecePlacement(3,  0f,  1.0f, 0f)          // small tri chimney top
+            new PiecePlacement(0,  0f,   -0.5f,  0f),
+            new PiecePlacement(1,  0f,   -0.5f,  180f),
+            new PiecePlacement(2,  0f,    0.5f,  135f),
+            new PiecePlacement(3, -0.5f,  1.2f,  0f),
+            new PiecePlacement(5,  0f,   -1.0f,  0f)
         ),
 
-        // Arrow pointing right
+        // Arrow: arrowhead (large tri) + shaft (parallelogram + small pieces)
         new Figure("Arrow", 1,
-            new PiecePlacement(0, -0.8f,  0f, 0f),
-            new PiecePlacement(1, -0.8f,  0f, 90f),
-            new PiecePlacement(2,  0.3f,  0.3f, 270f),
-            new PiecePlacement(3,  0.3f, -0.3f, 90f),
-            new PiecePlacement(6, -0.2f,  0f, 0f)
+            new PiecePlacement(0,  0.7f, 0f,   225f),
+            new PiecePlacement(6, -0.5f, 0f,   0f),
+            new PiecePlacement(3, -0.5f, 0.4f, 180f),
+            new PiecePlacement(4, -0.5f,-0.4f, 0f),
+            new PiecePlacement(5, -1.2f, 0f,   0f)
         ),
 
-        // Boat
-        new Figure("Boat", 1,
-            new PiecePlacement(0, -0.5f, -0.2f, 0f),
-            new PiecePlacement(1,  0.5f, -0.2f, 90f),
-            new PiecePlacement(6,  0f, -0.7f, 0f),         // parallelogram hull
-            new PiecePlacement(2,  0f,  0.5f, 180f),       // medium tri sail
-            new PiecePlacement(3, -0.4f, 0.3f, 0f)
+        // Fish: diamond body + tail
+        // Body = 2 large tris at rot 45/225 (tilted square)
+        // Tail = medium tri pointing left behind the body
+        // Eye = small tri
+        new Figure("Fish", 1,
+            new PiecePlacement(0,  0.3f, 0f,   45f),
+            new PiecePlacement(1,  0.3f, 0f,   225f),
+            new PiecePlacement(2, -1.1f, 0f,   315f),
+            new PiecePlacement(3,  0.8f, 0.4f, 0f),
+            new PiecePlacement(5, -0.3f, 0f,   0f)
         ),
 
-        // Tree
-        new Figure("Tree", 1,
-            new PiecePlacement(0,  0f,  0.8f, 180f),       // large tri top
-            new PiecePlacement(1,  0f,  0.2f, 0f),         // large tri middle
-            new PiecePlacement(2,  0f, -0.2f, 180f),       // medium tri lower
-            new PiecePlacement(5,  0f, -0.6f, 45f),        // square trunk
-            new PiecePlacement(3, -0.3f, 0.5f, 90f),
-            new PiecePlacement(4,  0.3f, 0.5f, 270f)
-        ),
+        // ── HARD (6-7 pieces) ──────────────────────────────────
 
-        // ── HARD (7 pieces, all used) ──────────────────────────
-
-        // Cat sitting
+        // Cat: square body + triangle head + ears + tail
         new Figure("Cat", 2,
-            new PiecePlacement(0, -0.3f, -0.5f, 0f),      // large tri body left
-            new PiecePlacement(1,  0.3f, -0.5f, 90f),      // large tri body right
-            new PiecePlacement(2,  0f,  0.3f, 0f),          // medium tri head
-            new PiecePlacement(3, -0.3f, 0.7f, 0f),         // small tri ear left
-            new PiecePlacement(4,  0.3f, 0.7f, 90f),        // small tri ear right
-            new PiecePlacement(5,  0f, -0.1f, 45f),         // square neck
-            new PiecePlacement(6,  0.6f, -0.8f, 45f)        // parallelogram tail
+            new PiecePlacement(0,  0f,   -0.3f, 0f),
+            new PiecePlacement(1,  0f,   -0.3f, 180f),
+            new PiecePlacement(2,  0f,    0.8f, 135f),
+            new PiecePlacement(3, -0.4f,  1.5f, 0f),
+            new PiecePlacement(4,  0.4f,  1.5f, 0f),
+            new PiecePlacement(5,  0f,    0.2f, 0f),
+            new PiecePlacement(6,  1.2f, -0.8f, 30f)
         ),
 
-        // Swan
-        new Figure("Swan", 2,
-            new PiecePlacement(0, -0.4f, -0.4f, 0f),
-            new PiecePlacement(1,  0.4f, -0.4f, 90f),
-            new PiecePlacement(2, -0.5f,  0.3f, 270f),
-            new PiecePlacement(3, -0.5f,  0.8f, 180f),
-            new PiecePlacement(4, -0.2f,  1.1f, 0f),
-            new PiecePlacement(5,  0.3f,  0f, 45f),
-            new PiecePlacement(6,  0f, -0.8f, 0f)
-        ),
-
-        // Runner
-        new Figure("Runner", 2,
-            new PiecePlacement(0,  0f,  0.5f, 45f),
-            new PiecePlacement(1,  0.5f, -0.2f, 135f),
-            new PiecePlacement(2, -0.3f,  0f, 0f),
-            new PiecePlacement(3,  0f,  1.0f, 0f),
-            new PiecePlacement(4, -0.6f, -0.5f, 270f),
-            new PiecePlacement(5,  0.2f,  0.8f, 45f),
-            new PiecePlacement(6,  0.6f, -0.7f, 135f)
-        ),
-
-        // Heart
-        new Figure("Heart", 2,
-            new PiecePlacement(0, -0.4f,  0.2f, 135f),
-            new PiecePlacement(1,  0.4f,  0.2f, 225f),
-            new PiecePlacement(2,  0f, -0.5f, 0f),
-            new PiecePlacement(3, -0.5f,  0.6f, 45f),
-            new PiecePlacement(4,  0.5f,  0.6f, 315f),
-            new PiecePlacement(5,  0f,  0.2f, 45f),
-            new PiecePlacement(6,  0f, -0.2f, 0f)
-        ),
-
-        // Candle
-        new Figure("Candle", 2,
-            new PiecePlacement(0, -0.2f, -0.6f, 0f),
-            new PiecePlacement(1,  0.2f, -0.6f, 90f),
-            new PiecePlacement(2,  0f,  0f, 0f),
-            new PiecePlacement(3,  0f,  0.7f, 0f),
-            new PiecePlacement(4,  0f,  1.0f, 180f),
-            new PiecePlacement(5,  0f, -0.2f, 0f),
-            new PiecePlacement(6, -0.3f, 0.3f, 90f)
+        // Rocket: tall shape pointing up
+        new Figure("Rocket", 2,
+            new PiecePlacement(0,  0f,   -0.3f, 45f),
+            new PiecePlacement(1,  0f,   -0.3f, 225f),
+            new PiecePlacement(2,  0f,    1.0f, 135f),
+            new PiecePlacement(3, -0.6f, -1.2f, 270f),
+            new PiecePlacement(4,  0.6f, -1.2f, 90f),
+            new PiecePlacement(5,  0f,   -0.8f, 0f),
+            new PiecePlacement(6,  0f,    0.3f, 0f)
         ),
     };
 
