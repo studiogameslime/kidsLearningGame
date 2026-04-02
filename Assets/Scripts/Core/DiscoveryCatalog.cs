@@ -23,6 +23,24 @@ public static class DiscoveryCatalog
         "Green", "Orange", "Purple", "Pink", "Cyan", "Brown", "Black", "White", "Grey"
     };
 
+    /// <summary>
+    /// Ordered list of aquarium rewards. Used by AquariumController for the
+    /// feeding-based progression loop (NOT the scratch-card system).
+    /// </summary>
+    public static readonly string[] AquariumRewardOrder =
+    {
+        "Fish_0", "AquariumItem_0", "Fish_1", "AquariumItem_1",
+        "Fish_2", "AquariumItem_2", "Fish_3", "AquariumItem_3",
+        "Fish_4", "AquariumItem_4", "Fish_5", "AquariumItem_5",
+        "Fish_6", "AquariumItem_6", "Fish_7", "AquariumItem_7",
+        "Fish_8", "AquariumItem_8", "Fish_9", "AquariumItem_9",
+        "Fish_10", "AquariumItem_10", "Fish_11", "AquariumItem_11",
+        "AquariumItem_12", "AquariumItem_13", "AquariumItem_14", "AquariumItem_15",
+        "AquariumItem_16", "AquariumItem_17", "AquariumItem_18", "AquariumItem_19",
+        "AquariumItem_20", "AquariumItem_21", "AquariumItem_22", "AquariumItem_23",
+        "AquariumItem_24", "AquariumItem_25", "AquariumItem_26", "AquariumItem_27"
+    };
+
     public static bool HasMore(JourneyProgress jp)
     {
         return NextAnimal(jp) != null || NextColor(jp) != null;
@@ -109,5 +127,4 @@ public static class DiscoveryCatalog
         }
         return null;
     }
-
 }

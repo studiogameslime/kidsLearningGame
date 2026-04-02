@@ -88,6 +88,13 @@ public static class NavigationManager
         BubbleTransition.LoadScene("ParentDashboard");
     }
 
+    /// <summary>Go to the Aquarium collectible scene.</summary>
+    public static void GoToAquarium()
+    {
+        GameContext.Clear();
+        BubbleTransition.LoadScene("AquariumScene");
+    }
+
     /// <summary>Go to the drawing gallery.</summary>
     public static void GoToDrawingGallery()
     {

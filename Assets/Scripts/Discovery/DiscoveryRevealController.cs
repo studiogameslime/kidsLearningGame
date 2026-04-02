@@ -114,6 +114,7 @@ public class DiscoveryRevealController : MonoBehaviour
             backgroundImage.color = new Color(0.98f, 0.95f, 0.90f);
     }
 
+
     // ── Scratch Overlay (Textured Surface) ─────────────────────────
 
     private void CreateScratchOverlay()
@@ -485,9 +486,9 @@ public class DiscoveryRevealController : MonoBehaviour
     {
         switch (discovery.type)
         {
-            case "animal": return GetAnimalHebrew(discovery.id);
-            case "color":  return GetColorHebrew(discovery.id);
-            default:       return discovery.id;
+            case "animal":   return GetAnimalHebrew(discovery.id);
+            case "color":    return GetColorHebrew(discovery.id);
+            default:         return discovery.id;
         }
     }
 

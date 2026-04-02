@@ -243,6 +243,9 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Parent Dashboard…", 0.997f);
             ParentDashboardSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Aquarium Scene…", 0.998f);
+            AquariumSceneSetup.RunSetupSilent();
+
             // Open ProfileSelection scene (entry point)
             EditorSceneManager.OpenScene($"{ScenesPath}/ProfileSelection.unity");
         }
@@ -1468,6 +1471,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/DrawingGallery.unity",
             $"{ScenesPath}/WorldScene.unity",
             $"{ScenesPath}/ParentDashboard.unity",
+            $"{ScenesPath}/AquariumScene.unity",
         };
 
         var buildScenes = scenePaths.Select(p => new EditorBuildSettingsScene(p, true)).ToArray();

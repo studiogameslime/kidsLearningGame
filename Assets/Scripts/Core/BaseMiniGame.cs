@@ -296,50 +296,13 @@ public abstract class BaseMiniGame : MonoBehaviour
                 yield break; // DiscoveryReveal scene is loading — do NOT start a new round
         }
 
-        // ── Show summary panel on final round ──
-        if (isFinalRound && showSummaryOnComplete)
-        {
-            _summaryPlayAgain = false;
-            int mistakes = Stats != null ? Stats.Mistakes : 0;
-
-            yield return SuccessPanel.Instance.Show(
-                mistakes,
-                playAgainCallback: () => _summaryPlayAgain = true,
-                homeCallback: () => _summaryPlayAgain = false
-            );
-
-            if (!_summaryPlayAgain)
-            {
-                // Player chose Home — exit the game
-                OnGameExit();
-                NavigationManager.GoToWorld();
-                yield break;
-            }
-
-            // Player chose Play Again — fall through to restart
-        }
-
-        // ── Advance to next round ──
+        // ── Advance to next round (always continue) ──
         CurrentRound++;
-
-        if (isEndless)
-        {
-            OnRoundCleanup();
-            SetupNewRound();
-            CurrentState = GameState.Playing;
-        }
-        else if (CurrentRound >= totalRounds)
-        {
+        if (CurrentRound >= totalRounds && !isEndless)
             CurrentRound = 0;
-            OnRoundCleanup();
-            SetupNewRound();
-            CurrentState = GameState.Playing;
-        }
-        else
-        {
-            OnRoundCleanup();
-            SetupNewRound();
-            CurrentState = GameState.Playing;
-        }
+
+        OnRoundCleanup();
+        SetupNewRound();
+        CurrentState = GameState.Playing;
     }
 }

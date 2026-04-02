@@ -626,6 +626,8 @@ public class WorldController : MonoBehaviour
 
         // Game shelf removed — ToyBox opens game collection directly
 
+        // Aquarium on CENTER screen
+        SpawnAquarium(viewportWidth, centerOffset);
     }
 
     private void SpawnAnimals(List<string> animalIds, float screenWidth, float xOffset = 0f)
@@ -829,6 +831,62 @@ public class WorldController : MonoBehaviour
                 spawnedBalloons.Add(balloon);
             }
         }
+    }
+
+    private void SpawnAquarium(float screenWidth, float xOffset = 0f)
+    {
+        if (grassArea == null) return;
+
+        float grassHeight = grassArea.rect.height;
+        if (grassHeight <= 0) grassHeight = 500f;
+
+        // Load aquarium icon sprite
+        var sprites = Resources.LoadAll<Sprite>("Aquarium/AquariumIcon");
+        Sprite aquariumSprite = null;
+        if (sprites != null && sprites.Length > 0)
+            aquariumSprite = sprites[0];
+        if (aquariumSprite == null)
+            aquariumSprite = Resources.Load<Sprite>("Aquarium/AquariumIcon");
+
+        if (aquariumSprite == null)
+        {
+            Debug.LogWarning("[WorldController] AquariumIcon sprite not found in Resources/Aquarium/");
+            return;
+        }
+
+        float aquariumSize = 180f;
+
+        // Shadow behind the aquarium
+        var shadowGO = new GameObject("AquariumShadow");
+        shadowGO.transform.SetParent(grassArea, false);
+        var shadowRT = shadowGO.AddComponent<RectTransform>();
+        shadowRT.anchorMin = Vector2.zero;
+        shadowRT.anchorMax = Vector2.zero;
+        shadowRT.pivot = new Vector2(0.5f, 0.5f);
+        shadowRT.sizeDelta = new Vector2(aquariumSize * 0.7f, aquariumSize * 0.18f);
+        shadowRT.anchoredPosition = new Vector2(xOffset + screenWidth * 0.35f, 134f);
+        var shadowImg = shadowGO.AddComponent<Image>();
+        if (circleSprite != null) shadowImg.sprite = circleSprite;
+        shadowImg.color = new Color(0f, 0f, 0f, 0.12f);
+        shadowImg.raycastTarget = false;
+
+        // Aquarium icon
+        var go = new GameObject("Aquarium");
+        go.transform.SetParent(grassArea, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.zero;
+        rt.pivot = new Vector2(0.5f, 0f);
+        rt.sizeDelta = new Vector2(aquariumSize, aquariumSize);
+        rt.anchoredPosition = new Vector2(xOffset + screenWidth * 0.35f, 139f);
+
+        var img = go.AddComponent<Image>();
+        img.sprite = aquariumSprite;
+        img.preserveAspect = true;
+        img.raycastTarget = true;
+
+        var aquarium = go.AddComponent<WorldAquarium>();
+        aquarium.circleSprite = circleSprite;
     }
 
     private void SpawnGameShelf(float screenWidth, float xOffset = 0f)

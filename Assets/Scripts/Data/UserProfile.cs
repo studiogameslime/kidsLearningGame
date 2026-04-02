@@ -21,6 +21,7 @@ public class UserProfile
     public GameProgress progress = new GameProgress();
     public JourneyProgress journey = new JourneyProgress();
     public ChildAnalyticsProfile analytics = new ChildAnalyticsProfile();
+    public AquariumCollection aquarium = new AquariumCollection();
     public List<SavedDrawing> savedDrawings = new List<SavedDrawing>();
     public List<ParentImage> parentImages = new List<ParentImage>();
 
@@ -166,6 +167,27 @@ public class ParentImage
     public string imagePath;   // relative path in persistentDataPath
     public string label;       // optional parent-given label
     public long createdAt;
+}
+
+/// <summary>
+/// Tracks the player's aquarium collectibles and decoration layout.
+/// </summary>
+[Serializable]
+public class AquariumCollection
+{
+    public List<string> unlockedFishIds = new List<string>();
+    public List<string> unlockedDecorationIds = new List<string>();
+    public List<AquariumItemPlacement> decorationPlacements = new List<AquariumItemPlacement>();
+    public int feedProgress;                // current feeding progress toward next gift (0 to feedsPerGift)
+    public int nextRewardIndex;             // index into AquariumRewardOrder for next unlock
+}
+
+[Serializable]
+public class AquariumItemPlacement
+{
+    public string itemId;
+    public float x;
+    public float y;
 }
 
 /// <summary>

@@ -213,6 +213,14 @@ public class WorldInputHandler : MonoBehaviour
                 return;
             }
 
+            // Check for aquarium
+            var aquarium = go.GetComponent<WorldAquarium>();
+            if (aquarium != null)
+            {
+                aquarium.OnTap();
+                return;
+            }
+
             // Check for game shelf (game selection entry point)
             var shelf = go.GetComponent<WorldGameShelf>();
             if (shelf != null)
