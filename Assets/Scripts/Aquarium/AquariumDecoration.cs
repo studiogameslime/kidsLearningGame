@@ -8,25 +8,46 @@ using UnityEngine.UI;
 /// Free drag within aquarium, but resting placement restricted to sand area.
 /// If released above sand, sinks down with a playful wobble animation.
 /// </summary>
-public class AquariumDecoration : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+public class AquariumDecoration : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
 {
     public string itemId;
     public RectTransform dragBounds;
     public AquariumController controller;
-    public float sandMaxY = 0.35f; // normalized Y anchor — decorations rest below this
+    public float sandMaxY = 0.35f;
 
     private RectTransform rt;
     private bool isFalling;
+    private bool isWiggling;
+    private bool wasDragged;
+    private float idleWiggleTimer;
+    private float nextIdleWiggle;
 
     private void Awake()
     {
         rt = GetComponent<RectTransform>();
+        nextIdleWiggle = Random.Range(8f, 18f);
+    }
+
+    private void Update()
+    {
+        if (isFalling || isWiggling) return;
+
+        // Occasional ambient wiggle
+        idleWiggleTimer += Time.deltaTime;
+        if (idleWiggleTimer >= nextIdleWiggle)
+        {
+            idleWiggleTimer = 0f;
+            nextIdleWiggle = Random.Range(10f, 20f);
+            StartCoroutine(Wiggle(4f, 0.3f));
+        }
     }
 
     public void OnBeginDrag(PointerEventData eventData)
     {
         if (isFalling) StopAllCoroutines();
         isFalling = false;
+        isWiggling = false;
+        wasDragged = true;
 
         rt.SetAsLastSibling();
         rt.localScale = Vector3.one * 1.08f;
@@ -156,5 +177,42 @@ public class AquariumDecoration : MonoBehaviour, IBeginDragHandler, IDragHandler
 
         if (controller != null)
             controller.OnDecorationMoved(this);
+    }
+
+    // ── Tap Wiggle ──
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        // Ignore if this was a drag, not a tap
+        if (wasDragged) { wasDragged = false; return; }
+        if (isFalling || isWiggling) return;
+
+        StartCoroutine(Wiggle(8f, 0.4f));
+
+        // Spawn a couple tiny bubbles
+        if (controller != null)
+            controller.SpawnBubblesAt(rt.anchoredPosition, 2);
+    }
+
+    private IEnumerator Wiggle(float maxAngle, float duration)
+    {
+        isWiggling = true;
+        float t = 0f;
+        Quaternion startRot = rt.localRotation;
+
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float p = t / duration;
+            float angle = Mathf.Sin(p * Mathf.PI * 4f) * maxAngle * (1f - p);
+            float scale = 1f + Mathf.Sin(p * Mathf.PI) * 0.05f;
+            rt.localRotation = Quaternion.Euler(0, 0, angle);
+            rt.localScale = Vector3.one * scale;
+            yield return null;
+        }
+
+        rt.localRotation = startRot;
+        rt.localScale = Vector3.one;
+        isWiggling = false;
     }
 }

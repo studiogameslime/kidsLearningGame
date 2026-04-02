@@ -34,7 +34,6 @@ public class TowerBuilderSetup : EditorWindow
 
     private static readonly int HeaderHeight = SetupConstants.HeaderHeight;
 
-    [MenuItem("Tools/Kids Learning Game/Setup Tower Builder")]
     public static void ShowWindow()
     {
         RunSetupSilent();

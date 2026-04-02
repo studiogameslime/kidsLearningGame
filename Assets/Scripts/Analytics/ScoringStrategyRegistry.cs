@@ -70,6 +70,9 @@ public static class ScoringStrategyRegistry
         if (id.Contains("pizza"))
             return new PizzaMakerScoringStrategy();
 
+        if (id.Contains("sizesort"))
+            return new SizeSortScoringStrategy();
+
         return _default;
     }
 }

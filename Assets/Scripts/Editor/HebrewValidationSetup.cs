@@ -39,7 +39,6 @@ public static class HebrewValidationSetup
         "Hebrew + number + percent",
     };
 
-    [MenuItem("Tools/Kids Learning Game/Create Hebrew Validation Scene")]
     public static void Create()
     {
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);

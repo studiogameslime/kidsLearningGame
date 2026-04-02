@@ -60,7 +60,6 @@ public class TowerGameAssetOrganizer : EditorWindow
         (23, "Stone_Block_Plank_Wide"),
     };
 
-    [MenuItem("Tools/Kids Learning Game/Organize Tower Assets")]
     public static void Organize()
     {
         try

@@ -204,10 +204,10 @@ public class ParentDashboardController : MonoBehaviour
 
     private void OnGatePassed()
     {
-        // Show rewarded ad after solving the math gate, then open dashboard
-        if (RewardedAdManager.Instance != null)
+        // Show interstitial ad when entering parent dashboard
+        if (InterstitialAdManager.Instance != null)
         {
-            RewardedAdManager.Instance.ShowAd(OpenDashboard);
+            InterstitialAdManager.Instance.ShowAd(OpenDashboard);
         }
         else
         {
@@ -2017,6 +2017,21 @@ public class ParentDashboardController : MonoBehaviour
         gcVL.childForceExpandHeight = false;
         gcVL.childControlWidth = true;
         gcVL.childControlHeight = true;
+
+        // ── Active games counter ──
+        {
+            int activeCount = 0;
+            int totalCount = _data.games.Count;
+            foreach (var g in _data.games)
+            {
+                bool vis = g.recommendation != null ? g.recommendation.finalVisible : g.systemVisibility;
+                if (vis) activeCount++;
+            }
+            var counterTMP = AddChildTMP(gridContentGO.transform,
+                H($"{activeCount} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05E4\u05E2\u05D9\u05DC\u05D9\u05DD \u05DE\u05EA\u05D5\u05DA {totalCount}"), // X משחקים פעילים מתוך Y
+                22, TextMedium, TextAlignmentOptions.Center);
+            counterTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 40;
+        }
 
         var gridGO = new GameObject("GamesGrid");
         gridGO.transform.SetParent(gridContentGO.transform, false);

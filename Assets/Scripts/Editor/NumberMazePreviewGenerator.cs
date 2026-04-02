@@ -8,7 +8,6 @@ using System.Collections.Generic;
 /// </summary>
 public class NumberMazePreviewGenerator : EditorWindow
 {
-    [MenuItem("Tools/Kids Learning Game/Generate Number Maze Preview")]
     public static void Generate()
     {
         int width = 1024;

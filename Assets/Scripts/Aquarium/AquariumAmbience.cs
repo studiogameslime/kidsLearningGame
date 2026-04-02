@@ -13,22 +13,32 @@ public class AquariumAmbience : MonoBehaviour
 
     private float bubbleTimer;
     private float sparkleTimer;
+    private float bigBubbleTimer;
 
     private void Start()
     {
-        // Create light rays — more visible, wider, warm-tinted
         for (int i = 0; i < 5; i++)
             CreateLightRay(i);
+
+        bigBubbleTimer = Random.Range(0.5f, 1.5f);
     }
 
     private void Update()
     {
-        // Bubbles — varied interval for natural feel
+        // Small ambient bubbles
         bubbleTimer += Time.deltaTime;
-        if (bubbleTimer >= Random.Range(0.4f, 0.8f))
+        if (bubbleTimer >= Random.Range(0.13f, 0.27f))
         {
             bubbleTimer = 0f;
             SpawnBubble();
+        }
+
+        // Large poppable bubbles
+        bigBubbleTimer -= Time.deltaTime;
+        if (bigBubbleTimer <= 0f)
+        {
+            bigBubbleTimer = Random.Range(1f, 2.5f);
+            SpawnPoppableBubble();
         }
 
         // Occasional sparkle
@@ -219,6 +229,142 @@ public class AquariumAmbience : MonoBehaviour
             // Subtle scale pulse
             float scale = 0.8f + Mathf.Sin(t * Mathf.PI) * 0.5f;
             rt.localScale = Vector3.one * scale;
+            yield return null;
+        }
+
+        Destroy(rt.gameObject);
+    }
+
+    // ── Large Poppable Bubbles ──
+
+    private void SpawnPoppableBubble()
+    {
+        if (areaRT == null || circleSprite == null) return;
+
+        Rect bounds = areaRT.rect;
+        float x = Random.Range(bounds.xMin + 80f, bounds.xMax - 80f);
+        float startY = bounds.yMin + 30f;
+
+        var go = new GameObject("PoppableBubble");
+        go.transform.SetParent(areaRT, false);
+
+        var rt = go.AddComponent<RectTransform>();
+        float size = Random.Range(45f, 85f);
+        rt.sizeDelta = new Vector2(size, size);
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = new Vector2(x, startY);
+
+        // Main bubble
+        var img = go.AddComponent<Image>();
+        img.sprite = circleSprite;
+        img.color = new Color(0.85f, 0.95f, 1f, 0.4f);
+        img.raycastTarget = true; // tappable!
+
+        // Shine highlight
+        var shineGO = new GameObject("Shine");
+        shineGO.transform.SetParent(go.transform, false);
+        var shineRT = shineGO.AddComponent<RectTransform>();
+        shineRT.anchorMin = new Vector2(0.2f, 0.55f);
+        shineRT.anchorMax = new Vector2(0.5f, 0.85f);
+        shineRT.offsetMin = Vector2.zero;
+        shineRT.offsetMax = Vector2.zero;
+        var shineImg = shineGO.AddComponent<Image>();
+        shineImg.sprite = circleSprite;
+        shineImg.color = new Color(1f, 1f, 1f, 0.3f);
+        shineImg.raycastTarget = false;
+
+        // Soft glow behind
+        var glowGO = new GameObject("Glow");
+        glowGO.transform.SetParent(go.transform, false);
+        glowGO.transform.SetAsFirstSibling();
+        var glowRT = glowGO.AddComponent<RectTransform>();
+        glowRT.anchorMin = new Vector2(-0.2f, -0.2f);
+        glowRT.anchorMax = new Vector2(1.2f, 1.2f);
+        glowRT.offsetMin = Vector2.zero;
+        glowRT.offsetMax = Vector2.zero;
+        var glowImg = glowGO.AddComponent<Image>();
+        glowImg.sprite = circleSprite;
+        glowImg.color = new Color(0.8f, 0.93f, 1f, 0.1f);
+        glowImg.raycastTarget = false;
+
+        // Add pop behavior
+        var popper = go.AddComponent<PoppableBubble>();
+        popper.ambience = this;
+
+        StartCoroutine(RiseBubble(rt, img, bounds));
+    }
+
+    private IEnumerator RiseBubble(RectTransform rt, Image img, Rect bounds)
+    {
+        float speed = Random.Range(25f, 50f);
+        float driftPhase = Random.Range(0f, Mathf.PI * 2f);
+        float driftAmp = Random.Range(15f, 30f);
+        float startX = rt.anchoredPosition.x;
+        float elapsed = 0f;
+
+        while (rt != null && rt.anchoredPosition.y < bounds.yMax + 30f)
+        {
+            elapsed += Time.deltaTime;
+            Vector2 pos = rt.anchoredPosition;
+            pos.y += speed * Time.deltaTime;
+            pos.x = startX + Mathf.Sin(driftPhase + elapsed * 0.8f) * driftAmp;
+
+            // Subtle scale breathing
+            float pulse = 1f + Mathf.Sin(elapsed * 2f) * 0.04f;
+            rt.localScale = Vector3.one * pulse;
+
+            rt.anchoredPosition = pos;
+            yield return null;
+        }
+
+        if (rt != null) Destroy(rt.gameObject);
+    }
+
+    /// <summary>Called by PoppableBubble when tapped. Spawns burst particles.</summary>
+    public void PopBubbleAt(Vector2 pos, float size)
+    {
+        if (circleSprite == null) return;
+
+        int count = Mathf.RoundToInt(size * 0.3f) + 3;
+        for (int i = 0; i < count; i++)
+        {
+            var go = new GameObject("PopParticle");
+            go.transform.SetParent(areaRT, false);
+            var rt = go.AddComponent<RectTransform>();
+            float s = Random.Range(4f, 10f);
+            rt.sizeDelta = new Vector2(s, s);
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = pos + Random.insideUnitCircle * size * 0.3f;
+
+            var img = go.AddComponent<Image>();
+            img.sprite = circleSprite;
+            img.color = new Color(0.85f, 0.95f, 1f, 0.6f);
+            img.raycastTarget = false;
+
+            StartCoroutine(AnimatePopParticle(rt, img, pos));
+        }
+    }
+
+    private IEnumerator AnimatePopParticle(RectTransform rt, Image img, Vector2 origin)
+    {
+        float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
+        float speed = Random.Range(80f, 200f);
+        Vector2 vel = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * speed;
+        float lifetime = Random.Range(0.3f, 0.5f);
+        float t = 0f;
+        Color c = img.color;
+
+        while (t < lifetime)
+        {
+            t += Time.deltaTime;
+            float p = t / lifetime;
+            vel.y += 50f * Time.deltaTime; // slight upward bias
+            origin += vel * Time.deltaTime;
+            vel *= 0.95f; // drag
+            rt.anchoredPosition = origin;
+            rt.localScale = Vector3.one * (1f - p * 0.7f);
+            img.color = new Color(c.r, c.g, c.b, c.a * (1f - p));
             yield return null;
         }
 

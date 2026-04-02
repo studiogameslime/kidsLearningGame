@@ -32,6 +32,15 @@ public class FingerTrail : MonoBehaviour
         new Color(0.70f, 0.35f, 0.95f), // Purple
     };
 
+    // ── Public API ─────────────────────────────────────────────────
+    public static void SetEnabled(bool enabled)
+    {
+        if (_instance != null && _instance._canvasGroup != null)
+            _instance._canvasGroup.alpha = enabled ? 1f : 0f;
+        _disabled = !enabled;
+    }
+    private static bool _disabled;
+
     // ── Runtime state ──────────────────────────────────────────────
     static FingerTrail _instance;
 
@@ -76,7 +85,8 @@ public class FingerTrail : MonoBehaviour
     {
         if (_canvas == null || _pool == null) return;
 
-        // Support both touch (mobile) and mouse (editor)
+        if (_disabled) return;
+
         bool hasInput = Input.touchCount > 0 || Input.GetMouseButton(0);
         if (!hasInput) return;
 

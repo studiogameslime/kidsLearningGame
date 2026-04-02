@@ -12,7 +12,6 @@ using TMPro;
 /// </summary>
 public static class GlyphAdjustmentCleaner
 {
-    [MenuItem("Tools/Kids Learning Game/Clear Glyph Adjustments")]
     public static void ClearAll()
     {
         int totalCleared = ClearAllFontAssets();

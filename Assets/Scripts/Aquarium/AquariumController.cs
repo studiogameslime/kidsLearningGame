@@ -36,7 +36,7 @@ public class AquariumController : MonoBehaviour
     public float decorationSize = 70f;
     public float feedProximityRadius = 300f;
     public int maxFeedResponders = 4;
-    public int feedsPerGift = 5;
+    public int baseFeedsPerGift = 5;
     public int maxActiveFoodPieces = 20;
 
     private List<AquariumFish> spawnedFish = new List<AquariumFish>();
@@ -72,6 +72,7 @@ public class AquariumController : MonoBehaviour
         }
 
         LoadFoodSprites();
+        FingerTrail.SetEnabled(false);
 
         if (backButton != null)
             backButton.onClick.AddListener(OnBackPressed);
@@ -119,7 +120,6 @@ public class AquariumController : MonoBehaviour
             // Food placement mode
             if (isPlacingFood)
             {
-                // Check if the tap is on the food button (toggle off)
                 if (foodButton != null && IsPointerOverObject(foodButton.gameObject, Input.mousePosition))
                 {
                     // Let the Button.onClick handle the toggle
@@ -128,6 +128,11 @@ public class AquariumController : MonoBehaviour
                 {
                     TryPlaceFood(Input.mousePosition);
                 }
+            }
+            else if (!giftActive)
+            {
+                // Interactive taps (fish > decoration > water)
+                HandleInteractiveTap(Input.mousePosition);
             }
         }
 
@@ -163,6 +168,121 @@ public class AquariumController : MonoBehaviour
         return RectTransformUtility.RectangleContainsScreenPoint(rt, screenPos, null);
     }
 
+    // ── Interactive Taps (fish > decoration > water) ──
+
+    private void HandleInteractiveTap(Vector2 screenPos)
+    {
+        // Check fish tap
+        foreach (var fish in spawnedFish)
+        {
+            if (fish == null) continue;
+            if (IsPointerOverObject(fish.gameObject, screenPos))
+            {
+                fish.OnTap();
+                SpawnBubblesAt(fish.GetComponent<RectTransform>().anchoredPosition, 3);
+                return;
+            }
+        }
+
+        // Decoration taps are handled by IPointerClickHandler on the decoration itself
+
+        // Water tap — spawn bubbles + ripple + nudge nearby fish
+        if (gameplayArea == null) return;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            gameplayArea, screenPos, null, out Vector2 localPos);
+        if (!gameplayArea.rect.Contains(localPos)) return;
+
+        SpawnBubblesAt(localPos, Random.Range(3, 6));
+        StartCoroutine(SpawnRipple(localPos));
+
+        // Nudge nearby fish toward tap
+        foreach (var fish in spawnedFish)
+        {
+            if (fish != null)
+                fish.Nudge(localPos, 200f);
+        }
+    }
+
+    // ── Bubble & Ripple Effects ──
+
+    public void SpawnBubblesAt(Vector2 localPos, int count)
+    {
+        if (gameplayArea == null) return;
+        for (int i = 0; i < count; i++)
+        {
+            var go = new GameObject("TapBubble");
+            go.transform.SetParent(gameplayArea, false);
+            var rt = go.AddComponent<RectTransform>();
+            float size = Random.Range(6f, 14f);
+            rt.sizeDelta = new Vector2(size, size);
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = localPos + Random.insideUnitCircle * 15f;
+
+            var img = go.AddComponent<Image>();
+            if (circleSprite != null) img.sprite = circleSprite;
+            img.color = new Color(0.85f, 0.95f, 1f, 0.5f);
+            img.raycastTarget = false;
+
+            StartCoroutine(AnimateTapBubble(rt, img));
+        }
+    }
+
+    private IEnumerator AnimateTapBubble(RectTransform rt, Image img)
+    {
+        Vector2 start = rt.anchoredPosition;
+        float dur = Random.Range(0.6f, 1.2f);
+        float riseH = Random.Range(40f, 80f);
+        float swayX = Random.Range(-15f, 15f);
+        float t = 0f;
+
+        while (t < dur)
+        {
+            t += Time.deltaTime;
+            float p = t / dur;
+            float y = start.y + riseH * p;
+            float x = start.x + swayX * Mathf.Sin(p * Mathf.PI);
+            rt.anchoredPosition = new Vector2(x, y);
+            float alpha = p > 0.6f ? 0.5f * (1f - (p - 0.6f) / 0.4f) : 0.5f;
+            img.color = new Color(0.85f, 0.95f, 1f, alpha);
+            yield return null;
+        }
+
+        Destroy(rt.gameObject);
+    }
+
+    private IEnumerator SpawnRipple(Vector2 localPos)
+    {
+        if (circleSprite == null) yield break;
+
+        var go = new GameObject("Ripple");
+        go.transform.SetParent(gameplayArea, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(10f, 10f);
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = localPos;
+
+        var img = go.AddComponent<Image>();
+        img.sprite = circleSprite;
+        img.color = new Color(1f, 1f, 1f, 0.2f);
+        img.raycastTarget = false;
+
+        float dur = 0.5f;
+        float t = 0f;
+        while (t < dur)
+        {
+            t += Time.deltaTime;
+            float p = t / dur;
+            float size = Mathf.Lerp(10f, 100f, p);
+            rt.sizeDelta = new Vector2(size, size);
+            img.color = new Color(1f, 1f, 1f, 0.2f * (1f - p));
+            yield return null;
+        }
+
+        Destroy(go);
+    }
+
     // ── Content Loading ──
 
     private void LoadAquariumContent()
@@ -171,6 +291,15 @@ public class AquariumController : MonoBehaviour
         if (profile == null) return;
 
         var aquarium = profile.aquarium;
+
+        // Seed starter fish for new profiles
+        if (aquarium.unlockedFishIds.Count == 0)
+        {
+            aquarium.unlockedFishIds.Add("Fish_0");
+            // Skip Fish_0 in the reward order
+            aquarium.nextRewardIndex = Mathf.Max(aquarium.nextRewardIndex, 1);
+            ProfileManager.Instance.Save();
+        }
 
         var fishSprites = LoadSpriteSheet("Aquarium/Fish");
         foreach (var fishId in aquarium.unlockedFishIds)
@@ -313,21 +442,24 @@ public class AquariumController : MonoBehaviour
     private void ShowFoodModeIndicator()
     {
         if (foodModeIndicator != null) return;
-        if (foodButton == null) return;
+        if (foodButton == null || foodButtonImage == null) return;
 
         foodModeIndicator = new GameObject("FoodModeGlow");
         foodModeIndicator.transform.SetParent(foodButton.transform, false);
-        foodModeIndicator.transform.SetAsFirstSibling(); // behind button content
+        foodModeIndicator.transform.SetAsFirstSibling();
 
         var rt = foodModeIndicator.AddComponent<RectTransform>();
-        rt.anchorMin = new Vector2(-0.25f, -0.25f);
-        rt.anchorMax = new Vector2(1.25f, 1.25f);
+        // Slightly larger than the button to create a glow outline
+        rt.anchorMin = new Vector2(-0.15f, -0.15f);
+        rt.anchorMax = new Vector2(1.15f, 1.15f);
         rt.offsetMin = Vector2.zero;
         rt.offsetMax = Vector2.zero;
 
         var img = foodModeIndicator.AddComponent<Image>();
-        if (circleSprite != null) img.sprite = circleSprite;
-        img.color = new Color(1f, 0.9f, 0.4f, 0.3f);
+        // Use the same sprite as the food button so glow follows the shape, not a square
+        img.sprite = foodButtonImage.sprite;
+        img.preserveAspect = true;
+        img.color = new Color(1f, 0.9f, 0.4f, 0.35f);
         img.raycastTarget = false;
     }
 
@@ -533,7 +665,7 @@ public class AquariumController : MonoBehaviour
 
         UpdateProgressBar(true);
 
-        if (profile.aquarium.feedProgress >= feedsPerGift)
+        if (profile.aquarium.feedProgress >= GetFeedsForNextGift())
         {
             // Exit food placement mode
             isPlacingFood = false;
@@ -553,7 +685,7 @@ public class AquariumController : MonoBehaviour
 
         var profile = ProfileManager.ActiveProfile;
         int progress = profile?.aquarium?.feedProgress ?? 0;
-        float ratio = Mathf.Clamp01((float)progress / feedsPerGift);
+        float ratio = Mathf.Clamp01((float)progress / GetFeedsForNextGift());
 
         if (animate)
             StartCoroutine(AnimateProgressBar(ratio));
@@ -810,6 +942,18 @@ public class AquariumController : MonoBehaviour
 
     // ── Reward Logic ──
 
+    /// <summary>
+    /// Returns how many eats are needed for the next gift.
+    /// Starts easy (baseFeedsPerGift) and increases gradually.
+    /// </summary>
+    private int GetFeedsForNextGift()
+    {
+        var profile = ProfileManager.ActiveProfile;
+        int rewardIndex = profile?.aquarium?.nextRewardIndex ?? 0;
+        // 5, 7, 9, 11, 13, 15, 17, 19, 20, 20...
+        return Mathf.Min(baseFeedsPerGift + rewardIndex * 2, 20);
+    }
+
     private bool HasMoreRewards()
     {
         var profile = ProfileManager.ActiveProfile;
@@ -887,6 +1031,7 @@ public class AquariumController : MonoBehaviour
 
     private void OnBackPressed()
     {
+        FingerTrail.SetEnabled(true);
         NavigationManager.GoToHome();
     }
 

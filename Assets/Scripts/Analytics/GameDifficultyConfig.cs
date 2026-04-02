@@ -411,12 +411,22 @@ public static class GameDifficultyConfig
             return $"{wc} \u05E7\u05E8\u05D5\u05E0\u05D5\u05EA, {mc} \u05D0\u05D5\u05EA\u05D9\u05D5\u05EA \u05D7\u05E1\u05E8\u05D5\u05EA"; // X קרונות, Y אותיות חסרות
         }
 
+
         // Number Train
         if (id.Contains("numbertrain"))
         {
             int wc, mc;
             NumberTrainConfig(difficulty, out wc, out mc);
             return $"{wc} \u05E7\u05E8\u05D5\u05E0\u05D5\u05EA, {mc} \u05D7\u05E1\u05E8\u05D9\u05DD"; // X קרונות, Y חסרים
+        }
+
+        // Size Sort
+        if (id.Contains("sizesort"))
+        {
+            float ss, ms;
+            SizeSortConfig(difficulty, out ss, out ms);
+            int pct = Mathf.RoundToInt(ss * 100);
+            return $"\u05E7\u05D8\u05DF {pct}%, \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9 {Mathf.RoundToInt(ms * 100)}%"; // קטן X%, בינוני Y%
         }
 
         // Connect Match
@@ -482,6 +492,7 @@ public static class GameDifficultyConfig
             if (variantValue <= 6) return 4;
             return 7;
         }
+
 
         // Number Train: variant = wagon count → difficulty
         if (gameId == "numbertrain")
@@ -560,6 +571,15 @@ public static class GameDifficultyConfig
             return 9;                                 // 20-24 cards → difficulty 9-10
         }
 
+        // Size Sort: variant = difficulty level directly
+        if (gameId == "sizesort")
+        {
+            if (variantValue <= 1) return 1;
+            if (variantValue <= 3) return 3;
+            if (variantValue <= 5) return 5;
+            return 7;
+        }
+
         return 1;
     }
 
@@ -601,5 +621,16 @@ public static class GameDifficultyConfig
             return gp.lastAutoDifficulty;
 
         return gp.currentDifficulty;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  SIZE SORT
+    // ═══════════════════════════════════════════════════════════
+
+    public static void SizeSortConfig(int difficulty, out float smallScale, out float mediumScale)
+    {
+        if (difficulty <= 3)      { smallScale = 0.4f; mediumScale = 0.7f; }
+        else if (difficulty <= 6) { smallScale = 0.5f; mediumScale = 0.75f; }
+        else                      { smallScale = 0.55f; mediumScale = 0.78f; }
     }
 }

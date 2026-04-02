@@ -142,30 +142,11 @@ public class AquariumSceneSetup
         waterTopRT.anchorMin = new Vector2(0, 0.6f);
         waterTopRT.anchorMax = new Vector2(1, 1);
 
-        var waterMidGO = StretchImg(canvasGO.transform, "WaterMid", WaterMid);
-        waterMidGO.GetComponent<Image>().raycastTarget = false;
-        var waterMidRT = waterMidGO.GetComponent<RectTransform>();
-        waterMidRT.anchorMin = new Vector2(0, 0.25f);
-        waterMidRT.anchorMax = new Vector2(1, 0.65f);
-
         var waterBtmGO = StretchImg(canvasGO.transform, "WaterBottom", WaterBottom);
         waterBtmGO.GetComponent<Image>().raycastTarget = false;
         var waterBtmRT = waterBtmGO.GetComponent<RectTransform>();
         waterBtmRT.anchorMin = new Vector2(0, 0);
-        waterBtmRT.anchorMax = new Vector2(1, 0.3f);
-
-        // Soft blend overlays between gradient bands
-        var blendTopGO = StretchImg(canvasGO.transform, "BlendTop", new Color(WaterTop.r, WaterTop.g, WaterTop.b, 0.3f));
-        blendTopGO.GetComponent<Image>().raycastTarget = false;
-        var blendTopRT = blendTopGO.GetComponent<RectTransform>();
-        blendTopRT.anchorMin = new Vector2(0, 0.55f);
-        blendTopRT.anchorMax = new Vector2(1, 0.7f);
-
-        var blendBtmGO = StretchImg(canvasGO.transform, "BlendBottom", new Color(WaterBottom.r, WaterBottom.g, WaterBottom.b, 0.25f));
-        blendBtmGO.GetComponent<Image>().raycastTarget = false;
-        var blendBtmRT = blendBtmGO.GetComponent<RectTransform>();
-        blendBtmRT.anchorMin = new Vector2(0, 0.2f);
-        blendBtmRT.anchorMax = new Vector2(1, 0.35f);
+        waterBtmRT.anchorMax = new Vector2(1, 0.55f);
 
         // Far wave (faded, lighter — creates depth)
         var waveFarGO = CreateSpriteLayer(canvasGO.transform, "WaveFar", hillsLargeSprite,
@@ -184,6 +165,15 @@ public class AquariumSceneSetup
             new Vector2(0, 0), new Vector2(1, 0.2f), SandFront);
         var sandRT = sandFrontGO.GetComponent<RectTransform>();
 
+        // ── Background life layer (behind gameplay, non-interactive) ──
+        var bgLifeGO = new GameObject("BackgroundLife");
+        bgLifeGO.transform.SetParent(canvasGO.transform, false);
+        var bgLifeRT = bgLifeGO.AddComponent<RectTransform>();
+        Full(bgLifeRT);
+        var bgLife = bgLifeGO.AddComponent<AquariumBackgroundLife>();
+        bgLife.areaRT = bgLifeRT;
+        bgLife.circleSprite = circleSprite;
+
         // ── Gameplay area (fish + decorations — ON TOP of all background layers) ──
         var gameplayGO = new GameObject("GameplayArea");
         gameplayGO.transform.SetParent(canvasGO.transform, false);
@@ -194,7 +184,7 @@ public class AquariumSceneSetup
         gameplayRT.offsetMin = Vector2.zero;
         gameplayRT.offsetMax = Vector2.zero;
 
-        // ── FX area (bubbles + light rays, on top of everything except UI) ──
+        // ── FX area (bubbles + light rays + poppable bubbles, on top of everything except UI) ──
         var fxGO = new GameObject("FXArea");
         fxGO.transform.SetParent(canvasGO.transform, false);
         var fxRT = fxGO.AddComponent<RectTransform>();
@@ -241,19 +231,19 @@ public class AquariumSceneSetup
 
         // Back/Home button (top-left)
         var homeIcon = UISheetHelper.HomeIcon;
-        var homeGO = IconBtn(safeArea.transform, "BackButton", homeIcon,
-            new Vector2(0, 1), new Vector2(0, 1),
-            new Vector2(16, -20), new Vector2(90, 90));
+        var homeGO = IconBtn(topBar.transform, "BackButton", homeIcon,
+            new Vector2(0, 0.5f), new Vector2(0, 0.5f),
+            new Vector2(24, 0), new Vector2(90, 90));
 
-        // ── FOOD BUTTON (right side, food box sprite Food_0) ──
+        // ── FOOD BUTTON (top-right, below header) ──
         var foodBtnGO = new GameObject("FoodButton");
         foodBtnGO.transform.SetParent(safeArea.transform, false);
         var foodBtnRT = foodBtnGO.AddComponent<RectTransform>();
-        foodBtnRT.anchorMin = new Vector2(1, 0.5f);
-        foodBtnRT.anchorMax = new Vector2(1, 0.5f);
-        foodBtnRT.pivot = new Vector2(1, 0.5f);
-        foodBtnRT.sizeDelta = new Vector2(120, 120);
-        foodBtnRT.anchoredPosition = new Vector2(-16, 0);
+        foodBtnRT.anchorMin = new Vector2(1, 1);
+        foodBtnRT.anchorMax = new Vector2(1, 1);
+        foodBtnRT.pivot = new Vector2(1, 1);
+        foodBtnRT.sizeDelta = new Vector2(100, 100);
+        foodBtnRT.anchoredPosition = new Vector2(-16, -TopBarHeight - 10);
         var foodBtnImg = foodBtnGO.AddComponent<Image>();
         // Food_0 sprite loaded at runtime by controller
         foodBtnImg.preserveAspect = true;
@@ -312,7 +302,7 @@ public class AquariumSceneSetup
         controller.backButton = homeGO.GetComponent<Button>();
         controller.foodButton = foodBtn;
         controller.foodButtonImage = foodBtnImg;
-        controller.backgroundImage = waterMidGO.GetComponent<Image>();
+        controller.backgroundImage = waterTopGO.GetComponent<Image>();
         // Gift sprite loaded at runtime from Resources/GiftBox
         controller.emptyHintText = hintTMP;
         controller.ambience = ambience;

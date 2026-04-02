@@ -10,7 +10,6 @@ using System.Collections.Generic;
 /// </summary>
 public class HebrewFontSetup : EditorWindow
 {
-    [MenuItem("Tools/Kids Learning Game/Setup Hebrew Font")]
     private static void MenuSetup()
     {
         RunSetupSilent();

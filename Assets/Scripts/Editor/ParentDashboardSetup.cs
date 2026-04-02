@@ -393,7 +393,7 @@ public class ParentDashboardSetup : EditorWindow
 
         // Ads — only in parent dashboard (behind parental gate)
         canvasGO.AddComponent<BannerAdManager>();
-        canvasGO.AddComponent<RewardedAdManager>();
+        canvasGO.AddComponent<InterstitialAdManager>();
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/ParentDashboard.unity");
     }

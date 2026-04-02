@@ -27,7 +27,6 @@ public static class AlinGuideSetup
     private const string ControllerPath = "Assets/Prefabs/UI/AlinGuide.controller";
     private const string PrefabPath = "Assets/Prefabs/UI/AlinGuide.prefab";
 
-    [MenuItem("Tools/Kids Learning Game/Setup Alin Guide")]
     public static void Setup()
     {
         // 1. Extract talking sprite frames

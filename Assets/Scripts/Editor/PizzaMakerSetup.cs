@@ -20,7 +20,6 @@ public class PizzaMakerSetup : EditorWindow
     private static readonly Color TableColor = new Color(0.42f, 0.28f, 0.18f);
     private static readonly Color ToolBarBg = new Color(0.35f, 0.23f, 0.14f, 0.85f);
 
-    [MenuItem("Tools/Kids Learning Game/Setup Pizza Maker")]
     public static void ShowWindow() => RunSetupSilent();
 
     public static void RunSetupSilent() => BuildScene();

@@ -18,7 +18,6 @@ public class BallMazeSetup : EditorWindow
 
     private static readonly Color HeaderColor = new Color(0.30f, 0.65f, 0.85f, 0.80f);
 
-    [MenuItem("Tools/Kids Learning Game/Setup Ball Maze")]
     public static void ShowWindow()
     {
         RunSetupSilent();

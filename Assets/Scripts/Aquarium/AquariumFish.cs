@@ -1,10 +1,10 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
 /// Controls a single fish in the Aquarium scene.
-/// Handles free swimming, direction changes, and feeding response.
-/// When chasing food, arrives at the food item and notifies the controller.
+/// Handles free swimming, direction changes, feeding response, and tap reactions.
 /// </summary>
 public class AquariumFish : MonoBehaviour
 {
@@ -144,5 +144,85 @@ public class AquariumFish : MonoBehaviour
         targetFood = food;
         foodOffset = Random.insideUnitCircle * 20f;
         return true;
+    }
+
+    // ── Tap Reaction ──
+
+    private bool isTapAnimating;
+
+    /// <summary>Playful flip + pop when tapped.</summary>
+    public void OnTap()
+    {
+        if (isTapAnimating) return;
+        StartCoroutine(TapReaction());
+    }
+
+    private IEnumerator TapReaction()
+    {
+        isTapAnimating = true;
+        float scaleX = facingRight ? 1f : -1f;
+
+        // Quick scale pop
+        float t = 0f;
+        while (t < 0.12f)
+        {
+            t += Time.deltaTime;
+            float p = t / 0.12f;
+            float s = 1f + 0.2f * Mathf.Sin(p * Mathf.PI);
+            rt.localScale = new Vector3(scaleX * s, s, 1f);
+            yield return null;
+        }
+
+        // Flip direction
+        facingRight = !facingRight;
+        scaleX = facingRight ? 1f : -1f;
+
+        // Quick rotate wiggle
+        t = 0f;
+        while (t < 0.25f)
+        {
+            t += Time.deltaTime;
+            float p = t / 0.25f;
+            float angle = Mathf.Sin(p * Mathf.PI * 3f) * 15f * (1f - p);
+            rt.localRotation = Quaternion.Euler(0, 0, angle);
+            rt.localScale = new Vector3(scaleX, 1f, 1f);
+            yield return null;
+        }
+
+        rt.localRotation = Quaternion.identity;
+        rt.localScale = new Vector3(scaleX, 1f, 1f);
+
+        // Pick new target in the direction the fish is now facing
+        PickTargetInFacingDirection();
+        isTapAnimating = false;
+    }
+
+    private void PickTargetInFacingDirection()
+    {
+        if (swimArea == null) return;
+        Rect bounds = swimArea.rect;
+        float margin = 40f;
+        float curX = rt.anchoredPosition.x;
+
+        float x;
+        if (facingRight)
+            x = Random.Range(Mathf.Max(curX + 50f, bounds.xMin + margin), bounds.xMax - margin);
+        else
+            x = Random.Range(bounds.xMin + margin, Mathf.Min(curX - 50f, bounds.xMax - margin));
+
+        float y = Random.Range(bounds.yMin + margin, bounds.yMax - margin);
+        targetPos = new Vector2(x, y);
+    }
+
+    /// <summary>Briefly swim toward a point out of curiosity.</summary>
+    public void Nudge(Vector2 point, float radius)
+    {
+        if (isChasing || isTapAnimating || feedCooldown > 0f) return;
+        float dist = Vector2.Distance(rt.anchoredPosition, point);
+        if (dist > radius) return;
+
+        // Set target partway toward the tap
+        Vector2 dir = (point - rt.anchoredPosition).normalized;
+        targetPos = rt.anchoredPosition + dir * Mathf.Min(dist * 0.4f, 60f);
     }
 }

@@ -246,6 +246,9 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Aquarium Scene…", 0.998f);
             AquariumSceneSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Size Sort…", 0.999f);
+            SizeSortSetup.RunSetupSilent();
+
             // Open ProfileSelection scene (entry point)
             EditorSceneManager.OpenScene($"{ScenesPath}/ProfileSelection.unity");
         }
@@ -853,8 +856,18 @@ public class ProjectSetup : EditorWindow
         EditorUtility.SetDirty(pizzaMaker);
 
         // ── Game Database ──
+        // ── Size Sort ──
+        var sizeSort = CreateSO<GameItemData>($"{DataPath}/SizeSort.asset");
+        sizeSort.id = "sizesort";
+        sizeSort.title = "Size Sort";
+        sizeSort.cardColor = HexColor("#8BC34A");
+        sizeSort.targetSceneName = "SizeSort";
+        sizeSort.hasSubItems = false;
+        sizeSort.thumbnail = LoadSprite($"{previewPath}/SizeSort.png");
+        EditorUtility.SetDirty(sizeSort);
+
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, /* pizzaMaker hidden for v1 */ };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, sizeSort };
         EditorUtility.SetDirty(db);
 
         // Validate age baseline configuration
@@ -1472,6 +1485,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/WorldScene.unity",
             $"{ScenesPath}/ParentDashboard.unity",
             $"{ScenesPath}/AquariumScene.unity",
+            $"{ScenesPath}/SizeSort.unity",
         };
 
         var buildScenes = scenePaths.Select(p => new EditorBuildSettingsScene(p, true)).ToArray();

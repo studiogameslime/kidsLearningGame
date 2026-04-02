@@ -198,7 +198,6 @@ public class DotShapeGeneratorWindow : EditorWindow
     //  EDITOR WINDOW
     // ══════════════════════════════════════════
 
-    [MenuItem("Tools/Kids Learning Game/Dot Shape Generator")]
     public static void ShowWindow()
     {
         GetWindow<DotShapeGeneratorWindow>("Dot Shape Generator");
