@@ -217,6 +217,7 @@ public class ParentDashboardController : MonoBehaviour
 
     private void OpenDashboard()
     {
+        FirebaseAnalyticsManager.LogParentDashboardOpened();
         gatePanel.gameObject.SetActive(false);
         dashboardPanel.gameObject.SetActive(true);
         LoadData();
@@ -1941,6 +1942,7 @@ public class ParentDashboardController : MonoBehaviour
     private GameObject _settingsPanelContent; // right panel content (updated on game select)
     private int _selectedGameIndex = -1;
     private readonly List<Image> _cardBackgrounds = new List<Image>();          // card bg images for selection tint
+    private TextMeshProUGUI _gamesCounterTMP;  // "X משחקים פעילים מתוך Y" text
     private readonly List<Outline[]> _cardOutlines = new List<Outline[]>();     // outline components for selection border
 
     private void BuildGamesTabContent()
@@ -2027,10 +2029,10 @@ public class ParentDashboardController : MonoBehaviour
                 bool vis = g.recommendation != null ? g.recommendation.finalVisible : g.systemVisibility;
                 if (vis) activeCount++;
             }
-            var counterTMP = AddChildTMP(gridContentGO.transform,
+            _gamesCounterTMP = AddChildTMP(gridContentGO.transform,
                 H($"{activeCount} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05E4\u05E2\u05D9\u05DC\u05D9\u05DD \u05DE\u05EA\u05D5\u05DA {totalCount}"), // X משחקים פעילים מתוך Y
                 22, TextMedium, TextAlignmentOptions.Center);
-            counterTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 40;
+            _gamesCounterTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 40;
         }
 
         var gridGO = new GameObject("GamesGrid");
@@ -2338,6 +2340,8 @@ public class ParentDashboardController : MonoBehaviour
         {
             var colorSection = MakePanelSection(parent, H("\u05DE\u05E6\u05D1 \u05E6\u05D1\u05D9\u05E2\u05D4")); // מצב צביעה
             MakeColoringModeControl(colorSection);
+            var customSection = MakePanelSection(parent, H("\u05E6\u05D1\u05E2\u05D9\u05DD \u05DE\u05D5\u05EA\u05D0\u05DE\u05D9\u05DD")); // צבעים מותאמים
+            MakeCustomColorsSection(customSection);
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -3018,6 +3022,67 @@ public class ParentDashboardController : MonoBehaviour
         explainTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
     }
 
+    private void MakeCustomColorsSection(Transform card)
+    {
+        var profile = ProfileManager.ActiveProfile;
+        if (profile?.colorStudio?.savedColors == null || profile.colorStudio.savedColors.Count == 0)
+        {
+            AddChildTMP(card, H("\u05D0\u05D9\u05DF \u05E6\u05D1\u05E2\u05D9\u05DD \u05DE\u05D5\u05EA\u05D0\u05DE\u05D9\u05DD \u05E2\u05D3\u05D9\u05D9\u05DF"), // אין צבעים מותאמים עדיין
+                14, TextLight, TextAlignmentOptions.Center)
+                .gameObject.AddComponent<LayoutElement>().preferredHeight = 35;
+            return;
+        }
+
+        var titleTMP = AddChildTMP(card,
+            H($"\u05E6\u05D1\u05E2\u05D9\u05DD \u05DE\u05D5\u05EA\u05D0\u05DE\u05D9\u05DD ({profile.colorStudio.savedColors.Count})"), // צבעים מותאמים (X)
+            16, TextDark, TextAlignmentOptions.Right);
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
+
+        var subtitleTMP = AddChildTMP(card,
+            H("\u05E6\u05D1\u05E2\u05D9\u05DD \u05E9\u05E0\u05D5\u05E6\u05E8\u05D5 \u05D1\u05E1\u05D8\u05D5\u05D3\u05D9\u05D5 \u05DE\u05D5\u05E4\u05D9\u05E2\u05D9\u05DD \u05D1\u05E4\u05DC\u05D8\u05EA \u05D4\u05E6\u05D1\u05D9\u05E2\u05D4"), // צבעים שנוצרו בסטודיו מופיעים בפלטת הצביעה
+            12, TextLight, TextAlignmentOptions.Right);
+        subtitleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 22;
+
+        // Color circles grid
+        var gridGO = new GameObject("CustomColorsGrid");
+        gridGO.transform.SetParent(card, false);
+        gridGO.AddComponent<RectTransform>();
+        var gridLE = gridGO.AddComponent<LayoutElement>();
+        gridLE.preferredHeight = 50;
+        gridLE.flexibleWidth = 1;
+        var grid = gridGO.AddComponent<GridLayoutGroup>();
+        grid.cellSize = new Vector2(38, 38);
+        grid.spacing = new Vector2(6, 6);
+        grid.childAlignment = TextAnchor.MiddleCenter;
+        grid.constraint = GridLayoutGroup.Constraint.Flexible;
+
+        var circleSprite = Resources.Load<Sprite>("Circle");
+        int maxShow = Mathf.Min(profile.colorStudio.savedColors.Count, 16);
+        for (int i = 0; i < maxShow; i++)
+        {
+            var cc = profile.colorStudio.savedColors[i];
+            var cellGO = new GameObject($"CC_{i}");
+            cellGO.transform.SetParent(gridGO.transform, false);
+            var img = cellGO.AddComponent<Image>();
+            if (circleSprite != null) img.sprite = circleSprite;
+            ColorUtility.TryParseHtmlString(cc.hex, out Color c);
+            img.color = c;
+            img.raycastTarget = false;
+            var outline = cellGO.AddComponent<Outline>();
+            outline.effectColor = new Color(1f, 1f, 1f, 0.2f);
+            outline.effectDistance = new Vector2(1, -1);
+        }
+
+        if (profile.colorStudio.savedColors.Count > maxShow)
+        {
+            AddChildTMP(card,
+                H($"+{profile.colorStudio.savedColors.Count - maxShow} \u05E2\u05D5\u05D3"), // +X עוד
+                12, TextLight, TextAlignmentOptions.Center)
+                .gameObject.AddComponent<LayoutElement>().preferredHeight = 20;
+        }
+    }
+
     private void MakeDrawingsGallery(Transform card)
     {
         var profile = ProfileManager.ActiveProfile;
@@ -3465,6 +3530,8 @@ public class ParentDashboardController : MonoBehaviour
         {
             MakeDivider(card);
             MakeColoringModeControl(card);
+            MakeDivider(card);
+            MakeCustomColorsSection(card);
             MakeDivider(card);
             MakeDrawingsGallery(card);
         }
@@ -4160,6 +4227,23 @@ public class ParentDashboardController : MonoBehaviour
                     iiImg.sprite = nowVisible ? uiCheckIcon : uiMinus;
             }
         }
+
+        // Update the active games counter
+        UpdateGamesCounter();
+    }
+
+    private void UpdateGamesCounter()
+    {
+        if (_gamesCounterTMP == null || _data == null) return;
+        int activeCount = 0;
+        int totalCount = _data.games.Count;
+        foreach (var g in _data.games)
+        {
+            bool vis = g.recommendation != null ? g.recommendation.finalVisible : g.systemVisibility;
+            if (vis) activeCount++;
+        }
+        HebrewText.SetText(_gamesCounterTMP,
+            H($"{activeCount} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05E4\u05E2\u05D9\u05DC\u05D9\u05DD \u05DE\u05EA\u05D5\u05DA {totalCount}"));
     }
 
     /// <summary>Syncs stale _data difficulty fields after a manual change.</summary>

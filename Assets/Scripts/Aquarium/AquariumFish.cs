@@ -62,7 +62,7 @@ public class AquariumFish : MonoBehaviour
             PickNewTarget();
         }
 
-        Vector2 target = isChasing
+        Vector2 target = (isChasing && targetFood != null)
             ? targetFood.GetComponent<RectTransform>().anchoredPosition + foodOffset
             : targetPos;
 

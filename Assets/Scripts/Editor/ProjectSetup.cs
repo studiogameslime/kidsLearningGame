@@ -163,8 +163,6 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Laundry Sorting…", 0.966f);
             LaundrySortingSetup.RunSetupSilent();
 
-            EditorUtility.DisplayProgressBar("Setting up project…", "Building Pizza Maker…", 0.967f);
-            PizzaMakerSetup.RunSetupSilent();
 
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Tower Builder…", 0.968f);
             TowerBuilderSetup.RunSetupSilent();
@@ -246,8 +244,17 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Aquarium Scene…", 0.998f);
             AquariumSceneSetup.RunSetupSilent();
 
-            EditorUtility.DisplayProgressBar("Setting up project…", "Building Size Sort…", 0.999f);
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Size Sort…", 0.998f);
             SizeSortSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Color Sort…", 0.998f);
+            ColorSortSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Fruit Puzzle…", 0.999f);
+            FruitPuzzleSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Color Studio…", 0.9995f);
+            ColorStudioSetup.RunSetupSilent();
 
             // Open ProfileSelection scene (entry point)
             EditorSceneManager.OpenScene($"{ScenesPath}/ProfileSelection.unity");
@@ -846,14 +853,6 @@ public class ProjectSetup : EditorWindow
         sockMatch.hasSubItems = false;
         EditorUtility.SetDirty(sockMatch);
 
-        // ── Pizza Maker ──
-        var pizzaMaker = CreateSO<GameItemData>($"{DataPath}/PizzaMaker.asset");
-        pizzaMaker.id = "pizzamaker";
-        pizzaMaker.title = "Pizza Maker";
-        pizzaMaker.cardColor = HexColor("#FF7043");
-        pizzaMaker.targetSceneName = "PizzaMaker";
-        pizzaMaker.hasSubItems = false;
-        EditorUtility.SetDirty(pizzaMaker);
 
         // ── Game Database ──
         // ── Size Sort ──
@@ -866,8 +865,28 @@ public class ProjectSetup : EditorWindow
         sizeSort.thumbnail = LoadSprite($"{previewPath}/SizeSort.png");
         EditorUtility.SetDirty(sizeSort);
 
+        // ── Color Sort ──
+        var colorSort = CreateSO<GameItemData>($"{DataPath}/ColorSort.asset");
+        colorSort.id = "colorsort";
+        colorSort.title = "Color Sort";
+        colorSort.cardColor = HexColor("#FF7043");
+        colorSort.targetSceneName = "ColorSort";
+        colorSort.hasSubItems = false;
+        colorSort.thumbnail = LoadSprite($"{previewPath}/Color Sorting.png");
+        EditorUtility.SetDirty(colorSort);
+
+        // ── Fruit Puzzle ──
+        var fruitPuzzle = CreateSO<GameItemData>($"{DataPath}/FruitPuzzle.asset");
+        fruitPuzzle.id = "fruitpuzzle";
+        fruitPuzzle.title = "Fruit Puzzle";
+        fruitPuzzle.cardColor = HexColor("#FF8A65");
+        fruitPuzzle.targetSceneName = "FruitPuzzle";
+        fruitPuzzle.hasSubItems = false;
+        fruitPuzzle.thumbnail = LoadSprite($"{previewPath}/FruitPuzzle.png");
+        EditorUtility.SetDirty(fruitPuzzle);
+
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, sizeSort };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, sizeSort, colorSort, fruitPuzzle };
         EditorUtility.SetDirty(db);
 
         // Validate age baseline configuration
@@ -1479,13 +1498,17 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/ImageGallery.unity",
             $"{ScenesPath}/ConnectMatch.unity",
             $"{ScenesPath}/LaundrySorting.unity",
-            $"{ScenesPath}/PizzaMaker.unity",
+            $"{ScenesPath}/BakeryGame.unity",
+            $"{ScenesPath}/SockMatch.unity",
             $"{ScenesPath}/DiscoveryReveal.unity",
             $"{ScenesPath}/DrawingGallery.unity",
             $"{ScenesPath}/WorldScene.unity",
             $"{ScenesPath}/ParentDashboard.unity",
             $"{ScenesPath}/AquariumScene.unity",
             $"{ScenesPath}/SizeSort.unity",
+            $"{ScenesPath}/ColorSort.unity",
+            $"{ScenesPath}/FruitPuzzle.unity",
+            $"{ScenesPath}/ColorStudioScene.unity",
         };
 
         var buildScenes = scenePaths.Select(p => new EditorBuildSettingsScene(p, true)).ToArray();

@@ -73,6 +73,7 @@ public class AquariumController : MonoBehaviour
 
         LoadFoodSprites();
         FingerTrail.SetEnabled(false);
+        FirebaseAnalyticsManager.LogScreenView("aquarium");
 
         if (backButton != null)
             backButton.onClick.AddListener(OnBackPressed);
@@ -654,6 +655,7 @@ public class AquariumController : MonoBehaviour
 
     public void OnFoodEaten()
     {
+        FirebaseAnalyticsManager.LogAquariumFeed();
         if (giftActive) return;
         if (!HasMoreRewards()) return;
 
@@ -813,6 +815,7 @@ public class AquariumController : MonoBehaviour
             FinishGiftSequence();
             return;
         }
+        FirebaseAnalyticsManager.LogAquariumGiftOpened(rewardId);
 
         UnlockReward(rewardId);
 

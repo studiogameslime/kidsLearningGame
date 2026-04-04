@@ -213,6 +213,14 @@ public class WorldInputHandler : MonoBehaviour
                 return;
             }
 
+            // Check for color studio
+            var colorStudio = go.GetComponent<WorldColorStudio>();
+            if (colorStudio != null)
+            {
+                colorStudio.OnTap();
+                return;
+            }
+
             // Check for aquarium
             var aquarium = go.GetComponent<WorldAquarium>();
             if (aquarium != null)

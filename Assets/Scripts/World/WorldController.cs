@@ -71,6 +71,9 @@ public class WorldController : MonoBehaviour
 
     private void Start()
     {
+        FirebaseAnalyticsManager.LogScreenView("world");
+        FirebaseAnalyticsManager.UpdateUserProperties();
+
         // Home button removed from world header — profile switch is in parent dashboard settings
         if (homeButton != null) homeButton.gameObject.SetActive(false);
         if (gamesButton != null) gamesButton.onClick.AddListener(OnGamesPressed);
@@ -628,6 +631,9 @@ public class WorldController : MonoBehaviour
 
         // Aquarium on CENTER screen
         SpawnAquarium(viewportWidth, centerOffset);
+
+        // Color Studio on CENTER screen
+        SpawnColorStudio(viewportWidth, centerOffset);
     }
 
     private void SpawnAnimals(List<string> animalIds, float screenWidth, float xOffset = 0f)
@@ -887,6 +893,51 @@ public class WorldController : MonoBehaviour
 
         var aquarium = go.AddComponent<WorldAquarium>();
         aquarium.circleSprite = circleSprite;
+    }
+
+    private void SpawnColorStudio(float screenWidth, float xOffset = 0f)
+    {
+        if (grassArea == null) return;
+
+        float studioSize = 170f;
+
+        // Shadow
+        var shadowGO = new GameObject("ColorStudioShadow");
+        shadowGO.transform.SetParent(grassArea, false);
+        var shadowRT = shadowGO.AddComponent<RectTransform>();
+        shadowRT.anchorMin = Vector2.zero;
+        shadowRT.anchorMax = Vector2.zero;
+        shadowRT.pivot = new Vector2(0.5f, 0.5f);
+        shadowRT.sizeDelta = new Vector2(studioSize * 0.7f, studioSize * 0.18f);
+        shadowRT.anchoredPosition = new Vector2(xOffset + screenWidth * 0.65f, 134f);
+        var shadowImg = shadowGO.AddComponent<Image>();
+        if (circleSprite != null) shadowImg.sprite = circleSprite;
+        shadowImg.color = new Color(0f, 0f, 0f, 0.12f);
+        shadowImg.raycastTarget = false;
+
+        // Color Studio icon — use a colored circle as placeholder
+        var go = new GameObject("ColorStudio");
+        go.transform.SetParent(grassArea, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.zero;
+        rt.pivot = new Vector2(0.5f, 0f);
+        rt.sizeDelta = new Vector2(studioSize, studioSize);
+        rt.anchoredPosition = new Vector2(xOffset + screenWidth * 0.65f, 139f);
+
+        var img = go.AddComponent<Image>();
+        // Try loading a dedicated icon, fall back to circle
+        var iconSprites = Resources.LoadAll<Sprite>("ColorStudio/ColorStudioIcon");
+        if (iconSprites != null && iconSprites.Length > 0)
+            img.sprite = iconSprites[0];
+        else if (circleSprite != null)
+            img.sprite = circleSprite;
+        img.preserveAspect = true;
+        img.raycastTarget = true;
+        img.color = new Color(0.95f, 0.75f, 0.3f); // warm yellow placeholder
+
+        var studio = go.AddComponent<WorldColorStudio>();
+        studio.circleSprite = circleSprite;
     }
 
     private void SpawnGameShelf(float screenWidth, float xOffset = 0f)

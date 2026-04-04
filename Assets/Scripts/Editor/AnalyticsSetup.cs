@@ -93,11 +93,6 @@ public class AnalyticsSetup : EditorWindow
             W(SkillCategory.Attention, 0.30f),
             W(SkillCategory.FineMotor, 0.30f)));
 
-        // ── Pizza Maker ──
-        mapping.entries.Add(Entry("pizzamaker",
-            W(SkillCategory.FineMotor, 0.40f),
-            W(SkillCategory.VisualMatching, 0.30f),
-            W(SkillCategory.Attention, 0.30f)));
 
         // ── Ball Maze ──
         mapping.entries.Add(Entry("ballmaze",
@@ -177,6 +172,30 @@ public class AnalyticsSetup : EditorWindow
             W(SkillCategory.Attention, 0.30f),
             W(SkillCategory.ProblemSolving, 0.30f)));
 
+        // ── Bakery ──
+        mapping.entries.Add(Entry("bakery",
+            W(SkillCategory.FineMotor, 0.40f),
+            W(SkillCategory.VisualMatching, 0.30f),
+            W(SkillCategory.Attention, 0.30f)));
+
+        // ── Sock Match ──
+        mapping.entries.Add(Entry("sockmatch",
+            W(SkillCategory.VisualMatching, 0.50f),
+            W(SkillCategory.Attention, 0.30f),
+            W(SkillCategory.Memory, 0.20f)));
+
+        // ── Fruit Puzzle ──
+        mapping.entries.Add(Entry("fruitpuzzle",
+            W(SkillCategory.VisualMatching, 0.40f),
+            W(SkillCategory.Attention, 0.30f),
+            W(SkillCategory.ProblemSolving, 0.30f)));
+
+        // ── Color Sort ──
+        mapping.entries.Add(Entry("colorsort",
+            W(SkillCategory.VisualMatching, 0.40f),
+            W(SkillCategory.Attention, 0.30f),
+            W(SkillCategory.ProblemSolving, 0.30f)));
+
         // ── Size Sort ──
         mapping.entries.Add(Entry("sizesort",
             W(SkillCategory.VisualMatching, 0.40f),
@@ -204,7 +223,7 @@ public class AnalyticsSetup : EditorWindow
             "ballmaze", "towerbuilder", "sharedsticker",
             "flappybird", "simonsays", "patterncopy", "letters", "numbermaze",
             "oddoneout", "quantitymatch", "connectmatch", "numbertrain",
-            "lettertrain", "laundrysorting", "pizzamaker", "sizesort"
+            "lettertrain", "laundrysorting", "bakery", "sockmatch", "sizesort", "colorsort", "fruitpuzzle"
         };
 
         // ── Age 2–2.5 years (24–30 months) ──

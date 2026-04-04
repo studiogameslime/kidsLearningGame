@@ -22,6 +22,7 @@ public class UserProfile
     public JourneyProgress journey = new JourneyProgress();
     public ChildAnalyticsProfile analytics = new ChildAnalyticsProfile();
     public AquariumCollection aquarium = new AquariumCollection();
+    public ColorStudioCollection colorStudio = new ColorStudioCollection();
     public List<SavedDrawing> savedDrawings = new List<SavedDrawing>();
     public List<ParentImage> parentImages = new List<ParentImage>();
 
@@ -188,6 +189,26 @@ public class AquariumItemPlacement
     public string itemId;
     public float x;
     public float y;
+}
+
+/// <summary>
+/// A color created in the Color Studio, with its parent mix history.
+/// </summary>
+[Serializable]
+public class CreatedColor
+{
+    public string hex;        // result color as "#RRGGBB"
+    public string parentAHex; // first parent hex (base colors use "base_" prefix)
+    public string parentBHex; // second parent hex
+}
+
+/// <summary>
+/// Tracks the player's Color Studio collection — created colors with full mix history.
+/// </summary>
+[Serializable]
+public class ColorStudioCollection
+{
+    public List<CreatedColor> savedColors = new List<CreatedColor>();
 }
 
 /// <summary>

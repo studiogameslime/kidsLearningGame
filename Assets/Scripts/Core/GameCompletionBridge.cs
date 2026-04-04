@@ -118,6 +118,7 @@ public class GameCompletionBridge : MonoBehaviour
 
                     jp.gamesUntilNextDiscovery = DiscoveryScheduler.CalcNextInterval(jp);
                     ProfileManager.Instance.Save();
+                    FirebaseAnalyticsManager.LogDiscovery(discovery.type, discovery.id);
 
                     // Show discovery reveal
                     BubbleTransition.LoadScene("DiscoveryReveal");

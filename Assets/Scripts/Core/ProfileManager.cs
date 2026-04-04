@@ -72,6 +72,8 @@ public class ProfileManager : MonoBehaviour
                 if (p.journey != null && p.journey.collectedStickerIds == null) p.journey.collectedStickerIds = new List<string>();
                 if (p.everVisibleGameIds == null) p.everVisibleGameIds = new List<string>();
                 if (p.aquarium == null) p.aquarium = new AquariumCollection();
+                if (p.colorStudio == null) p.colorStudio = new ColorStudioCollection();
+                if (p.colorStudio.savedColors == null) p.colorStudio.savedColors = new List<CreatedColor>();
                 if (p.aquarium.unlockedFishIds == null) p.aquarium.unlockedFishIds = new List<string>();
                 if (p.aquarium.unlockedDecorationIds == null) p.aquarium.unlockedDecorationIds = new List<string>();
                 if (p.aquarium.decorationPlacements == null) p.aquarium.decorationPlacements = new List<AquariumItemPlacement>();

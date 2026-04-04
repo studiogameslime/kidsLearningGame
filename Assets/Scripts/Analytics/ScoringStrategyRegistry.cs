@@ -67,11 +67,15 @@ public static class ScoringStrategyRegistry
         if (id.Contains("fishing"))
             return new DefaultScoringStrategy();
 
-        if (id.Contains("pizza"))
-            return new PizzaMakerScoringStrategy();
 
         if (id.Contains("sizesort"))
             return new SizeSortScoringStrategy();
+
+        if (id.Contains("colorsort"))
+            return new ColorSortScoringStrategy();
+
+        if (id.Contains("fruitpuzzle"))
+            return new FruitPuzzleScoringStrategy();
 
         return _default;
     }

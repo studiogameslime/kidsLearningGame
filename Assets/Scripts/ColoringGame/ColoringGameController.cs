@@ -62,6 +62,7 @@ public class ColoringGameController : BaseMiniGame
 
     private static readonly int[] BrushSizes = { 12, 24, 40 };
 
+    private Color[] _activePalette = PaletteColors; // defaults, extended in BuildColorPalette
     private int selectedColorIndex = 0;
     private int selectedBrushIndex = 1; // medium default
     private int selectedStickerIndex = -1; // -1 = no sticker
@@ -178,7 +179,7 @@ public class ColoringGameController : BaseMiniGame
             drawingCanvas.SetOutlineBoundary(outlineImage.texture);
 
         // Set initial fill color
-        drawingCanvas.SetColor(PaletteColors[selectedColorIndex]);
+        drawingCanvas.SetColor(_activePalette[selectedColorIndex]);
 
         // Listen for successful fills
         drawingCanvas.onAreaFilled = OnAreaFilled;
@@ -222,7 +223,7 @@ public class ColoringGameController : BaseMiniGame
     private void ConfigureBrushMode()
     {
         drawingCanvas.SetAreaFillMode(false);
-        drawingCanvas.SetColor(PaletteColors[selectedColorIndex]);
+        drawingCanvas.SetColor(_activePalette[selectedColorIndex]);
         drawingCanvas.SetBrushSize(BrushSizes[selectedBrushIndex]);
 
         // Build brush-mode UI
@@ -358,14 +359,32 @@ public class ColoringGameController : BaseMiniGame
     {
         if (colorButtonPrefab == null || colorButtonContainer == null) return;
 
-        for (int i = 0; i < PaletteColors.Length; i++)
+        // Build full palette: default colors + custom colors from Color Studio
+        var allColors = new System.Collections.Generic.List<Color>(PaletteColors);
+
+        var profile = ProfileManager.ActiveProfile;
+        if (profile?.colorStudio?.savedColors != null && profile.colorStudio.savedColors.Count > 0)
+        {
+            foreach (var cc in profile.colorStudio.savedColors)
+            {
+                if (!string.IsNullOrEmpty(cc.hex))
+                {
+                    ColorUtility.TryParseHtmlString(cc.hex, out Color c);
+                    allColors.Add(c);
+                }
+            }
+        }
+
+        _activePalette = allColors.ToArray();
+
+        for (int i = 0; i < _activePalette.Length; i++)
         {
             var go = Instantiate(colorButtonPrefab, colorButtonContainer);
             var btn = go.GetComponent<Button>();
             var img = go.GetComponent<Image>();
             int index = i; // capture
 
-            img.color = PaletteColors[i];
+            img.color = _activePalette[i];
 
             // Selection ring (child image)
             var ring = go.transform.Find("Ring");
@@ -428,7 +447,7 @@ public class ColoringGameController : BaseMiniGame
         selectedColorIndex = index;
         selectedStickerIndex = -1;
         isEraserActive = false;
-        drawingCanvas.SetColor(PaletteColors[index]);
+        drawingCanvas.SetColor(_activePalette[index]);
         drawingCanvas.SetEraser(false);
         drawingCanvas.SetStickerMode(null);
         UpdateColorSelection();
@@ -493,7 +512,7 @@ public class ColoringGameController : BaseMiniGame
 
     private void UpdateBrushTipColors()
     {
-        Color tipColor = isEraserActive ? Color.white : PaletteColors[selectedColorIndex];
+        Color tipColor = isEraserActive ? Color.white : _activePalette[selectedColorIndex];
         foreach (var tip in brushTipImages)
             tip.color = tipColor;
     }

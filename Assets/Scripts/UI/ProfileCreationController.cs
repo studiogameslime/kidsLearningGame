@@ -514,6 +514,7 @@ public class ProfileCreationController : MonoBehaviour
 
         // Set as active and go to the World
         ProfileManager.Instance.SetActiveProfile(profile);
+        FirebaseAnalyticsManager.LogProfileCreated(selectedAge, selectedAnimalId);
         NavigationManager.GoToWorld();
     }
 

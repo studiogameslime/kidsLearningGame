@@ -195,9 +195,12 @@ public static class ParentDashboardViewModel
         { "numbertrain",   "\u05E8\u05DB\u05D1\u05EA \u05D4\u05DE\u05E1\u05E4\u05E8\u05D9\u05DD" },
         { "lettertrain",   "\u05E8\u05DB\u05D1\u05EA \u05D4\u05D0\u05D5\u05EA\u05D9\u05D5\u05EA" },
         { "laundrysorting","\u05DE\u05D9\u05D9\u05DF \u05D1\u05D2\u05D3\u05D9\u05DD" },
-        { "pizzamaker",    "\u05D4\u05E4\u05D9\u05E6\u05E8\u05D9\u05D9\u05D4" },
         { "bakery",        "\u05DE\u05D0\u05E4\u05D9\u05D9\u05D4" }, // מאפייה
         { "sockmatch",    "\u05D2\u05E8\u05D1\u05D9\u05D9\u05DD" }, // גרביים
+        { "fishing",      "\u05D3\u05D9\u05D2" }, // דיג
+        { "sizesort",     "\u05DE\u05D9\u05D5\u05DF \u05DC\u05E4\u05D9 \u05D2\u05D5\u05D3\u05DC" }, // מיון לפי גודל
+        { "colorsort",    "\u05DE\u05D9\u05D5\u05DF \u05E6\u05D1\u05E2\u05D9\u05DD" }, // מיון צבעים
+        { "fruitpuzzle",  "\u05E4\u05D0\u05D6\u05DC \u05E8\u05DB\u05D1\u05D9\u05DD" }, // פאזל רכבים
     };
 
     // ── Hebrew category names + colors ──

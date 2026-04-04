@@ -420,6 +420,22 @@ public static class GameDifficultyConfig
             return $"{wc} \u05E7\u05E8\u05D5\u05E0\u05D5\u05EA, {mc} \u05D7\u05E1\u05E8\u05D9\u05DD"; // X קרונות, Y חסרים
         }
 
+        // Vehicle Puzzle
+        if (id.Contains("fruitpuzzle"))
+        {
+            int vc, r;
+            FruitPuzzleConfig(difficulty, out vc, out r);
+            return $"{vc} \u05E8\u05DB\u05D1\u05D9\u05DD, {vc * 3} \u05D7\u05DC\u05E7\u05D9\u05DD"; // X רכבים, Y חלקים
+        }
+
+        // Color Sort
+        if (id.Contains("colorsort"))
+        {
+            int cc, ipc;
+            ColorSortConfig(difficulty, out cc, out ipc);
+            return $"{cc} \u05E6\u05D1\u05E2\u05D9\u05DD, {cc * ipc} \u05E4\u05E8\u05D9\u05D8\u05D9\u05DD"; // X צבעים, Y פריטים
+        }
+
         // Size Sort
         if (id.Contains("sizesort"))
         {
@@ -571,6 +587,24 @@ public static class GameDifficultyConfig
             return 9;                                 // 20-24 cards → difficulty 9-10
         }
 
+        // Fruit Puzzle: variant = difficulty directly
+        if (gameId == "fruitpuzzle")
+        {
+            if (variantValue <= 1) return 1;
+            if (variantValue <= 3) return 3;
+            if (variantValue <= 5) return 5;
+            return 7;
+        }
+
+        // Color Sort: variant = difficulty directly
+        if (gameId == "colorsort")
+        {
+            if (variantValue <= 1) return 1;
+            if (variantValue <= 3) return 3;
+            if (variantValue <= 5) return 5;
+            return 7;
+        }
+
         // Size Sort: variant = difficulty level directly
         if (gameId == "sizesort")
         {
@@ -626,6 +660,23 @@ public static class GameDifficultyConfig
     // ═══════════════════════════════════════════════════════════
     //  SIZE SORT
     // ═══════════════════════════════════════════════════════════
+
+    public static void FruitPuzzleConfig(int difficulty, out int cols, out int rows)
+    {
+        // cols reused as vehicleCount, rows unused (always 3 strips)
+        if (difficulty <= 3)      { cols = 1; rows = 3; } // 1 vehicle, 3 pieces
+        else if (difficulty <= 6) { cols = 2; rows = 3; } // 2 vehicles, 6 pieces
+        else                      { cols = 3; rows = 3; } // 3 vehicles, 9 pieces
+    }
+
+    public static void ColorSortConfig(int difficulty, out int colorCount, out int itemsPerColor)
+    {
+        if (difficulty <= 2)      { colorCount = 2; itemsPerColor = 2; }
+        else if (difficulty <= 4) { colorCount = 3; itemsPerColor = 2; }
+        else if (difficulty <= 6) { colorCount = 3; itemsPerColor = 2; }
+        else if (difficulty <= 8) { colorCount = 3; itemsPerColor = 3; }
+        else                      { colorCount = 3; itemsPerColor = 3; }
+    }
 
     public static void SizeSortConfig(int difficulty, out float smallScale, out float mediumScale)
     {

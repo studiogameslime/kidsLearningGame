@@ -25,7 +25,6 @@ public abstract class BaseMiniGame : MonoBehaviour
     protected bool playConfettiOnRoundWin = false;   // confetti per round (most games: false)
     protected bool playConfettiOnSessionWin = true;   // confetti when all rounds done (most games: true)
     protected bool playWinSound = true;               // SoundLibrary.PlayRandomFeedback()
-    protected bool showSummaryOnComplete = true;      // show success panel after final round
     protected string contentCategory = "";            // SessionContent.Animals, etc.
 
     // Timing
@@ -64,6 +63,9 @@ public abstract class BaseMiniGame : MonoBehaviour
 
         // Let derived class configure
         OnGameInit();
+
+        // Firebase: log game started
+        FirebaseAnalyticsManager.LogGameStarted(GameId, Difficulty);
 
         // Start first round
         CurrentRound = 0;
@@ -221,6 +223,7 @@ public abstract class BaseMiniGame : MonoBehaviour
     /// <summary>Navigate home / main menu. Abandons stats if still playing.</summary>
     protected void ExitGame()
     {
+        FirebaseAnalyticsManager.LogGameExited(GameId);
         OnGameExit();
         NavigationManager.GoToMainMenu();
     }
@@ -246,13 +249,17 @@ public abstract class BaseMiniGame : MonoBehaviour
         OnRoundSetup();
     }
 
-    private bool _summaryPlayAgain;
 
     private IEnumerator CompletionSequence()
     {
         // Let game set final stats
         OnBeforeComplete();
         Stats?.RecordRoundComplete();
+
+        // Firebase: log completion
+        int mistakes = Stats != null ? Stats.Mistakes : 0;
+        int correct = Stats != null ? Stats.CorrectActions : 0;
+        FirebaseAnalyticsManager.LogGameCompleted(GameId, Difficulty, correct, mistakes, Time.realtimeSinceStartup);
 
         // Register this round's session immediately (every round = 1 session)
         Stats?.Finalize(completed: true);

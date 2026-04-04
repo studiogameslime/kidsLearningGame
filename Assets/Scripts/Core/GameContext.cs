@@ -88,6 +88,13 @@ public static class NavigationManager
         BubbleTransition.LoadScene("ParentDashboard");
     }
 
+    /// <summary>Go to the Color Studio sandbox.</summary>
+    public static void GoToColorStudio()
+    {
+        GameContext.Clear();
+        BubbleTransition.LoadScene("ColorStudioScene");
+    }
+
     /// <summary>Go to the Aquarium collectible scene.</summary>
     public static void GoToAquarium()
     {
