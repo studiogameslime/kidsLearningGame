@@ -1,0 +1,19 @@
+apply plugin: 'com.android.library'
+
+android {
+    namespace "com.google.firebase.app.unity"
+    compileSdkVersion 33
+
+    defaultConfig {
+        minSdkVersion 25
+        targetSdkVersion 33
+
+        // Firebase config values (moved from res/values/google-services.xml for Unity 6 compatibility)
+        resValue "string", "gcm_defaultSenderId", "364790404264"
+        resValue "string", "google_storage_bucket", "alin-teaching-kids.firebasestorage.app"
+        resValue "string", "project_id", "alin-teaching-kids"
+        resValue "string", "google_api_key", "AIzaSyCNZpZJ5LiCKf2w2TOoNhzrB5MM49WfUDg"
+        resValue "string", "google_crash_reporting_api_key", "AIzaSyCNZpZJ5LiCKf2w2TOoNhzrB5MM49WfUDg"
+        resValue "string", "google_app_id", "1:364790404264:android:dfcf4dff62ce6cab345e9d"
+    }
+}
