@@ -763,7 +763,7 @@ public class ParentDashboardController : MonoBehaviour
         parent.anchorMin = Vector2.zero;
         parent.anchorMax = Vector2.one;
         parent.pivot = new Vector2(0.5f, 0.5f);
-        parent.offsetMin = new Vector2(0, 80); // 80px bottom margin for ad banner
+        parent.offsetMin = new Vector2(0, 120); // bottom margin for ad banner
         parent.offsetMax = Vector2.zero;
 
         // Find favorite game for top row

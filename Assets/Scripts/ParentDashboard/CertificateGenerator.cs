@@ -373,32 +373,63 @@ public static class CertificateGenerator
     #if UNITY_ANDROID && !UNITY_EDITOR
     private static void ShareImageAndroid(string imagePath, string fallbackText)
     {
-        using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-        using (var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
-        using (var intentClass = new AndroidJavaClass("android.content.Intent"))
-        using (var intent = new AndroidJavaObject("android.content.Intent"))
+        try
         {
-            intent.Call<AndroidJavaObject>("setAction", intentClass.GetStatic<string>("ACTION_SEND"));
-            intent.Call<AndroidJavaObject>("setType", "image/*");
-
-            // Get content URI via FileProvider
-            using (var file = new AndroidJavaObject("java.io.File", imagePath))
-            using (var fileProviderClass = new AndroidJavaClass("androidx.core.content.FileProvider"))
+            using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+            using (var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
             {
-                string authority = activity.Call<string>("getPackageName") + ".fileprovider";
-                using (var uri = fileProviderClass.CallStatic<AndroidJavaObject>("getUriForFile", activity, authority, file))
-                {
-                    intent.Call<AndroidJavaObject>("putExtra", intentClass.GetStatic<string>("EXTRA_STREAM"), uri);
-                    intent.Call<AndroidJavaObject>("putExtra", intentClass.GetStatic<string>("EXTRA_TEXT"), fallbackText);
-                    intent.Call<AndroidJavaObject>("addFlags", intentClass.GetStatic<int>("FLAG_GRANT_READ_URI_PERMISSION"));
+                // Insert image into MediaStore to get a content:// URI (no FileProvider needed)
+                var contentResolver = activity.Call<AndroidJavaObject>("getContentResolver");
+                var mediaStoreImages = new AndroidJavaClass("android.provider.MediaStore$Images$Media");
+                var externalUri = mediaStoreImages.GetStatic<AndroidJavaObject>("EXTERNAL_CONTENT_URI");
 
-                    using (var chooser = intentClass.CallStatic<AndroidJavaObject>("createChooser",
-                        intent, "\u05E9\u05EA\u05E4\u05D5 \u05E2\u05DD \u05D7\u05D1\u05E8\u05D9\u05DD")) // שתפו עם חברים
+                // Build content values
+                using (var values = new AndroidJavaObject("android.content.ContentValues"))
+                {
+                    string fileName = "share_" + System.DateTime.Now.Ticks + ".png";
+                    values.Call("put", "_display_name", fileName);
+                    values.Call("put", "mime_type", "image/png");
+                    values.Call("put", "relative_path", "Pictures/AlinTeachingKids");
+
+                    // Insert and get URI
+                    var insertUri = contentResolver.Call<AndroidJavaObject>("insert", externalUri, values);
+                    if (insertUri == null)
                     {
-                        activity.Call("startActivity", chooser);
+                        Debug.LogError("[Share] Failed to insert into MediaStore");
+                        return;
+                    }
+
+                    // Copy image bytes to MediaStore
+                    using (var outputStream = contentResolver.Call<AndroidJavaObject>("openOutputStream", insertUri))
+                    {
+                        byte[] bytes = System.IO.File.ReadAllBytes(imagePath);
+                        outputStream.Call("write", bytes);
+                        outputStream.Call("flush");
+                        outputStream.Call("close");
+                    }
+
+                    // Share via intent
+                    using (var intentClass = new AndroidJavaClass("android.content.Intent"))
+                    using (var intent = new AndroidJavaObject("android.content.Intent"))
+                    {
+                        intent.Call<AndroidJavaObject>("setAction", intentClass.GetStatic<string>("ACTION_SEND"));
+                        intent.Call<AndroidJavaObject>("setType", "image/png");
+                        intent.Call<AndroidJavaObject>("putExtra", intentClass.GetStatic<string>("EXTRA_STREAM"), insertUri);
+                        intent.Call<AndroidJavaObject>("putExtra", intentClass.GetStatic<string>("EXTRA_TEXT"), fallbackText);
+                        intent.Call<AndroidJavaObject>("addFlags", intentClass.GetStatic<int>("FLAG_GRANT_READ_URI_PERMISSION"));
+
+                        using (var chooser = intentClass.CallStatic<AndroidJavaObject>("createChooser",
+                            intent, "\u05E9\u05EA\u05E4\u05D5 \u05E2\u05DD \u05D7\u05D1\u05E8\u05D9\u05DD")) // שתפו עם חברים
+                        {
+                            activity.Call("startActivity", chooser);
+                        }
                     }
                 }
             }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[Share] Android share failed: {e.Message}\n{e.StackTrace}");
         }
     }
     #endif

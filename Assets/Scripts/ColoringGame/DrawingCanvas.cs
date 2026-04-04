@@ -462,23 +462,40 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
         int srcX = (int)srcRect.x, srcY = (int)srcRect.y;
         int srcW = (int)srcRect.width, srcH = (int)srcRect.height;
 
+        // Compensate for display stretch: texture is square but RawImage may not be.
+        // Calculate how many texture pixels correspond to equal screen distance in X vs Y.
+        Rect displayRect = rectTransform.rect;
+        float displayAspect = (displayRect.width > 0 && displayRect.height > 0)
+            ? (displayRect.width / displayRect.height) : 1f;
+        float texAspect = (float)textureWidth / textureHeight;
+        // ratio > 1 means display is wider than texture: X pixels appear smaller on screen
+        float stretchX = displayAspect / texAspect;
+
+        // Preserve sprite aspect ratio AND compensate for display stretch
+        float spriteAspect = (float)srcW / srcH;
+        int drawW, drawH;
+        // Start with stampSize as the height, compute width from sprite + stretch
+        drawH = stampSize;
+        drawW = Mathf.Max(1, Mathf.RoundToInt(stampSize * spriteAspect / stretchX));
+
         int cx = Mathf.RoundToInt(center.x);
         int cy = Mathf.RoundToInt(center.y);
-        int halfSize = stampSize / 2;
+        int halfW = drawW / 2;
+        int halfH = drawH / 2;
 
-        for (int y = 0; y < stampSize; y++)
+        for (int y = 0; y < drawH; y++)
         {
-            for (int x = 0; x < stampSize; x++)
+            for (int x = 0; x < drawW; x++)
             {
                 // Sample from sprite rect
-                int sx = srcX + Mathf.Clamp((int)((float)x / stampSize * srcW), 0, srcW - 1);
-                int sy = srcY + Mathf.Clamp((int)((float)y / stampSize * srcH), 0, srcH - 1);
+                int sx = srcX + Mathf.Clamp((int)((float)x / drawW * srcW), 0, srcW - 1);
+                int sy = srcY + Mathf.Clamp((int)((float)y / drawH * srcH), 0, srcH - 1);
                 Color src = readable.GetPixel(sx, sy);
 
                 if (src.a < 0.05f) continue;
 
-                int dx = cx - halfSize + x;
-                int dy = cy - halfSize + y;
+                int dx = cx - halfW + x;
+                int dy = cy - halfH + y;
                 if (dx < 0 || dx >= textureWidth || dy < 0 || dy >= textureHeight) continue;
 
                 // Alpha blend onto drawing

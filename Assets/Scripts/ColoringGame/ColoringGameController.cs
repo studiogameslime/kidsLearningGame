@@ -141,7 +141,13 @@ public class ColoringGameController : BaseMiniGame
 
         // Wire save drawing button (also advances journey if active)
         if (saveDrawingButton != null)
+        {
             saveDrawingButton.onClick.AddListener(OnSaveDrawing);
+            // Ensure save icon appears black — disable color tint transition
+            saveDrawingButton.transition = Selectable.Transition.None;
+            var btnImg = saveDrawingButton.GetComponent<Image>();
+            if (btnImg != null) btnImg.color = Color.black;
+        }
 
         // Position tutorial hand at center of the drawing canvas
         PositionTutorialHand();

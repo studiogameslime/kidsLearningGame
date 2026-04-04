@@ -45,10 +45,11 @@ public class SafeAreaHandler : MonoBehaviour
 
         if (landscapeOnly)
         {
-            // Only apply horizontal insets (left/right notch areas).
-            // Top/bottom stay at 0/1 so backgrounds and headers fill the screen.
+            // Apply horizontal insets (left/right notch areas)
+            // AND top inset (camera punch-hole in landscape).
+            // Bottom stays at 0 so content extends to screen edge.
             anchorMin.y = 0f;
-            anchorMax.y = 1f;
+            // anchorMax.y stays as safe area value — respects top camera cutout
         }
 
         rectTransform.anchorMin = anchorMin;

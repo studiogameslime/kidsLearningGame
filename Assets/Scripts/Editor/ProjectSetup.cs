@@ -883,7 +883,7 @@ public class ProjectSetup : EditorWindow
         fruitPuzzle.cardColor = HexColor("#FF8A65");
         fruitPuzzle.targetSceneName = "FruitPuzzle";
         fruitPuzzle.hasSubItems = false;
-        fruitPuzzle.thumbnail = LoadSprite($"{previewPath}/FruitPuzzle.png");
+        fruitPuzzle.thumbnail = LoadSprite($"{previewPath}/Cars Puzzle.png");
         EditorUtility.SetDirty(fruitPuzzle);
 
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
