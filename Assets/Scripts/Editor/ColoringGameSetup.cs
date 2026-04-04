@@ -258,7 +258,7 @@ public class ColoringGameSetup : EditorWindow
         saveRT.anchoredPosition = new Vector2(-16, -8); saveRT.sizeDelta = new Vector2(64, 64);
         var saveBgImg = saveGO.AddComponent<Image>();
         saveBgImg.sprite = saveIcon; saveBgImg.preserveAspect = true;
-        saveBgImg.color = Color.white; saveBgImg.raycastTarget = true;
+        saveBgImg.color = Color.black; saveBgImg.raycastTarget = true;
         saveGO.AddComponent<Button>().targetGraphic = saveBgImg;
 
         // Done button (journey only, next to save)

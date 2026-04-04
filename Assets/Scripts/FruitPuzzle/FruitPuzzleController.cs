@@ -138,7 +138,7 @@ public class FruitPuzzleController : BaseMiniGame
             var img = go.AddComponent<Image>();
             img.sprite = sprites[v];
             img.preserveAspect = true;
-            img.color = new Color(0.1f, 0.1f, 0.1f, 0.25f);
+            img.color = new Color(0.05f, 0.05f, 0.05f, 0.5f);
             img.raycastTarget = false;
             silhouetteGOs.Add(go);
         }
