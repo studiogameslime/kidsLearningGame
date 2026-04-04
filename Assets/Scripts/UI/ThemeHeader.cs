@@ -15,6 +15,11 @@ public class ThemeHeader : MonoBehaviour
     private void Start()
     {
         NormalizeLayout();
+
+        // Auto-add edge extender so header background extends beyond safe area
+        if (GetComponent<SafeAreaEdgeExtender>() == null)
+            gameObject.AddComponent<SafeAreaEdgeExtender>();
+
         ApplyThemeColors();
     }
 
@@ -60,6 +65,11 @@ public class ThemeHeader : MonoBehaviour
         var img = GetComponent<Image>();
         if (img != null)
             img.color = ThemeManager.HeaderColor;
+
+        // Propagate to edge extender (extends header background beyond safe area)
+        var extender = GetComponent<SafeAreaEdgeExtender>();
+        if (extender != null)
+            extender.SetColor(ThemeManager.HeaderColor);
 
         Color textColor = ThemeManager.TextColor;
 
