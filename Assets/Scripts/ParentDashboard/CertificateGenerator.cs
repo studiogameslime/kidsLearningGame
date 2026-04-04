@@ -28,7 +28,7 @@ public static class CertificateGenerator
     /// </summary>
     public static IEnumerator GenerateAndShare(ParentDashboardData data, Sprite roundedRect)
     {
-        if (data == null) yield break;
+        if (data == null || _isSharing) yield break;
 
         // ── Create off-screen rendering setup ──
         var rootGO = new GameObject("CertificateRoot");
@@ -370,9 +370,27 @@ public static class CertificateGenerator
     //  SHARING
     // ════════════════════════════════════════════════════════════════
 
+    private static bool _isSharing;
+
+    /// <summary>Prevent multiple share dialogs from opening at once.</summary>
+    private static bool AcquireShareLock()
+    {
+        if (_isSharing) return false;
+        _isSharing = true;
+        return true;
+    }
+
+    /// <summary>Release share lock after a delay (Android share sheet is async).</summary>
+    private static async void ReleaseShareLockDelayed(float seconds = 2f)
+    {
+        await System.Threading.Tasks.Task.Delay((int)(seconds * 1000));
+        _isSharing = false;
+    }
+
     #if UNITY_ANDROID && !UNITY_EDITOR
     private static void ShareImageAndroid(string imagePath, string fallbackText)
     {
+        if (!AcquireShareLock()) return;
         try
         {
             using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
@@ -426,10 +444,12 @@ public static class CertificateGenerator
                     }
                 }
             }
+            ReleaseShareLockDelayed();
         }
         catch (System.Exception e)
         {
             Debug.LogError($"[Share] Android share failed: {e.Message}\n{e.StackTrace}");
+            _isSharing = false;
         }
     }
     #endif
