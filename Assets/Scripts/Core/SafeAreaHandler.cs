@@ -1,11 +1,18 @@
 using UnityEngine;
 
 /// <summary>
-/// Adjusts the attached RectTransform to stay within the device safe area.
-/// Attach to a full-stretch child of the Canvas. All UI should be placed inside it.
+/// Keeps interactive content within the device safe area for landscape games.
 ///
-/// Applies all safe area insets (left, right, top, bottom) so UI elements
-/// avoid notches, camera punch-holes, and rounded corners.
+/// The RectTransform itself stays full-screen (edge-to-edge) so that any
+/// background Image on this GameObject fills the entire screen seamlessly.
+///
+/// Child elements are pushed inward by adjusting their anchored positions
+/// via left/right offsets on the rect. This avoids notch/camera punch-hole
+/// areas while keeping backgrounds looking clean.
+///
+/// Landscape approach: only left + right insets are applied (where the
+/// notch/camera physically is in landscape). Top/bottom stay full — headers
+/// extend to the top edge, game content to the bottom edge.
 /// </summary>
 [RequireComponent(typeof(RectTransform))]
 public class SafeAreaHandler : MonoBehaviour
@@ -13,8 +20,9 @@ public class SafeAreaHandler : MonoBehaviour
     private RectTransform rectTransform;
     private Rect lastSafeArea;
 
-    /// <summary>Top safe area inset in pixels, available for other scripts.</summary>
-    public static float TopInsetPixels { get; private set; }
+    /// <summary>Safe area insets in screen pixels.</summary>
+    public static float LeftInsetPx { get; private set; }
+    public static float RightInsetPx { get; private set; }
 
     private void Awake()
     {
@@ -32,20 +40,21 @@ public class SafeAreaHandler : MonoBehaviour
     {
         lastSafeArea = Screen.safeArea;
 
-        // Convert safe area from screen pixels to anchor values (0–1).
+        // Convert safe area to anchor values (0–1)
         Vector2 anchorMin = lastSafeArea.position;
         Vector2 anchorMax = lastSafeArea.position + lastSafeArea.size;
 
         anchorMin.x /= Screen.width;
-        anchorMin.y /= Screen.height;
         anchorMax.x /= Screen.width;
-        anchorMax.y /= Screen.height;
 
-        // Cache top inset for other scripts (e.g. headers that need padding)
-        TopInsetPixels = Screen.height - (lastSafeArea.y + lastSafeArea.height);
+        // Cache pixel values
+        LeftInsetPx = lastSafeArea.x;
+        RightInsetPx = Screen.width - (lastSafeArea.x + lastSafeArea.width);
 
-        rectTransform.anchorMin = anchorMin;
-        rectTransform.anchorMax = anchorMax;
+        // Only horizontal insets — landscape camera/notch is on left or right side.
+        // Top/bottom stay at 0/1 so headers and backgrounds extend to screen edges.
+        rectTransform.anchorMin = new Vector2(anchorMin.x, 0f);
+        rectTransform.anchorMax = new Vector2(anchorMax.x, 1f);
         rectTransform.offsetMin = Vector2.zero;
         rectTransform.offsetMax = Vector2.zero;
     }
