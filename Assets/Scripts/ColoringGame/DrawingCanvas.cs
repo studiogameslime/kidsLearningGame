@@ -42,9 +42,11 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
     private bool isDrawing;
     private int activePointerId = -1;
 
-    // Deferred draw start — waits one frame to detect pinch before committing paint
+    // Deferred draw start — waits to detect pinch before committing paint
     private bool pendingDrawStart;
     private Vector2 pendingDrawPos;
+    private enum PendingAction { Brush, Fill, Sticker }
+    private PendingAction pendingAction;
 
     // Sticker stamp mode
     private Sprite activeSticker;
@@ -299,27 +301,20 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
         if (!ScreenToTexturePos(eventData.position, out localPos))
             return;
 
-        // Save snapshot for undo before any modification
-        SaveUndoSnapshot();
-
-        // Stickers work in all modes (fill + brush)
-        if (activeSticker != null)
-        {
-            StampSprite(activeSticker, localPos, stickerStampSize);
-            return;
-        }
-
-        if (areaFillMode)
-        {
-            PerformAreaFill(localPos);
-            return;
-        }
-
-        // Don't draw immediately — defer so pinch-to-zoom can cancel before paint is committed
-        isDrawing = true;
-        lastDrawPos = null;
+        // Don't draw/fill/stamp immediately — defer so pinch-to-zoom can cancel
         pendingDrawStart = true;
         pendingDrawPos = localPos;
+
+        if (activeSticker != null)
+            pendingAction = PendingAction.Sticker;
+        else if (areaFillMode)
+            pendingAction = PendingAction.Fill;
+        else
+        {
+            pendingAction = PendingAction.Brush;
+            isDrawing = true;
+            lastDrawPos = null;
+        }
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -335,6 +330,7 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
         if (pendingDrawStart)
         {
             pendingDrawStart = false;
+            SaveUndoSnapshot();
             DrawCircle(pendingDrawPos);
             lastDrawPos = pendingDrawPos;
             drawTexture.Apply();
@@ -357,12 +353,24 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
     {
         if (eventData.pointerId != activePointerId) return;
 
-        // If draw was deferred and never committed (tap without drag), commit the dot now
+        // If action was deferred and never committed (tap without drag), commit now
         if (pendingDrawStart && !isPinching && Input.touchCount < 2)
         {
             pendingDrawStart = false;
-            DrawCircle(pendingDrawPos);
-            drawTexture.Apply();
+            SaveUndoSnapshot();
+            switch (pendingAction)
+            {
+                case PendingAction.Fill:
+                    PerformAreaFill(pendingDrawPos);
+                    break;
+                case PendingAction.Sticker:
+                    StampSprite(activeSticker, pendingDrawPos, stickerStampSize);
+                    break;
+                case PendingAction.Brush:
+                    DrawCircle(pendingDrawPos);
+                    drawTexture.Apply();
+                    break;
+            }
         }
         pendingDrawStart = false;
 
