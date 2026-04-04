@@ -237,6 +237,7 @@ public class ShadowMatchSetup : EditorWindow
         ctrl.shadowsArea = shadowsRT;
         ctrl.animalsRow = animalsRT;
         ctrl.circleSprite = circleSprite;
+        ctrl.silhouetteShader = Shader.Find("UI/Silhouette");
         ctrl.animalCount = 4;
         ctrl.shadowSize = 400f;
         ctrl.animalSize = 400f;

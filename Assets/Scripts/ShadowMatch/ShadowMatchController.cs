@@ -19,6 +19,7 @@ public class ShadowMatchController : BaseMiniGame
     public RectTransform shadowsArea;
     public RectTransform animalsRow;
     public Sprite circleSprite;
+    public Shader silhouetteShader; // UI/Silhouette — wired in setup, ensures inclusion in build
 
     [Header("Settings")]
     public int animalCount = 4;
@@ -41,7 +42,13 @@ public class ShadowMatchController : BaseMiniGame
     {
         canvas = GetComponentInParent<Canvas>();
 
-        var silShader = Shader.Find("UI/Silhouette");
+        var silShader = silhouetteShader;
+        if (silShader == null)
+        {
+            var resMat = Resources.Load<Material>("SilhouetteMaterial");
+            if (resMat != null) silShader = resMat.shader;
+        }
+        if (silShader == null) silShader = Shader.Find("UI/Silhouette");
         if (silShader != null)
         {
             silhouetteMaterial = new Material(silShader);

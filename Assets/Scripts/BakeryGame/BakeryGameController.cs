@@ -16,6 +16,7 @@ public class BakeryGameController : BaseMiniGame
     public Sprite[] cookieSprites;       // Cookies_0..7
     public Sprite roundedRect;
     public Sprite circleSprite;
+    public Shader silhouetteShader; // UI/Silhouette — wired in setup, ensures inclusion in build
 
     [Header("Slot Styling")]
     public Color slotColor     = new Color(0.62f, 0.48f, 0.33f, 1f);
@@ -37,7 +38,14 @@ public class BakeryGameController : BaseMiniGame
     {
         canvas = GetComponentInParent<Canvas>();
         // Silhouette shader: replaces sprite RGB with solid tint color, keeps alpha shape
-        var shader = Shader.Find("UI/Silhouette");
+        // Try direct reference first (wired in setup), then Resources, then Shader.Find (editor only)
+        var shader = silhouetteShader;
+        if (shader == null)
+        {
+            var resMat = Resources.Load<Material>("SilhouetteMaterial");
+            if (resMat != null) shader = resMat.shader;
+        }
+        if (shader == null) shader = Shader.Find("UI/Silhouette");
         if (shader != null) silhouetteMat = new Material(shader);
         base.Start();
     }

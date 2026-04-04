@@ -118,6 +118,7 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Creating sprites…", 0.05f);
             var roundedRect = CreateRoundedRectSprite();
             var circleSprite = CreateCircleSprite();
+            CreateSilhouetteMaterial();
 
             EditorUtility.DisplayProgressBar("Setting up project…", "Creating prefabs…", 0.15f);
             var cardPrefab = CreateCardPrefab(roundedRect);
@@ -322,6 +323,27 @@ public class ProjectSetup : EditorWindow
         }
 
         return AssetDatabase.LoadAssetAtPath<Sprite>(path);
+    }
+
+    private static void CreateSilhouetteMaterial()
+    {
+        EnsureFolder("Assets/Resources");
+        string path = "Assets/Resources/SilhouetteMaterial.mat";
+        if (AssetDatabase.LoadAssetAtPath<Material>(path) != null) return; // already exists
+        var shader = Shader.Find("UI/Silhouette");
+        if (shader == null) { Debug.LogWarning("UI/Silhouette shader not found"); return; }
+        var mat = new Material(shader);
+        AssetDatabase.CreateAsset(mat, path);
+        AssetDatabase.SaveAssets();
+        Debug.Log("[ProjectSetup] Created SilhouetteMaterial in Resources");
+    }
+
+    // Auto-create silhouette material on editor load if missing
+    [UnityEditor.Callbacks.DidReloadScripts]
+    private static void EnsureSilhouetteMaterial()
+    {
+        if (AssetDatabase.LoadAssetAtPath<Material>("Assets/Resources/SilhouetteMaterial.mat") == null)
+            CreateSilhouetteMaterial();
     }
 
     private static Sprite CreateCircleSprite()

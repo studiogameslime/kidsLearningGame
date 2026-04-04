@@ -212,6 +212,7 @@ public class BakeryGameSetup : EditorWindow
         ctrl.slotColor = SlotColor;
         ctrl.slotEdgeLight = SlotEdgeLight;
         ctrl.slotEdgeDark = SlotEdgeDark;
+        ctrl.silhouetteShader = Shader.Find("UI/Silhouette");
 
         // Wire home button
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
