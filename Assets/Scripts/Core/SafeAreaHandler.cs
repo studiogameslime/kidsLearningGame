@@ -4,19 +4,17 @@ using UnityEngine;
 /// Adjusts the attached RectTransform to stay within the device safe area.
 /// Attach to a full-stretch child of the Canvas. All UI should be placed inside it.
 ///
-/// Landscape-only mode: only insets left/right (where notches/cutouts are in landscape).
-/// Top/bottom remain at full screen so headers and backgrounds stretch without gaps.
+/// Applies all safe area insets (left, right, top, bottom) so UI elements
+/// avoid notches, camera punch-holes, and rounded corners.
 /// </summary>
 [RequireComponent(typeof(RectTransform))]
 public class SafeAreaHandler : MonoBehaviour
 {
-    /// <summary>When true, only applies horizontal (left/right) safe area insets.
-    /// Keeps top/bottom at full screen so headers/backgrounds extend edge-to-edge.</summary>
-    [Tooltip("Only inset left/right for landscape notches. Keep top/bottom full.")]
-    public bool landscapeOnly = true;
-
     private RectTransform rectTransform;
     private Rect lastSafeArea;
+
+    /// <summary>Top safe area inset in pixels, available for other scripts.</summary>
+    public static float TopInsetPixels { get; private set; }
 
     private void Awake()
     {
@@ -43,14 +41,8 @@ public class SafeAreaHandler : MonoBehaviour
         anchorMax.x /= Screen.width;
         anchorMax.y /= Screen.height;
 
-        if (landscapeOnly)
-        {
-            // Apply horizontal insets (left/right notch areas)
-            // AND top inset (camera punch-hole in landscape).
-            // Bottom stays at 0 so content extends to screen edge.
-            anchorMin.y = 0f;
-            // anchorMax.y stays as safe area value — respects top camera cutout
-        }
+        // Cache top inset for other scripts (e.g. headers that need padding)
+        TopInsetPixels = Screen.height - (lastSafeArea.y + lastSafeArea.height);
 
         rectTransform.anchorMin = anchorMin;
         rectTransform.anchorMax = anchorMax;
