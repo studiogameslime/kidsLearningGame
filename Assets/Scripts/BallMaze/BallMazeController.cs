@@ -56,6 +56,11 @@ public class BallMazeController : BaseMiniGame
     private static readonly Color TABLE_COLOR = new Color(0.91f, 0.87f, 0.82f);   // warm cream
     private static readonly Color FRAME_COLOR = new Color(0.76f, 0.62f, 0.42f);    // light wood
     private static readonly Color FRAME_DARK  = new Color(0.55f, 0.42f, 0.25f);    // frame edge
+    private static readonly Color BOARD_COLOR = new Color(0.87f, 0.78f, 0.65f);    // warm wood board
+    private static readonly Color BLOCK_COLOR = new Color(0.55f, 0.42f, 0.25f);    // dark wood block
+    private static readonly Color BALL_COLOR  = new Color(0.93f, 0.31f, 0.24f);    // red ball
+    private static readonly Color HOLE_COLOR  = new Color(0.15f, 0.15f, 0.15f);    // dark hole
+    private static readonly Color START_COLOR = new Color(0.6f, 0.85f, 0.6f, 0.6f);// green start
     private const float FRAME_THICKNESS = 14f;
     private const float SHADOW_OFFSET = 6f;
 
@@ -190,11 +195,11 @@ public class BallMazeController : BaseMiniGame
 
         // ═══ BOARD SURFACE ═══
         var boardGO = CreateImage(playArea, "Board", Vector2.zero,
-            new Vector2(boardPixelW, boardPixelH), Color.white);
+            new Vector2(boardPixelW, boardPixelH), BOARD_COLOR);
         boardRT = boardGO.GetComponent<RectTransform>();
         var boardImg = boardGO.GetComponent<Image>();
-        boardImg.sprite = GetSprite("background_brown");
-        boardImg.type = Image.Type.Tiled;
+        var bgSprite = GetSprite("background_brown");
+        if (bgSprite != null) { boardImg.sprite = bgSprite; boardImg.type = Image.Type.Tiled; boardImg.color = Color.white; }
         boardImg.raycastTarget = true;
 
         // Vignette overlay (subtle darkening at edges)
@@ -221,20 +226,25 @@ public class BallMazeController : BaseMiniGame
         // ═══ START MARKER ═══
         Vector2 startPos = GridToLocal(currentLevel.ballX, currentLevel.ballY);
         var startGO = CreateImage(boardRT, "StartMarker", startPos,
-            new Vector2(unitSize * 0.9f, unitSize * 0.9f), new Color(1, 1, 1, 0.6f));
-        startGO.GetComponent<Image>().sprite = GetSprite("hole_start");
-        startGO.GetComponent<Image>().preserveAspect = true;
-        startGO.GetComponent<Image>().raycastTarget = false;
+            new Vector2(unitSize * 0.9f, unitSize * 0.9f), START_COLOR);
+        var startImg = startGO.GetComponent<Image>();
+        var startSpr = GetSprite("hole_start");
+        if (startSpr != null) { startImg.sprite = startSpr; startImg.color = new Color(1, 1, 1, 0.6f); }
+        else if (roundedRectSprite != null) { startImg.sprite = roundedRectSprite; startImg.type = Image.Type.Sliced; }
+        startImg.preserveAspect = true;
+        startImg.raycastTarget = false;
 
         // ═══ HOLE ═══
         Vector2 holePos = GridToLocal(currentLevel.holeX, currentLevel.holeY);
         float holeVisSize = currentLevel.holeRadius * 2.2f * unitSize;
         var holeGO = CreateImage(boardRT, "Hole", holePos,
-            new Vector2(holeVisSize, holeVisSize), Color.white);
+            new Vector2(holeVisSize, holeVisSize), HOLE_COLOR);
         holeRT = holeGO.GetComponent<RectTransform>();
-        holeGO.GetComponent<Image>().sprite = GetSprite("hole_large_end");
-        holeGO.GetComponent<Image>().preserveAspect = true;
-        holeGO.GetComponent<Image>().raycastTarget = false;
+        var holeImg = holeGO.GetComponent<Image>();
+        var holeSpr = GetSprite("hole_large_end");
+        if (holeSpr != null) { holeImg.sprite = holeSpr; holeImg.color = Color.white; }
+        else if (roundedRectSprite != null) { holeImg.sprite = roundedRectSprite; holeImg.type = Image.Type.Sliced; }
+        holeImg.raycastTarget = false;
 
         // ═══ BALL SHADOW ═══
         float ballSize = currentLevel.ballRadius * 2f * unitSize;
@@ -250,11 +260,14 @@ public class BallMazeController : BaseMiniGame
 
         // ═══ BALL ═══
         var ballGO = CreateImage(boardRT, "Ball", startPos,
-            new Vector2(ballSize, ballSize), Color.white);
+            new Vector2(ballSize, ballSize), BALL_COLOR);
         ballRT = ballGO.GetComponent<RectTransform>();
-        ballGO.GetComponent<Image>().sprite = GetSprite(currentLevel.ballSprite);
-        ballGO.GetComponent<Image>().preserveAspect = true;
-        ballGO.GetComponent<Image>().raycastTarget = false;
+        var ballImg = ballGO.GetComponent<Image>();
+        var ballSpr = GetSprite(currentLevel.ballSprite);
+        if (ballSpr != null) { ballImg.sprite = ballSpr; ballImg.color = Color.white; }
+        else if (roundedRectSprite != null) { ballImg.sprite = roundedRectSprite; ballImg.type = Image.Type.Sliced; }
+        ballImg.preserveAspect = true;
+        ballImg.raycastTarget = false;
         ballRT.SetAsLastSibling();
 
         StartCoroutine(BallIdlePulse());
@@ -316,9 +329,11 @@ public class BallMazeController : BaseMiniGame
         CreateBlockShadow(pos, size, def.rotation);
 
         // Block visual — use natural sprite size, let RectTransform rotation handle orientation
-        var go = CreateImage(boardRT, "Block_" + def.type, pos, size, Color.white);
+        var go = CreateImage(boardRT, "Block_" + def.type, pos, size, BLOCK_COLOR);
         var img = go.GetComponent<Image>();
-        img.sprite = GetSprite(def.SpriteName);
+        var blockSpr = GetSprite(def.SpriteName);
+        if (blockSpr != null) { img.sprite = blockSpr; img.color = Color.white; }
+        else if (roundedRectSprite != null) { img.sprite = roundedRectSprite; img.type = Image.Type.Sliced; }
         img.preserveAspect = false;
         img.raycastTarget = false;
         go.GetComponent<RectTransform>().localEulerAngles = new Vector3(0, 0, def.rotation);
@@ -364,9 +379,12 @@ public class BallMazeController : BaseMiniGame
         var shadowRotRT = shadowGO.GetComponent<RectTransform>();
 
         // Block
-        var go = CreateImage(boardRT, "Rotating_" + def.type, pos, size, Color.white);
+        var rotColor = new Color(0.65f, 0.45f, 0.22f); // slightly lighter than static blocks
+        var go = CreateImage(boardRT, "Rotating_" + def.type, pos, size, rotColor);
         var img = go.GetComponent<Image>();
-        img.sprite = GetSprite(def.SpriteName);
+        var rotSpr = GetSprite(def.SpriteName);
+        if (rotSpr != null) { img.sprite = rotSpr; img.color = Color.white; }
+        else if (roundedRectSprite != null) { img.sprite = roundedRectSprite; img.type = Image.Type.Sliced; }
         img.preserveAspect = false;
         img.raycastTarget = false;
         var rt = go.GetComponent<RectTransform>();
@@ -408,11 +426,9 @@ public class BallMazeController : BaseMiniGame
         if (Mathf.Abs(accel.x) > 0.15f || Mathf.Abs(accel.y) > 0.15f)
             DismissTutorial();
 
-        // Landscape orientation: device X = screen Y, device Y = -screen X
-        // When holding phone in landscape-left (home button right):
-        //   tilt right (accel.y < 0) → ball moves right (+X on screen)
-        //   tilt forward (accel.x > 0) → ball moves up (+Y on screen)
-        Vector2 rawTilt = new Vector2(-accel.y, accel.x);
+        // Unity's Input.acceleration is already in screen-space coordinates,
+        // so tilt right → positive X, tilt forward → positive Y.
+        Vector2 rawTilt = new Vector2(accel.x, accel.y);
 
         // Dead zone — ignore tiny tilts when device is nearly flat
         if (Mathf.Abs(rawTilt.x) < TILT_DEAD_ZONE) rawTilt.x = 0f;

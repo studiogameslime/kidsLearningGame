@@ -125,6 +125,7 @@ public class CollectibleAlbumController : MonoBehaviour
     public void Open()
     {
         if (_isOpen || _isAnimating) return;
+        FirebaseAnalyticsManager.LogAlbumOpened();
         BuildUI();
         _currentPage = 0;
         PopulatePages(_currentPage);
@@ -647,6 +648,7 @@ public class CollectibleAlbumController : MonoBehaviour
         }
 
         _currentPage = targetPage;
+        FirebaseAnalyticsManager.LogAlbumPageViewed(_currentPage);
         // Refresh nav buttons and page dots
         _prevButton.gameObject.SetActive(_currentPage > 0);
         _nextButton.gameObject.SetActive(_currentPage < TotalPages - 1);

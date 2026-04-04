@@ -211,12 +211,14 @@ public class WorldEnvironment : MonoBehaviour
     public void OnSunTapped()
     {
         if (isTransitioning || IsNight) return;
+        FirebaseAnalyticsManager.LogDayNightToggled("night");
         StartCoroutine(TransitionToNight());
     }
 
     public void OnMoonTapped()
     {
         if (isTransitioning || !IsNight) return;
+        FirebaseAnalyticsManager.LogDayNightToggled("day");
         StartCoroutine(TransitionToDay());
     }
 

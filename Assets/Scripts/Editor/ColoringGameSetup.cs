@@ -257,17 +257,9 @@ public class ColoringGameSetup : EditorWindow
         saveRT.pivot = new Vector2(1, 1);
         saveRT.anchoredPosition = new Vector2(-16, -8); saveRT.sizeDelta = new Vector2(64, 64);
         var saveBgImg = saveGO.AddComponent<Image>();
-        saveBgImg.sprite = roundedRect; saveBgImg.type = Image.Type.Sliced;
-        saveBgImg.color = HexColor("#A5D6A7"); saveBgImg.raycastTarget = true;
+        saveBgImg.sprite = saveIcon; saveBgImg.preserveAspect = true;
+        saveBgImg.color = Color.white; saveBgImg.raycastTarget = true;
         saveGO.AddComponent<Button>().targetGraphic = saveBgImg;
-        var saveIconGO = new GameObject("Icon");
-        saveIconGO.transform.SetParent(saveGO.transform, false);
-        var saveIconRT = saveIconGO.AddComponent<RectTransform>();
-        saveIconRT.anchorMin = new Vector2(0.15f, 0.15f); saveIconRT.anchorMax = new Vector2(0.85f, 0.85f);
-        saveIconRT.offsetMin = Vector2.zero; saveIconRT.offsetMax = Vector2.zero;
-        var saveIconImg = saveIconGO.AddComponent<Image>();
-        saveIconImg.sprite = saveIcon; saveIconImg.preserveAspect = true;
-        saveIconImg.color = Color.white; saveIconImg.raycastTarget = false;
 
         // Done button (journey only, next to save)
         var doneGO = new GameObject("DoneButton");

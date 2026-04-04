@@ -297,7 +297,6 @@ public class ParentDashboardController : MonoBehaviour
     {
         // Clean up previous content (for re-entry)
         if (_statsTabBar != null) Destroy(_statsTabBar);
-        if (_gameDetailsOverlay != null) Destroy(_gameDetailsOverlay);
         for (int i = 0; i < tabContents.Length; i++)
         {
             // Destroy all children of each scroll content
@@ -433,6 +432,8 @@ public class ParentDashboardController : MonoBehaviour
     private void SwitchContentTab(int tab)
     {
         _activeContentTab = tab;
+        string tabName = tab == TabStatistics ? "statistics" : tab == TabGames ? "games" : "gallery";
+        FirebaseAnalyticsManager.LogParentTabSwitched(tabName);
 
         // Toggle scroll views
         if (tabContents.Length > 0) tabContents[0].parent.gameObject.SetActive(tab == TabStatistics);
@@ -2292,7 +2293,10 @@ public class ParentDashboardController : MonoBehaviour
 
         // ═══════════════════════════════════════════════════════════
         //  SECTION 2: DIFFICULTY — 3 tiers (easy/medium/hard)
+        //  (hidden for coloring — no meaningful difficulty)
         // ═══════════════════════════════════════════════════════════
+        if (gameId != "coloring")
+        {
         bool hasRec = rec != null;
         int currentDiff = hasRec ? rec.finalDifficulty : game.currentDifficulty;
         // Map 1-10 to tier: 0=easy(1-3), 1=medium(4-6), 2=hard(7-10)
@@ -2332,6 +2336,7 @@ public class ParentDashboardController : MonoBehaviour
         hardBtn.onClick.AddListener(() => OnDifficultyTierChanged(
             gameId, 2, easyBtn, medBtn, hardBtn, capturedDescTMP,
             diffSection, capturedScrollContent));
+        } // end if (gameId != "coloring") — difficulty
 
         // ═══════════════════════════════════════════════════════════
         //  SECTION 2.5: COLORING MODE (only for coloring game)
@@ -2340,14 +2345,15 @@ public class ParentDashboardController : MonoBehaviour
         {
             var colorSection = MakePanelSection(parent, H("\u05DE\u05E6\u05D1 \u05E6\u05D1\u05D9\u05E2\u05D4")); // מצב צביעה
             MakeColoringModeControl(colorSection);
-            var customSection = MakePanelSection(parent, H("\u05E6\u05D1\u05E2\u05D9\u05DD \u05DE\u05D5\u05EA\u05D0\u05DE\u05D9\u05DD")); // צבעים מותאמים
-            MakeCustomColorsSection(customSection);
+
+            MakeDrawingsGallery(parent);
         }
 
         // ═══════════════════════════════════════════════════════════
         //  SECTION 3: QUICK STATS — mini blocks
+        //  (hidden for coloring)
         // ═══════════════════════════════════════════════════════════
-        if (game.sessionsPlayed > 0)
+        if (gameId != "coloring" && game.sessionsPlayed > 0)
         {
             var statsSection = MakePanelSection(parent, H("\u05E1\u05D8\u05D8\u05D9\u05E1\u05D8\u05D9\u05E7\u05D4")); // סטטיסטיקה
 
@@ -2771,30 +2777,6 @@ public class ParentDashboardController : MonoBehaviour
             capturedState = newState;
         });
 
-        // ── "ניהול" manage button ──
-        GameDashboardData capturedGame = game;
-        var manageBtnGO = new GameObject("ManageBtn");
-        manageBtnGO.transform.SetParent(row.transform, false);
-        var manageBgImg = manageBtnGO.AddComponent<Image>();
-        manageBgImg.sprite = null; // plain rect
-        manageBgImg.color = Primary;
-        manageBgImg.raycastTarget = true;
-        var manageLE = manageBtnGO.AddComponent<LayoutElement>();
-        manageLE.minWidth = 52;
-        manageLE.preferredWidth = 52;
-        manageLE.flexibleWidth = 0;
-        manageLE.preferredHeight = 38;
-
-        var manageTMP = AddChildTMP(manageBtnGO.transform, H("\u05E0\u05D9\u05D4\u05D5\u05DC"), 12, Color.white, TextAlignmentOptions.Center); // ניהול
-        manageTMP.fontStyle = FontStyles.Bold;
-        var mrt = manageTMP.rectTransform;
-        mrt.anchorMin = Vector2.zero; mrt.anchorMax = Vector2.one;
-        mrt.offsetMin = Vector2.zero; mrt.offsetMax = Vector2.zero;
-
-        var manageBtn = manageBtnGO.AddComponent<Button>();
-        manageBtn.targetGraphic = manageBgImg;
-        manageBtn.onClick.AddListener(() => ShowGameDetails(capturedGame));
-
         // ── Game preview thumbnail (leftmost visually in RTL = last in hierarchy) ──
         var gameItem = FindGameItemFromDb(gameId);
         if (gameItem != null && gameItem.thumbnail != null)
@@ -2823,115 +2805,7 @@ public class ParentDashboardController : MonoBehaviour
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    //  GAME DETAILS SCREEN (overlay on Games tab)
-    // ═══════════════════════════════════════════════════════════════
-
-    private GameObject _gameDetailsOverlay;
-
-    private void ShowGameDetails(GameDashboardData game)
-    {
-        // Create overlay on top of the dashboard
-        if (_gameDetailsOverlay != null) Destroy(_gameDetailsOverlay);
-
-        _gameDetailsOverlay = new GameObject("GameDetailsPanel");
-        _gameDetailsOverlay.transform.SetParent(dashboardPanel, false);
-        var overlayRT = _gameDetailsOverlay.AddComponent<RectTransform>();
-        // Right-side panel (35% width) — games grid stays visible on the left
-        overlayRT.anchorMin = new Vector2(0, 0);
-        overlayRT.anchorMax = new Vector2(0.38f, 1);
-        overlayRT.offsetMin = Vector2.zero;
-        overlayRT.offsetMax = Vector2.zero;
-
-        var overlayBg = _gameDetailsOverlay.AddComponent<Image>();
-        if (roundedRect != null) { overlayBg.sprite = roundedRect; overlayBg.type = Image.Type.Sliced; }
-        overlayBg.color = new Color(0.97f, 0.97f, 0.98f, 1f);
-        overlayBg.raycastTarget = true;
-
-        // Scroll view for details
-        var scrollGO = new GameObject("Scroll");
-        scrollGO.transform.SetParent(_gameDetailsOverlay.transform, false);
-        var scrollRT = scrollGO.AddComponent<RectTransform>();
-        scrollRT.anchorMin = new Vector2(0.02f, 0.02f);
-        scrollRT.anchorMax = new Vector2(0.98f, 0.92f);
-        scrollRT.offsetMin = Vector2.zero;
-        scrollRT.offsetMax = Vector2.zero;
-        scrollGO.AddComponent<Image>().color = Color.clear;
-        scrollGO.AddComponent<UnityEngine.UI.RectMask2D>();
-        var scroll = scrollGO.AddComponent<ScrollRect>();
-        scroll.horizontal = false;
-        scroll.vertical = true;
-
-        var contentGO = new GameObject("Content");
-        contentGO.transform.SetParent(scrollGO.transform, false);
-        var contentRT = contentGO.AddComponent<RectTransform>();
-        contentRT.anchorMin = new Vector2(0, 1);
-        contentRT.anchorMax = new Vector2(1, 1);
-        contentRT.pivot = new Vector2(0.5f, 1);
-        contentRT.sizeDelta = Vector2.zero;
-        var contentVL = contentGO.AddComponent<VerticalLayoutGroup>();
-        contentVL.spacing = 16;
-        contentVL.padding = new RectOffset(15, 15, 15, 15);
-        contentVL.childForceExpandWidth = true;
-        contentVL.childForceExpandHeight = false;
-        contentVL.childControlWidth = true;
-        contentVL.childControlHeight = true;
-        contentGO.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        scroll.content = contentRT;
-
-        // ── Header: back button + game name ──
-        var headerGO = new GameObject("Header");
-        headerGO.transform.SetParent(_gameDetailsOverlay.transform, false);
-        var headerRT = headerGO.AddComponent<RectTransform>();
-        headerRT.anchorMin = new Vector2(0, 0.92f);
-        headerRT.anchorMax = new Vector2(1, 1f);
-        headerRT.offsetMin = new Vector2(8, 0);
-        headerRT.offsetMax = new Vector2(-8, -4);
-        var headerHL = headerGO.AddComponent<HorizontalLayoutGroup>();
-        headerHL.spacing = 8;
-        headerHL.childAlignment = TextAnchor.MiddleRight;
-        headerHL.childForceExpandWidth = false;
-        headerHL.childControlWidth = false;
-        headerHL.childControlHeight = true;
-
-        // Game name (large)
-        var nameGO = new GameObject("Name");
-        nameGO.transform.SetParent(headerGO.transform, false);
-        nameGO.AddComponent<LayoutElement>().flexibleWidth = 1;
-        var nameTMP = nameGO.AddComponent<TextMeshProUGUI>();
-        HebrewText.SetText(nameTMP, game.gameName);
-        nameTMP.fontSize = 28;
-        nameTMP.fontStyle = FontStyles.Bold;
-        nameTMP.color = TextDark;
-        nameTMP.alignment = TextAlignmentOptions.Right;
-        nameTMP.raycastTarget = false;
-
-        // Back button
-        var backGO = new GameObject("BackBtn");
-        backGO.transform.SetParent(headerGO.transform, false);
-        backGO.AddComponent<LayoutElement>().preferredWidth = 80;
-        var backBg = backGO.AddComponent<Image>();
-        if (roundedRect != null) { backBg.sprite = roundedRect; backBg.type = Image.Type.Sliced; }
-        backBg.color = HexColor("#E0E0E0");
-        var backBtn = backGO.AddComponent<Button>();
-        backBtn.targetGraphic = backBg;
-        backBtn.onClick.AddListener(CloseGameDetails);
-        var backTextGO = new GameObject("Label");
-        backTextGO.transform.SetParent(backGO.transform, false);
-        var bkRT = backTextGO.AddComponent<RectTransform>();
-        bkRT.anchorMin = Vector2.zero; bkRT.anchorMax = Vector2.one;
-        bkRT.offsetMin = Vector2.zero; bkRT.offsetMax = Vector2.zero;
-        var bkTMP = backTextGO.AddComponent<TextMeshProUGUI>();
-        HebrewText.SetText(bkTMP, "\u2190 \u05D7\u05D6\u05E8\u05D4"); // ← חזרה
-        bkTMP.fontSize = 22;
-        bkTMP.color = TextDark;
-        bkTMP.alignment = TextAlignmentOptions.Center;
-        bkTMP.raycastTarget = false;
-
-        // ── Build the full game card inside the scroll (reuse existing MakeGameCard) ──
-        MakeGameCard(contentRT, game);
-    }
-
+    // (Game details overlay removed — settings panel is the single UI for game settings)
     private void MakeColoringModeControl(Transform card)
     {
         // Title row
@@ -3095,27 +2969,28 @@ public class ParentDashboardController : MonoBehaviour
         }
 
         var titleTMP = AddChildTMP(card, H("\u05E6\u05D9\u05D5\u05E8\u05D9\u05DD"), // ציורים
-            16, TextDark, TextAlignmentOptions.Right);
+            16, Color.white, TextAlignmentOptions.Right);
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
 
-        // Grid of recent drawings (last 6)
+        // Grid of recent drawings — 3 per row, tap to share
         var gridGO = new GameObject("DrawingsGrid");
         gridGO.transform.SetParent(card, false);
         gridGO.AddComponent<RectTransform>();
         var gridLE = gridGO.AddComponent<LayoutElement>();
-        gridLE.preferredHeight = 140;
         gridLE.flexibleWidth = 1;
-        var grid = gridGO.AddComponent<GridLayoutGroup>();
-        grid.cellSize = new Vector2(120, 120);
-        grid.spacing = new Vector2(8, 8);
-        grid.childAlignment = TextAnchor.MiddleCenter;
-        grid.constraint = GridLayoutGroup.Constraint.Flexible;
+        var drawGrid = gridGO.AddComponent<GridLayoutGroup>();
+        drawGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        drawGrid.constraintCount = 3;
+        drawGrid.cellSize = new Vector2(130, 130);
+        drawGrid.spacing = new Vector2(6, 6);
+        drawGrid.childAlignment = TextAnchor.UpperCenter;
+        gridGO.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
         string appLink = "https://play.google.com/store/apps/details?id=com.elroey.kidslearning";
         string childName = profile.displayName ?? "";
 
-        int count = Mathf.Min(profile.savedDrawings.Count, 6);
+        int count = Mathf.Min(profile.savedDrawings.Count, 9);
         for (int i = profile.savedDrawings.Count - 1; i >= profile.savedDrawings.Count - count; i--)
         {
             var drawing = profile.savedDrawings[i];
@@ -3123,16 +2998,11 @@ public class ParentDashboardController : MonoBehaviour
 
             if (!System.IO.File.Exists(fullPath)) continue;
 
+            // Cell = just the drawing image, tap to share
             var cellGO = new GameObject($"Drawing_{i}");
             cellGO.transform.SetParent(gridGO.transform, false);
 
-            // Drawing thumbnail
-            var imgGO = new GameObject("Img");
-            imgGO.transform.SetParent(cellGO.transform, false);
-            var imgRT = imgGO.AddComponent<RectTransform>();
-            imgRT.anchorMin = Vector2.zero; imgRT.anchorMax = Vector2.one;
-            imgRT.offsetMin = Vector2.zero; imgRT.offsetMax = Vector2.zero;
-            var img = imgGO.AddComponent<Image>();
+            var img = cellGO.AddComponent<Image>();
             img.raycastTarget = true;
 
             // Load drawing texture
@@ -3143,37 +3013,9 @@ public class ParentDashboardController : MonoBehaviour
                 new Vector2(0.5f, 0.5f), 100f);
             img.preserveAspect = true;
 
-            // Game icon watermark (bottom-right corner)
-            var gameItem = FindGameItemFromDb("coloring");
-            if (gameItem != null && gameItem.thumbnail != null)
-            {
-                var iconGO = new GameObject("Icon");
-                iconGO.transform.SetParent(cellGO.transform, false);
-                var iconRT = iconGO.AddComponent<RectTransform>();
-                iconRT.anchorMin = new Vector2(1, 0); iconRT.anchorMax = new Vector2(1, 0);
-                iconRT.pivot = new Vector2(1, 0);
-                iconRT.sizeDelta = new Vector2(28, 28);
-                iconRT.anchoredPosition = new Vector2(-4, 4);
-                var iconImg = iconGO.AddComponent<Image>();
-                iconImg.sprite = gameItem.thumbnail;
-                iconImg.preserveAspect = true;
-                iconImg.raycastTarget = false;
-            }
-
-            // Share button overlay
-            var shareBtnGO = new GameObject("ShareBtn");
-            shareBtnGO.transform.SetParent(cellGO.transform, false);
-            var shareRT = shareBtnGO.AddComponent<RectTransform>();
-            shareRT.anchorMin = new Vector2(0, 0); shareRT.anchorMax = new Vector2(0, 0);
-            shareRT.pivot = new Vector2(0, 0);
-            shareRT.sizeDelta = new Vector2(30, 30);
-            shareRT.anchoredPosition = new Vector2(4, 4);
-            var shareBg = shareBtnGO.AddComponent<Image>();
-            shareBg.color = new Color(0.2f, 0.7f, 0.3f, 0.85f);
-            shareBg.raycastTarget = true;
-            var shareTMP = AddChildTMP(shareBtnGO.transform, "\u21AA", 18, Color.white, TextAlignmentOptions.Center); // ↪
-            var shareBtn = shareBtnGO.AddComponent<Button>();
-            shareBtn.targetGraphic = shareBg;
+            // Tap drawing to share
+            var shareBtn = cellGO.AddComponent<Button>();
+            shareBtn.targetGraphic = img;
 
             string capturedPath = fullPath;
             string capturedName = childName;
@@ -3183,6 +3025,7 @@ public class ParentDashboardController : MonoBehaviour
 
     private void ShareDrawing(string imagePath, string childName, string appLink)
     {
+        FirebaseAnalyticsManager.LogDrawingShared();
         string text = $"\u05EA\u05E8\u05D0\u05D5 \u05D0\u05D9\u05D6\u05D4 \u05E6\u05D9\u05D5\u05E8 \u05D9\u05E4\u05D4 {childName} \u05E2\u05E9\u05D4 \u05D1\u05DC\u05D5\u05DE\u05D3\u05D9\u05DD \u05E2\u05DD \u05D0\u05DC\u05D9\u05DF \uD83C\uDFA8\n{appLink}";
         // תראו איזה ציור יפה X עשה בלומדים עם אלין 🎨
 
@@ -3195,445 +3038,6 @@ public class ParentDashboardController : MonoBehaviour
         Debug.Log($"[ShareDrawing] Editor — path: {imagePath}\nText: {text}");
         Application.OpenURL("file://" + imagePath);
         #endif
-    }
-
-    private void CloseGameDetails()
-    {
-        if (_gameDetailsOverlay != null)
-        {
-            Destroy(_gameDetailsOverlay);
-            _gameDetailsOverlay = null;
-        }
-    }
-
-    /// <summary>Refreshes the games tab to reflect changes (called after difficulty/visibility changes).</summary>
-    private void RefreshGamesTab()
-    {
-        if (tabContents != null && tabContents.Length > 1)
-        {
-            var parent = tabContents[1];
-            for (int i = parent.childCount - 1; i >= 0; i--)
-                Destroy(parent.GetChild(i).gameObject);
-            _data = ParentDashboardViewModel.Build();
-            BuildGamesTabContent();
-        }
-    }
-
-    private void MakeGameCard(Transform parent, GameDashboardData game)
-    {
-        var rec = game.recommendation;
-        var card = MakeCard(parent);
-        string gameId = game.gameId;
-
-        // ── Header row: score badge + name + visibility chip ──
-        var headerRow = MakeHRow(card, 60, TextAnchor.MiddleRight);
-        headerRow.GetComponent<HorizontalLayoutGroup>().spacing = 16;
-
-        // Score badge
-        var badgeGO = new GameObject("Badge");
-        badgeGO.transform.SetParent(headerRow.transform, false);
-        var badgeLE = badgeGO.AddComponent<LayoutElement>();
-        badgeLE.preferredWidth = 48;
-        badgeLE.preferredHeight = 65;
-        var badgeImg = badgeGO.AddComponent<Image>();
-        if (circleSprite != null) badgeImg.sprite = circleSprite;
-        badgeImg.color = game.sessionsPlayed > 0
-            ? ParentDashboardViewModel.ScoreColor(game.score)
-            : TextLight;
-        if (game.sessionsPlayed > 0)
-        {
-            var badgeTMP = AddChildTMP(badgeGO.transform, $"{game.score:F0}",
-                16, Color.white, TextAlignmentOptions.Center);
-            badgeTMP.fontStyle = FontStyles.Bold;
-        }
-        else
-        {
-            AddChildTMP(badgeGO.transform, "\u2014", 16, Color.white, TextAlignmentOptions.Center); // —
-        }
-
-        // Name + subtitle column
-        var infoCol = MakeVCol(headerRow.transform);
-        var infoLE = infoCol.AddComponent<LayoutElement>();
-        infoLE.flexibleWidth = 1;
-        infoLE.preferredHeight = 68;
-
-        var nameTMP = AddChildTMP(infoCol.transform, H(game.gameName), 19, TextDark, TextAlignmentOptions.Right);
-        nameTMP.fontStyle = FontStyles.Bold;
-        nameTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 35;
-
-        string sub = game.sessionsPlayed > 0
-            ? $"{ParentDashboardViewModel.TrendArrow(game.trend)} " +
-                H($"{game.sessionsPlayed} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD") // X משחקים
-            : H("\u05E2\u05D5\u05D3 \u05DC\u05D0 \u05E9\u05D5\u05D7\u05E7"); // עוד לא שוחק
-        var subTMP = AddChildTMP(infoCol.transform, sub, 14, TextMedium, TextAlignmentOptions.Right);
-        subTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 27;
-
-        // Visibility status chip
-        bool finalVisible = rec != null ? rec.finalVisible : game.systemVisibility;
-        var visChipGO = new GameObject("VisChip");
-        visChipGO.transform.SetParent(headerRow.transform, false);
-        var visChipLE = visChipGO.AddComponent<LayoutElement>();
-        visChipLE.preferredWidth = 72;
-        visChipLE.preferredHeight = 38;
-        var visChipImg = visChipGO.AddComponent<Image>();
-        visChipImg.sprite = roundedRect;
-        visChipImg.type = Image.Type.Sliced;
-        visChipImg.color = finalVisible ? HexColor("#E8F5E9") : HexColor("#FFEBEE");
-        var visChipTMP = AddChildTMP(visChipGO.transform,
-            finalVisible
-                ? H("\u05DE\u05D5\u05E6\u05D2")  // מוצג
-                : H("\u05DE\u05D5\u05E1\u05EA\u05E8"), // מוסתר
-            12, finalVisible ? AccentGreen : AccentRed, TextAlignmentOptions.Center);
-
-        // ═══════════════════════════════════════════════════════════
-        //  SECTION 1: ACCESS CONTROL
-        // ═══════════════════════════════════════════════════════════
-        MakeDivider(card);
-
-        // System access recommendation
-        bool sysVisible = rec != null ? rec.systemRecommendsVisible : game.isInBaselineBucket;
-        string sysAccessLabel = sysVisible
-            ? H("\u05DE\u05D5\u05DE\u05DC\u05E5 \u05E2\u05DC \u05D9\u05D3\u05D9 \u05D4\u05DE\u05E2\u05E8\u05DB\u05EA") // מומלץ על ידי המערכת
-            : H("\u05DC\u05D0 \u05DE\u05D5\u05DE\u05DC\u05E5 \u05DB\u05E8\u05D2\u05E2"); // לא מומלץ כרגע
-        var sysAccessRow = MakeHRow(card, 24, TextAnchor.MiddleRight);
-        sysAccessRow.GetComponent<HorizontalLayoutGroup>().spacing = 8;
-        var sysAccessIcon = AddChildTMP(sysAccessRow.transform,
-            sysVisible ? "\u25CF" : "\u25CB", // ● or ○
-            12, sysVisible ? AccentGreen : TextLight, TextAlignmentOptions.Center);
-        sysAccessIcon.gameObject.AddComponent<LayoutElement>().preferredWidth = 16;
-        var sysAccessTMP = AddChildTMP(sysAccessRow.transform, sysAccessLabel,
-            13, TextMedium, TextAlignmentOptions.Right);
-        sysAccessTMP.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
-
-        // Access control: 3 toggle buttons (Auto / On / Off)
-        var accessRow = MakeHRow(card, 38, TextAnchor.MiddleCenter);
-        accessRow.GetComponent<HorizontalLayoutGroup>().spacing = 10;
-        accessRow.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
-
-        ParentGameAccessMode currentMode = rec != null
-            ? rec.accessOverrideMode : game.visibilityMode;
-
-        var autoBtn = MakeToggleButton(accessRow.transform,
-            H("\u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9"), // אוטומטי
-            currentMode == ParentGameAccessMode.Default);
-        var onBtn = MakeToggleButton(accessRow.transform,
-            H("\u05E4\u05E2\u05D9\u05DC"), // פעיל
-            currentMode == ParentGameAccessMode.ForcedEnabled);
-        var offBtn = MakeToggleButton(accessRow.transform,
-            H("\u05DE\u05D5\u05E1\u05EA\u05E8"), // מוסתר
-            currentMode == ParentGameAccessMode.ForcedDisabled);
-
-        // Access explanation
-        string accessExplain = rec != null
-            ? ParentDashboardViewModel.GetExplanationLabel(rec.accessExplanation)
-            : game.visibilityReasonDisplay;
-        var accessExplainTMP = AddChildTMP(card, H(accessExplain), 12, TextLight, TextAlignmentOptions.Right);
-        accessExplainTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
-
-        // Wire access toggle buttons
-        var capturedCard = card;
-        var capturedScrollContent = parent;
-        var capturedVisChipImg = visChipImg;
-        var capturedVisChipTMP = visChipTMP;
-        var capturedAccessExplainTMP = accessExplainTMP;
-        var capturedAutoBtn = autoBtn;
-        var capturedOnBtn = onBtn;
-        var capturedOffBtn = offBtn;
-
-        autoBtn.onClick.AddListener(() => OnAccessModeChanged(
-            gameId, ParentGameAccessMode.Default,
-            capturedAutoBtn, capturedOnBtn, capturedOffBtn,
-            capturedVisChipImg, capturedVisChipTMP, capturedAccessExplainTMP,
-            capturedCard, capturedScrollContent));
-        onBtn.onClick.AddListener(() => OnAccessModeChanged(
-            gameId, ParentGameAccessMode.ForcedEnabled,
-            capturedAutoBtn, capturedOnBtn, capturedOffBtn,
-            capturedVisChipImg, capturedVisChipTMP, capturedAccessExplainTMP,
-            capturedCard, capturedScrollContent));
-        offBtn.onClick.AddListener(() => OnAccessModeChanged(
-            gameId, ParentGameAccessMode.ForcedDisabled,
-            capturedAutoBtn, capturedOnBtn, capturedOffBtn,
-            capturedVisChipImg, capturedVisChipTMP, capturedAccessExplainTMP,
-            capturedCard, capturedScrollContent));
-
-        // ═══════════════════════════════════════════════════════════
-        //  SECTION 2: CONTENT / DIFFICULTY RECOMMENDATION + CONTROL
-        // ═══════════════════════════════════════════════════════════
-        MakeDivider(card);
-
-        bool hasRec = rec != null;
-        bool hasVariant = hasRec && rec.hasScalableVariant;
-        bool isManual = game.manualDifficultyOverride;
-
-        // ── Recommendation chain display ──
-        if (hasRec)
-        {
-            // Baseline by age
-            var baseRow = MakeHRow(card, 22, TextAnchor.MiddleRight);
-            baseRow.GetComponent<HorizontalLayoutGroup>().spacing = 8;
-            AddChildTMP(baseRow.transform, "\u25B8", 10, TextLight, TextAlignmentOptions.Center) // ▸
-                .gameObject.AddComponent<LayoutElement>().preferredWidth = 14;
-            AddChildTMP(baseRow.transform,
-                H($"\u05D1\u05E8\u05D9\u05E8\u05EA \u05DE\u05D7\u05D3\u05DC \u05DC\u05E4\u05D9 \u05D2\u05D9\u05DC: {rec.baselineVariantLabel}"), // ברירת מחדל לפי גיל: X
-                13, TextLight, TextAlignmentOptions.Right)
-                .gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
-
-            // System recommendation (if different from baseline)
-            if (rec.systemRecommendedDifficulty != rec.baselineDifficulty)
-            {
-                var sysRow = MakeHRow(card, 22, TextAnchor.MiddleRight);
-                sysRow.GetComponent<HorizontalLayoutGroup>().spacing = 8;
-                AddChildTMP(sysRow.transform, "\u25B8", 10, Primary, TextAlignmentOptions.Center) // ▸
-                    .gameObject.AddComponent<LayoutElement>().preferredWidth = 14;
-                string sysLabel = rec.recommendationSource == ContentRecommendationSource.Adaptive
-                    ? H($"\u05D4\u05DE\u05DC\u05E6\u05EA \u05D4\u05DE\u05E2\u05E8\u05DB\u05EA: {rec.systemRecommendedVariantLabel}") // המלצת המערכת: X
-                    : H($"\u05D4\u05DE\u05DC\u05E6\u05EA \u05D4\u05DE\u05E2\u05E8\u05DB\u05EA: {rec.systemRecommendedVariantLabel}");
-                AddChildTMP(sysRow.transform, sysLabel,
-                    13, Primary, TextAlignmentOptions.Right)
-                    .gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
-            }
-
-            // Content explanation
-            string contentExplain = ParentDashboardViewModel.GetExplanationLabel(rec.contentExplanation);
-            AddChildTMP(card, H(contentExplain), 12, TextLight, TextAlignmentOptions.Right)
-                .gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
-        }
-
-        MakeSpacer(card, 4f);
-
-        // ── Difficulty control row ──
-        var diffRow = MakeHRow(card, 50, TextAnchor.MiddleRight);
-        diffRow.GetComponent<HorizontalLayoutGroup>().spacing = 10;
-        diffRow.GetComponent<HorizontalLayoutGroup>().padding = new RectOffset(2, 2, 6, 6);
-
-        // Minus button
-        var minusBtn = MakeSmallButton(diffRow.transform, "\u2212", 28); // −
-        // Difficulty display
-        var diffDisplayGO = new GameObject("DiffDisplay");
-        diffDisplayGO.transform.SetParent(diffRow.transform, false);
-        var diffDisplayLE = diffDisplayGO.AddComponent<LayoutElement>();
-        diffDisplayLE.preferredWidth = 60;
-        diffDisplayLE.preferredHeight = 54;
-        var diffBgImg = diffDisplayGO.AddComponent<Image>();
-        diffBgImg.sprite = roundedRect;
-        diffBgImg.type = Image.Type.Sliced;
-        diffBgImg.color = HexColor("#EBF5FB");
-        int displayDiff = hasRec ? rec.finalDifficulty : game.currentDifficulty;
-        var diffValTMP = AddChildTMP(diffDisplayGO.transform, $"{displayDiff}",
-            22, Primary, TextAlignmentOptions.Center);
-        diffValTMP.fontStyle = FontStyles.Bold;
-        // Plus button
-        var plusBtn = MakeSmallButton(diffRow.transform, "+", 28);
-
-        // Label
-        var diffLabelTMP = AddChildTMP(diffRow.transform,
-            H("\u05E8\u05DE\u05EA \u05E7\u05D5\u05E9\u05D9"), // רמת קושי
-            15, TextMedium, TextAlignmentOptions.Right);
-        diffLabelTMP.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
-
-        // Auto/manual chip
-        var modeLabelTMP = AddChildTMP(diffRow.transform,
-            isManual ? H("\u05D9\u05D3\u05E0\u05D9") : H("\u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9"), // ידני / אוטומטי
-            12, isManual ? AccentOrange : AccentGreen, TextAlignmentOptions.Center);
-        modeLabelTMP.gameObject.AddComponent<LayoutElement>().preferredWidth = 72;
-
-        // ── Final value display (prominent) ──
-        string finalLabel = hasRec ? rec.finalVariantLabel
-            : (game.activeDifficultyImpact ?? "");
-        var finalRow = MakeHRow(card, 28, TextAnchor.MiddleRight);
-        finalRow.GetComponent<HorizontalLayoutGroup>().spacing = 8;
-        var finalIcon = AddChildTMP(finalRow.transform, "\u25BA", 12, Primary, TextAlignmentOptions.Center); // ►
-        finalIcon.gameObject.AddComponent<LayoutElement>().preferredWidth = 16;
-        string finalPrefix = H("\u05D4\u05E2\u05E8\u05DA \u05D1\u05E4\u05D5\u05E2\u05DC:"); // הערך בפועל:
-        var finalValTMP = AddChildTMP(finalRow.transform,
-            $"{finalPrefix} {H(finalLabel)}",
-            15, Primary, TextAlignmentOptions.Right);
-        finalValTMP.fontStyle = FontStyles.Bold;
-        finalValTMP.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
-
-        // ── Reset button (shown when manual override) ──
-        GameObject resetBtnGO = null;
-
-        if (isManual)
-        {
-            MakeSpacer(card, 4f);
-
-            // Recommended info row
-            if (hasRec)
-            {
-                var recCard = MakeInlineCard(card, HexColor("#F0FFF0"));
-                recCard.GetComponent<VerticalLayoutGroup>().padding = new RectOffset(15, 15, 10, 10);
-                recCard.GetComponent<VerticalLayoutGroup>().spacing = 3;
-
-                string recLabel = H($"\u05D4\u05DE\u05DC\u05E6\u05EA \u05D4\u05DE\u05E2\u05E8\u05DB\u05EA: {rec.systemRecommendedVariantLabel}"); // המלצת המערכת: X
-                AddChildTMP(recCard.transform, recLabel, 14, AccentGreen, TextAlignmentOptions.Right)
-                    .gameObject.AddComponent<LayoutElement>().preferredHeight = 27;
-            }
-
-            MakeSpacer(card, 4f);
-
-            // Reset button
-            resetBtnGO = new GameObject("ResetBtn");
-            resetBtnGO.transform.SetParent(card, false);
-            var resetLE2 = resetBtnGO.AddComponent<LayoutElement>();
-            resetLE2.preferredHeight = 49;
-            var resetImg = resetBtnGO.AddComponent<Image>();
-            if (roundedRect != null) resetImg.sprite = roundedRect;
-            resetImg.type = Image.Type.Sliced;
-            resetImg.color = HexColor("#E8F5E9");
-            var resetBtn = resetBtnGO.AddComponent<Button>();
-            resetBtn.targetGraphic = resetImg;
-            var resetColors = resetBtn.colors;
-            resetColors.highlightedColor = HexColor("#C8E6C9");
-            resetColors.pressedColor = HexColor("#A5D6A7");
-            resetBtn.colors = resetColors;
-
-            var resetLabelGO = new GameObject("Label");
-            resetLabelGO.transform.SetParent(resetBtnGO.transform, false);
-            var resetLabelRT = resetLabelGO.AddComponent<RectTransform>();
-            resetLabelRT.anchorMin = Vector2.zero;
-            resetLabelRT.anchorMax = Vector2.one;
-            resetLabelRT.offsetMin = Vector2.zero;
-            resetLabelRT.offsetMax = Vector2.zero;
-            var resetLabelTMP = resetLabelGO.AddComponent<TextMeshProUGUI>();
-            HebrewText.SetText(resetLabelTMP, "\u05D7\u05D6\u05E8\u05D4 \u05DC\u05E8\u05DE\u05D4 \u05D4\u05DE\u05D5\u05DE\u05DC\u05E6\u05EA"); // חזרה לרמה המומלצת
-            resetLabelTMP.fontSize = 20;
-            resetLabelTMP.color = AccentGreen;
-            resetLabelTMP.alignment = TextAlignmentOptions.Center;
-            resetLabelTMP.enableWordWrapping = false;
-            resetLabelTMP.raycastTarget = false;
-        }
-
-        // Wire difficulty buttons
-        var capturedFinalValTMP = finalValTMP;
-        var capturedResetGO = resetBtnGO;
-
-        minusBtn.onClick.AddListener(() => ChangeDifficultyFull(
-            gameId, -1, diffValTMP, modeLabelTMP, capturedFinalValTMP,
-            capturedCard, capturedScrollContent));
-        plusBtn.onClick.AddListener(() => ChangeDifficultyFull(
-            gameId, +1, diffValTMP, modeLabelTMP, capturedFinalValTMP,
-            capturedCard, capturedScrollContent));
-
-        if (resetBtnGO != null)
-        {
-            resetBtnGO.GetComponent<Button>().onClick.AddListener(() => ResetDifficultyOverride(
-                gameId, diffValTMP, modeLabelTMP, capturedFinalValTMP,
-                capturedResetGO, null,
-                capturedCard, capturedScrollContent));
-        }
-
-        // ═══════════════════════════════════════════════════════════
-        //  SECTION 2.5: COLORING MODE (only for coloring game)
-        // ═══════════════════════════════════════════════════════════
-        if (gameId == "coloring")
-        {
-            MakeDivider(card);
-            MakeColoringModeControl(card);
-            MakeDivider(card);
-            MakeCustomColorsSection(card);
-            MakeDivider(card);
-            MakeDrawingsGallery(card);
-        }
-
-        // ═══════════════════════════════════════════════════════════
-        //  SECTION 3: QUICK STATS (only if played)
-        // ═══════════════════════════════════════════════════════════
-        if (game.sessionsPlayed > 0)
-        {
-            MakeDivider(card);
-            var quickRow = MakeHRow(card, 28, TextAnchor.MiddleCenter);
-            quickRow.GetComponent<HorizontalLayoutGroup>().spacing = 21;
-            quickRow.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
-
-            AddMiniStat(quickRow.transform, $"{game.accuracy:P0}",
-                H("\u05D3\u05D9\u05D5\u05E7")); // דיוק
-            AddMiniStat(quickRow.transform, $"{game.completionRate:P0}",
-                H("\u05D0\u05D7\u05D5\u05D6 \u05D4\u05E9\u05DC\u05DE\u05D4")); // אחוז השלמה
-            AddMiniStat(quickRow.transform, H(game.lastPlayedDisplay),
-                H("\u05E9\u05D5\u05D7\u05E7 \u05DC\u05D0\u05D7\u05E8\u05D5\u05E0\u05D4")); // שוחק לאחרונה
-        }
-
-        // ═══════════════════════════════════════════════════════════
-        //  SECTION 4: EXPANDABLE DETAILS (only if played)
-        // ═══════════════════════════════════════════════════════════
-        if (game.sessionsPlayed > 0)
-        {
-            var detailsGO = new GameObject("Details");
-            detailsGO.transform.SetParent(card, false);
-            detailsGO.SetActive(false);
-            var detailsLayout = detailsGO.AddComponent<VerticalLayoutGroup>();
-            detailsLayout.spacing = 8;
-            detailsLayout.padding = new RectOffset(2, 2, 10, 10);
-            detailsLayout.childForceExpandWidth = true;
-            detailsLayout.childForceExpandHeight = false;
-            detailsGO.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-            MakeDivider(detailsGO.transform);
-
-            MakeDetailRow(detailsGO.transform, "\u05D6\u05DE\u05DF \u05DE\u05E9\u05D7\u05E7 \u05DB\u05D5\u05DC\u05DC", H(game.totalPlayTimeDisplay)); // זמן משחק כולל
-            MakeDetailRow(detailsGO.transform, "\u05DE\u05E9\u05DA \u05DE\u05E9\u05D7\u05E7 \u05DE\u05DE\u05D5\u05E6\u05E2", H(game.averageSessionDisplay)); // משך משחק ממוצע
-            MakeDetailRow(detailsGO.transform, "\u05D3\u05D9\u05D5\u05E7", $"{game.accuracy:P0}"); // דיוק
-            MakeDetailRow(detailsGO.transform, "\u05E9\u05D2\u05D9\u05D0\u05D5\u05EA \u05DE\u05DE\u05D5\u05E6\u05E2", $"{game.mistakeRate:F1}"); // שגיאות ממוצע
-            MakeDetailRow(detailsGO.transform, "\u05E7\u05E6\u05D1 \u05D4\u05E9\u05DC\u05DE\u05D4", $"{game.completionRate:P0}"); // קצב השלמה
-            MakeDetailRow(detailsGO.transform, "\u05E6\u05D9\u05D5\u05DF \u05DE\u05D4\u05D9\u05E8\u05D5\u05EA", $"{game.speedScore:F0}"); // ציון מהירות
-            MakeDetailRow(detailsGO.transform, "\u05E2\u05E6\u05DE\u05D0\u05D5\u05EA", $"{game.independenceScore:F0}"); // עצמאות
-            MakeDetailRow(detailsGO.transform, "\u05E8\u05DE\u05D4 \u05D2\u05D1\u05D5\u05D4\u05D4 \u05D1\u05D9\u05D5\u05EA\u05E8", $"{game.highestDifficulty}/10"); // רמה גבוהה ביותר
-            MakeDetailRow(detailsGO.transform, "\u05E8\u05E6\u05E3 \u05D4\u05E6\u05DC\u05D7\u05D5\u05EA \u05D4\u05DB\u05D9 \u05D0\u05E8\u05D5\u05DA", $"{game.maxStreak}"); // רצף הצלחות הכי ארוך
-
-            if (!string.IsNullOrEmpty(game.hintUsageLabel))
-                MakeDetailRow(detailsGO.transform, "\u05E9\u05D9\u05DE\u05D5\u05E9 \u05D1\u05E8\u05DE\u05D6\u05D9\u05DD", H(game.hintUsageLabel)); // שימוש ברמזים
-            if (!string.IsNullOrEmpty(game.persistenceLabel))
-                MakeDetailRow(detailsGO.transform, "\u05D4\u05EA\u05DE\u05D3\u05D4", H(game.persistenceLabel)); // התמדה
-            if (!string.IsNullOrEmpty(game.difficultyBalanceLabel))
-                MakeDetailRow(detailsGO.transform, "\u05D0\u05D9\u05D6\u05D5\u05DF \u05E7\u05D5\u05E9\u05D9", H(game.difficultyBalanceLabel)); // איזון קושי
-            if (!string.IsNullOrEmpty(game.trendLabel))
-                MakeDetailRow(detailsGO.transform, "\u05DE\u05D2\u05DE\u05D4", H(game.trendLabel)); // מגמה
-
-            MakeDetailRow(detailsGO.transform, "\u05DE\u05E9\u05D7\u05E7 \u05D0\u05D7\u05E8\u05D5\u05DF",
-                H(game.lastPlayedDisplay)); // משחק אחרון
-
-            if (!string.IsNullOrEmpty(game.insightText))
-            {
-                var insight = AddChildTMP(detailsGO.transform, H(game.insightText), 15, Primary, TextAlignmentOptions.Right);
-                insight.fontStyle = FontStyles.Italic;
-                insight.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
-            }
-
-            if (game.recentSessions.Count > 0)
-            {
-                MakeDivider(detailsGO.transform);
-                var sessTitle = AddChildTMP(detailsGO.transform,
-                    H("\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05D0\u05D7\u05E8\u05D5\u05E0\u05D9\u05DD"), // משחקים אחרונים
-                    16, TextDark, TextAlignmentOptions.Right);
-                sessTitle.fontStyle = FontStyles.Bold;
-                sessTitle.gameObject.AddComponent<LayoutElement>().preferredHeight = 32;
-
-                int showCount = Mathf.Min(5, game.recentSessions.Count);
-                for (int i = game.recentSessions.Count - 1; i >= game.recentSessions.Count - showCount; i--)
-                {
-                    var s = game.recentSessions[i];
-                    string status = s.completed ? "\u2713" : "\u2717";
-                    string line = $"{status} {ParentDashboardViewModel.FormatDate(s.timestamp)} | " +
-                        $"\u05E8\u05DE\u05D4 {s.difficulty} | {s.accuracy:P0} | {s.mistakes} \u05E9\u05D2\u05D9\u05D0\u05D5\u05EA";
-                    var sessTMP = AddChildTMP(detailsGO.transform, line, 13, TextMedium, TextAlignmentOptions.Right);
-                    sessTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 27;
-                }
-            }
-
-            // Tap header to expand/collapse
-            var expandBtn = headerRow.AddComponent<Button>();
-            expandBtn.transition = Selectable.Transition.None;
-            var scrollContent = parent;
-            expandBtn.onClick.AddListener(() =>
-            {
-                detailsGO.SetActive(!detailsGO.activeSelf);
-                LayoutRebuilder.ForceRebuildLayoutImmediate(card.GetComponent<RectTransform>());
-                LayoutRebuilder.ForceRebuildLayoutImmediate(scrollContent.GetComponent<RectTransform>());
-            });
-        }
-
-        FitCard(card);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -4120,6 +3524,8 @@ public class ParentDashboardController : MonoBehaviour
             ? GameVisibilityService.Evaluate(profile, gameItem)
             : new GameVisibilityResult(false, VisibilityReasonCode.Hidden_MissingData, VisibilitySource.MissingData);
         bool nowVisible = evalResult.isVisible;
+        FirebaseAnalyticsManager.LogGameVisibilityChanged(gameId,
+            ParentDashboardViewModel.GetGameName(gameId), nowVisible);
 
         // Update toggle button states in settings panel
         UpdateToggleButton(autoBtn, newMode == ParentGameAccessMode.Default);
@@ -4261,6 +3667,8 @@ public class ParentDashboardController : MonoBehaviour
                 break;
             }
         }
+        FirebaseAnalyticsManager.LogDifficultyChanged(gameId,
+            ParentDashboardViewModel.GetGameName(gameId), newDifficulty, isManual);
     }
 
     private GameItemData FindGameItemFromDb(string gameId)

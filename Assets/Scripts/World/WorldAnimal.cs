@@ -74,6 +74,7 @@ public class WorldAnimal : MonoBehaviour
     public void OnTap()
     {
         isTouchActive = false;
+        FirebaseAnalyticsManager.LogAnimalTapped(animalId);
 
         // Trigger Success animation
         if (spriteAnim != null)
@@ -93,6 +94,7 @@ public class WorldAnimal : MonoBehaviour
 
         if (!isDragging)
         {
+            FirebaseAnalyticsManager.LogAnimalDragged(animalId);
             isDragging = true;
             if (spriteAnim != null)
                 spriteAnim.PlayFloating();

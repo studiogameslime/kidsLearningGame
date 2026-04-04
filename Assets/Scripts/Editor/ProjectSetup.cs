@@ -253,8 +253,9 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Fruit Puzzle…", 0.999f);
             FruitPuzzleSetup.RunSetupSilent();
 
-            EditorUtility.DisplayProgressBar("Setting up project…", "Building Color Studio…", 0.9995f);
-            ColorStudioSetup.RunSetupSilent();
+            // Color Studio — hidden for now
+            // EditorUtility.DisplayProgressBar("Setting up project…", "Building Color Studio…", 0.9995f);
+            // ColorStudioSetup.RunSetupSilent();
 
             // Open ProfileSelection scene (entry point)
             EditorSceneManager.OpenScene($"{ScenesPath}/ProfileSelection.unity");
@@ -1508,7 +1509,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/SizeSort.unity",
             $"{ScenesPath}/ColorSort.unity",
             $"{ScenesPath}/FruitPuzzle.unity",
-            $"{ScenesPath}/ColorStudioScene.unity",
+            // $"{ScenesPath}/ColorStudioScene.unity", // hidden for now
         };
 
         var buildScenes = scenePaths.Select(p => new EditorBuildSettingsScene(p, true)).ToArray();

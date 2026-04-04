@@ -632,8 +632,8 @@ public class WorldController : MonoBehaviour
         // Aquarium on CENTER screen
         SpawnAquarium(viewportWidth, centerOffset);
 
-        // Color Studio on CENTER screen
-        SpawnColorStudio(viewportWidth, centerOffset);
+        // Color Studio — hidden for now
+        // SpawnColorStudio(viewportWidth, centerOffset);
     }
 
     private void SpawnAnimals(List<string> animalIds, float screenWidth, float xOffset = 0f)

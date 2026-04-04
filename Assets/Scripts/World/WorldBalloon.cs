@@ -83,6 +83,7 @@ public class WorldBalloon : MonoBehaviour
     {
         if (isPopped) return;
         isPopped = true;
+        FirebaseAnalyticsManager.LogBalloonPopped();
 
         // Track bubble pop in analytics
         var profile = ProfileManager.ActiveProfile;

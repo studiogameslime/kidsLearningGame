@@ -42,6 +42,10 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
     private bool isDrawing;
     private int activePointerId = -1;
 
+    // Deferred draw start — waits one frame to detect pinch before committing paint
+    private bool pendingDrawStart;
+    private Vector2 pendingDrawPos;
+
     // Sticker stamp mode
     private Sprite activeSticker;
     public bool IsStickerMode => activeSticker != null;
@@ -197,6 +201,7 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
             {
                 // Start pinch — cancel any drawing in progress
                 isPinching = true;
+                pendingDrawStart = false; // discard deferred draw
                 if (isDrawing)
                 {
                     isDrawing = false;
@@ -310,11 +315,11 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
             return;
         }
 
+        // Don't draw immediately — defer so pinch-to-zoom can cancel before paint is committed
         isDrawing = true;
         lastDrawPos = null;
-        DrawCircle(localPos);
-        lastDrawPos = localPos;
-        drawTexture.Apply();
+        pendingDrawStart = true;
+        pendingDrawPos = localPos;
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -323,6 +328,17 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
         if (areaFillMode || isPinching) return;
         if (!isDrawing || activeSticker != null) return;
         if (eventData.pointerId != activePointerId) return;
+        // Abort if second finger appeared (about to pinch)
+        if (Input.touchCount >= 2) return;
+
+        // Commit deferred draw start now that we know it's a single-finger drag
+        if (pendingDrawStart)
+        {
+            pendingDrawStart = false;
+            DrawCircle(pendingDrawPos);
+            lastDrawPos = pendingDrawPos;
+            drawTexture.Apply();
+        }
 
         Vector2 localPos;
         if (ScreenToTexturePos(eventData.position, out localPos))
@@ -340,6 +356,16 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
     public void OnPointerUp(PointerEventData eventData)
     {
         if (eventData.pointerId != activePointerId) return;
+
+        // If draw was deferred and never committed (tap without drag), commit the dot now
+        if (pendingDrawStart && !isPinching && Input.touchCount < 2)
+        {
+            pendingDrawStart = false;
+            DrawCircle(pendingDrawPos);
+            drawTexture.Apply();
+        }
+        pendingDrawStart = false;
+
         isDrawing = false;
         lastDrawPos = null;
         activePointerId = -1;

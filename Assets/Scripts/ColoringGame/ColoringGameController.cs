@@ -359,23 +359,8 @@ public class ColoringGameController : BaseMiniGame
     {
         if (colorButtonPrefab == null || colorButtonContainer == null) return;
 
-        // Build full palette: default colors + custom colors from Color Studio
-        var allColors = new System.Collections.Generic.List<Color>(PaletteColors);
-
-        var profile = ProfileManager.ActiveProfile;
-        if (profile?.colorStudio?.savedColors != null && profile.colorStudio.savedColors.Count > 0)
-        {
-            foreach (var cc in profile.colorStudio.savedColors)
-            {
-                if (!string.IsNullOrEmpty(cc.hex))
-                {
-                    ColorUtility.TryParseHtmlString(cc.hex, out Color c);
-                    allColors.Add(c);
-                }
-            }
-        }
-
-        _activePalette = allColors.ToArray();
+        // Use default palette colors
+        _activePalette = PaletteColors;
 
         for (int i = 0; i < _activePalette.Length; i++)
         {

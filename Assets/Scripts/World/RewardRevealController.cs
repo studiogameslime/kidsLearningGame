@@ -167,6 +167,7 @@ public class RewardRevealController : MonoBehaviour
     private void OnGiftOpened(GiftBoxController gift)
     {
         if (gift.reward == null) return;
+        FirebaseAnalyticsManager.LogDiscovery(gift.reward.type, gift.reward.id);
 
         Vector2 giftPos = gift.GetComponent<RectTransform>().anchoredPosition;
 
