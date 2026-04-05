@@ -19,6 +19,7 @@ public class ColorCatchSetup
     private static readonly Color HillNear          = HexColor("#5BAF5B"); // darker green hill
     private static readonly Color GrassColor        = HexColor("#4CAF50"); // rich grass
     private static readonly Color GrassLight        = HexColor("#66BB6A"); // grass highlight
+    private static readonly Color HeaderColor       = new Color(0.2f, 0.45f, 0.2f, 0.75f); // semi-transparent green
     private static readonly int TopBarHeight  = SetupConstants.HeaderHeight;
 
     public static void RunSetupSilent()
