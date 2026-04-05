@@ -126,8 +126,8 @@ public class ColorCatchSetup
         var progressBG = new GameObject("ProgressBarBG");
         progressBG.transform.SetParent(canvasGO.transform, false);
         var progBGRT = progressBG.AddComponent<RectTransform>();
-        progBGRT.anchorMin = new Vector2(0.3f, 0.89f);
-        progBGRT.anchorMax = new Vector2(0.7f, 0.92f);
+        progBGRT.anchorMin = new Vector2(0.3f, 0.82f);
+        progBGRT.anchorMax = new Vector2(0.7f, 0.85f);
         progBGRT.offsetMin = Vector2.zero;
         progBGRT.offsetMax = Vector2.zero;
         var progBGImg = progressBG.AddComponent<Image>();
