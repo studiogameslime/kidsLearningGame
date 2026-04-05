@@ -12,14 +12,13 @@ public class ColorCatchSetup
 {
     private static readonly Vector2 Ref = new Vector2(1920, 1080);
 
-    // Nature / garden colors
-    private static readonly Color SkyTop            = HexColor("#87CEEB"); // light blue
-    private static readonly Color SkyBottom          = HexColor("#D4F1F9"); // pale sky
-    private static readonly Color HillFar           = HexColor("#7EC87E"); // light green hill
-    private static readonly Color HillNear          = HexColor("#5BAF5B"); // darker green hill
-    private static readonly Color GrassColor        = HexColor("#4CAF50"); // rich grass
-    private static readonly Color GrassLight        = HexColor("#66BB6A"); // grass highlight
-    private static readonly Color HeaderColor       = new Color(0.2f, 0.45f, 0.2f, 0.75f); // semi-transparent green
+    // Nature colors (matching World scene)
+    private static readonly Color DaySky            = HexColor("#8FD4F5");
+    private static readonly Color DayHillsLarge     = HexColor("#B7D7D6");
+    private static readonly Color DayHills          = HexColor("#9FCBC5");
+    private static readonly Color DayGroundBack     = HexColor("#8ED36B");
+    private static readonly Color DayGroundFront    = HexColor("#79C956");
+    private static readonly string WorldArtDir      = "Assets/Art/World";
     private static readonly int TopBarHeight  = SetupConstants.HeaderHeight;
 
     public static void RunSetupSilent()
@@ -47,7 +46,7 @@ public class ColorCatchSetup
         camGO.AddComponent<AudioListener>();
         var cam = camGO.AddComponent<Camera>();
         cam.clearFlags = CameraClearFlags.SolidColor;
-        cam.backgroundColor = SkyTop;
+        cam.backgroundColor = DaySky;
         cam.orthographic = true;
         var urpType = System.Type.GetType("UnityEngine.Rendering.Universal.UniversalAdditionalCameraData, Unity.RenderPipelines.Universal.Runtime");
         if (urpType != null) camGO.AddComponent(urpType);
@@ -69,73 +68,58 @@ public class ColorCatchSetup
 
         var roundedRect = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/RoundedRect.png");
 
-        // ═══ NATURE BACKGROUND ═══
+        // ═══ NATURE BACKGROUND (same art assets as World scene) ═══
 
-        // Sky gradient (top half lighter, bottom half slightly darker)
-        var skyGO = StretchImg(canvasGO.transform, "Sky", SkyBottom);
+        // Load World art sprites
+        var hillsLargeSprite = LoadSprite($"{WorldArtDir}/hillsLarge.png");
+        var hillsSprite = LoadSprite($"{WorldArtDir}/hills.png");
+        var groundLayer1Sprite = LoadSprite($"{WorldArtDir}/groundLayer1.png");
+        var groundLayer2Sprite = LoadSprite($"{WorldArtDir}/groundLayer2.png");
+        var cloudSprites = new Sprite[8];
+        for (int i = 0; i < 8; i++)
+            cloudSprites[i] = LoadSprite($"{WorldArtDir}/cloud{i}.png");
+
+        // Sky background
+        var skyGO = StretchImg(canvasGO.transform, "SkyBackground", DaySky);
         skyGO.GetComponent<Image>().raycastTarget = false;
 
-        // Sky top overlay (gradient effect — darker blue at top fading out)
-        var skyTopGO = new GameObject("SkyTop");
-        skyTopGO.transform.SetParent(canvasGO.transform, false);
-        var skyTopRT = skyTopGO.AddComponent<RectTransform>();
-        skyTopRT.anchorMin = new Vector2(0, 0.5f);
-        skyTopRT.anchorMax = Vector2.one;
-        skyTopRT.offsetMin = Vector2.zero;
-        skyTopRT.offsetMax = Vector2.zero;
-        var skyTopImg = skyTopGO.AddComponent<Image>();
-        skyTopImg.color = SkyTop;
-        skyTopImg.raycastTarget = false;
+        // Decorative clouds (static, scattered across sky)
+        for (int i = 0; i < 5; i++)
+        {
+            var cSprite = cloudSprites[i % cloudSprites.Length];
+            if (cSprite == null) continue;
+            var cloudGO = new GameObject($"Cloud_{i}");
+            cloudGO.transform.SetParent(canvasGO.transform, false);
+            var cRT = cloudGO.AddComponent<RectTransform>();
+            float cx = 0.1f + i * 0.2f;
+            float cy = 0.7f + (i % 3) * 0.08f;
+            float cSize = 0.12f + (i % 2) * 0.05f;
+            cRT.anchorMin = new Vector2(cx - cSize, cy - cSize * 0.5f);
+            cRT.anchorMax = new Vector2(cx + cSize, cy + cSize * 0.5f);
+            cRT.offsetMin = Vector2.zero;
+            cRT.offsetMax = Vector2.zero;
+            var cImg = cloudGO.AddComponent<Image>();
+            cImg.sprite = cSprite;
+            cImg.preserveAspect = true;
+            cImg.color = new Color(1f, 1f, 1f, 0.85f);
+            cImg.raycastTarget = false;
+        }
 
-        // Far hill (soft rounded, behind everything)
-        var hillFarGO = new GameObject("HillFar");
-        hillFarGO.transform.SetParent(canvasGO.transform, false);
-        var hillFarRT = hillFarGO.AddComponent<RectTransform>();
-        hillFarRT.anchorMin = new Vector2(-0.1f, 0f);
-        hillFarRT.anchorMax = new Vector2(1.1f, 0.45f);
-        hillFarRT.offsetMin = Vector2.zero;
-        hillFarRT.offsetMax = Vector2.zero;
-        var hillFarImg = hillFarGO.AddComponent<Image>();
-        hillFarImg.color = HillFar;
-        if (roundedRect != null) { hillFarImg.sprite = roundedRect; hillFarImg.type = Image.Type.Sliced; }
-        hillFarImg.raycastTarget = false;
+        // Large hills (far background)
+        CreateSpriteLayer(canvasGO.transform, "HillsLarge", hillsLargeSprite,
+            new Vector2(0, 0.3f), new Vector2(1, 0.6f), DayHillsLarge);
 
-        // Near hill (darker, overlapping)
-        var hillNearGO = new GameObject("HillNear");
-        hillNearGO.transform.SetParent(canvasGO.transform, false);
-        var hillNearRT = hillNearGO.AddComponent<RectTransform>();
-        hillNearRT.anchorMin = new Vector2(-0.05f, 0f);
-        hillNearRT.anchorMax = new Vector2(1.05f, 0.35f);
-        hillNearRT.offsetMin = Vector2.zero;
-        hillNearRT.offsetMax = Vector2.zero;
-        var hillNearImg = hillNearGO.AddComponent<Image>();
-        hillNearImg.color = HillNear;
-        if (roundedRect != null) { hillNearImg.sprite = roundedRect; hillNearImg.type = Image.Type.Sliced; }
-        hillNearImg.raycastTarget = false;
+        // Small hills (closer)
+        CreateSpriteLayer(canvasGO.transform, "Hills", hillsSprite,
+            new Vector2(0, 0.2f), new Vector2(1, 0.45f), DayHills);
 
-        // Grass strip (bottom)
-        var grassGO = new GameObject("Grass");
-        grassGO.transform.SetParent(canvasGO.transform, false);
-        var grassRT = grassGO.AddComponent<RectTransform>();
-        grassRT.anchorMin = Vector2.zero;
-        grassRT.anchorMax = new Vector2(1, 0.2f);
-        grassRT.offsetMin = Vector2.zero;
-        grassRT.offsetMax = Vector2.zero;
-        var grassImg = grassGO.AddComponent<Image>();
-        grassImg.color = GrassColor;
-        grassImg.raycastTarget = false;
+        // Ground back layer
+        CreateSpriteLayer(canvasGO.transform, "GroundBack", groundLayer1Sprite,
+            new Vector2(0, 0), new Vector2(1, 0.35f), DayGroundBack);
 
-        // Grass highlight strip (thin lighter line at top of grass)
-        var grassHLGO = new GameObject("GrassHighlight");
-        grassHLGO.transform.SetParent(canvasGO.transform, false);
-        var grassHLRT = grassHLGO.AddComponent<RectTransform>();
-        grassHLRT.anchorMin = new Vector2(0, 0.19f);
-        grassHLRT.anchorMax = new Vector2(1, 0.21f);
-        grassHLRT.offsetMin = Vector2.zero;
-        grassHLRT.offsetMax = Vector2.zero;
-        var grassHLImg = grassHLGO.AddComponent<Image>();
-        grassHLImg.color = GrassLight;
-        grassHLImg.raycastTarget = false;
+        // Ground front layer
+        CreateSpriteLayer(canvasGO.transform, "GroundFront", groundLayer2Sprite,
+            new Vector2(0, 0), new Vector2(1, 0.2f), DayGroundFront);
 
         // ═══ PLAY AREA ═══
 
@@ -273,6 +257,25 @@ public class ColorCatchSetup
         go.transform.SetParent(parent, false);
         Full(go.AddComponent<RectTransform>());
         go.AddComponent<Image>().color = color;
+        return go;
+    }
+
+    private static GameObject CreateSpriteLayer(Transform parent, string name, Sprite sprite,
+        Vector2 anchorMin, Vector2 anchorMax, Color tint)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = anchorMin;
+        rt.anchorMax = anchorMax;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+        var img = go.AddComponent<Image>();
+        img.sprite = sprite;
+        img.type = Image.Type.Simple;
+        img.color = tint;
+        img.preserveAspect = false;
+        img.raycastTarget = false;
         return go;
     }
 
