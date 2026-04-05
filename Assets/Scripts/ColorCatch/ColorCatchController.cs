@@ -384,23 +384,44 @@ public class ColorCatchController : BaseMiniGame
                 continue;
             }
 
-            // Check overlap with basket
-            if (basketRT != null && CheckOverlap(item.rt, basketRT))
+            // Check overlap with basket — different zones for correct vs wrong color
+            if (basketRT != null)
             {
-                item.caught = true;
-                OnItemCaught(item);
+                int hitZone = GetBasketHitZone(item.rt);
+                // hitZone: 0=no hit, 1=top opening, 2=sides/body
+                if (hitZone > 0)
+                {
+                    bool isCorrectColor = item.colorIndex == targetColorIndex;
+                    // Correct color: catch from top or sides
+                    // Wrong color: only mistake if enters from top opening
+                    if (isCorrectColor || hitZone == 1)
+                    {
+                        item.caught = true;
+                        OnItemCaught(item);
+                    }
+                }
             }
         }
     }
 
-    private bool CheckOverlap(RectTransform a, RectTransform b)
+    /// <summary>
+    /// Returns 0=no hit, 1=top opening of basket, 2=sides/body of basket.
+    /// Top opening = upper 35% of the basket rect.
+    /// </summary>
+    private int GetBasketHitZone(RectTransform itemRT)
     {
-        Rect rectA = GetScreenRect(a);
-        Rect rectB = GetScreenRect(b);
-        // Shrink basket rect slightly for more forgiving but accurate feel
-        float shrink = rectB.width * 0.15f;
-        rectB = new Rect(rectB.x + shrink, rectB.y, rectB.width - shrink * 2f, rectB.height);
-        return rectA.Overlaps(rectB);
+        Rect itemRect = GetScreenRect(itemRT);
+        Rect basketRect = GetScreenRect(basketRT);
+
+        // No overlap at all
+        if (!itemRect.Overlaps(basketRect)) return 0;
+
+        // Item center Y position
+        float itemCenterY = itemRect.y + itemRect.height * 0.5f;
+        // Top opening = upper 35% of basket
+        float topThreshold = basketRect.y + basketRect.height * 0.65f;
+
+        return (itemCenterY >= topThreshold) ? 1 : 2;
     }
 
     private Rect GetScreenRect(RectTransform rt)
