@@ -15,6 +15,8 @@ public class SandDrawingSetup
     private static readonly Color HeaderColor = new Color(0.55f, 0.40f, 0.20f, 0.55f); // warm sandy header
     private static readonly int TopBarHeight = SetupConstants.HeaderHeight;
     private static readonly Color BgColor = new Color(0.82f, 0.72f, 0.54f); // warm sand background
+    private static readonly Color FrameWood = new Color(0.55f, 0.38f, 0.20f); // wood frame
+    private static readonly Color FrameWoodDark = new Color(0.42f, 0.28f, 0.14f); // wood frame edge
 
     public static void RunSetupSilent()
     {
@@ -76,12 +78,41 @@ public class SandDrawingSetup
         bgImg.color = BgColor;
         bgImg.raycastTarget = false;
 
-        // Sand Display — RawImage covering most of the screen
+        var roundedRect = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/RoundedRect.png");
+
+        // Wooden frame (outer)
+        var frameOuterGO = new GameObject("FrameOuter");
+        frameOuterGO.transform.SetParent(canvasGO.transform, false);
+        var frameOuterRT = frameOuterGO.AddComponent<RectTransform>();
+        frameOuterRT.anchorMin = new Vector2(0.015f, 0.015f);
+        frameOuterRT.anchorMax = new Vector2(0.985f, 0.885f);
+        frameOuterRT.offsetMin = Vector2.zero;
+        frameOuterRT.offsetMax = Vector2.zero;
+        var frameOuterImg = frameOuterGO.AddComponent<Image>();
+        if (roundedRect != null) { frameOuterImg.sprite = roundedRect; frameOuterImg.type = Image.Type.Sliced; }
+        frameOuterImg.color = FrameWoodDark;
+        frameOuterImg.raycastTarget = false;
+        frameOuterGO.AddComponent<Shadow>().effectColor = new Color(0, 0, 0, 0.3f);
+
+        // Wooden frame (inner)
+        var frameInnerGO = new GameObject("FrameInner");
+        frameInnerGO.transform.SetParent(canvasGO.transform, false);
+        var frameInnerRT = frameInnerGO.AddComponent<RectTransform>();
+        frameInnerRT.anchorMin = new Vector2(0.02f, 0.02f);
+        frameInnerRT.anchorMax = new Vector2(0.98f, 0.88f);
+        frameInnerRT.offsetMin = Vector2.zero;
+        frameInnerRT.offsetMax = Vector2.zero;
+        var frameInnerImg = frameInnerGO.AddComponent<Image>();
+        if (roundedRect != null) { frameInnerImg.sprite = roundedRect; frameInnerImg.type = Image.Type.Sliced; }
+        frameInnerImg.color = FrameWood;
+        frameInnerImg.raycastTarget = false;
+
+        // Sand Display — RawImage inside the frame
         var sandGO = new GameObject("SandDisplay");
         sandGO.transform.SetParent(canvasGO.transform, false);
         var sandRT = sandGO.AddComponent<RectTransform>();
-        sandRT.anchorMin = new Vector2(0.02f, 0.02f);
-        sandRT.anchorMax = new Vector2(0.98f, 0.88f);
+        sandRT.anchorMin = new Vector2(0.025f, 0.025f);
+        sandRT.anchorMax = new Vector2(0.975f, 0.875f);
         sandRT.offsetMin = Vector2.zero;
         sandRT.offsetMax = Vector2.zero;
         var sandRawImg = sandGO.AddComponent<RawImage>();

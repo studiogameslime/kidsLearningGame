@@ -15,12 +15,12 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
     public Button resetButton;
 
     [Header("Brush Settings")]
-    public int brushRadius = 28;
+    public int brushRadius = 36;
     [Range(0f, 1f)]
-    public float brushSoftness = 0.45f;
-    public int scatterCount = 4;
-    public float scatterRadius = 2.5f;
-    public int scatterDotRadius = 3;
+    public float brushSoftness = 0.5f;
+    public int scatterCount = 5;
+    public float scatterRadius = 2f;
+    public int scatterDotRadius = 2;
 
     // Texture dimensions
     private const int TexWidth = 1024;
@@ -91,7 +91,7 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
 
     private void GenerateTextures()
     {
-        // Top sand: warm beige with Perlin noise variation
+        // Top sand surface: warm golden beige with fine grain variation
         topTex = new Texture2D(256, 256, TextureFormat.RGB24, false);
         topTex.filterMode = FilterMode.Bilinear;
         topTex.wrapMode = TextureWrapMode.Repeat;
@@ -100,20 +100,21 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
         {
             for (int x = 0; x < 256; x++)
             {
-                float n1 = Mathf.PerlinNoise(x * 0.05f, y * 0.05f);
-                float n2 = Mathf.PerlinNoise(x * 0.12f + 100f, y * 0.12f + 100f) * 0.3f;
-                float n = n1 + n2;
-                // Warm beige: base ~(0.86, 0.76, 0.58) with noise variation
-                float r = 0.82f + n * 0.08f;
-                float g = 0.72f + n * 0.07f;
-                float b = 0.54f + n * 0.06f;
+                float n1 = Mathf.PerlinNoise(x * 0.04f, y * 0.04f);
+                float n2 = Mathf.PerlinNoise(x * 0.1f + 100f, y * 0.1f + 100f) * 0.25f;
+                float n3 = Mathf.PerlinNoise(x * 0.3f + 50f, y * 0.3f + 50f) * 0.08f; // fine detail
+                float n = n1 + n2 + n3;
+                // Warm golden sand: base ~(0.90, 0.80, 0.58)
+                float r = 0.87f + n * 0.06f;
+                float g = 0.78f + n * 0.05f;
+                float b = 0.56f + n * 0.04f;
                 topPixels[y * 256 + x] = new Color(r, g, b);
             }
         }
         topTex.SetPixels(topPixels);
         topTex.Apply();
 
-        // Bottom sand: dark wet brown
+        // Bottom (groove/tracing): slightly darker sand, like a shadow in the groove
         bottomTex = new Texture2D(256, 256, TextureFormat.RGB24, false);
         bottomTex.filterMode = FilterMode.Bilinear;
         bottomTex.wrapMode = TextureWrapMode.Repeat;
@@ -123,27 +124,29 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
             for (int x = 0; x < 256; x++)
             {
                 float n1 = Mathf.PerlinNoise(x * 0.04f + 50f, y * 0.04f + 50f);
-                float n2 = Mathf.PerlinNoise(x * 0.15f + 200f, y * 0.15f + 200f) * 0.2f;
+                float n2 = Mathf.PerlinNoise(x * 0.12f + 200f, y * 0.12f + 200f) * 0.2f;
                 float n = n1 + n2;
-                // Dark wet sand: base ~(0.48, 0.38, 0.24)
-                float r = 0.44f + n * 0.08f;
-                float g = 0.34f + n * 0.07f;
-                float b = 0.20f + n * 0.06f;
+                // Groove sand: slightly darker and cooler — like a shadow
+                float r = 0.72f + n * 0.06f;
+                float g = 0.63f + n * 0.05f;
+                float b = 0.48f + n * 0.04f;
                 bottomPixels[y * 256 + x] = new Color(r, g, b);
             }
         }
         bottomTex.SetPixels(bottomPixels);
         bottomTex.Apply();
 
-        // Grain texture: high-frequency Perlin noise
+        // Grain texture: multi-octave fine noise for sand grain look
         grainTex = new Texture2D(256, 256, TextureFormat.RGBA32, false);
-        grainTex.filterMode = FilterMode.Bilinear;
+        grainTex.filterMode = FilterMode.Point; // sharp grains, not blurred
         grainTex.wrapMode = TextureWrapMode.Repeat;
         for (int y = 0; y < 256; y++)
         {
             for (int x = 0; x < 256; x++)
             {
-                float n = Mathf.PerlinNoise(x * 0.25f + 300f, y * 0.25f + 300f);
+                float n1 = Mathf.PerlinNoise(x * 0.5f + 300f, y * 0.5f + 300f);
+                float n2 = Mathf.PerlinNoise(x * 1.2f + 500f, y * 1.2f + 500f) * 0.4f;
+                float n = (n1 + n2) * 0.7f;
                 grainTex.SetPixel(x, y, new Color(n, n, n));
             }
         }
@@ -163,12 +166,12 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
         sandMat.SetTexture("_TopTex", topTex);
         sandMat.SetTexture("_BottomTex", bottomTex);
         sandMat.SetTexture("_GrainTex", grainTex);
-        sandMat.SetFloat("_TopTiling", 3f);
-        sandMat.SetFloat("_BottomTiling", 2.5f);
-        sandMat.SetFloat("_EdgeWidth", 0.06f);
-        sandMat.SetFloat("_EdgeBrightness", 1.2f);
-        sandMat.SetFloat("_GrainStrength", 0.12f);
-        sandMat.SetFloat("_GrooveDepth", 0.3f);
+        sandMat.SetFloat("_TopTiling", 4f);
+        sandMat.SetFloat("_BottomTiling", 3f);
+        sandMat.SetFloat("_EdgeWidth", 0.04f);     // narrower edge for sharper ridges
+        sandMat.SetFloat("_EdgeBrightness", 1.8f);  // brighter raised edges
+        sandMat.SetFloat("_GrainStrength", 0.08f);  // subtler grain
+        sandMat.SetFloat("_GrooveDepth", 0.1f);     // shallow groove (sand, not wet)
     }
 
     // ── Mask Operations ──
