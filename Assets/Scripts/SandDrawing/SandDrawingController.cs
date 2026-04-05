@@ -59,7 +59,7 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
         maskTex = new Texture2D(TexWidth, TexHeight, TextureFormat.RGBA32, false);
         maskTex.filterMode = FilterMode.Bilinear;
         maskTex.wrapMode = TextureWrapMode.Clamp;
-        maskPixels = new byte[TexWidth * TexHeight];
+        maskPixels = new byte[TexWidth * TexHeight * 4]; // RGBA32 = 4 bytes per pixel
         FillMask(255);
         ApplyMask();
 
@@ -175,8 +175,13 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
 
     private void FillMask(byte value)
     {
-        for (int i = 0; i < maskPixels.Length; i++)
-            maskPixels[i] = value;
+        for (int i = 0; i < maskPixels.Length; i += 4)
+        {
+            maskPixels[i]     = value; // R
+            maskPixels[i + 1] = value; // G
+            maskPixels[i + 2] = value; // B
+            maskPixels[i + 3] = 255;   // A
+        }
     }
 
     private void ApplyMask()
@@ -238,24 +243,27 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
                 float distSq = dx * dx + dy * dy;
                 if (distSq > rSq) continue;
 
-                int idx = py * TexWidth + px;
+                int idx = (py * TexWidth + px) * 4; // RGBA32
                 byte current = maskPixels[idx];
 
                 if (distSq <= innerRSq)
                 {
-                    // Hard center: fully grooved
                     maskPixels[idx] = 0;
+                    maskPixels[idx + 1] = 0;
+                    maskPixels[idx + 2] = 0;
                 }
                 else
                 {
-                    // Soft falloff zone
                     float dist = Mathf.Sqrt(distSq);
-                    float t = (dist - innerR) / (r - innerR); // 0 at inner edge, 1 at outer edge
-                    t = t * t; // quadratic falloff for organic feel
+                    float t = (dist - innerR) / (r - innerR);
+                    t = t * t;
                     byte target = (byte)(t * 255);
-                    // Only make it darker (lower), never lighter
                     if (target < current)
+                    {
                         maskPixels[idx] = target;
+                        maskPixels[idx + 1] = target;
+                        maskPixels[idx + 2] = target;
+                    }
                 }
             }
         }
@@ -291,12 +299,15 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
                     if (px < 0 || px >= TexWidth) continue;
                     if (dx * dx + dy * dy > dotR * dotR) continue;
 
-                    int idx = py * TexWidth + px;
+                    int idx = (py * TexWidth + px) * 4; // RGBA32
                     byte current = maskPixels[idx];
-                    // Partially reveal groove at scatter point
                     byte target = (byte)Random.Range(40, 140);
                     if (target < current)
+                    {
                         maskPixels[idx] = target;
+                        maskPixels[idx + 1] = target;
+                        maskPixels[idx + 2] = target;
+                    }
                 }
             }
         }
