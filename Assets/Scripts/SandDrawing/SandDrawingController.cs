@@ -56,7 +56,7 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
         CreateMaterial();
 
         // Initialize mask to all sand (1.0 = surface visible)
-        maskTex = new Texture2D(TexWidth, TexHeight, TextureFormat.R8, false);
+        maskTex = new Texture2D(TexWidth, TexHeight, TextureFormat.RGBA32, false);
         maskTex.filterMode = FilterMode.Bilinear;
         maskTex.wrapMode = TextureWrapMode.Clamp;
         maskPixels = new byte[TexWidth * TexHeight];
@@ -136,19 +136,17 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
         bottomTex.Apply();
 
         // Grain texture: high-frequency Perlin noise
-        grainTex = new Texture2D(256, 256, TextureFormat.R8, false);
+        grainTex = new Texture2D(256, 256, TextureFormat.RGBA32, false);
         grainTex.filterMode = FilterMode.Bilinear;
         grainTex.wrapMode = TextureWrapMode.Repeat;
-        var grainBytes = new byte[256 * 256];
         for (int y = 0; y < 256; y++)
         {
             for (int x = 0; x < 256; x++)
             {
                 float n = Mathf.PerlinNoise(x * 0.25f + 300f, y * 0.25f + 300f);
-                grainBytes[y * 256 + x] = (byte)(n * 255);
+                grainTex.SetPixel(x, y, new Color(n, n, n));
             }
         }
-        grainTex.SetRawTextureData(grainBytes);
         grainTex.Apply();
     }
 
