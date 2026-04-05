@@ -428,6 +428,14 @@ public static class GameDifficultyConfig
             return $"{vc} \u05E8\u05DB\u05D1\u05D9\u05DD, {vc * 3} \u05D7\u05DC\u05E7\u05D9\u05DD"; // X רכבים, Y חלקים
         }
 
+        // Color Catch
+        if (id.Contains("colorcatch"))
+        {
+            int cc, tc;
+            ColorCatchConfig(difficulty, out cc, out tc);
+            return $"{cc} \u05E6\u05D1\u05E2\u05D9\u05DD, {tc} \u05EA\u05E4\u05D9\u05E1\u05D5\u05EA"; // X צבעים, Y תפיסות
+        }
+
         // Color Sort
         if (id.Contains("colorsort"))
         {
@@ -596,6 +604,15 @@ public static class GameDifficultyConfig
             return 7;
         }
 
+        // Color Catch: variant = difficulty directly
+        if (gameId == "colorcatch")
+        {
+            if (variantValue <= 1) return 1;
+            if (variantValue <= 3) return 3;
+            if (variantValue <= 5) return 5;
+            return 7;
+        }
+
         // Color Sort: variant = difficulty directly
         if (gameId == "colorsort")
         {
@@ -667,6 +684,23 @@ public static class GameDifficultyConfig
         if (difficulty <= 3)      { cols = 1; rows = 3; } // 1 vehicle, 3 pieces
         else if (difficulty <= 6) { cols = 2; rows = 3; } // 2 vehicles, 6 pieces
         else                      { cols = 3; rows = 3; } // 3 vehicles, 9 pieces
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  COLOR CATCH
+    // ═══════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Returns (colorCount, targetCatches) for Color Catch at a given difficulty.
+    /// Difficulty 1-3 → 2 colors, 5 catches
+    /// Difficulty 4-6 → 3 colors, 8 catches
+    /// Difficulty 7-10 → 4 colors, 12 catches
+    /// </summary>
+    public static void ColorCatchConfig(int difficulty, out int colorCount, out int targetCatches)
+    {
+        if (difficulty <= 3)      { colorCount = 2; targetCatches = 5; }
+        else if (difficulty <= 6) { colorCount = 3; targetCatches = 8; }
+        else                      { colorCount = 4; targetCatches = 12; }
     }
 
     public static void ColorSortConfig(int difficulty, out int colorCount, out int itemsPerColor)

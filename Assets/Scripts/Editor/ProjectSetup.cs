@@ -251,6 +251,9 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Color Sort…", 0.998f);
             ColorSortSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Color Catch…", 0.9985f);
+            ColorCatchSetup.RunSetupSilent();
+
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Fruit Puzzle…", 0.999f);
             FruitPuzzleSetup.RunSetupSilent();
 
@@ -898,6 +901,15 @@ public class ProjectSetup : EditorWindow
         colorSort.thumbnail = LoadSprite($"{previewPath}/Color Sorting.png");
         EditorUtility.SetDirty(colorSort);
 
+        // ── Color Catch ──
+        var colorCatch = CreateSO<GameItemData>($"{DataPath}/ColorCatch.asset");
+        colorCatch.id = "colorcatch";
+        colorCatch.title = "Color Catch";
+        colorCatch.cardColor = HexColor("#26C6DA");
+        colorCatch.targetSceneName = "ColorCatch";
+        colorCatch.hasSubItems = false;
+        EditorUtility.SetDirty(colorCatch);
+
         // ── Fruit Puzzle ──
         var fruitPuzzle = CreateSO<GameItemData>($"{DataPath}/FruitPuzzle.asset");
         fruitPuzzle.id = "fruitpuzzle";
@@ -909,7 +921,7 @@ public class ProjectSetup : EditorWindow
         EditorUtility.SetDirty(fruitPuzzle);
 
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, sizeSort, colorSort, fruitPuzzle };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, sizeSort, colorSort, colorCatch, fruitPuzzle };
         EditorUtility.SetDirty(db);
 
         // Validate age baseline configuration
@@ -1530,6 +1542,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/AquariumScene.unity",
             $"{ScenesPath}/SizeSort.unity",
             $"{ScenesPath}/ColorSort.unity",
+            $"{ScenesPath}/ColorCatch.unity",
             $"{ScenesPath}/FruitPuzzle.unity",
             // $"{ScenesPath}/ColorStudioScene.unity", // hidden for now
         };

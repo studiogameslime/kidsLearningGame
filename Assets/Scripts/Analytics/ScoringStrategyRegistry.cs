@@ -71,6 +71,9 @@ public static class ScoringStrategyRegistry
         if (id.Contains("sizesort"))
             return new SizeSortScoringStrategy();
 
+        if (id.Contains("colorcatch"))
+            return new ColorCatchScoringStrategy();
+
         if (id.Contains("colorsort"))
             return new ColorSortScoringStrategy();
 

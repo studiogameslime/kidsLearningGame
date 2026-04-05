@@ -277,6 +277,7 @@ public static class AgeBaselineConfig
             new Entry(3, "fishing"),                // shape recognition + tapping
             new Entry(3, "sizesort",     1),  // very different sizes
             new Entry(3, "colorsort",    1),  // 2 distinct colors
+            new Entry(3, "colorcatch",   1),  // 2 colors, 5 catches
             new Entry(3, "bakery"),                   // creative sandbox
             new Entry(3, "sockmatch"),                // match sock pairs
             new Entry(3, "fruitpuzzle",  1),  // 2x2 grid
@@ -312,6 +313,7 @@ public static class AgeBaselineConfig
             new Entry(5, "lettertrain",  7),   // 7 wagons, 3 missing letters, full alphabet
             new Entry(5, "sizesort",     5),   // moderate size differences
             new Entry(5, "colorsort",    5),  // confusing warm tones
+            new Entry(5, "colorcatch",   5),  // 3 colors, 8 catches
             new Entry(5, "fruitpuzzle",  5),  // 2x3 grid
             new Entry(5, "numbermaze",    15),  // target 15, 6x4 grid
             new Entry(5, "patterncopy",   5),   // 5x5 grid
