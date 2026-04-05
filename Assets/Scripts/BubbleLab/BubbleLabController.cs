@@ -18,8 +18,8 @@ public class BubbleLabController : MonoBehaviour, IPointerDownHandler, IPointerU
 
     [Header("Settings")]
     public int maxBubbles = 30;
-    public float minBubbleRadius = 20f;
-    public float maxBubbleRadius = 100f;
+    public float minBubbleRadius = 40f;
+    public float maxBubbleRadius = 140f;
     public float longPressDuration = 0.4f;
     public float mergeOverlapRatio = 0.5f;
 
@@ -290,9 +290,24 @@ public class BubbleLabController : MonoBehaviour, IPointerDownHandler, IPointerU
             previewImage = null;
         }
 
-        // Spawn a bubble
+        // Spawn bubbles — short tap creates a burst of small ones, long press creates one big one
         Color color = Palette[selectedColorIndex];
-        CreateBubble(localPos, color, radius);
+        if (holdTime < 0.25f)
+        {
+            // Quick tap: burst of 3-5 small bubbles
+            int count = Random.Range(3, 6);
+            for (int i = 0; i < count; i++)
+            {
+                float r = Random.Range(minBubbleRadius * 0.6f, minBubbleRadius * 1.2f);
+                Vector2 offset = new Vector2(Random.Range(-60f, 60f), Random.Range(-40f, 40f));
+                CreateBubble(localPos + offset, color, r);
+            }
+        }
+        else
+        {
+            // Long press: one big bubble
+            CreateBubble(localPos, color, radius);
+        }
     }
 
     // ── Bubble Creation ──
@@ -311,9 +326,9 @@ public class BubbleLabController : MonoBehaviour, IPointerDownHandler, IPointerU
         bubble.color = color;
         bubble.radius = radius;
         bubble.wobblePhase = Random.Range(0f, Mathf.PI * 2f);
-        bubble.wobbleFreq = Random.Range(2f, 5f);
-        bubble.wobbleAmp = Random.Range(20f, 60f);
-        bubble.velocity = new Vector2(Random.Range(-20f, 20f), Random.Range(30f, 60f));
+        bubble.wobbleFreq = Random.Range(1.5f, 3.5f);
+        bubble.wobbleAmp = Random.Range(40f, 100f);
+        bubble.velocity = new Vector2(Random.Range(-40f, 40f), Random.Range(40f, 90f));
         bubble.lifetime = Random.Range(8f, 15f);
         bubble.age = 0f;
 
@@ -330,7 +345,7 @@ public class BubbleLabController : MonoBehaviour, IPointerDownHandler, IPointerU
 
         var img = go.AddComponent<Image>();
         img.sprite = circleSprite;
-        Color bubbleColor = new Color(color.r, color.g, color.b, 0.6f);
+        Color bubbleColor = new Color(color.r, color.g, color.b, 0.4f); // more transparent/glassy
         img.color = bubbleColor;
         img.raycastTarget = false;
 
@@ -349,7 +364,7 @@ public class BubbleLabController : MonoBehaviour, IPointerDownHandler, IPointerU
         var rimImg = rimGO.AddComponent<Image>();
         rimImg.sprite = circleSprite;
         Color rimColor = Color.Lerp(color, Color.white, 0.5f);
-        rimImg.color = new Color(rimColor.r, rimColor.g, rimColor.b, 0.25f);
+        rimImg.color = new Color(rimColor.r, rimColor.g, rimColor.b, 0.35f);
         rimImg.raycastTarget = false;
         rimGO.transform.SetAsFirstSibling(); // behind main
         bubble.rimImage = rimImg;
@@ -364,7 +379,7 @@ public class BubbleLabController : MonoBehaviour, IPointerDownHandler, IPointerU
         shineRT.offsetMax = Vector2.zero;
         var shineImg = shineGO.AddComponent<Image>();
         shineImg.sprite = circleSprite;
-        shineImg.color = new Color(1f, 1f, 1f, 0.45f);
+        shineImg.color = new Color(1f, 1f, 1f, 0.6f); // brighter shine
         shineImg.raycastTarget = false;
         bubble.shineImage = shineImg;
 
@@ -640,9 +655,9 @@ public class BubbleLabController : MonoBehaviour, IPointerDownHandler, IPointerU
 
     private void CreateColorSelector()
     {
-        float selectorHeight = 100f;
-        float circleSize = 64f;
-        float spacing = 20f;
+        float selectorHeight = 130f;
+        float circleSize = 85f;
+        float spacing = 24f;
         float totalWidth = Palette.Length * circleSize + (Palette.Length - 1) * spacing;
 
         // Selector container at bottom of play area

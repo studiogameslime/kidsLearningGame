@@ -15,8 +15,8 @@ public class BubbleLabSetup
     private static readonly int TopBarHeight = SetupConstants.HeaderHeight;
 
     // Background gradient colors
-    private static readonly Color BgTop = new Color(0.12f, 0.08f, 0.25f);      // dark blue-purple
-    private static readonly Color BgBottom = new Color(0.15f, 0.25f, 0.45f);    // lighter blue
+    private static readonly Color BgTop = new Color(0.20f, 0.15f, 0.40f);      // soft purple
+    private static readonly Color BgBottom = new Color(0.25f, 0.40f, 0.65f);    // brighter blue
     private static readonly Color HeaderColor = new Color(0.20f, 0.12f, 0.35f, 0.55f); // purple header
 
     public static void RunSetupSilent()
