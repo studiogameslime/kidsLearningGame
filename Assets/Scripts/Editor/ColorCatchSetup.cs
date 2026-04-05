@@ -181,7 +181,7 @@ public class ColorCatchSetup
         Full(safeRT);
         safeArea.AddComponent<SafeAreaHandler>();
 
-        var topBar = StretchImg(safeArea.transform, "TopBar", HeaderColor);
+        var topBar = StretchImg(safeArea.transform, "TopBar", new Color(0.2f, 0.45f, 0.2f, 0.75f));
         var topBarRT = topBar.GetComponent<RectTransform>();
         topBarRT.anchorMin = new Vector2(0, 1);
         topBarRT.anchorMax = new Vector2(1, 1);
