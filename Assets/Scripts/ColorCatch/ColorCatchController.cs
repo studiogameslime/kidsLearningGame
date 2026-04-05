@@ -492,15 +492,25 @@ public class ColorCatchController : BaseMiniGame
 
         // Convert to basket-local coords
         Vector2 startLocal = rt.anchoredPosition;
-        // Target: center-bottom of basket, stacked
-        int stackIndex = caughtItemsInBasket.Count;
-        float stackOffsetY = stackIndex * 15f;
-        float targetY = 20f + stackOffsetY;
-        float targetX = Random.Range(-30f, 30f);
-        Vector2 targetLocal = new Vector2(targetX, targetY);
 
-        // Shrink item to fit in basket
-        float targetScale = 0.55f;
+        // Grid layout inside basket: items arranged in rows
+        float basketW = basketRT.sizeDelta.x;
+        float basketH = basketRT.sizeDelta.y;
+        float itemScale = 0.35f;
+        float cellSize = currentTier.itemSize * itemScale;
+        int cols = Mathf.Max(1, Mathf.FloorToInt((basketW * 0.8f) / cellSize));
+        int stackIndex = caughtItemsInBasket.Count;
+        int col = stackIndex % cols;
+        int row = stackIndex / cols;
+
+        // Center the grid horizontally, stack from bottom up inside basket
+        float gridW = cols * cellSize;
+        float startX = -gridW * 0.5f + cellSize * 0.5f;
+        float targetX = startX + col * cellSize + Random.Range(-3f, 3f);
+        float targetY = -basketH * 0.3f + row * cellSize + Random.Range(-2f, 2f);
+
+        Vector2 targetLocal = new Vector2(targetX, targetY);
+        float targetScale = itemScale;
 
         // Bounce animation: 3 decreasing bounces
         float duration = 0.4f;
