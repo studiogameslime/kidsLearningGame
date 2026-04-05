@@ -632,6 +632,9 @@ public class WorldController : MonoBehaviour
         // Aquarium on CENTER screen
         SpawnAquarium(viewportWidth, centerOffset);
 
+        // Sand Drawing sandbox on LEFT screen
+        SpawnSandbox(viewportWidth, 0f);
+
         // Color Studio — hidden for now
         // SpawnColorStudio(viewportWidth, centerOffset);
     }
@@ -893,6 +896,49 @@ public class WorldController : MonoBehaviour
 
         var aquarium = go.AddComponent<WorldAquarium>();
         aquarium.circleSprite = circleSprite;
+    }
+
+    private void SpawnSandbox(float screenWidth, float xOffset = 0f)
+    {
+        if (grassArea == null) return;
+
+        float grassHeight = grassArea.rect.height;
+        if (grassHeight <= 0) grassHeight = 500f;
+
+        float sandboxSize = 160f;
+
+        // Shadow behind the sandbox icon
+        var shadowGO = new GameObject("SandboxShadow");
+        shadowGO.transform.SetParent(grassArea, false);
+        var shadowRT = shadowGO.AddComponent<RectTransform>();
+        shadowRT.anchorMin = Vector2.zero;
+        shadowRT.anchorMax = Vector2.zero;
+        shadowRT.pivot = new Vector2(0.5f, 0.5f);
+        shadowRT.sizeDelta = new Vector2(sandboxSize * 0.7f, sandboxSize * 0.18f);
+        shadowRT.anchoredPosition = new Vector2(xOffset + screenWidth * 0.7f, 134f);
+        var shadowImg = shadowGO.AddComponent<Image>();
+        if (circleSprite != null) shadowImg.sprite = circleSprite;
+        shadowImg.color = new Color(0f, 0f, 0f, 0.12f);
+        shadowImg.raycastTarget = false;
+
+        // Sandbox icon — temporary circle placeholder with sand color
+        var go = new GameObject("Sandbox");
+        go.transform.SetParent(grassArea, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.zero;
+        rt.pivot = new Vector2(0.5f, 0f);
+        rt.sizeDelta = new Vector2(sandboxSize, sandboxSize);
+        rt.anchoredPosition = new Vector2(xOffset + screenWidth * 0.7f, 139f);
+
+        var img = go.AddComponent<Image>();
+        if (circleSprite != null) img.sprite = circleSprite;
+        img.color = new Color(0.82f, 0.72f, 0.54f); // warm sand color placeholder
+        img.preserveAspect = true;
+        img.raycastTarget = true;
+
+        var sandbox = go.AddComponent<WorldSandbox>();
+        sandbox.circleSprite = circleSprite;
     }
 
     private void SpawnColorStudio(float screenWidth, float xOffset = 0f)

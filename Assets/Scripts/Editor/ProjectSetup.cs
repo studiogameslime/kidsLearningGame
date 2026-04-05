@@ -245,6 +245,9 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Aquarium Scene…", 0.998f);
             AquariumSceneSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Sand Drawing…", 0.9981f);
+            SandDrawingSetup.RunSetupSilent();
+
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Size Sort…", 0.998f);
             SizeSortSetup.RunSetupSilent();
 
@@ -1545,6 +1548,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/ColorSort.unity",
             $"{ScenesPath}/ColorCatch.unity",
             $"{ScenesPath}/FruitPuzzle.unity",
+            $"{ScenesPath}/SandDrawingScene.unity",
             // $"{ScenesPath}/ColorStudioScene.unity", // hidden for now
         };
 

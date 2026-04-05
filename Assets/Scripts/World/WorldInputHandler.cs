@@ -229,6 +229,14 @@ public class WorldInputHandler : MonoBehaviour
                 return;
             }
 
+            // Check for sandbox (sand drawing)
+            var sandbox = go.GetComponent<WorldSandbox>();
+            if (sandbox != null)
+            {
+                sandbox.OnTap();
+                return;
+            }
+
             // Check for game shelf (game selection entry point)
             var shelf = go.GetComponent<WorldGameShelf>();
             if (shelf != null)

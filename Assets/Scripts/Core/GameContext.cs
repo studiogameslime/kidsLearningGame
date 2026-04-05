@@ -102,6 +102,13 @@ public static class NavigationManager
         BubbleTransition.LoadScene("AquariumScene");
     }
 
+    /// <summary>Go to the Sand Drawing sandbox.</summary>
+    public static void GoToSandDrawing()
+    {
+        GameContext.Clear();
+        BubbleTransition.LoadScene("SandDrawingScene");
+    }
+
     /// <summary>Go to the drawing gallery.</summary>
     public static void GoToDrawingGallery()
     {
