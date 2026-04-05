@@ -635,6 +635,9 @@ public class WorldController : MonoBehaviour
         // Sand Drawing sandbox on LEFT screen
         SpawnSandbox(viewportWidth, 0f);
 
+        // Bubble Lab on LEFT screen
+        SpawnBubbleLab(viewportWidth, 0f);
+
         // Color Studio — hidden for now
         // SpawnColorStudio(viewportWidth, centerOffset);
     }
@@ -939,6 +942,49 @@ public class WorldController : MonoBehaviour
 
         var sandbox = go.AddComponent<WorldSandbox>();
         sandbox.circleSprite = circleSprite;
+    }
+
+    private void SpawnBubbleLab(float screenWidth, float xOffset = 0f)
+    {
+        if (grassArea == null) return;
+
+        float grassHeight = grassArea.rect.height;
+        if (grassHeight <= 0) grassHeight = 500f;
+
+        float labSize = 160f;
+
+        // Shadow behind the lab icon
+        var shadowGO = new GameObject("BubbleLabShadow");
+        shadowGO.transform.SetParent(grassArea, false);
+        var shadowRT = shadowGO.AddComponent<RectTransform>();
+        shadowRT.anchorMin = Vector2.zero;
+        shadowRT.anchorMax = Vector2.zero;
+        shadowRT.pivot = new Vector2(0.5f, 0.5f);
+        shadowRT.sizeDelta = new Vector2(labSize * 0.7f, labSize * 0.18f);
+        shadowRT.anchoredPosition = new Vector2(xOffset + screenWidth * 0.35f, 134f);
+        var shadowImg = shadowGO.AddComponent<Image>();
+        if (circleSprite != null) shadowImg.sprite = circleSprite;
+        shadowImg.color = new Color(0f, 0f, 0f, 0.12f);
+        shadowImg.raycastTarget = false;
+
+        // Bubble Lab icon — purple circle (lab theme)
+        var go = new GameObject("BubbleLab");
+        go.transform.SetParent(grassArea, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.zero;
+        rt.pivot = new Vector2(0.5f, 0f);
+        rt.sizeDelta = new Vector2(labSize, labSize);
+        rt.anchoredPosition = new Vector2(xOffset + screenWidth * 0.35f, 139f);
+
+        var img = go.AddComponent<Image>();
+        if (circleSprite != null) img.sprite = circleSprite;
+        img.color = new Color(0.45f, 0.30f, 0.70f); // purple lab color
+        img.preserveAspect = true;
+        img.raycastTarget = true;
+
+        var bubbleLab = go.AddComponent<WorldBubbleLab>();
+        bubbleLab.circleSprite = circleSprite;
     }
 
     private void SpawnColorStudio(float screenWidth, float xOffset = 0f)

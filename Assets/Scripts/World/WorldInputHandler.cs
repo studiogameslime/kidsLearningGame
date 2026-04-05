@@ -237,6 +237,14 @@ public class WorldInputHandler : MonoBehaviour
                 return;
             }
 
+            // Check for bubble lab
+            var bubbleLab = go.GetComponent<WorldBubbleLab>();
+            if (bubbleLab != null)
+            {
+                bubbleLab.OnTap();
+                return;
+            }
+
             // Check for game shelf (game selection entry point)
             var shelf = go.GetComponent<WorldGameShelf>();
             if (shelf != null)

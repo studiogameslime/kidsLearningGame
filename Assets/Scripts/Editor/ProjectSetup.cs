@@ -248,6 +248,9 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Sand Drawing…", 0.9981f);
             SandDrawingSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Bubble Lab…", 0.9982f);
+            BubbleLabSetup.RunSetupSilent();
+
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Size Sort…", 0.998f);
             SizeSortSetup.RunSetupSilent();
 
@@ -1549,6 +1552,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/ColorCatch.unity",
             $"{ScenesPath}/FruitPuzzle.unity",
             $"{ScenesPath}/SandDrawingScene.unity",
+            $"{ScenesPath}/BubbleLabScene.unity",
             // $"{ScenesPath}/ColorStudioScene.unity", // hidden for now
         };
 

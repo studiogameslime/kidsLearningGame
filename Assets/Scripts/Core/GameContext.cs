@@ -109,6 +109,13 @@ public static class NavigationManager
         BubbleTransition.LoadScene("SandDrawingScene");
     }
 
+    /// <summary>Go to the Bubble Lab sandbox.</summary>
+    public static void GoToBubbleLab()
+    {
+        GameContext.Clear();
+        BubbleTransition.LoadScene("BubbleLabScene");
+    }
+
     /// <summary>Go to the drawing gallery.</summary>
     public static void GoToDrawingGallery()
     {
