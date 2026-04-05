@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -5,7 +7,7 @@ using UnityEngine.EventSystems;
 /// <summary>
 /// Sand Drawing sandbox controller — kids draw in sand with their finger.
 /// Procedurally generates all textures at runtime (no external art needed).
-/// Uses a mask texture to reveal a dark "wet sand" layer beneath light surface sand.
+/// Reveals a colorful rainbow layer beneath golden sand with sparkle particles.
 /// </summary>
 public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
 {
@@ -48,6 +50,19 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
     private float shakeTimer;
     private Vector2 shakeBasePos;
 
+    // Sparkle particles
+    private RectTransform sparkleContainer;
+    private Sprite circleSprite;
+    private int sparkleCounter;
+    private static readonly Color[] SparkleColors = {
+        new Color(1f, 0.85f, 0.2f),    // gold
+        new Color(1f, 0.95f, 0.5f),    // light gold
+        new Color(1f, 1f, 0.8f),        // cream
+        new Color(0.95f, 0.7f, 0.9f),  // pink
+        new Color(0.7f, 0.9f, 1f),      // sky blue
+        new Color(0.8f, 1f, 0.7f),      // mint
+    };
+
     private void Start()
     {
         displayRT = sandDisplay.GetComponent<RectTransform>();
@@ -76,6 +91,18 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
 
         // Disable finger trail in this scene (we draw directly on sand)
         FingerTrail.SetEnabled(false);
+
+        // Create sparkle container (child of sand display, renders on top)
+        var sparkleGO = new GameObject("Sparkles");
+        sparkleGO.transform.SetParent(sandDisplay.transform, false);
+        sparkleContainer = sparkleGO.AddComponent<RectTransform>();
+        sparkleContainer.anchorMin = Vector2.zero;
+        sparkleContainer.anchorMax = Vector2.one;
+        sparkleContainer.offsetMin = Vector2.zero;
+        sparkleContainer.offsetMax = Vector2.zero;
+
+        // Create a simple circle sprite for sparkles
+        circleSprite = CreateCircleSprite(16);
     }
 
     private void OnDestroy()
@@ -114,23 +141,24 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
         topTex.SetPixels(topPixels);
         topTex.Apply();
 
-        // Bottom (groove/tracing): slightly darker sand, like a shadow in the groove
-        bottomTex = new Texture2D(256, 256, TextureFormat.RGB24, false);
+        // Bottom (revealed layer): colorful rainbow swirl — hidden treasure under the sand!
+        bottomTex = new Texture2D(512, 288, TextureFormat.RGB24, false); // match aspect ratio
         bottomTex.filterMode = FilterMode.Bilinear;
-        bottomTex.wrapMode = TextureWrapMode.Repeat;
-        var bottomPixels = new Color[256 * 256];
-        for (int y = 0; y < 256; y++)
+        bottomTex.wrapMode = TextureWrapMode.Clamp; // no tiling — full image
+        var bottomPixels = new Color[512 * 288];
+        for (int y = 0; y < 288; y++)
         {
-            for (int x = 0; x < 256; x++)
+            for (int x = 0; x < 512; x++)
             {
-                float n1 = Mathf.PerlinNoise(x * 0.04f + 50f, y * 0.04f + 50f);
-                float n2 = Mathf.PerlinNoise(x * 0.12f + 200f, y * 0.12f + 200f) * 0.2f;
-                float n = n1 + n2;
-                // Groove sand: slightly darker and cooler — like a shadow
-                float r = 0.72f + n * 0.06f;
-                float g = 0.63f + n * 0.05f;
-                float b = 0.48f + n * 0.04f;
-                bottomPixels[y * 256 + x] = new Color(r, g, b);
+                // Rainbow swirl: hue rotates with position + Perlin distortion
+                float nx = (float)x / 512f;
+                float ny = (float)y / 288f;
+                float swirl = Mathf.PerlinNoise(nx * 3f + 10f, ny * 3f + 10f) * 0.3f;
+                float hue = (nx * 0.5f + ny * 0.3f + swirl) % 1f;
+                // Add pastel softness
+                float sat = 0.55f + Mathf.PerlinNoise(nx * 4f, ny * 4f) * 0.2f;
+                float val = 0.85f + Mathf.PerlinNoise(nx * 2f + 100f, ny * 2f + 100f) * 0.1f;
+                bottomPixels[y * 512 + x] = Color.HSVToRGB(hue, sat, val);
             }
         }
         bottomTex.SetPixels(bottomPixels);
@@ -167,7 +195,7 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
         sandMat.SetTexture("_BottomTex", bottomTex);
         sandMat.SetTexture("_GrainTex", grainTex);
         sandMat.SetFloat("_TopTiling", 4f);
-        sandMat.SetFloat("_BottomTiling", 3f);
+        sandMat.SetFloat("_BottomTiling", 1f); // no tiling — full rainbow image
         sandMat.SetFloat("_EdgeWidth", 0.04f);     // narrower edge for sharper ridges
         sandMat.SetFloat("_EdgeBrightness", 1.8f);  // brighter raised edges
         sandMat.SetFloat("_GrainStrength", 0.08f);  // subtler grain
@@ -354,6 +382,7 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
         ScatterGrains(texPos);
         lastDrawPos = texPos;
         maskDirty = true;
+        SpawnSparkles(eventData.position, 2);
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -374,6 +403,7 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
 
         lastDrawPos = texPos;
         maskDirty = true;
+        SpawnSparkles(eventData.position, 2);
     }
 
     public void OnPointerUp(PointerEventData eventData)
@@ -416,6 +446,11 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
         FillMask(255);
         maskDirty = true;
 
+        // Clear all sparkles
+        if (sparkleContainer != null)
+            for (int i = sparkleContainer.childCount - 1; i >= 0; i--)
+                Destroy(sparkleContainer.GetChild(i).gameObject);
+
         // Start shake animation
         isShaking = true;
         shakeTimer = 0.35f;
@@ -426,5 +461,107 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
     {
         FingerTrail.SetEnabled(true);
         NavigationManager.GoToWorld();
+    }
+
+    // ── Sparkle Particles ──
+
+    /// <summary>Spawn sparkle particles at a screen position while drawing.</summary>
+    private void SpawnSparkles(Vector2 screenPos, int count = 3)
+    {
+        if (sparkleContainer == null || circleSprite == null) return;
+
+        for (int i = 0; i < count; i++)
+        {
+            sparkleCounter++;
+            var go = new GameObject($"Sparkle_{sparkleCounter}");
+            go.transform.SetParent(sparkleContainer, false);
+            var rt = go.AddComponent<RectTransform>();
+
+            // Convert screen pos to local pos in sparkle container
+            Vector2 localPos;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                sparkleContainer, screenPos, null, out localPos);
+
+            rt.anchoredPosition = localPos + new Vector2(
+                Random.Range(-brushRadius * 1.5f, brushRadius * 1.5f),
+                Random.Range(-brushRadius * 1.5f, brushRadius * 1.5f));
+            float size = Random.Range(8f, 22f);
+            rt.sizeDelta = new Vector2(size, size);
+
+            var img = go.AddComponent<Image>();
+            img.sprite = circleSprite;
+            img.color = SparkleColors[Random.Range(0, SparkleColors.Length)];
+            img.raycastTarget = false;
+
+            StartCoroutine(AnimateSparkle(rt, img));
+        }
+    }
+
+    private IEnumerator AnimateSparkle(RectTransform rt, Image img)
+    {
+        if (rt == null) yield break;
+
+        Vector2 startPos = rt.anchoredPosition;
+        float angle = Random.Range(0f, Mathf.PI * 2f);
+        float speed = Random.Range(60f, 150f);
+        Vector2 velocity = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * speed;
+        float spinSpeed = Random.Range(-360f, 360f);
+        float lifetime = Random.Range(0.4f, 0.8f);
+        float elapsed = 0f;
+        Color startColor = img.color;
+        float startScale = rt.localScale.x;
+
+        // Start with a quick pop-in
+        rt.localScale = Vector3.zero;
+        float popDur = 0.08f;
+        float popT = 0f;
+        while (popT < popDur)
+        {
+            popT += Time.deltaTime;
+            float s = Mathf.Lerp(0f, 1.2f, popT / popDur);
+            if (rt == null) yield break;
+            rt.localScale = Vector3.one * s;
+            yield return null;
+        }
+        if (rt != null) rt.localScale = Vector3.one;
+
+        // Float upward and fade
+        while (elapsed < lifetime)
+        {
+            elapsed += Time.deltaTime;
+            if (rt == null) yield break;
+
+            float progress = elapsed / lifetime;
+            velocity.y += 80f * Time.deltaTime; // float upward
+            rt.anchoredPosition += velocity * Time.deltaTime;
+            rt.Rotate(0, 0, spinSpeed * Time.deltaTime);
+
+            // Fade and shrink
+            float fade = 1f - progress * progress;
+            img.color = new Color(startColor.r, startColor.g, startColor.b, startColor.a * fade);
+            rt.localScale = Vector3.one * Mathf.Lerp(1f, 0.2f, progress);
+
+            yield return null;
+        }
+
+        if (rt != null) Destroy(rt.gameObject);
+    }
+
+    private Sprite CreateCircleSprite(int size)
+    {
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        float center = size / 2f;
+        float radius = center - 1f;
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float dist = Vector2.Distance(new Vector2(x, y), new Vector2(center, center));
+                float a = Mathf.Clamp01((radius - dist) / 1.5f);
+                tex.SetPixel(x, y, new Color(1, 1, 1, a));
+            }
+        }
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f));
     }
 }
