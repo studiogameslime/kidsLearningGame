@@ -222,8 +222,35 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
         maskDirty = false;
     }
 
+    // Sand refill rate: how fast cleared sand fills back (0-255 units per second)
+    private const float RefillRate = 30f; // ~8.5 seconds to fully refill
+    private float refillAccumulator;
+
     private void LateUpdate()
     {
+        // Gradually refill sand — cleared areas slowly cover back up
+        refillAccumulator += RefillRate * Time.deltaTime;
+        if (refillAccumulator >= 1f)
+        {
+            int step = (int)refillAccumulator;
+            refillAccumulator -= step;
+            bool anyChanged = false;
+
+            for (int i = 0; i < maskPixels.Length; i += 4)
+            {
+                byte val = maskPixels[i];
+                if (val < 255)
+                {
+                    int newVal = Mathf.Min(255, val + step);
+                    maskPixels[i] = (byte)newVal;
+                    maskPixels[i + 1] = (byte)newVal;
+                    maskPixels[i + 2] = (byte)newVal;
+                    anyChanged = true;
+                }
+            }
+            if (anyChanged) maskDirty = true;
+        }
+
         if (maskDirty)
             ApplyMask();
 
