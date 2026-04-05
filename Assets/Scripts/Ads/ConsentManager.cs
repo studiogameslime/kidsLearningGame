@@ -24,7 +24,7 @@ public static class ConsentManager
     {
         var requestParameters = new ConsentRequestParameters
         {
-            TagForUnderAgeOfConsent = true, // COPPA: users are children
+            TagForUnderAgeOfConsent = false, // Mixed audience: ads shown only behind parental gate
         };
 
         ConsentInformation.Update(requestParameters, (FormError error) =>
