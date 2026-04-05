@@ -12,14 +12,13 @@ public class ColorCatchSetup
 {
     private static readonly Vector2 Ref = new Vector2(1920, 1080);
 
-    // Wood table colors (same as ColorSort / Memory)
-    private static readonly Color TableBaseColor    = HexColor("#5C3D2E");
-    private static readonly Color BoardWoodA        = HexColor("#8B6B4A");
-    private static readonly Color BoardWoodB        = HexColor("#7E6042");
-    private static readonly Color PlankSepColor     = HexColor("#5A4030");
-    private static readonly Color BoardEdgeColor    = HexColor("#6B4D38");
-    private static readonly Color BoardInnerRim     = HexColor("#A08060");
-    private static readonly Color HeaderColor       = new Color(0.35f, 0.22f, 0.12f, 0.75f);
+    // Nature / garden colors
+    private static readonly Color SkyTop            = HexColor("#87CEEB"); // light blue
+    private static readonly Color SkyBottom          = HexColor("#D4F1F9"); // pale sky
+    private static readonly Color HillFar           = HexColor("#7EC87E"); // light green hill
+    private static readonly Color HillNear          = HexColor("#5BAF5B"); // darker green hill
+    private static readonly Color GrassColor        = HexColor("#4CAF50"); // rich grass
+    private static readonly Color GrassLight        = HexColor("#66BB6A"); // grass highlight
     private static readonly int TopBarHeight  = SetupConstants.HeaderHeight;
 
     public static void RunSetupSilent()
@@ -47,7 +46,7 @@ public class ColorCatchSetup
         camGO.AddComponent<AudioListener>();
         var cam = camGO.AddComponent<Camera>();
         cam.clearFlags = CameraClearFlags.SolidColor;
-        cam.backgroundColor = TableBaseColor;
+        cam.backgroundColor = SkyTop;
         cam.orthographic = true;
         var urpType = System.Type.GetType("UnityEngine.Rendering.Universal.UniversalAdditionalCameraData, Unity.RenderPipelines.Universal.Runtime");
         if (urpType != null) camGO.AddComponent(urpType);
@@ -69,47 +68,73 @@ public class ColorCatchSetup
 
         var roundedRect = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/RoundedRect.png");
 
-        // ═══ WOOD TABLE BACKGROUND ═══
+        // ═══ NATURE BACKGROUND ═══
 
-        // Base dark brown table
-        var bgGO = StretchImg(canvasGO.transform, "Background", TableBaseColor);
-        bgGO.GetComponent<Image>().raycastTarget = false;
+        // Sky gradient (top half lighter, bottom half slightly darker)
+        var skyGO = StretchImg(canvasGO.transform, "Sky", SkyBottom);
+        skyGO.GetComponent<Image>().raycastTarget = false;
 
-        // Board panel (wood plank surface)
-        var boardGO = new GameObject("BoardPanel");
-        boardGO.transform.SetParent(canvasGO.transform, false);
-        var boardRT = boardGO.AddComponent<RectTransform>();
-        boardRT.anchorMin = new Vector2(0.005f, 0.01f);
-        boardRT.anchorMax = new Vector2(0.995f, 0.90f);
-        boardRT.offsetMin = Vector2.zero;
-        boardRT.offsetMax = Vector2.zero;
+        // Sky top overlay (gradient effect — darker blue at top fading out)
+        var skyTopGO = new GameObject("SkyTop");
+        skyTopGO.transform.SetParent(canvasGO.transform, false);
+        var skyTopRT = skyTopGO.AddComponent<RectTransform>();
+        skyTopRT.anchorMin = new Vector2(0, 0.5f);
+        skyTopRT.anchorMax = Vector2.one;
+        skyTopRT.offsetMin = Vector2.zero;
+        skyTopRT.offsetMax = Vector2.zero;
+        var skyTopImg = skyTopGO.AddComponent<Image>();
+        skyTopImg.color = SkyTop;
+        skyTopImg.raycastTarget = false;
 
-        var boardImg = boardGO.AddComponent<Image>();
-        if (roundedRect != null) { boardImg.sprite = roundedRect; boardImg.type = Image.Type.Sliced; }
-        boardImg.color = BoardEdgeColor;
-        boardImg.raycastTarget = false;
-        boardGO.AddComponent<Shadow>().effectColor = new Color(0.12f, 0.06f, 0.02f, 0.5f);
+        // Far hill (soft rounded, behind everything)
+        var hillFarGO = new GameObject("HillFar");
+        hillFarGO.transform.SetParent(canvasGO.transform, false);
+        var hillFarRT = hillFarGO.AddComponent<RectTransform>();
+        hillFarRT.anchorMin = new Vector2(-0.1f, 0f);
+        hillFarRT.anchorMax = new Vector2(1.1f, 0.45f);
+        hillFarRT.offsetMin = Vector2.zero;
+        hillFarRT.offsetMax = Vector2.zero;
+        var hillFarImg = hillFarGO.AddComponent<Image>();
+        hillFarImg.color = HillFar;
+        if (roundedRect != null) { hillFarImg.sprite = roundedRect; hillFarImg.type = Image.Type.Sliced; }
+        hillFarImg.raycastTarget = false;
 
-        // Inner rim
-        var rimGO = new GameObject("InnerRim");
-        rimGO.transform.SetParent(boardGO.transform, false);
-        var rimRT = rimGO.AddComponent<RectTransform>();
-        Full(rimRT);
-        rimRT.offsetMin = new Vector2(2, 2);
-        rimRT.offsetMax = new Vector2(-2, -2);
-        var rimImg = rimGO.AddComponent<Image>();
-        if (roundedRect != null) { rimImg.sprite = roundedRect; rimImg.type = Image.Type.Sliced; }
-        rimImg.color = BoardInnerRim;
-        rimImg.raycastTarget = false;
+        // Near hill (darker, overlapping)
+        var hillNearGO = new GameObject("HillNear");
+        hillNearGO.transform.SetParent(canvasGO.transform, false);
+        var hillNearRT = hillNearGO.AddComponent<RectTransform>();
+        hillNearRT.anchorMin = new Vector2(-0.05f, 0f);
+        hillNearRT.anchorMax = new Vector2(1.05f, 0.35f);
+        hillNearRT.offsetMin = Vector2.zero;
+        hillNearRT.offsetMax = Vector2.zero;
+        var hillNearImg = hillNearGO.AddComponent<Image>();
+        hillNearImg.color = HillNear;
+        if (roundedRect != null) { hillNearImg.sprite = roundedRect; hillNearImg.type = Image.Type.Sliced; }
+        hillNearImg.raycastTarget = false;
 
-        // Wood planks
-        var woodGO = new GameObject("WoodSurface");
-        woodGO.transform.SetParent(boardGO.transform, false);
-        var woodRT = woodGO.AddComponent<RectTransform>();
-        Full(woodRT);
-        woodRT.offsetMin = new Vector2(3, 3);
-        woodRT.offsetMax = new Vector2(-3, -3);
-        CreateWoodPlanks(woodGO.transform, roundedRect);
+        // Grass strip (bottom)
+        var grassGO = new GameObject("Grass");
+        grassGO.transform.SetParent(canvasGO.transform, false);
+        var grassRT = grassGO.AddComponent<RectTransform>();
+        grassRT.anchorMin = Vector2.zero;
+        grassRT.anchorMax = new Vector2(1, 0.2f);
+        grassRT.offsetMin = Vector2.zero;
+        grassRT.offsetMax = Vector2.zero;
+        var grassImg = grassGO.AddComponent<Image>();
+        grassImg.color = GrassColor;
+        grassImg.raycastTarget = false;
+
+        // Grass highlight strip (thin lighter line at top of grass)
+        var grassHLGO = new GameObject("GrassHighlight");
+        grassHLGO.transform.SetParent(canvasGO.transform, false);
+        var grassHLRT = grassHLGO.AddComponent<RectTransform>();
+        grassHLRT.anchorMin = new Vector2(0, 0.19f);
+        grassHLRT.anchorMax = new Vector2(1, 0.21f);
+        grassHLRT.offsetMin = Vector2.zero;
+        grassHLRT.offsetMax = Vector2.zero;
+        var grassHLImg = grassHLGO.AddComponent<Image>();
+        grassHLImg.color = GrassLight;
+        grassHLImg.raycastTarget = false;
 
         // ═══ PLAY AREA ═══
 
@@ -132,7 +157,7 @@ public class ColorCatchSetup
         progBGRT.offsetMax = Vector2.zero;
         var progBGImg = progressBG.AddComponent<Image>();
         if (roundedRect != null) { progBGImg.sprite = roundedRect; progBGImg.type = Image.Type.Sliced; }
-        progBGImg.color = new Color(0.2f, 0.12f, 0.06f, 0.6f);
+        progBGImg.color = new Color(0.15f, 0.3f, 0.15f, 0.7f);
         progBGImg.raycastTarget = false;
 
         // Progress fill
@@ -226,27 +251,6 @@ public class ColorCatchSetup
     }
 
     // ═══ HELPERS ═══
-
-    private static void CreateWoodPlanks(Transform parent, Sprite roundedRect)
-    {
-        int plankCount = 8;
-        for (int i = 0; i < plankCount; i++)
-        {
-            float yMin = (float)i / plankCount;
-            float yMax = (float)(i + 1) / plankCount;
-
-            var plankGO = new GameObject($"Plank_{i}");
-            plankGO.transform.SetParent(parent, false);
-            var prt = plankGO.AddComponent<RectTransform>();
-            prt.anchorMin = new Vector2(0, yMin);
-            prt.anchorMax = new Vector2(1, yMax);
-            prt.offsetMin = new Vector2(0, i > 0 ? 1 : 0);
-            prt.offsetMax = Vector2.zero;
-            var pimg = plankGO.AddComponent<Image>();
-            pimg.color = (i % 2 == 0) ? BoardWoodA : BoardWoodB;
-            pimg.raycastTarget = false;
-        }
-    }
 
     private static void EnsureFolder(string path)
     {
