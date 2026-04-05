@@ -2998,29 +2998,94 @@ public class ParentDashboardController : MonoBehaviour
 
             if (!System.IO.File.Exists(fullPath)) continue;
 
-            // Cell = just the drawing image, tap to share
+            // Cell background (grid forces 130x130)
             var cellGO = new GameObject($"Drawing_{i}");
             cellGO.transform.SetParent(gridGO.transform, false);
+            var cellBg = cellGO.AddComponent<Image>();
+            cellBg.color = new Color(1f, 1f, 1f, 0.15f);
+            cellBg.raycastTarget = true;
 
-            var img = cellGO.AddComponent<Image>();
-            img.raycastTarget = true;
+            // Drawing image as child — preserveAspect keeps ratio inside the cell
+            var imgGO = new GameObject("Img");
+            imgGO.transform.SetParent(cellGO.transform, false);
+            var imgRT = imgGO.AddComponent<RectTransform>();
+            imgRT.anchorMin = Vector2.zero; imgRT.anchorMax = Vector2.one;
+            imgRT.offsetMin = new Vector2(4, 4); imgRT.offsetMax = new Vector2(-4, -4);
+            var img = imgGO.AddComponent<Image>();
+            img.raycastTarget = false;
 
             // Load drawing texture
             byte[] bytes = System.IO.File.ReadAllBytes(fullPath);
             var tex = new Texture2D(2, 2);
             tex.LoadImage(bytes);
-            img.sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height),
+            var sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height),
                 new Vector2(0.5f, 0.5f), 100f);
+            img.sprite = sprite;
             img.preserveAspect = true;
 
-            // Tap drawing to share
-            var shareBtn = cellGO.AddComponent<Button>();
-            shareBtn.targetGraphic = img;
+            // Tap to open fullscreen preview with share option
+            var tapBtn = cellGO.AddComponent<Button>();
+            tapBtn.targetGraphic = cellBg;
+            tapBtn.transition = Selectable.Transition.None;
 
             string capturedPath = fullPath;
             string capturedName = childName;
-            shareBtn.onClick.AddListener(() => ShareDrawing(capturedPath, capturedName, appLink));
+            Sprite capturedSprite = sprite;
+            tapBtn.onClick.AddListener(() => ShowDrawingPreview(capturedSprite, capturedPath, capturedName, appLink));
         }
+    }
+
+    private void ShowDrawingPreview(Sprite sprite, string imagePath, string childName, string appLink)
+    {
+        // Fullscreen overlay with the drawing
+        var overlayGO = new GameObject("DrawingPreview");
+        overlayGO.transform.SetParent(dashboardPanel, false);
+        var overlayRT = overlayGO.AddComponent<RectTransform>();
+        overlayRT.anchorMin = Vector2.zero; overlayRT.anchorMax = Vector2.one;
+        overlayRT.offsetMin = Vector2.zero; overlayRT.offsetMax = Vector2.zero;
+
+        // Dark background — tap to close
+        var bgImg = overlayGO.AddComponent<Image>();
+        bgImg.color = new Color(0, 0, 0, 0.85f);
+        var closeTapBtn = overlayGO.AddComponent<Button>();
+        closeTapBtn.targetGraphic = bgImg;
+        closeTapBtn.transition = Selectable.Transition.None;
+        var capturedOverlay = overlayGO;
+        closeTapBtn.onClick.AddListener(() => Destroy(capturedOverlay));
+
+        // Drawing image — centered, preserveAspect
+        var drawGO = new GameObject("Drawing");
+        drawGO.transform.SetParent(overlayGO.transform, false);
+        var drawRT = drawGO.AddComponent<RectTransform>();
+        drawRT.anchorMin = new Vector2(0.1f, 0.1f);
+        drawRT.anchorMax = new Vector2(0.9f, 0.85f);
+        drawRT.offsetMin = Vector2.zero; drawRT.offsetMax = Vector2.zero;
+        var drawImg = drawGO.AddComponent<Image>();
+        drawImg.sprite = sprite;
+        drawImg.preserveAspect = true;
+        drawImg.raycastTarget = false;
+
+        // Share button at bottom center
+        var shareBtnGO = new GameObject("ShareBtn");
+        shareBtnGO.transform.SetParent(overlayGO.transform, false);
+        var shareRT = shareBtnGO.AddComponent<RectTransform>();
+        shareRT.anchorMin = new Vector2(0.3f, 0.02f);
+        shareRT.anchorMax = new Vector2(0.7f, 0.09f);
+        shareRT.offsetMin = Vector2.zero; shareRT.offsetMax = Vector2.zero;
+        var shareBg = shareBtnGO.AddComponent<Image>();
+        if (roundedRect != null) { shareBg.sprite = roundedRect; shareBg.type = Image.Type.Sliced; }
+        shareBg.color = Primary;
+        var shareBtn = shareBtnGO.AddComponent<Button>();
+        shareBtn.targetGraphic = shareBg;
+        var shareLabelTMP = AddChildTMP(shareBtnGO.transform,
+            H("\u05E9\u05EA\u05E4\u05D5"), // שתפו
+            24, Color.white, TextAlignmentOptions.Center);
+        shareLabelTMP.fontStyle = FontStyles.Bold;
+        var slRT = shareLabelTMP.rectTransform;
+        slRT.anchorMin = Vector2.zero; slRT.anchorMax = Vector2.one;
+        slRT.offsetMin = Vector2.zero; slRT.offsetMax = Vector2.zero;
+
+        shareBtn.onClick.AddListener(() => ShareDrawing(imagePath, childName, appLink));
     }
 
     private void ShareDrawing(string imagePath, string childName, string appLink)
