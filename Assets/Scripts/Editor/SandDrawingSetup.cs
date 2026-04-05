@@ -167,7 +167,6 @@ public class SandDrawingSetup
         resetRT.sizeDelta = new Vector2(160, 60);
         resetRT.anchoredPosition = new Vector2(0, 16);
         var resetImg = resetGO.AddComponent<Image>();
-        var roundedRect = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/RoundedRect.png");
         if (roundedRect != null) { resetImg.sprite = roundedRect; resetImg.type = Image.Type.Sliced; }
         resetImg.color = new Color(0.65f, 0.50f, 0.30f, 0.85f);
         var resetBtn = resetGO.AddComponent<Button>();
