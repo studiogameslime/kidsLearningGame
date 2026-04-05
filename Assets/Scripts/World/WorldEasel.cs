@@ -222,7 +222,7 @@ public class WorldEasel : MonoBehaviour
         bgImg.color = Color.white;
         if (roundedRectSprite != null) bgImg.sprite = roundedRectSprite;
 
-        // Drawing image
+        // Drawing image — preserve aspect ratio
         var imgGO = new GameObject("Image");
         imgGO.transform.SetParent(go.transform, false);
         var imgRT = imgGO.AddComponent<RectTransform>();
@@ -233,6 +233,9 @@ public class WorldEasel : MonoBehaviour
         var rawImg = imgGO.AddComponent<RawImage>();
         rawImg.texture = tex;
         rawImg.raycastTarget = false;
+        var arf = imgGO.AddComponent<AspectRatioFitter>();
+        arf.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+        arf.aspectRatio = (tex.height > 0) ? (float)tex.width / tex.height : 1f;
 
         var btn = go.AddComponent<Button>();
         btn.targetGraphic = bgImg;
@@ -246,6 +249,9 @@ public class WorldEasel : MonoBehaviour
             CreateFullscreenView();
 
         fullscreenImage.texture = tex;
+        var arf = fullscreenImage.GetComponent<AspectRatioFitter>();
+        if (arf != null)
+            arf.aspectRatio = (tex.height > 0) ? (float)tex.width / tex.height : 1f;
         fullscreenPanel.SetActive(true);
     }
 
@@ -276,6 +282,9 @@ public class WorldEasel : MonoBehaviour
 
         fullscreenImage = imgContainer.AddComponent<RawImage>();
         fullscreenImage.raycastTarget = false;
+        var fsArf = imgContainer.AddComponent<AspectRatioFitter>();
+        fsArf.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+        fsArf.aspectRatio = 1f; // updated when showing
 
         // Close button (tap anywhere)
         var closeBtn = fullscreenPanel.AddComponent<Button>();
