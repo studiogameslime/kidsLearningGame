@@ -908,6 +908,7 @@ public class ProjectSetup : EditorWindow
         colorCatch.cardColor = HexColor("#26C6DA");
         colorCatch.targetSceneName = "ColorCatch";
         colorCatch.hasSubItems = false;
+        colorCatch.thumbnail = LoadSprite($"{previewPath}/Color Catch.png");
         EditorUtility.SetDirty(colorCatch);
 
         // ── Fruit Puzzle ──
