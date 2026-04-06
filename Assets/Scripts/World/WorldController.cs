@@ -636,7 +636,7 @@ public class WorldController : MonoBehaviour
         SpawnSandbox(viewportWidth, 0f);
 
         // Bubble Lab on LEFT screen
-        SpawnBubbleLab(viewportWidth, 0f);
+        // SpawnBubbleLab(viewportWidth, 0f); // hidden for now
 
         // Color Studio — hidden for now
         // SpawnColorStudio(viewportWidth, centerOffset);
