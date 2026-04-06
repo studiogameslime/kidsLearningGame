@@ -408,7 +408,7 @@ public abstract class BaseMiniGame : MonoBehaviour
         var nextGame = pool[Random.Range(0, pool.Count)];
 
         // Reset counter for next game
-        _sessionsInCurrentGame = 0;
+        _roundsInCurrentGame = 0;
         _lastGameId = nextGame.id;
 
         // Log and navigate
