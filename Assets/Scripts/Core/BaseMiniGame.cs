@@ -30,6 +30,7 @@ public abstract class BaseMiniGame : MonoBehaviour
     // Timing
     protected float delayBeforeNextRound = 0.3f;
     protected float delayAfterFinalRound = 1.0f;
+    private float _gameSceneStartTime; // tracks total time in this game scene
 
     // ── State (read-only for derived classes) ──────────────────────
 
@@ -65,6 +66,7 @@ public abstract class BaseMiniGame : MonoBehaviour
         OnGameInit();
 
         // Firebase: log game started + screen view (enables engagement time tracking per game)
+        _gameSceneStartTime = Time.realtimeSinceStartup;
         FirebaseAnalyticsManager.LogGameStarted(GameId, Difficulty);
         FirebaseAnalyticsManager.LogScreenView($"game_{GameId}");
 
@@ -233,7 +235,9 @@ public abstract class BaseMiniGame : MonoBehaviour
     /// <summary>Navigate home / main menu. Abandons stats if still playing.</summary>
     protected void ExitGame()
     {
+        float duration = Time.realtimeSinceStartup - _gameSceneStartTime;
         FirebaseAnalyticsManager.LogGameExited(GameId);
+        FirebaseAnalyticsManager.LogGameSessionDuration(GameId, duration);
         OnGameExit();
         NavigationManager.GoToMainMenu();
     }

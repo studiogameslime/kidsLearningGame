@@ -329,6 +329,15 @@ public class FirebaseAnalyticsManager : MonoBehaviour
     //  APP SESSION
     // ══════════════════════════════════
 
+    public static void LogGameSessionDuration(string gameId, float durationSeconds)
+    {
+        if (!_initialized || durationSeconds < 3f) return;
+        FirebaseAnalytics.LogEvent("game_session_duration",
+            new Parameter("game_id", gameId),
+            new Parameter("game_name", ParentDashboardViewModel.GetGameName(gameId)),
+            new Parameter("duration_seconds", (double)durationSeconds));
+    }
+
     public static void LogAppSessionDuration(float durationSeconds)
     {
         if (!_initialized || durationSeconds < 5f) return;
