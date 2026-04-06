@@ -68,6 +68,15 @@ public abstract class BaseMiniGame : MonoBehaviour
         FirebaseAnalyticsManager.LogGameStarted(GameId, Difficulty);
         FirebaseAnalyticsManager.LogScreenView($"game_{GameId}");
 
+        // Track first game ever played (once per profile)
+        var profile = ProfileManager.ActiveProfile;
+        if (profile != null && profile.analytics.totalGamesCompleted == 0
+            && !PlayerPrefs.HasKey($"first_game_{profile.id}"))
+        {
+            PlayerPrefs.SetInt($"first_game_{profile.id}", 1);
+            FirebaseAnalyticsManager.LogFirstGamePlayed(GameId);
+        }
+
         // Start first round
         CurrentRound = 0;
         SetupNewRound();
@@ -265,6 +274,9 @@ public abstract class BaseMiniGame : MonoBehaviour
         // Register this round's session immediately (every round = 1 session)
         Stats?.Finalize(completed: true);
 
+        // Check milestones
+        CheckMilestones();
+
         bool isFinalRound = !isEndless && (CurrentRound + 1 >= totalRounds);
         bool shouldPlayConfetti = isFinalRound ? playConfettiOnSessionWin : playConfettiOnRoundWin;
 
@@ -312,5 +324,57 @@ public abstract class BaseMiniGame : MonoBehaviour
         OnRoundCleanup();
         SetupNewRound();
         CurrentState = GameState.Playing;
+    }
+
+    // ── Milestones ──
+
+    private static readonly int[] GameMilestones = { 10, 25, 50, 100, 200, 500 };
+    private static readonly int[] AnimalMilestones = { 5, 10, 15, 19 };
+    private static readonly int[] ColorMilestones = { 3, 5, 8, 11 };
+
+    private void CheckMilestones()
+    {
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null) return;
+
+        int games = profile.journey?.totalGamesCompleted ?? 0;
+        string key = $"milestone_games_{profile.id}";
+        int lastLogged = PlayerPrefs.GetInt(key, 0);
+
+        foreach (int m in GameMilestones)
+        {
+            if (games >= m && lastLogged < m)
+            {
+                FirebaseAnalyticsManager.LogMilestoneReached("games_played", m);
+                PlayerPrefs.SetInt(key, m);
+                break; // one milestone per completion
+            }
+        }
+
+        int animals = profile.discoveredAnimals?.Count ?? 0;
+        string aKey = $"milestone_animals_{profile.id}";
+        int lastAnimal = PlayerPrefs.GetInt(aKey, 0);
+        foreach (int m in AnimalMilestones)
+        {
+            if (animals >= m && lastAnimal < m)
+            {
+                FirebaseAnalyticsManager.LogMilestoneReached("animals_discovered", m);
+                PlayerPrefs.SetInt(aKey, m);
+                break;
+            }
+        }
+
+        int colors = profile.discoveredColors?.Count ?? 0;
+        string cKey = $"milestone_colors_{profile.id}";
+        int lastColor = PlayerPrefs.GetInt(cKey, 0);
+        foreach (int m in ColorMilestones)
+        {
+            if (colors >= m && lastColor < m)
+            {
+                FirebaseAnalyticsManager.LogMilestoneReached("colors_discovered", m);
+                PlayerPrefs.SetInt(cKey, m);
+                break;
+            }
+        }
     }
 }

@@ -324,4 +324,64 @@ public class FirebaseAnalyticsManager : MonoBehaviour
             new Parameter("sandbox_id", sandboxId),
             new Parameter("duration_seconds", (double)durationSeconds));
     }
+
+    // ══════════════════════════════════
+    //  APP SESSION
+    // ══════════════════════════════════
+
+    public static void LogAppSessionDuration(float durationSeconds)
+    {
+        if (!_initialized || durationSeconds < 5f) return;
+        FirebaseAnalytics.LogEvent("app_session_duration",
+            new Parameter("duration_seconds", (double)durationSeconds));
+    }
+
+    public static void LogFirstGamePlayed(string gameId)
+    {
+        if (!_initialized) return;
+        FirebaseAnalytics.LogEvent("first_game_played",
+            new Parameter("game_id", gameId),
+            new Parameter("game_name", ParentDashboardViewModel.GetGameName(gameId)));
+    }
+
+    // ══════════════════════════════════
+    //  MILESTONES
+    // ══════════════════════════════════
+
+    public static void LogMilestoneReached(string type, int value)
+    {
+        if (!_initialized) return;
+        FirebaseAnalytics.LogEvent("milestone_reached",
+            new Parameter("milestone_type", type),
+            new Parameter("milestone_value", value));
+    }
+
+    // ══════════════════════════════════
+    //  PARENT DASHBOARD
+    // ══════════════════════════════════
+
+    public static void LogParentSessionDuration(float durationSeconds)
+    {
+        if (!_initialized || durationSeconds < 3f) return;
+        FirebaseAnalytics.LogEvent("parent_session_duration",
+            new Parameter("duration_seconds", (double)durationSeconds));
+    }
+
+    public static void LogParentChangedSetting(string setting, string value)
+    {
+        if (!_initialized) return;
+        FirebaseAnalytics.LogEvent("parent_changed_setting",
+            new Parameter("setting", setting),
+            new Parameter("value", value));
+    }
+
+    // ══════════════════════════════════
+    //  RETENTION
+    // ══════════════════════════════════
+
+    public static void LogDaysSinceInstall(int days)
+    {
+        if (!_initialized) return;
+        FirebaseAnalytics.SetUserProperty("days_since_install", days.ToString());
+    }
 }

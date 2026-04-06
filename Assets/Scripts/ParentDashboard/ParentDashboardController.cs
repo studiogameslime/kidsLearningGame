@@ -223,8 +223,11 @@ public class ParentDashboardController : MonoBehaviour
         }
     }
 
+    private float _parentSessionStart;
+
     private void OpenDashboard()
     {
+        _parentSessionStart = Time.realtimeSinceStartup;
         FirebaseAnalyticsManager.LogParentDashboardOpened();
         gatePanel.gameObject.SetActive(false);
         dashboardPanel.gameObject.SetActive(true);
@@ -3380,6 +3383,8 @@ public class ParentDashboardController : MonoBehaviour
 
         // Map tier to difficulty value: easy=2, medium=5, hard=8
         int newDiff = tier == 0 ? 2 : tier == 1 ? 5 : 8;
+        string[] tierNames = { "easy", "medium", "hard" };
+        FirebaseAnalyticsManager.LogParentChangedSetting($"difficulty_{gameId}", tierNames[Mathf.Clamp(tier, 0, 2)]);
 
         var gp = profile.analytics.GetOrCreateGame(gameId);
         if (!gp.manualDifficultyOverride)
@@ -3586,6 +3591,8 @@ public class ParentDashboardController : MonoBehaviour
 
         // Prevent disabling the last visible game
         if (newMode == ParentGameAccessMode.ForcedDisabled && WouldLeaveZeroVisibleGames(gameId)) return;
+
+        FirebaseAnalyticsManager.LogParentChangedSetting($"access_{gameId}", newMode.ToString());
 
         // Update override & persist
         GameVisibilityService.SetOverride(profile, gameId, newMode);
@@ -4417,7 +4424,11 @@ public class ParentDashboardController : MonoBehaviour
 
     // ── Navigation ──
 
-    public void OnBackPressed() => BubbleTransition.LoadScene("WorldScene");
+    public void OnBackPressed()
+    {
+        FirebaseAnalyticsManager.LogParentSessionDuration(Time.realtimeSinceStartup - _parentSessionStart);
+        BubbleTransition.LoadScene("WorldScene");
+    }
 
     // ═══════════════════════════════════════════════════════════════
     //  SETTINGS POPUP
