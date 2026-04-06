@@ -944,6 +944,10 @@ public class ProjectSetup : EditorWindow
         db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, sizeSort, colorSort, colorCatch, fruitPuzzle, letterBubbles };
         EditorUtility.SetDirty(db);
 
+        // Copy GameDatabase to Resources so Resources.Load works at runtime
+        EnsureFolder("Assets/Resources");
+        AssetDatabase.CopyAsset($"{DataPath}/GameDatabase.asset", "Assets/Resources/GameDatabase.asset");
+
         // Validate age baseline configuration
         ValidateAgeBaseline(db);
 

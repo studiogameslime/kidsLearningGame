@@ -376,14 +376,29 @@ public abstract class BaseMiniGame : MonoBehaviour
         if (!_visitedGamesThisSession.Contains(GameId))
             _visitedGamesThisSession.Add(GameId);
 
-        // Find a different visible game
+        // Find the game database
         var db = Resources.Load<GameDatabase>("GameDatabase");
         if (db == null)
         {
             var dbs = Resources.FindObjectsOfTypeAll<GameDatabase>();
             if (dbs.Length > 0) db = dbs[0];
         }
-        if (db == null || db.games == null) return;
+        if (db == null)
+        {
+            // Last resort: find via any scene object that holds it
+            var home = Object.FindObjectOfType<HomeController>();
+            if (home != null) db = home.gameDatabase;
+            if (db == null)
+            {
+                var pdCtrl = Object.FindObjectOfType<ParentDashboardController>();
+                if (pdCtrl != null) db = pdCtrl.gameDatabase;
+            }
+        }
+        if (db == null || db.games == null)
+        {
+            Debug.LogWarning("[AutoSwitch] GameDatabase not found — cannot switch");
+            return;
+        }
 
         var profile = ProfileManager.ActiveProfile;
         if (profile == null) return;
@@ -420,6 +435,8 @@ public abstract class BaseMiniGame : MonoBehaviour
         // Log and navigate
         FirebaseAnalyticsManager.LogParentChangedSetting("auto_switch_triggered",
             $"{GameId}_to_{nextGame.id}");
+
+        Debug.Log($"[AutoSwitch] Switching from {GameId} to {nextGame.id} ({nextGame.targetSceneName})");
 
         // Exit current game cleanly
         OnGameExit();
