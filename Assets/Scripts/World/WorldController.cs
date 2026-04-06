@@ -935,8 +935,15 @@ public class WorldController : MonoBehaviour
         rt.anchoredPosition = new Vector2(xOffset + screenWidth * 0.7f, 139f);
 
         var img = go.AddComponent<Image>();
-        if (circleSprite != null) img.sprite = circleSprite;
-        img.color = new Color(0.82f, 0.72f, 0.54f); // warm sand color placeholder
+        var sandboxSprite = Resources.Load<Sprite>("Sandbox/SandboxIcon");
+        if (sandboxSprite == null)
+        {
+            // Fallback: try loading from Art folder path via LoadAll
+            var allSprites = Resources.LoadAll<Sprite>("Sandbox");
+            if (allSprites != null && allSprites.Length > 0) sandboxSprite = allSprites[0];
+        }
+        img.sprite = sandboxSprite != null ? sandboxSprite : circleSprite;
+        img.color = Color.white;
         img.preserveAspect = true;
         img.raycastTarget = true;
 
