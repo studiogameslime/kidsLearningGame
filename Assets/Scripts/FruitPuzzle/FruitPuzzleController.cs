@@ -111,16 +111,16 @@ public class FruitPuzzleController : BaseMiniGame
     {
         if (silhouetteArea == null) return Vector2.zero;
         Rect bounds = silhouetteArea.rect;
-        float y = 0f; // all at the same height
+        float y = 0f;
 
         if (vehicleCount == 1)
             return new Vector2(0, y);
 
-        // Evenly spread across width
-        float totalW = bounds.width * 0.8f;
-        float step = totalW / (vehicleCount - 1);
-        float startX = -totalW * 0.5f;
-        return new Vector2(startX + idx * step, y);
+        // Space vehicles with fixed gap, centered as a group
+        float gap = vehicleDisplaySize * 0.3f; // 30% of vehicle size between them
+        float groupWidth = vehicleCount * vehicleDisplaySize + (vehicleCount - 1) * gap;
+        float startX = -groupWidth * 0.5f + vehicleDisplaySize * 0.5f;
+        return new Vector2(startX + idx * (vehicleDisplaySize + gap), y);
     }
 
     private void CreateSilhouettes(List<Sprite> sprites)
