@@ -88,9 +88,9 @@ public static class GameDifficultyConfig
     private static readonly string[] EasyAnimals =
         { "Elephant", "Giraffe", "Horse", "Cow", "Lion" };
     private static readonly string[] MediumAnimals =
-        { "Dog", "Cat", "Sheep", "Monkey", "Donkey", "Bear", "Zebra" };
+        { "Elephant", "Giraffe", "Horse", "Cow", "Lion", "Dog", "Cat", "Sheep", "Monkey", "Donkey", "Bear", "Zebra" };
     private static readonly string[] HardAnimals =
-        { "Chicken", "Duck", "Bird", "Fish", "Frog", "Snake", "Turtle" };
+        { "Elephant", "Giraffe", "Horse", "Cow", "Lion", "Dog", "Cat", "Sheep", "Monkey", "Donkey", "Bear", "Zebra", "Chicken", "Duck", "Bird", "Fish", "Frog", "Snake", "Turtle" };
 
     /// <summary>
     /// Returns which animal tier to use for a given difficulty level.
@@ -361,11 +361,11 @@ public static class GameDifficultyConfig
             switch (tier)
             {
                 case AnimalTier.Easy:
-                    return "\u05D7\u05D9\u05D5\u05EA \u05D2\u05D3\u05D5\u05DC\u05D5\u05EA \u05E9\u05E7\u05DC \u05DC\u05D6\u05D4\u05D5\u05EA"; // חיות גדולות שקל לזהות
+                    return "5 \u05D7\u05D9\u05D5\u05EA \u05D2\u05D3\u05D5\u05DC\u05D5\u05EA"; // 5 חיות גדולות
                 case AnimalTier.Medium:
-                    return "\u05D7\u05D9\u05D5\u05EA \u05D1\u05D2\u05D5\u05D3\u05DC \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9"; // חיות בגודל בינוני
+                    return "12 \u05D7\u05D9\u05D5\u05EA \u05DE\u05D2\u05D5\u05D5\u05E0\u05D5\u05EA"; // 12 חיות מגוונות
                 case AnimalTier.Hard:
-                    return "\u05D7\u05D9\u05D5\u05EA \u05E7\u05D8\u05E0\u05D5\u05EA \u05E9\u05E7\u05E9\u05D4 \u05D9\u05D5\u05EA\u05E8 \u05DC\u05D6\u05D4\u05D5\u05EA"; // חיות קטנות שקשה יותר לזהות
+                    return "\u05DB\u05DC 19 \u05D4\u05D7\u05D9\u05D5\u05EA"; // כל 19 החיות
             }
         }
 
@@ -531,9 +531,13 @@ public static class GameDifficultyConfig
         // Shared Sticker
         if (id.Contains("sharedsticker") || id.Contains("shared"))
         {
-            if (difficulty <= 3) return "\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05D3\u05D5\u05DE\u05D4 \u2014 \u05E7\u05DC"; // מצא את הדומה — קל
-            if (difficulty <= 6) return "\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05D3\u05D5\u05DE\u05D4 \u2014 \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9"; // — בינוני
-            return "\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05D3\u05D5\u05DE\u05D4 \u2014 \u05E7\u05E9\u05D4"; // — קשה
+            int stickers;
+            if (difficulty <= 2) stickers = 3;
+            else if (difficulty <= 4) stickers = 4;
+            else if (difficulty <= 6) stickers = 5;
+            else if (difficulty <= 8) stickers = 6;
+            else stickers = 7;
+            return $"{stickers} \u05DE\u05D3\u05D1\u05E7\u05D5\u05EA \u05D1\u05DB\u05E8\u05D8\u05D9\u05E1"; // X מדבקות בכרטיס
         }
 
         // Flappy Bird

@@ -24,10 +24,7 @@ public class SharedStickerGameController : BaseMiniGame
     [Header("UI")]
     public Sprite circleSprite;
 
-    // Difficulty: stickers per card at each stage
-    private static readonly int[] DifficultyStickers = { 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8 };
-
-    private int internalRound; // tracks difficulty progression across endless rounds
+    private int internalRound; // tracks round count
     private int sharedStickerIndex; // index into stickerSprites of the shared one
     private List<GameObject> spawnedStickers = new List<GameObject>();
     private bool acceptingInput = true;
@@ -70,8 +67,18 @@ public class SharedStickerGameController : BaseMiniGame
 
     // ── GENERATION ──────────────────────────────────────────────
 
-    private int StickersPerCard =>
-        DifficultyStickers[Mathf.Min(internalRound, DifficultyStickers.Length - 1)];
+    // Difficulty 1-10 → 3-7 stickers per card (controlled via parent dashboard)
+    private int StickersPerCard
+    {
+        get
+        {
+            if (Difficulty <= 2) return 3;
+            if (Difficulty <= 4) return 4;
+            if (Difficulty <= 6) return 5;
+            if (Difficulty <= 8) return 6;
+            return 7;
+        }
+    }
 
     private void PositionTutorialHand()
     {
