@@ -242,7 +242,7 @@ public class AquariumSceneSetup
         foodBtnRT.anchorMin = new Vector2(1, 1);
         foodBtnRT.anchorMax = new Vector2(1, 1);
         foodBtnRT.pivot = new Vector2(1, 1);
-        foodBtnRT.sizeDelta = new Vector2(100, 100);
+        foodBtnRT.sizeDelta = new Vector2(200, 200);
         foodBtnRT.anchoredPosition = new Vector2(-16, -TopBarHeight - 10);
         var foodBtnImg = foodBtnGO.AddComponent<Image>();
         // Food_0 sprite loaded at runtime by controller
