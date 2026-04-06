@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -322,12 +323,104 @@ public abstract class BaseMiniGame : MonoBehaviour
 
         // ── Advance to next round (always continue) ──
         CurrentRound++;
+
+        // Auto-switch: after a full session (all rounds), switch to a different game
         if (CurrentRound >= totalRounds && !isEndless)
+        {
+            if (ShouldAutoSwitch())
+            {
+                AutoSwitchToNextGame();
+                yield break;
+            }
             CurrentRound = 0;
+        }
 
         OnRoundCleanup();
         SetupNewRound();
         CurrentState = GameState.Playing;
+    }
+
+    // ── Auto-Switch Games ──
+
+    private static int _sessionsInCurrentGame; // counts full sessions (all rounds) in this game
+    private static string _lastGameId;
+    private static readonly List<string> _visitedGamesThisSession = new List<string>();
+
+    // Sandboxes and endless games that should never auto-switch
+    private static readonly HashSet<string> NoSwitchGames = new HashSet<string>
+    {
+        "coloring", "sharedsticker", "flappybird", "towerbuilder"
+    };
+
+    private bool ShouldAutoSwitch()
+    {
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null || !profile.autoSwitchGames) return false;
+        if (NoSwitchGames.Contains(GameId)) return false;
+
+        // Track sessions in this game
+        if (_lastGameId != GameId)
+        {
+            _lastGameId = GameId;
+            _sessionsInCurrentGame = 0;
+        }
+        _sessionsInCurrentGame++;
+
+        // Switch after 3 full sessions in the same game
+        return _sessionsInCurrentGame >= 3;
+    }
+
+    private void AutoSwitchToNextGame()
+    {
+        // Mark this game as visited
+        if (!_visitedGamesThisSession.Contains(GameId))
+            _visitedGamesThisSession.Add(GameId);
+
+        // Find a different visible game
+        var db = Resources.Load<GameDatabase>("GameDatabase");
+        if (db == null || db.games == null) return;
+
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null) return;
+
+        // Build list of eligible games (visible, not current, not endless/sandbox, not recently visited)
+        var candidates = new List<GameItemData>();
+        var fallbacks = new List<GameItemData>(); // visited but still eligible
+
+        foreach (var game in db.games)
+        {
+            if (game.id == GameId) continue;
+            if (NoSwitchGames.Contains(game.id)) continue;
+
+            var visibility = GameVisibilityService.Evaluate(profile, game);
+            if (!visibility.isVisible) continue;
+
+            if (_visitedGamesThisSession.Contains(game.id))
+                fallbacks.Add(game);
+            else
+                candidates.Add(game);
+        }
+
+        // Prefer unvisited, fall back to visited if all exhausted
+        var pool = candidates.Count > 0 ? candidates : fallbacks;
+        if (pool.Count == 0) return; // no games to switch to
+
+        // Pick random from pool
+        var nextGame = pool[Random.Range(0, pool.Count)];
+
+        // Reset counter for next game
+        _sessionsInCurrentGame = 0;
+        _lastGameId = nextGame.id;
+
+        // Log and navigate
+        FirebaseAnalyticsManager.LogParentChangedSetting("auto_switch_triggered",
+            $"{GameId}_to_{nextGame.id}");
+
+        // Exit current game cleanly
+        OnGameExit();
+        GameContext.CurrentGame = nextGame;
+        GameContext.CurrentSelection = null;
+        BubbleTransition.LoadScene(nextGame.targetSceneName);
     }
 
     // ── Milestones ──
