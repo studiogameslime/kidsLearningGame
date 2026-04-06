@@ -445,6 +445,7 @@ public class LetterGameController : BaseMiniGame
 
         if (letter == _correctLetter)
         {
+            SoundLibrary.PlayLetterName(letter.ToString());
             RecordCorrect("first_letter", _currentWord.id);
             PlayCorrectEffect(btnGO.GetComponent<RectTransform>());
             StartCoroutine(OnCorrectSequence(btnGO));

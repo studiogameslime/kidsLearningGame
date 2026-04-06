@@ -552,6 +552,7 @@ public class LetterTrainController : BaseMiniGame
     private void PlaceLetterInWagon(int wagonIndex, char letter, GameObject option)
     {
         _placedCount++;
+        SoundLibrary.PlayLetterName(letter.ToString());
         RecordCorrect("letter_placed", letter.ToString(), isLast: _placedCount >= _totalMissing);
         if (_wagonObjects[wagonIndex] != null)
             PlayCorrectEffect(_wagonObjects[wagonIndex].GetComponent<RectTransform>());

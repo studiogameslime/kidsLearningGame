@@ -46,6 +46,19 @@ public static class SoundLibrary
         if (clip != null) BackgroundMusicManager.PlayOneShot(clip);
     }
 
+    // ── Letter Names ──
+
+    public static AudioClip LetterName(string letter)
+    {
+        return Resources.Load<AudioClip>($"Sounds/Letters/{letter}");
+    }
+
+    public static void PlayLetterName(string letter)
+    {
+        var clip = LetterName(letter);
+        if (clip != null) BackgroundMusicManager.PlayOneShot(clip);
+    }
+
     // ── Feedback (random win clip) ──
 
     private static readonly string[] FeedbackClips =
