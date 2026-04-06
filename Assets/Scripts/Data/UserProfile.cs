@@ -31,6 +31,9 @@ public class UserProfile
     public List<GameAccessOverrideData> gameAccessOverrides = new List<GameAccessOverrideData>();
     public List<string> everVisibleGameIds = new List<string>(); // once seen, never auto-hidden
 
+    // Auto-switch games after X rounds (off by default, parent enables)
+    public bool autoSwitchGames;
+
     // Store review
     public bool hasShownStoreReview;
 

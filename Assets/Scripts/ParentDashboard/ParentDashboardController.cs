@@ -4601,6 +4601,24 @@ public class ParentDashboardController : MonoBehaviour
             H("\u05EA\u05D6\u05DB\u05D5\u05E8\u05EA \u05DB\u05E9\u05DE\u05D3\u05D1\u05E7\u05D4 \u05D7\u05D3\u05E9\u05D4 \u05DE\u05D5\u05DB\u05E0\u05D4 \u05DC\u05D0\u05D9\u05E1\u05D5\u05E3 )\u05DB\u05DC 6 \u05E9\u05E2\u05D5\u05EA("), // תזכורת כשמדבקה חדשה מוכנה לאיסוף )כל 6 שעות( — reversed parens for RTL
             AppSettings.NotificationsEnabled,
             val => AppSettings.NotificationsEnabled = val);
+
+        MakeSettingsDivider(contentGO.transform);
+
+        // Auto-switch games toggle
+        var profile = ProfileManager.ActiveProfile;
+        MakeSettingsToggle(contentGO.transform,
+            H("\u05DE\u05E2\u05D1\u05E8 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9 \u05D1\u05D9\u05DF \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD"), // מעבר אוטומטי בין משחקים
+            H("\u05D0\u05D7\u05E8\u05D9 \u05DB\u05DE\u05D4 \u05E1\u05D9\u05D1\u05D5\u05D1\u05D9\u05DD \u05D4\u05D9\u05DC\u05D3 \u05E2\u05D5\u05D1\u05E8 \u05DC\u05DE\u05E9\u05D7\u05E7 \u05D0\u05D7\u05E8"), // אחרי כמה סיבובים הילד עובר למשחק אחר
+            profile != null && profile.autoSwitchGames,
+            val =>
+            {
+                if (profile != null)
+                {
+                    profile.autoSwitchGames = val;
+                    ProfileManager.Instance?.Save();
+                    FirebaseAnalyticsManager.LogParentChangedSetting("auto_switch_games", val ? "on" : "off");
+                }
+            });
     }
 
     private void MakeSettingsToggle(Transform parent, string title, string subtitle,
