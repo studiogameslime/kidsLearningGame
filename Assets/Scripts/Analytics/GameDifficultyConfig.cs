@@ -492,6 +492,90 @@ public static class GameDifficultyConfig
             }
         }
 
+        // Coloring
+        if (id.Contains("coloring"))
+            return "\u05E6\u05D1\u05D9\u05E2\u05D4 \u05D7\u05D5\u05E4\u05E9\u05D9\u05EA"; // צביעה חופשית
+
+        // Shadows
+        if (id.Contains("shadow"))
+        {
+            if (difficulty <= 3) return "\u05E6\u05DC\u05DC\u05D9\u05D5\u05EA \u05E4\u05E9\u05D5\u05D8\u05D5\u05EA"; // צלליות פשוטות
+            if (difficulty <= 6) return "\u05E6\u05DC\u05DC\u05D9\u05D5\u05EA \u05D3\u05D5\u05DE\u05D5\u05EA"; // צלליות דומות
+            return "\u05E6\u05DC\u05DC\u05D9\u05D5\u05EA \u05DE\u05D0\u05EA\u05D2\u05E8\u05D5\u05EA"; // צלליות מאתגרות
+        }
+
+        // Color Mixing
+        if (id.Contains("colormixing") || id.Contains("colormix"))
+        {
+            if (difficulty <= 3) return "\u05E6\u05D1\u05E2\u05D9\u05DD \u05D1\u05E1\u05D9\u05E1\u05D9\u05D9\u05DD"; // צבעים בסיסיים
+            if (difficulty <= 6) return "\u05E2\u05E8\u05D1\u05D5\u05D1 \u05E6\u05D1\u05E2\u05D9\u05DD"; // ערבוב צבעים
+            return "\u05E6\u05D1\u05E2\u05D9\u05DD \u05DE\u05D5\u05E8\u05DB\u05D1\u05D9\u05DD"; // צבעים מורכבים
+        }
+
+        // Tower Builder
+        if (id.Contains("tower"))
+        {
+            int tier = TowerBuilderTier(difficulty);
+            string[] labels = { "\u05DE\u05D2\u05D3\u05DC \u05E7\u05D8\u05DF", "\u05DE\u05D2\u05D3\u05DC \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9", "\u05DE\u05D2\u05D3\u05DC \u05D2\u05D1\u05D5\u05D4", "\u05DE\u05D2\u05D3\u05DC \u05E2\u05E0\u05E7" }; // מגדל קטן/בינוני/גבוה/ענק
+            return labels[Mathf.Clamp(tier, 0, labels.Length - 1)];
+        }
+
+        // Ball Maze
+        if (id.Contains("ballmaze") || id.Contains("maze") && !id.Contains("number"))
+        {
+            int tier = BallMazeTier(difficulty);
+            string[] labels = { "\u05DE\u05D1\u05D5\u05DA \u05E7\u05DC", "\u05DE\u05D1\u05D5\u05DA \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9", "\u05DE\u05D1\u05D5\u05DA \u05E7\u05E9\u05D4" }; // מבוך קל/בינוני/קשה
+            return labels[Mathf.Clamp(tier, 0, labels.Length - 1)];
+        }
+
+        // Shared Sticker
+        if (id.Contains("sharedsticker") || id.Contains("shared"))
+        {
+            if (difficulty <= 3) return "\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05D3\u05D5\u05DE\u05D4 \u2014 \u05E7\u05DC"; // מצא את הדומה — קל
+            if (difficulty <= 6) return "\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05D3\u05D5\u05DE\u05D4 \u2014 \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9"; // — בינוני
+            return "\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05D3\u05D5\u05DE\u05D4 \u2014 \u05E7\u05E9\u05D4"; // — קשה
+        }
+
+        // Flappy Bird
+        if (id.Contains("flappy"))
+        {
+            if (difficulty <= 3) return "\u05DE\u05E2\u05D5\u05E3 \u05D0\u05D9\u05D8\u05D9"; // מעוף איטי
+            if (difficulty <= 6) return "\u05DE\u05E2\u05D5\u05E3 \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9"; // מעוף בינוני
+            return "\u05DE\u05E2\u05D5\u05E3 \u05DE\u05D4\u05D9\u05E8"; // מעוף מהיר
+        }
+
+        // Bakery
+        if (id.Contains("bakery"))
+        {
+            if (difficulty <= 3) return "\u05E2\u05D5\u05D2\u05D9\u05D5\u05EA \u05E4\u05E9\u05D5\u05D8\u05D5\u05EA"; // עוגיות פשוטות
+            if (difficulty <= 6) return "\u05E2\u05D5\u05D2\u05D9\u05D5\u05EA \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9\u05D5\u05EA"; // עוגיות בינוניות
+            return "\u05E2\u05D5\u05D2\u05D9\u05D5\u05EA \u05DE\u05D5\u05E8\u05DB\u05D1\u05D5\u05EA"; // עוגיות מורכבות
+        }
+
+        // Sock Match
+        if (id.Contains("sockmatch") || id.Contains("sock"))
+        {
+            if (difficulty <= 3) return "\u05D2\u05E8\u05D1\u05D9\u05D9\u05DD \u05E9\u05D5\u05E0\u05D5\u05EA"; // גרביים שונות
+            if (difficulty <= 6) return "\u05D2\u05E8\u05D1\u05D9\u05D9\u05DD \u05D3\u05D5\u05DE\u05D5\u05EA"; // גרביים דומות
+            return "\u05D2\u05E8\u05D1\u05D9\u05D9\u05DD \u05DE\u05D0\u05EA\u05D2\u05E8\u05D5\u05EA"; // גרביים מאתגרות
+        }
+
+        // Laundry Sorting
+        if (id.Contains("laundry"))
+        {
+            if (difficulty <= 3) return "\u05DE\u05D9\u05D5\u05DF \u05E7\u05DC"; // מיון קל
+            if (difficulty <= 6) return "\u05DE\u05D9\u05D5\u05DF \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9"; // מיון בינוני
+            return "\u05DE\u05D9\u05D5\u05DF \u05DE\u05D5\u05E8\u05DB\u05D1"; // מיון מורכב
+        }
+
+        // Fishing
+        if (id.Contains("fishing"))
+        {
+            if (difficulty <= 3) return "\u05D3\u05D2\u05D9\u05DD \u05D0\u05D9\u05D8\u05D9\u05D9\u05DD"; // דגים איטיים
+            if (difficulty <= 6) return "\u05D3\u05D2\u05D9\u05DD \u05DE\u05D4\u05D9\u05E8\u05D9\u05DD"; // דגים מהירים
+            return "\u05D3\u05D2\u05D9\u05DD \u05DE\u05D0\u05D5\u05D3 \u05DE\u05D4\u05D9\u05E8\u05D9\u05DD"; // דגים מאוד מהירים
+        }
+
         // Fallback
         return $"\u05E8\u05DE\u05D4 {difficulty}"; // רמה X
     }
