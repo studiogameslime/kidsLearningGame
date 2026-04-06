@@ -69,6 +69,8 @@ public class LetterBubblesController : BaseMiniGame
     private char targetLetter;
     private int targetsPoppedThisRound;
     private int targetsNeededThisRound;
+    private int lettersCompletedThisRound;
+    private const int LettersPerRound = 5;
     private Sprite circleSprite;
     private List<BubbleData> activeBubbles = new List<BubbleData>();
     private HashSet<char> usedLettersThisSession = new HashSet<char>();
@@ -116,6 +118,7 @@ public class LetterBubblesController : BaseMiniGame
 
         targetsPoppedThisRound = 0;
         targetsNeededThisRound = currentParams.targetCount;
+        lettersCompletedThisRound = 0;
 
         // Update target display
         if (targetLetterText != null)
@@ -372,8 +375,18 @@ public class LetterBubblesController : BaseMiniGame
 
             if (isLast)
             {
-                roundActive = false;
-                StartCoroutine(CompleteAfterDelay(0.5f));
+                lettersCompletedThisRound++;
+                if (lettersCompletedThisRound >= LettersPerRound)
+                {
+                    // All 5 letters done — complete the round
+                    roundActive = false;
+                    StartCoroutine(CompleteAfterDelay(0.5f));
+                }
+                else
+                {
+                    // Switch to next letter seamlessly
+                    StartCoroutine(SwitchLetterInline());
+                }
             }
         }
         else
@@ -382,6 +395,70 @@ public class LetterBubblesController : BaseMiniGame
             RecordMistake(targetId: targetLetter.ToString());
             PlayWrongEffect(bubble.rt);
             StartCoroutine(FlashBubble(bubble));
+        }
+    }
+
+    private IEnumerator SwitchLetterInline()
+    {
+        yield return new WaitForSeconds(0.4f);
+
+        // Pick new letter
+        targetLetter = PickTargetLetter();
+        usedLettersThisSession.Add(targetLetter);
+        if (usedLettersThisSession.Count >= HebrewAlphabet.Length)
+            usedLettersThisSession.Clear();
+
+        targetsPoppedThisRound = 0;
+
+        // Update display
+        if (targetLetterText != null)
+            HebrewText.SetText(targetLetterText, targetLetter.ToString());
+
+        // Play letter name
+        SoundLibrary.PlayLetterName(targetLetter.ToString());
+
+        // Pulse target display
+        StartCoroutine(PulseTargetDisplay());
+
+        // Replace all existing bubble letters (swap non-target bubbles to new random + add new targets)
+        ReassignBubbleLetters();
+    }
+
+    private void ReassignBubbleLetters()
+    {
+        int targetCount = 0;
+        foreach (var b in activeBubbles)
+        {
+            if (b.isPopping || b.go == null) continue;
+
+            if (targetCount < targetsNeededThisRound && Random.value < 0.35f)
+            {
+                // Make this a target bubble
+                b.letter = targetLetter;
+                b.isTarget = true;
+                targetCount++;
+            }
+            else
+            {
+                char[] pool = GetDistractorPool();
+                b.letter = pool[Random.Range(0, pool.Length)];
+                b.isTarget = false;
+            }
+            b.letterTMP.text = b.letter.ToString();
+        }
+
+        // Ensure minimum targets
+        if (targetCount < targetsNeededThisRound)
+        {
+            foreach (var b in activeBubbles)
+            {
+                if (b.isPopping || b.go == null || b.isTarget) continue;
+                b.letter = targetLetter;
+                b.isTarget = true;
+                b.letterTMP.text = b.letter.ToString();
+                targetCount++;
+                if (targetCount >= targetsNeededThisRound) break;
+            }
         }
     }
 
