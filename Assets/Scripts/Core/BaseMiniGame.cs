@@ -321,19 +321,17 @@ public abstract class BaseMiniGame : MonoBehaviour
                 yield break; // DiscoveryReveal scene is loading — do NOT start a new round
         }
 
+        // ── Auto-switch check (before advancing round) ──
+        if (ShouldAutoSwitch())
+        {
+            AutoSwitchToNextGame();
+            yield break;
+        }
+
         // ── Advance to next round (always continue) ──
         CurrentRound++;
-
-        // Auto-switch: after a full session (all rounds), switch to a different game
         if (CurrentRound >= totalRounds && !isEndless)
-        {
-            if (ShouldAutoSwitch())
-            {
-                AutoSwitchToNextGame();
-                yield break;
-            }
             CurrentRound = 0;
-        }
 
         OnRoundCleanup();
         SetupNewRound();
@@ -342,14 +340,15 @@ public abstract class BaseMiniGame : MonoBehaviour
 
     // ── Auto-Switch Games ──
 
-    private static int _sessionsInCurrentGame; // counts full sessions (all rounds) in this game
+    private static int _roundsInCurrentGame; // counts completed rounds in this game
     private static string _lastGameId;
     private static readonly List<string> _visitedGamesThisSession = new List<string>();
+    private const int RoundsBeforeSwitch = 5; // switch after 5 completed rounds
 
-    // Sandboxes and endless games that should never auto-switch
+    // Creative/sandbox games that should never auto-switch
     private static readonly HashSet<string> NoSwitchGames = new HashSet<string>
     {
-        "coloring", "sharedsticker", "flappybird", "towerbuilder"
+        "coloring"
     };
 
     private bool ShouldAutoSwitch()
@@ -358,16 +357,16 @@ public abstract class BaseMiniGame : MonoBehaviour
         if (profile == null || !profile.autoSwitchGames) return false;
         if (NoSwitchGames.Contains(GameId)) return false;
 
-        // Track sessions in this game
+        // Track rounds completed in this game
         if (_lastGameId != GameId)
         {
             _lastGameId = GameId;
-            _sessionsInCurrentGame = 0;
+            _roundsInCurrentGame = 0;
         }
-        _sessionsInCurrentGame++;
+        _roundsInCurrentGame++;
 
-        // Switch after completing one full session (all rounds)
-        return _sessionsInCurrentGame >= 1;
+        // Switch after N completed rounds
+        return _roundsInCurrentGame >= RoundsBeforeSwitch;
     }
 
     private void AutoSwitchToNextGame()
