@@ -157,39 +157,10 @@ public class SandDrawingSetup
             new Vector2(0, 0.5f), new Vector2(0, 0.5f),
             new Vector2(24, 0), new Vector2(90, 90));
 
-        // Reset button (bottom-center area)
-        var resetGO = new GameObject("ResetButton");
-        resetGO.transform.SetParent(safeArea.transform, false);
-        var resetRT = resetGO.AddComponent<RectTransform>();
-        resetRT.anchorMin = new Vector2(0.5f, 0);
-        resetRT.anchorMax = new Vector2(0.5f, 0);
-        resetRT.pivot = new Vector2(0.5f, 0);
-        resetRT.sizeDelta = new Vector2(160, 60);
-        resetRT.anchoredPosition = new Vector2(0, 16);
-        var resetImg = resetGO.AddComponent<Image>();
-        if (roundedRect != null) { resetImg.sprite = roundedRect; resetImg.type = Image.Type.Sliced; }
-        resetImg.color = new Color(0.65f, 0.50f, 0.30f, 0.85f);
-        var resetBtn = resetGO.AddComponent<Button>();
-        resetBtn.targetGraphic = resetImg;
-
-        // Reset button label
-        var resetLabelGO = new GameObject("ResetLabel");
-        resetLabelGO.transform.SetParent(resetGO.transform, false);
-        var resetLabelRT = resetLabelGO.AddComponent<RectTransform>();
-        Full(resetLabelRT);
-        var resetLabelTMP = resetLabelGO.AddComponent<TextMeshProUGUI>();
-        HebrewText.SetText(resetLabelTMP, "\u05E0\u05E7\u05D4"); // נקה (Clean)
-        resetLabelTMP.fontSize = 28;
-        resetLabelTMP.fontStyle = FontStyles.Bold;
-        resetLabelTMP.color = Color.white;
-        resetLabelTMP.alignment = TextAlignmentOptions.Center;
-        resetLabelTMP.raycastTarget = false;
-
         // Controller
         var controller = canvasGO.AddComponent<SandDrawingController>();
         controller.sandDisplay = sandRawImg;
         controller.backButton = homeGO.GetComponent<Button>();
-        controller.resetButton = resetBtn;
         controller.sandShader = Shader.Find("UI/SandSurface");
 
         // Save Scene
