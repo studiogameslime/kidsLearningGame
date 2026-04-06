@@ -366,6 +366,7 @@ public abstract class BaseMiniGame : MonoBehaviour
         _roundsInCurrentGame++;
 
         // Switch after N completed rounds
+        Debug.Log($"[AutoSwitch] {GameId}: round {_roundsInCurrentGame}/{RoundsBeforeSwitch}, autoSwitch={profile.autoSwitchGames}");
         return _roundsInCurrentGame >= RoundsBeforeSwitch;
     }
 
@@ -377,6 +378,11 @@ public abstract class BaseMiniGame : MonoBehaviour
 
         // Find a different visible game
         var db = Resources.Load<GameDatabase>("GameDatabase");
+        if (db == null)
+        {
+            var dbs = Resources.FindObjectsOfTypeAll<GameDatabase>();
+            if (dbs.Length > 0) db = dbs[0];
+        }
         if (db == null || db.games == null) return;
 
         var profile = ProfileManager.ActiveProfile;
