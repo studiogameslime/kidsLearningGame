@@ -329,6 +329,14 @@ public class FirebaseAnalyticsManager : MonoBehaviour
     //  APP SESSION
     // ══════════════════════════════════
 
+    public static void LogSceneDuration(string sceneName, float durationSeconds)
+    {
+        if (!_initialized || durationSeconds < 2f) return;
+        FirebaseAnalytics.LogEvent("scene_duration",
+            new Parameter("scene_name", sceneName),
+            new Parameter("duration_seconds", (double)durationSeconds));
+    }
+
     public static void LogGameSessionDuration(string gameId, float durationSeconds)
     {
         if (!_initialized || durationSeconds < 3f) return;
