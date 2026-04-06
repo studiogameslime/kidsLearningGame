@@ -132,6 +132,16 @@ public static class SoundLibrary
         return Resources.Load<AudioClip>("Sounds/World/Here your paintings");
     }
 
+    public static AudioClip AquariumIntro()
+    {
+        return Resources.Load<AudioClip>("Sounds/World/This is your aquarium");
+    }
+
+    public static AudioClip AquariumFeedFishes()
+    {
+        return Resources.Load<AudioClip>("Sounds/World/Here you can feed all your fishes");
+    }
+
     public static AudioClip WorldOpenFirstGift()
     {
         return Resources.Load<AudioClip>("Sounds/World/Lets open your first gift");

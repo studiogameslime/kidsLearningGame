@@ -87,6 +87,23 @@ public class AquariumController : MonoBehaviour
         LoadAquariumContent();
         UpdateProgressBar(false);
         UpdateEmptyHint();
+
+        // Play intro voice guide
+        StartCoroutine(PlayIntroGuide());
+    }
+
+    private System.Collections.IEnumerator PlayIntroGuide()
+    {
+        yield return new WaitForSeconds(0.5f);
+        var introClip = SoundLibrary.AquariumIntro();
+        if (introClip != null)
+        {
+            BackgroundMusicManager.PlayOneShot(introClip);
+            yield return new WaitForSeconds(introClip.length + 0.3f);
+        }
+        var feedClip = SoundLibrary.AquariumFeedFishes();
+        if (feedClip != null)
+            BackgroundMusicManager.PlayOneShot(feedClip);
     }
 
     private void LoadFoodSprites()
