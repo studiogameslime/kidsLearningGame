@@ -366,8 +366,8 @@ public abstract class BaseMiniGame : MonoBehaviour
         }
         _sessionsInCurrentGame++;
 
-        // Switch after 3 full sessions in the same game
-        return _sessionsInCurrentGame >= 3;
+        // Switch after completing one full session (all rounds)
+        return _sessionsInCurrentGame >= 1;
     }
 
     private void AutoSwitchToNextGame()
