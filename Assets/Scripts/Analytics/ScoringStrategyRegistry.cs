@@ -65,8 +65,37 @@ public static class ScoringStrategyRegistry
             return new LetterTrainScoringStrategy();
 
         if (id.Contains("fishing"))
-            return new DefaultScoringStrategy();
+            return new FishingScoringStrategy();
 
+        if (id.Contains("coloring"))
+            return new ColoringScoringStrategy();
+
+        if (id.Contains("shadow"))
+            return new ShadowMatchScoringStrategy();
+
+        if (id.Contains("colormixing") || id.Contains("colormix"))
+            return new ColorMixingScoringStrategy();
+
+        if (id.Contains("tower"))
+            return new TowerBuilderScoringStrategy();
+
+        if (id.Contains("ballmaze"))
+            return new BallMazeScoringStrategy();
+
+        if (id.Contains("sharedsticker") || id.Contains("shared"))
+            return new SharedStickerScoringStrategy();
+
+        if (id.Contains("flappy"))
+            return new FlappyBirdScoringStrategy();
+
+        if (id.Contains("bakery"))
+            return new BakeryScoringStrategy();
+
+        if (id.Contains("sockmatch") || id.Contains("sock"))
+            return new SockMatchScoringStrategy();
+
+        if (id.Contains("laundry"))
+            return new LaundrySortingScoringStrategy();
 
         if (id.Contains("sizesort"))
             return new SizeSortScoringStrategy();
