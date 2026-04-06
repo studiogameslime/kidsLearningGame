@@ -190,6 +190,7 @@ public class SandDrawingSetup
         controller.sandDisplay = sandRawImg;
         controller.backButton = homeGO.GetComponent<Button>();
         controller.resetButton = resetBtn;
+        controller.sandShader = Shader.Find("UI/SandSurface");
 
         // Save Scene
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/SandDrawingScene.unity");

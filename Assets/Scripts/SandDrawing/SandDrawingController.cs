@@ -15,6 +15,7 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
     public RawImage sandDisplay;
     public Button backButton;
     public Button resetButton;
+    public Shader sandShader; // UI/SandSurface — direct reference ensures inclusion in build
 
     [Header("Brush Settings")]
     public int brushRadius = 36;
@@ -193,7 +194,7 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
 
     private void CreateMaterial()
     {
-        var shader = Shader.Find("UI/SandSurface");
+        var shader = sandShader != null ? sandShader : Shader.Find("UI/SandSurface");
         if (shader == null)
         {
             Debug.LogError("[SandDrawing] UI/SandSurface shader not found!");
