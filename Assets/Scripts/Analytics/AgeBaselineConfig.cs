@@ -274,13 +274,13 @@ public static class AgeBaselineConfig
             new Entry(4, "quantitymatch", 5),   // quantities up to 5
             new Entry(4, "numbertrain",   6),   // 6 wagons, 2 missing
             new Entry(4, "lettertrain",  5),   // 5 wagons, 1 missing letter, early alphabet
-            new Entry(3, "fishing"),                // shape recognition + tapping
-            new Entry(3, "sizesort",     1),  // very different sizes
-            new Entry(3, "colorsort",    1),  // 2 distinct colors
-            new Entry(3, "colorcatch",   1),  // 2 colors, 5 catches
-            new Entry(3, "bakery"),                   // creative sandbox
-            new Entry(3, "sockmatch"),                // match sock pairs
-            new Entry(3, "fruitpuzzle",  1),  // 2x2 grid
+            new Entry(4, "fishing"),                // shape recognition + tapping
+            new Entry(4, "sizesort",     1),  // very different sizes
+            new Entry(4, "colorsort",    1),  // 2 distinct colors
+            new Entry(4, "colorcatch",   1),  // 2 colors, 5 catches
+            new Entry(4, "bakery"),                   // creative sandbox
+            new Entry(4, "sockmatch"),                // match sock pairs
+            new Entry(4, "fruitpuzzle",  1),  // 2x2 grid
             new Entry(4, "numbermaze",    10),  // target 10, 5x3 grid
             new Entry(4, "patterncopy",   3),   // 3x3 grid
             new Entry(4, "letters",       3),   // 2-3 letter words
@@ -321,6 +321,9 @@ public static class AgeBaselineConfig
             new Entry(5, "connectmatch",  3),   // 3x3 grid, longer path
 
             new Entry(5, "laundrysorting"),
+            new Entry(5, "fishing"),
+            new Entry(5, "bakery"),
+            new Entry(5, "sockmatch"),
 
             // new Entry(5, "pizzamaker"), // hidden for v1
         };
