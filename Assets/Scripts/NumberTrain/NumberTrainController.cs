@@ -154,9 +154,9 @@ public class NumberTrainController : BaseMiniGame
         int tier = Difficulty <= 3 ? 0 : Difficulty <= 6 ? 1 : 2;
         switch (tier)
         {
-            case 0: _wagonCount = 6;  _totalMissing = 3; break;
-            case 1: _wagonCount = 8;  _totalMissing = 5; break;
-            case 2: _wagonCount = 10; _totalMissing = 7; break;
+            case 0: _wagonCount = 5;  _totalMissing = 1; break;
+            case 1: _wagonCount = 6;  _totalMissing = 2; break;
+            case 2: _wagonCount = 7;  _totalMissing = 3; break;
         }
 
         // Start number — cap so last wagon doesn't exceed 10
