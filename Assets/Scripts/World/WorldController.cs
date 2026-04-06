@@ -908,7 +908,7 @@ public class WorldController : MonoBehaviour
         float grassHeight = grassArea.rect.height;
         if (grassHeight <= 0) grassHeight = 500f;
 
-        float sandboxSize = 160f;
+        float sandboxSize = 240f;
 
         // Shadow behind the sandbox icon
         var shadowGO = new GameObject("SandboxShadow");
