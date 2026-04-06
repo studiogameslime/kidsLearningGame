@@ -1,23 +1,21 @@
-// Sand drawing surface shader.
-// Renders a two-layer sand effect: light surface sand and dark wet groove underneath.
-// A runtime mask (R channel) controls which layer is visible.
-// Includes grain variation, groove depth darkening, and raised ridge edges.
-// UI-compatible with full stencil block for Canvas masking.
+// Sand surface shader with rainbow drawing.
+// Top layer = sand texture. Drawing reveals rainbow colors that shift
+// continuously as the finger moves, creating an ever-changing hue trail.
+// Edge detection creates raised sand ridges at groove borders.
 Shader "UI/SandSurface"
 {
     Properties
     {
-        _BottomTex ("Bottom (Wet Sand)", 2D) = "black" {}
-        _TopTex ("Top (Surface Sand)", 2D) = "white" {}
-        _MaskTex ("Mask (R=sand)", 2D) = "white" {}
-        _GrainTex ("Grain Noise", 2D) = "gray" {}
-
-        _EdgeWidth ("Edge Width", Range(0.001, 0.15)) = 0.06
-        _EdgeBrightness ("Edge Brightness", Range(0, 2)) = 1.2
-        _GrainStrength ("Grain Strength", Range(0, 0.5)) = 0.12
-        _GrooveDepth ("Groove Depth Darken", Range(0, 0.6)) = 0.3
-        _TopTiling ("Top Tiling", Float) = 3.0
-        _BottomTiling ("Bottom Tiling", Float) = 2.5
+        _MainTex ("Sprite Texture", 2D) = "white" {}
+        _TopTex ("Top Sand Surface", 2D) = "white" {}
+        _MaskTex ("Draw Mask (R=hue, G=drawn)", 2D) = "black" {}
+        _GrainTex ("Sand Grain Noise", 2D) = "gray" {}
+        _EdgeWidth ("Edge Width", Range(0.01, 0.2)) = 0.04
+        _EdgeBrightness ("Edge Brightness", Range(0, 3)) = 1.8
+        _GrainStrength ("Grain Strength", Range(0, 0.3)) = 0.08
+        _TopTiling ("Top Tex Tiling", Float) = 4
+        _Saturation ("Rainbow Saturation", Range(0, 1)) = 0.7
+        _Brightness ("Rainbow Brightness", Range(0, 1)) = 0.95
 
         // Required for UI masking
         _StencilComp ("Stencil Comparison", Float) = 8
@@ -77,17 +75,15 @@ Shader "UI/SandSurface"
                 float4 color : COLOR;
             };
 
-            sampler2D _BottomTex;
             sampler2D _TopTex;
             sampler2D _MaskTex;
             sampler2D _GrainTex;
-
             float _EdgeWidth;
             float _EdgeBrightness;
             float _GrainStrength;
-            float _GrooveDepth;
             float _TopTiling;
-            float _BottomTiling;
+            float _Saturation;
+            float _Brightness;
 
             v2f vert(appdata v)
             {
@@ -98,53 +94,46 @@ Shader "UI/SandSurface"
                 return o;
             }
 
+            // HSV to RGB conversion
+            fixed3 hsv2rgb(float h, float s, float v)
+            {
+                float4 K = float4(1.0, 2.0/3.0, 1.0/3.0, 3.0);
+                float3 p = abs(frac(float3(h, h, h) + K.xyz) * 6.0 - K.www);
+                return v * lerp(K.xxx, saturate(p - K.xxx), s);
+            }
+
             fixed4 frag(v2f i) : SV_Target
             {
-                // Sample mask: 1 = sand surface, 0 = groove (drawn area)
-                float mask = tex2D(_MaskTex, i.uv).r;
+                // Sample mask: R = hue value (0-1), G = drawn amount (0-1)
+                fixed4 maskSample = tex2D(_MaskTex, i.uv);
+                float hue = maskSample.r;
+                float drawn = maskSample.g; // 0 = untouched sand, 1 = fully drawn
 
-                // Tiled texture sampling
+                // Sand surface texture with grain
                 float2 topUV = i.uv * _TopTiling;
-                float2 bottomUV = i.uv * _BottomTiling;
-
                 fixed4 topCol = tex2D(_TopTex, topUV);
-                fixed4 bottomCol = tex2D(_BottomTex, bottomUV);
-
-                // Grain variation on top sand — subtle noise to break uniformity
                 float grain = tex2D(_GrainTex, i.uv * 5.0).r;
-                float grainOffset = (grain - 0.5) * _GrainStrength;
-                topCol.rgb += grainOffset;
+                topCol.rgb += (grain - 0.5) * _GrainStrength;
 
-                // Darken bottom for groove depth illusion
-                bottomCol.rgb *= (1.0 - _GrooveDepth);
+                // Rainbow color from hue
+                fixed3 rainbowCol = hsv2rgb(hue, _Saturation, _Brightness);
 
-                // Edge detection via screen-space derivatives of the mask
-                // This finds the boundary between sand and groove
-                float dMdx = ddx(mask);
-                float dMdy = ddy(mask);
+                // Edge detection on the drawn mask
+                float dMdx = ddx(drawn);
+                float dMdy = ddy(drawn);
                 float edgeGrad = sqrt(dMdx * dMdx + dMdy * dMdy);
-
-                // Normalize edge intensity based on edge width
                 float edgeIntensity = saturate(edgeGrad / _EdgeWidth);
 
-                // Warm sandy ridge color for the pushed-aside sand at edges
+                // Sand ridge color at edges (bright sand pushed aside)
                 fixed3 ridgeColor = topCol.rgb * _EdgeBrightness;
-                // Add warm tint to ridges (slight orange/golden push)
                 ridgeColor += fixed3(0.06, 0.03, -0.01) * edgeIntensity;
 
-                // Lerp between bottom (groove) and top (sand) based on mask
-                // Use smoothstep for slightly softer transition
-                float blendMask = smoothstep(0.05, 0.45, mask);
-                fixed3 baseColor = lerp(bottomCol.rgb, topCol.rgb, blendMask);
+                // Blend: sand where not drawn, rainbow where drawn
+                float blendMask = smoothstep(0.05, 0.4, drawn);
+                fixed3 baseColor = lerp(topCol.rgb, rainbowCol, blendMask);
 
-                // Apply edge ridges on top — only where there IS a gradient
-                baseColor = lerp(baseColor, ridgeColor, edgeIntensity * 0.7);
-
-                // Subtle vignette-like depth: slightly darken groove centers
-                // (areas far from edges within the groove)
-                float grooveFactor = 1.0 - blendMask;
-                float centerDarken = grooveFactor * (1.0 - edgeIntensity) * 0.08;
-                baseColor -= centerDarken;
+                // Apply edge ridges
+                baseColor = lerp(baseColor, ridgeColor, edgeIntensity * 0.6);
 
                 return fixed4(baseColor * i.color.rgb, i.color.a);
             }

@@ -35,9 +35,13 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
     private Texture2D grainTex;
     private Material sandMat;
 
-    // Mask pixel data (R8 — single channel)
+    // Mask pixel data — RGBA32: R=hue (0-255), G=drawn amount (0-255), B=unused, A=255
     private byte[] maskPixels;
     private bool maskDirty;
+
+    // Rainbow hue that continuously advances while drawing
+    private float currentHue; // 0-1, wraps around
+    private float hueSpeed = 0.15f; // how fast hue changes per pixel of movement
 
     // Input state
     private RectTransform displayRT;
@@ -192,14 +196,13 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
 
         sandMat = new Material(shader);
         sandMat.SetTexture("_TopTex", topTex);
-        sandMat.SetTexture("_BottomTex", bottomTex);
         sandMat.SetTexture("_GrainTex", grainTex);
         sandMat.SetFloat("_TopTiling", 4f);
-        sandMat.SetFloat("_BottomTiling", 1f); // no tiling — full rainbow image
-        sandMat.SetFloat("_EdgeWidth", 0.04f);     // narrower edge for sharper ridges
-        sandMat.SetFloat("_EdgeBrightness", 1.8f);  // brighter raised edges
-        sandMat.SetFloat("_GrainStrength", 0.08f);  // subtler grain
-        sandMat.SetFloat("_GrooveDepth", 0.1f);     // shallow groove (sand, not wet)
+        sandMat.SetFloat("_EdgeWidth", 0.04f);
+        sandMat.SetFloat("_EdgeBrightness", 1.8f);
+        sandMat.SetFloat("_GrainStrength", 0.08f);
+        sandMat.SetFloat("_Saturation", 0.7f);
+        sandMat.SetFloat("_Brightness", 0.95f);
     }
 
     // ── Mask Operations ──
@@ -208,9 +211,9 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
     {
         for (int i = 0; i < maskPixels.Length; i += 4)
         {
-            maskPixels[i]     = value; // R
-            maskPixels[i + 1] = value; // G
-            maskPixels[i + 2] = value; // B
+            maskPixels[i]     = 0;     // R = hue (irrelevant when not drawn)
+            maskPixels[i + 1] = 0;     // G = drawn amount (0 = sand visible)
+            maskPixels[i + 2] = 0;     // B = unused
             maskPixels[i + 3] = 255;   // A
         }
     }
@@ -238,13 +241,11 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
 
             for (int i = 0; i < maskPixels.Length; i += 4)
             {
-                byte val = maskPixels[i];
-                if (val < 255)
+                byte drawn = maskPixels[i + 1]; // G = drawn amount
+                if (drawn > 0)
                 {
-                    int newVal = Mathf.Min(255, val + step);
-                    maskPixels[i] = (byte)newVal;
-                    maskPixels[i + 1] = (byte)newVal;
-                    maskPixels[i + 2] = (byte)newVal;
+                    int newVal = Mathf.Max(0, drawn - step);
+                    maskPixels[i + 1] = (byte)newVal; // fade drawn back to 0 (sand returns)
                     anyChanged = true;
                 }
             }
@@ -277,7 +278,7 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
 
     /// <summary>
     /// Paint a soft-falloff circle into the mask at the given texture coordinate.
-    /// Sets mask to 0 (groove) with soft edges controlled by brushSoftness.
+    /// Paints rainbow into the mask. R=hue, G=drawn amount (with soft falloff).
     /// </summary>
     private void PaintMaskCircle(Vector2 center)
     {
@@ -287,6 +288,7 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
         float rSq = r * r;
         float innerR = r * (1f - brushSoftness);
         float innerRSq = innerR * innerR;
+        byte hueByte = (byte)(Mathf.Repeat(currentHue, 1f) * 255f);
 
         for (int dy = -r; dy <= r; dy++)
         {
@@ -302,25 +304,25 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
                 if (distSq > rSq) continue;
 
                 int idx = (py * TexWidth + px) * 4; // RGBA32
-                byte current = maskPixels[idx];
 
                 if (distSq <= innerRSq)
                 {
-                    maskPixels[idx] = 0;
-                    maskPixels[idx + 1] = 0;
-                    maskPixels[idx + 2] = 0;
+                    // Full draw: set hue and drawn=255
+                    maskPixels[idx] = hueByte;       // R = hue
+                    maskPixels[idx + 1] = 255;       // G = fully drawn
                 }
                 else
                 {
+                    // Soft edge: partial draw
                     float dist = Mathf.Sqrt(distSq);
-                    float t = (dist - innerR) / (r - innerR);
+                    float t = 1f - (dist - innerR) / (r - innerR);
                     t = t * t;
-                    byte target = (byte)(t * 255);
-                    if (target < current)
+                    byte drawnTarget = (byte)(t * 255f);
+                    byte currentDrawn = maskPixels[idx + 1];
+                    if (drawnTarget > currentDrawn)
                     {
-                        maskPixels[idx] = target;
-                        maskPixels[idx + 1] = target;
-                        maskPixels[idx + 2] = target;
+                        maskPixels[idx] = hueByte;           // R = hue
+                        maskPixels[idx + 1] = drawnTarget;   // G = drawn amount
                     }
                 }
             }
@@ -358,13 +360,13 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
                     if (dx * dx + dy * dy > dotR * dotR) continue;
 
                     int idx = (py * TexWidth + px) * 4; // RGBA32
-                    byte current = maskPixels[idx];
-                    byte target = (byte)Random.Range(40, 140);
-                    if (target < current)
+                    byte currentDrawn = maskPixels[idx + 1];
+                    byte target = (byte)Random.Range(80, 180);
+                    if (target > currentDrawn)
                     {
-                        maskPixels[idx] = target;
-                        maskPixels[idx + 1] = target;
-                        maskPixels[idx + 2] = target;
+                        byte hueByte = (byte)(Mathf.Repeat(currentHue + Random.Range(-0.05f, 0.05f), 1f) * 255f);
+                        maskPixels[idx] = hueByte;       // R = hue
+                        maskPixels[idx + 1] = target;    // G = drawn
                     }
                 }
             }
@@ -381,14 +383,17 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
         float step = Mathf.Max(1f, brushRadius * 0.3f);
         int steps = Mathf.CeilToInt(dist / step);
 
+        // Advance hue based on distance traveled
+        float hueAdvance = dist * hueSpeed / TexWidth;
+
         for (int i = 0; i <= steps; i++)
         {
             float t = steps == 0 ? 0 : (float)i / steps;
             Vector2 pos = Vector2.Lerp(from, to, t);
+            currentHue += hueAdvance / Mathf.Max(1, steps);
             PaintMaskCircle(pos);
         }
 
-        // Scatter grains at the endpoint for natural look
         ScatterGrains(to);
     }
 
