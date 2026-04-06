@@ -54,6 +54,9 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
     private float shakeTimer;
     private Vector2 shakeBasePos;
 
+    // Session tracking
+    private float sessionStartTime;
+
     // Sparkle particles
     private RectTransform sparkleContainer;
     private Sprite circleSprite;
@@ -95,6 +98,9 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
 
         // Disable finger trail in this scene (we draw directly on sand)
         FingerTrail.SetEnabled(false);
+
+        sessionStartTime = Time.realtimeSinceStartup;
+        FirebaseAnalyticsManager.LogScreenView("sand_drawing");
 
         // Create sparkle container (child of sand display, renders on top)
         var sparkleGO = new GameObject("Sparkles");
@@ -491,8 +497,20 @@ public class SandDrawingController : MonoBehaviour, IPointerDownHandler, IDragHa
 
     private void OnBackPressed()
     {
+        LogSessionDuration();
         FingerTrail.SetEnabled(true);
         NavigationManager.GoToWorld();
+    }
+
+    private void LogSessionDuration()
+    {
+        float duration = Time.realtimeSinceStartup - sessionStartTime;
+        FirebaseAnalyticsManager.LogSandboxSession("sand_drawing", duration);
+    }
+
+    private void OnApplicationPause(bool paused)
+    {
+        if (paused) LogSessionDuration();
     }
 
     // ── Sparkle Particles ──

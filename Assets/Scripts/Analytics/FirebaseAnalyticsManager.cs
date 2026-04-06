@@ -312,4 +312,16 @@ public class FirebaseAnalyticsManager : MonoBehaviour
         if (!_initialized) return;
         FirebaseAnalytics.LogEvent("drawing_shared");
     }
+
+    // ══════════════════════════════════
+    //  SANDBOX SESSIONS
+    // ══════════════════════════════════
+
+    public static void LogSandboxSession(string sandboxId, float durationSeconds)
+    {
+        if (!_initialized || durationSeconds < 2f) return; // ignore very short sessions
+        FirebaseAnalytics.LogEvent("sandbox_session",
+            new Parameter("sandbox_id", sandboxId),
+            new Parameter("duration_seconds", (double)durationSeconds));
+    }
 }

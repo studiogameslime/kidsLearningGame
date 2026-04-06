@@ -111,7 +111,12 @@ public class BubbleLabController : MonoBehaviour, IPointerDownHandler, IPointerU
 
         // Disable finger trail in this scene
         FingerTrail.SetEnabled(false);
+
+        _sessionStart = Time.realtimeSinceStartup;
+        FirebaseAnalyticsManager.LogScreenView("bubble_lab");
     }
+
+    private float _sessionStart;
 
     private void Update()
     {
@@ -826,6 +831,7 @@ public class BubbleLabController : MonoBehaviour, IPointerDownHandler, IPointerU
 
     private void OnBackPressed()
     {
+        FirebaseAnalyticsManager.LogSandboxSession("bubble_lab", Time.realtimeSinceStartup - _sessionStart);
         FingerTrail.SetEnabled(true);
         NavigationManager.GoToWorld();
     }
