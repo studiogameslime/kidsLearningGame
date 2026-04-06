@@ -220,9 +220,9 @@ public class LetterBubblesController : BaseMiniGame
             bool isTarget = i < targetCount;
             char letter = isTarget ? targetLetter : distractorPool[Random.Range(0, distractorPool.Length)];
 
-            // Random starting position spread across the area
+            // Start from below the screen, staggered so they rise in gradually
             float x = Random.Range(currentParams.bubbleSize * 0.5f, areaWidth - currentParams.bubbleSize * 0.5f);
-            float y = Random.Range(-currentParams.bubbleSize, areaHeight * 0.8f);
+            float y = Random.Range(-areaHeight * 0.3f, -currentParams.bubbleSize);
 
             var bubble = CreateBubble(letter, isTarget, new Vector2(x, y));
             activeBubbles.Add(bubble);
