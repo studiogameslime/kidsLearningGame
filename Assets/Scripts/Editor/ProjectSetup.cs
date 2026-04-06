@@ -260,8 +260,11 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Color Catch…", 0.9985f);
             ColorCatchSetup.RunSetupSilent();
 
-            EditorUtility.DisplayProgressBar("Setting up project…", "Building Fruit Puzzle…", 0.999f);
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Fruit Puzzle…", 0.998f);
             FruitPuzzleSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Letter Bubbles…", 0.999f);
+            LetterBubblesSetup.RunSetupSilent();
 
             // Color Studio — hidden for now
             // EditorUtility.DisplayProgressBar("Setting up project…", "Building Color Studio…", 0.9995f);
@@ -927,8 +930,18 @@ public class ProjectSetup : EditorWindow
         fruitPuzzle.thumbnail = LoadSprite($"{previewPath}/Cars Puzzle.png");
         EditorUtility.SetDirty(fruitPuzzle);
 
+        // ── Letter Bubbles ──
+        var letterBubbles = CreateSO<GameItemData>($"{DataPath}/LetterBubbles.asset");
+        letterBubbles.id = "letterbubbles";
+        letterBubbles.title = "Letter Bubbles";
+        letterBubbles.cardColor = HexColor("#7E57C2");
+        letterBubbles.targetSceneName = "LetterBubbles";
+        letterBubbles.hasSubItems = false;
+        letterBubbles.thumbnail = LoadSprite($"{previewPath}/Letter Bubbles.png");
+        EditorUtility.SetDirty(letterBubbles);
+
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, sizeSort, colorSort, colorCatch, fruitPuzzle };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, sizeSort, colorSort, colorCatch, fruitPuzzle, letterBubbles };
         EditorUtility.SetDirty(db);
 
         // Validate age baseline configuration
@@ -1551,6 +1564,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/ColorSort.unity",
             $"{ScenesPath}/ColorCatch.unity",
             $"{ScenesPath}/FruitPuzzle.unity",
+            $"{ScenesPath}/LetterBubbles.unity",
             $"{ScenesPath}/SandDrawingScene.unity",
             $"{ScenesPath}/BubbleLabScene.unity",
             // $"{ScenesPath}/ColorStudioScene.unity", // hidden for now

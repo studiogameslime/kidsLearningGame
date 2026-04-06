@@ -384,6 +384,14 @@ public static class GameDifficultyConfig
             return $"\u05DC\u05D5\u05D7 {grid}\u00D7{grid}, {density}% \u05DE\u05D9\u05DC\u05D5\u05D9"; // לוח AxA, X% מילוי
         }
 
+        // Letter Bubbles (must be checked before generic "letter")
+        if (id.Contains("letterbubbles"))
+        {
+            int bc, tc;
+            LetterBubblesConfig(difficulty, out bc, out tc);
+            return $"{bc} \u05D1\u05D5\u05E2\u05D5\u05EA, {tc} \u05D9\u05E2\u05D3\u05D9\u05DD"; // X בועות, Y יעדים
+        }
+
         // Letter Game
         if (id.Contains("letter"))
         {
@@ -692,6 +700,15 @@ public static class GameDifficultyConfig
             return 7;
         }
 
+        // Letter Bubbles: variant = difficulty directly
+        if (gameId == "letterbubbles")
+        {
+            if (variantValue <= 1) return 1;
+            if (variantValue <= 3) return 3;
+            if (variantValue <= 5) return 5;
+            return 7;
+        }
+
         // Color Catch: variant = difficulty directly
         if (gameId == "colorcatch")
         {
@@ -805,5 +822,22 @@ public static class GameDifficultyConfig
         if (difficulty <= 3)      { smallScale = 0.4f; mediumScale = 0.7f; }
         else if (difficulty <= 6) { smallScale = 0.5f; mediumScale = 0.75f; }
         else                      { smallScale = 0.55f; mediumScale = 0.78f; }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  LETTER BUBBLES
+    // ═══════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Returns (bubbleCount, targetCount) for Letter Bubbles at a given difficulty.
+    /// Difficulty 1-3 → 6 bubbles, 2 targets (easy, big, slow)
+    /// Difficulty 4-6 → 8 bubbles, 3 targets (medium)
+    /// Difficulty 7-10 → 12 bubbles, 4 targets (fast, confusing letters)
+    /// </summary>
+    public static void LetterBubblesConfig(int difficulty, out int bubbleCount, out int targetCount)
+    {
+        if (difficulty <= 3)      { bubbleCount = 6; targetCount = 2; }
+        else if (difficulty <= 6) { bubbleCount = 8; targetCount = 3; }
+        else                      { bubbleCount = 12; targetCount = 4; }
     }
 }

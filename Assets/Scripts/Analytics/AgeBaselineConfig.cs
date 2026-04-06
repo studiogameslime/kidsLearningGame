@@ -250,6 +250,7 @@ public static class AgeBaselineConfig
             new Entry(3, "numbertrain",   5),   // 5 wagons, 1 missing
 
             new Entry(3, "laundrysorting"),
+            new Entry(3, "letterbubbles", 1),  // 6 bubbles, 2 targets, slow
 
             // new Entry(3, "pizzamaker"), // hidden for v1
         };
@@ -287,6 +288,7 @@ public static class AgeBaselineConfig
             new Entry(4, "connectmatch",  2),   // 2x2 grid, short path
 
             new Entry(4, "laundrysorting"),
+            new Entry(4, "letterbubbles", 1),  // 6 bubbles, 2 targets, slow
 
             // new Entry(4, "pizzamaker"), // hidden for v1
         };
@@ -324,6 +326,7 @@ public static class AgeBaselineConfig
             new Entry(5, "fishing"),
             new Entry(5, "bakery"),
             new Entry(5, "sockmatch"),
+            new Entry(5, "letterbubbles", 5),  // 8 bubbles, 3 targets, medium speed
 
             // new Entry(5, "pizzamaker"), // hidden for v1
         };

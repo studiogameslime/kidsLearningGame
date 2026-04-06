@@ -43,6 +43,9 @@ public static class ScoringStrategyRegistry
         if (id.Contains("pattern") || id.Contains("patterncopy"))
             return new PatternCopyScoringStrategy();
 
+        if (id.Contains("letterbubbles"))
+            return new LetterBubblesScoringStrategy();
+
         if (id.Contains("letter"))
             return new LetterGameScoringStrategy();
 
