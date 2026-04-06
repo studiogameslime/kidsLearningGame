@@ -73,7 +73,7 @@ public abstract class BaseMiniGame : MonoBehaviour
 
         // Track first game ever played (once per profile)
         var profile = ProfileManager.ActiveProfile;
-        if (profile != null && profile.analytics.totalGamesCompleted == 0
+        if (profile != null && (profile.journey?.totalGamesCompleted ?? 0) == 0
             && !PlayerPrefs.HasKey($"first_game_{profile.id}"))
         {
             PlayerPrefs.SetInt($"first_game_{profile.id}", 1);
@@ -448,7 +448,7 @@ public abstract class BaseMiniGame : MonoBehaviour
             }
         }
 
-        int animals = profile.discoveredAnimals?.Count ?? 0;
+        int animals = profile.journey?.unlockedAnimalIds?.Count ?? 0;
         string aKey = $"milestone_animals_{profile.id}";
         int lastAnimal = PlayerPrefs.GetInt(aKey, 0);
         foreach (int m in AnimalMilestones)
@@ -461,7 +461,7 @@ public abstract class BaseMiniGame : MonoBehaviour
             }
         }
 
-        int colors = profile.discoveredColors?.Count ?? 0;
+        int colors = profile.journey?.unlockedColorIds?.Count ?? 0;
         string cKey = $"milestone_colors_{profile.id}";
         int lastColor = PlayerPrefs.GetInt(cKey, 0);
         foreach (int m in ColorMilestones)
