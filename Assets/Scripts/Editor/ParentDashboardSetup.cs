@@ -124,48 +124,87 @@ public class ParentDashboardSetup : EditorWindow
         var questionTMP = questionGO.GetComponent<TextMeshProUGUI>();
         questionTMP.fontStyle = FontStyles.Bold;
 
-        // Answer buttons (2x2 grid — larger for landscape)
-        var answerButtons = new Button[4];
-        var answerLabels = new TextMeshProUGUI[4];
-        float btnW = 320, btnH = 100, gap = 30;
-        float gridW = btnW * 2 + gap;
-        float gridH = btnH * 2 + gap;
+        // Answer input field + submit button
+        var inputAreaGO = new GameObject("InputArea");
+        inputAreaGO.transform.SetParent(gateGO.transform, false);
+        var inputAreaRT = inputAreaGO.AddComponent<RectTransform>();
+        inputAreaRT.anchorMin = new Vector2(0.2f, 0.28f);
+        inputAreaRT.anchorMax = new Vector2(0.8f, 0.42f);
+        inputAreaRT.offsetMin = Vector2.zero;
+        inputAreaRT.offsetMax = Vector2.zero;
 
-        var answersGO = new GameObject("Answers");
-        answersGO.transform.SetParent(gateGO.transform, false);
-        var answersRT = answersGO.AddComponent<RectTransform>();
-        answersRT.anchorMin = new Vector2(0.5f, 0.22f);
-        answersRT.anchorMax = new Vector2(0.5f, 0.22f);
-        answersRT.pivot = new Vector2(0.5f, 0.5f);
-        answersRT.sizeDelta = new Vector2(gridW, gridH);
+        // Input field background
+        var inputGO = new GameObject("AnswerInput");
+        inputGO.transform.SetParent(inputAreaGO.transform, false);
+        var inputRT = inputGO.AddComponent<RectTransform>();
+        inputRT.anchorMin = new Vector2(0f, 0f);
+        inputRT.anchorMax = new Vector2(0.65f, 1f);
+        inputRT.offsetMin = Vector2.zero;
+        inputRT.offsetMax = Vector2.zero;
+        var inputBg = inputGO.AddComponent<Image>();
+        inputBg.sprite = roundedRect;
+        inputBg.type = Image.Type.Sliced;
+        inputBg.color = Color.white;
 
-        for (int i = 0; i < 4; i++)
-        {
-            int col = i % 2;
-            int row = i / 2;
-            float x = (-gridW / 2f + btnW / 2f) + col * (btnW + gap);
-            float y = (gridH / 2f - btnH / 2f) - row * (btnH + gap);
+        // TMP Input Field
+        var inputField = inputGO.AddComponent<TMP_InputField>();
+        inputField.contentType = TMP_InputField.ContentType.IntegerNumber;
+        inputField.characterLimit = 4;
 
-            var btnGO = new GameObject($"Answer_{i}");
-            btnGO.transform.SetParent(answersGO.transform, false);
-            var btnRT = btnGO.AddComponent<RectTransform>();
-            btnRT.anchoredPosition = new Vector2(x, y);
-            btnRT.sizeDelta = new Vector2(btnW, btnH);
+        // Text area
+        var textAreaGO = new GameObject("TextArea");
+        textAreaGO.transform.SetParent(inputGO.transform, false);
+        var textAreaRT = textAreaGO.AddComponent<RectTransform>();
+        Full(textAreaRT);
+        textAreaRT.offsetMin = new Vector2(20, 5);
+        textAreaRT.offsetMax = new Vector2(-20, -5);
+        textAreaGO.AddComponent<RectMask2D>();
 
-            var btnBg = btnGO.AddComponent<Image>();
-            btnBg.sprite = roundedRect;
-            btnBg.type = Image.Type.Sliced;
-            btnBg.color = AnswerBg;
+        // Input text
+        var inputTextGO = MakeTMP(textAreaGO.transform, "Text", "", 44, HexColor("#2C3E50"));
+        var inputTextRT = inputTextGO.GetComponent<RectTransform>();
+        Full(inputTextRT);
+        var inputTextTMP = inputTextGO.GetComponent<TextMeshProUGUI>();
+        inputTextTMP.alignment = TextAlignmentOptions.Center;
+        inputField.textComponent = inputTextTMP;
+        inputField.textViewport = textAreaRT;
 
-            var btn = btnGO.AddComponent<Button>();
-            btn.targetGraphic = btnBg;
+        // Placeholder
+        var placeholderGO = MakeTMP(textAreaGO.transform, "Placeholder",
+            "\u05D4\u05E7\u05DC\u05D3 \u05EA\u05E9\u05D5\u05D1\u05D4", 36, new Color(0.6f, 0.6f, 0.6f)); // הקלד תשובה
+        var placeholderRT = placeholderGO.GetComponent<RectTransform>();
+        Full(placeholderRT);
+        placeholderGO.GetComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Center;
+        inputField.placeholder = placeholderGO.GetComponent<TextMeshProUGUI>();
 
-            var labelGO = MakeTMP(btnGO.transform, "Label", "0", 40, HexColor("#2C3E50"));
-            Full(labelGO.GetComponent<RectTransform>());
+        // Submit button
+        var submitGO = new GameObject("SubmitButton");
+        submitGO.transform.SetParent(inputAreaGO.transform, false);
+        var submitRT = submitGO.AddComponent<RectTransform>();
+        submitRT.anchorMin = new Vector2(0.7f, 0f);
+        submitRT.anchorMax = new Vector2(1f, 1f);
+        submitRT.offsetMin = Vector2.zero;
+        submitRT.offsetMax = Vector2.zero;
+        var submitBg = submitGO.AddComponent<Image>();
+        submitBg.sprite = roundedRect;
+        submitBg.type = Image.Type.Sliced;
+        submitBg.color = HexColor("#4CAF50");
+        var submitBtn = submitGO.AddComponent<Button>();
+        submitBtn.targetGraphic = submitBg;
+        var submitLabelGO = MakeTMP(submitGO.transform, "Label",
+            "\u05D0\u05D9\u05E9\u05D5\u05E8", 36, Color.white); // אישור
+        Full(submitLabelGO.GetComponent<RectTransform>());
+        submitLabelGO.GetComponent<TextMeshProUGUI>().fontStyle = FontStyles.Bold;
 
-            answerButtons[i] = btn;
-            answerLabels[i] = labelGO.GetComponent<TextMeshProUGUI>();
-        }
+        // Error text (hidden by default)
+        var errorGO = MakeTMP(gateGO.transform, "ErrorText",
+            "\u05EA\u05E9\u05D5\u05D1\u05D4 \u05DC\u05D0 \u05E0\u05DB\u05D5\u05E0\u05D4", 28, new Color(1f, 0.4f, 0.4f)); // תשובה לא נכונה
+        var errorRT = errorGO.GetComponent<RectTransform>();
+        errorRT.anchorMin = new Vector2(0.2f, 0.20f);
+        errorRT.anchorMax = new Vector2(0.8f, 0.28f);
+        errorRT.offsetMin = Vector2.zero;
+        errorRT.offsetMax = Vector2.zero;
+        errorGO.SetActive(false);
 
         // Gate home button (top-left)
         var homeIcon = UISheetHelper.HomeIcon;
@@ -351,8 +390,11 @@ public class ParentDashboardSetup : EditorWindow
         var ctrl = canvasGO.AddComponent<ParentDashboardController>();
         ctrl.gatePanel = gateRT;
         ctrl.questionText = questionTMP;
-        ctrl.answerButtons = answerButtons;
-        ctrl.answerLabels = answerLabels;
+        ctrl.answerInput = inputField;
+        ctrl.submitButton = submitBtn;
+        ctrl.errorText = errorGO.GetComponent<TextMeshProUGUI>();
+        ctrl.answerButtons = new Button[0];
+        ctrl.answerLabels = new TextMeshProUGUI[0];
         ctrl.dashboardPanel = dashRT;
         ctrl.headerNameText = nameGO2.GetComponent<TextMeshProUGUI>();
         ctrl.headerAgeText = ageGO2.GetComponent<TextMeshProUGUI>();

@@ -15,6 +15,10 @@ public class ParentDashboardController : MonoBehaviour
     [Header("Gate")]
     public RectTransform gatePanel;
     public TextMeshProUGUI questionText;
+    public TMP_InputField answerInput;
+    public Button submitButton;
+    public TextMeshProUGUI errorText;
+    // Legacy — kept for backwards compatibility with old scenes
     public Button[] answerButtons;
     public TextMeshProUGUI[] answerLabels;
 
@@ -110,11 +114,11 @@ public class ParentDashboardController : MonoBehaviour
         gatePanel.gameObject.SetActive(true);
         GenerateQuestion();
 
-        for (int i = 0; i < answerButtons.Length; i++)
-        {
-            int idx = i;
-            answerButtons[i].onClick.AddListener(() => OnAnswerTapped(idx));
-        }
+        // Wire input field submit
+        if (submitButton != null)
+            submitButton.onClick.AddListener(OnSubmitAnswer);
+        if (answerInput != null)
+            answerInput.onSubmit.AddListener((_) => OnSubmitAnswer());
 
         if (backButton != null)
             backButton.onClick.AddListener(OnBackPressed);
@@ -161,32 +165,36 @@ public class ParentDashboardController : MonoBehaviour
         questionText.isRightToLeftText = false;
         questionText.text = question;
 
-        var answers = new List<int> { _correctAnswer };
-        while (answers.Count < 4)
+        // Clear input and error
+        if (answerInput != null)
         {
-            int wrong = _correctAnswer + Random.Range(-5, 6);
-            if (wrong != _correctAnswer && wrong > 0 && !answers.Contains(wrong))
-                answers.Add(wrong);
+            answerInput.text = "";
+            answerInput.ActivateInputField();
         }
-
-        for (int i = answers.Count - 1; i > 0; i--)
-        {
-            int j = Random.Range(0, i + 1);
-            int tmp = answers[i]; answers[i] = answers[j]; answers[j] = tmp;
-        }
-
-        for (int i = 0; i < 4; i++)
-            answerLabels[i].text = answers[i].ToString();
+        if (errorText != null)
+            errorText.gameObject.SetActive(false);
     }
 
-    private void OnAnswerTapped(int idx)
+    private void OnSubmitAnswer()
     {
-        int answer = int.Parse(answerLabels[idx].text);
-        if (answer == _correctAnswer)
+        if (answerInput == null) return;
+
+        string input = answerInput.text.Trim();
+        int answer;
+        if (int.TryParse(input, out answer) && answer == _correctAnswer)
+        {
             OnGatePassed();
+        }
         else
         {
-            StartCoroutine(ShakeButton(answerButtons[idx].GetComponent<RectTransform>()));
+            // Show error + shake + regenerate
+            if (errorText != null)
+            {
+                errorText.gameObject.SetActive(true);
+                HebrewText.SetText(errorText, "\u05EA\u05E9\u05D5\u05D1\u05D4 \u05DC\u05D0 \u05E0\u05DB\u05D5\u05E0\u05D4, \u05E0\u05E1\u05D5 \u05E9\u05D5\u05D1"); // תשובה לא נכונה, נסו שוב
+            }
+            if (submitButton != null)
+                StartCoroutine(ShakeButton(submitButton.GetComponent<RectTransform>()));
             GenerateQuestion();
         }
     }
