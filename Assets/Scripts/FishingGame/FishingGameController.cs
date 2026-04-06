@@ -68,6 +68,7 @@ public class FishingGameController : BaseMiniGame
 
         successfulCatches = 0;
         usedTargets.Clear();
+        state = FishingState.WaitingForInput;
 
         // Setup fishing line
         if (fishingLine != null)
