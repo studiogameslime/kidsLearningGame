@@ -64,8 +64,9 @@ public abstract class BaseMiniGame : MonoBehaviour
         // Let derived class configure
         OnGameInit();
 
-        // Firebase: log game started
+        // Firebase: log game started + screen view (enables engagement time tracking per game)
         FirebaseAnalyticsManager.LogGameStarted(GameId, Difficulty);
+        FirebaseAnalyticsManager.LogScreenView($"game_{GameId}");
 
         // Start first round
         CurrentRound = 0;
