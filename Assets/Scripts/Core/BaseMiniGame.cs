@@ -458,17 +458,6 @@ public abstract class BaseMiniGame : MonoBehaviour
 
         int games = profile.journey?.totalGamesCompleted ?? 0;
 
-        // After 5 games: send a one-shot notification about the parent dashboard
-        if (games >= 5)
-        {
-            NotificationService.Instance?.ScheduleOneShot(
-                "parent_dashboard_5_games",
-                "הילד שלכם כבר שיחק ב-5 משחקים!",
-                "היכנסו לאזור הורים כדי לראות את ההתקדמות",
-                delaySeconds: 10.0
-            );
-        }
-
         string key = $"milestone_games_{profile.id}";
         int lastLogged = PlayerPrefs.GetInt(key, 0);
 

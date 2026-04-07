@@ -67,5 +67,25 @@ public class AppSessionTracker : MonoBehaviour
         _logged = true;
         float duration = Time.realtimeSinceStartup - _sessionStartTime;
         FirebaseAnalyticsManager.LogAppSessionDuration(duration);
+
+        // Schedule parent dashboard notification 1 hour after leaving
+        ScheduleParentDashboardNotification();
+    }
+
+    private void ScheduleParentDashboardNotification()
+    {
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null) return;
+
+        int games = profile.journey?.totalGamesCompleted ?? 0;
+        if (games < 5) return; // not enough games yet
+
+        // Schedule 1 hour from now, fires only once ever
+        NotificationService.Instance?.ScheduleOneShot(
+            "parent_dashboard_5_games",
+            "\u05D4\u05D9\u05DC\u05D3 \u05E9\u05DC\u05DB\u05DD \u05DB\u05D1\u05E8 \u05E9\u05D9\u05D7\u05E7 \u05D1-5 \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD!", // הילד שלכם כבר שיחק ב-5 משחקים!
+            "\u05D4\u05D9\u05DB\u05E0\u05E1\u05D5 \u05DC\u05D0\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD \u05DB\u05D3\u05D9 \u05DC\u05E8\u05D0\u05D5\u05EA \u05D0\u05EA \u05D4\u05D4\u05EA\u05E7\u05D3\u05DE\u05D5\u05EA", // היכנסו לאזור הורים כדי לראות את ההתקדמות
+            delaySeconds: 3600.0 // 1 hour
+        );
     }
 }
