@@ -292,7 +292,8 @@ public class StickerTreeController : MonoBehaviour
         if (AppSettings.NotificationsEnabled)
         {
             var fireUtc = DateTimeOffset.FromUnixTimeSeconds(now + (long)growDurationSeconds).UtcDateTime;
-            NotificationService.Instance?.ScheduleStickerReady(fireUtc);
+            string childName = ProfileManager.ActiveProfile?.displayName ?? "";
+            NotificationService.Instance?.ScheduleStickerReady(fireUtc, childName);
         }
 
         // Play feedback

@@ -98,7 +98,8 @@ public static class AppSettings
         if (fireTime > now)
         {
             var fireUtc = System.DateTimeOffset.FromUnixTimeSeconds(fireTime).UtcDateTime;
-            NotificationService.Instance?.ScheduleStickerReady(fireUtc);
+            string childName = ProfileManager.ActiveProfile?.displayName ?? "";
+            NotificationService.Instance?.ScheduleStickerReady(fireUtc, childName);
         }
     }
 }

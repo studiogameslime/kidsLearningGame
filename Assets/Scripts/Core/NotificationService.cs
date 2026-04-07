@@ -108,7 +108,7 @@ public class NotificationService : MonoBehaviour
     /// <summary>
     /// Schedule a local notification for when the sticker is ready.
     /// </summary>
-    public void ScheduleStickerReady(DateTime fireTimeUtc)
+    public void ScheduleStickerReady(DateTime fireTimeUtc, string childName = "")
     {
         CancelStickerNotification();
 
@@ -118,11 +118,19 @@ public class NotificationService : MonoBehaviour
         var delay = fireTimeUtc - DateTime.UtcNow;
         if (delay.TotalSeconds <= 0) return; // already ready
 
+        // Personalized message with child's name
+        string title = string.IsNullOrEmpty(childName)
+            ? "\u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05DE\u05D5\u05DB\u05E0\u05D4!"  // המדבקה מוכנה!
+            : $"{childName}, \u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05E9\u05DC\u05DA \u05DE\u05D5\u05DB\u05E0\u05D4!"; // מתן, המדבקה שלך מוכנה!
+        string body = string.IsNullOrEmpty(childName)
+            ? "\u05D1\u05D5\u05D0\u05D5 \u05DC\u05D0\u05E1\u05D5\u05E3 \u05D0\u05EA \u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05DE\u05E2\u05E5 \u05D4\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA!" // בואו לאסוף את המדבקה מעץ המדבקות!
+            : $"\u05D1\u05D5\u05D0\u05D5 \u05DC\u05E2\u05D6\u05D5\u05E8 \u05DC-{childName} \u05DC\u05D0\u05E1\u05D5\u05E3 \u05D0\u05EA \u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05D4\u05D7\u05D3\u05E9\u05D4!"; // בואו לעזור ל-מתן לאסוף את המדבקה החדשה!
+
 #if UNITY_ANDROID
         var notification = new AndroidNotification
         {
-            Title = "\u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05DE\u05D5\u05DB\u05E0\u05D4!",  // המדבקה מוכנה!
-            Text = "\u05D1\u05D5\u05D0\u05D5 \u05DC\u05D0\u05E1\u05D5\u05E3 \u05D0\u05EA \u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05DE\u05E2\u05E5 \u05D4\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA!", // בואו לאסוף את המדבקה מעץ המדבקות!
+            Title = title,
+            Text = body,
             FireTime = fireTimeUtc.ToLocalTime()
         };
         int id = AndroidNotificationCenter.SendNotification(notification, AndroidChannelId);
@@ -137,8 +145,8 @@ public class NotificationService : MonoBehaviour
         var notification = new iOSNotification
         {
             Identifier = StickerNotifTag,
-            Title = "המדבקה מוכנה!",
-            Body = "בואו לאסוף את המדבקה מעץ המדבקות!",
+            Title = title,
+            Body = body,
             ShowInForeground = false,
             Trigger = timeTrigger
         };
