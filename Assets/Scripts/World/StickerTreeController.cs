@@ -47,6 +47,8 @@ public class StickerTreeController : MonoBehaviour
         new Vector2(280, 340),
     };
 
+    private bool _isLocked;
+
     private void Start()
     {
         _treeImage = GetComponent<Image>();
@@ -54,14 +56,31 @@ public class StickerTreeController : MonoBehaviour
 
         if (treeStages == null || treeStages.Length == 0) return;
 
+        // Check if feature is locked
+        _isLocked = !FeatureUnlockManager.IsUnlocked(FeatureUnlockManager.Feature.StickerTree);
+
         CreateTimerUI();
-        RefreshState();
+
+        if (!_isLocked)
+            RefreshState();
+        else
+            ApplyLockedState();
     }
 
     private void Update()
     {
         if (treeStages == null || treeStages.Length == 0) return;
+        if (_isLocked) return; // no growth or timer when locked
         RefreshState();
+    }
+
+    private void ApplyLockedState()
+    {
+        // Show seedling stage, no sticker, no timer
+        ApplyStageVisual(0);
+        if (_timerText != null) _timerText.text = "";
+        if (_stickerGO != null) { Destroy(_stickerGO); _stickerGO = null; }
+        _hasStickerReady = false;
     }
 
     /// <summary>Called by WorldInputHandler when player taps the tree.</summary>
@@ -204,13 +223,29 @@ public class StickerTreeController : MonoBehaviour
 
     private void BloomSticker(UserProfile profile)
     {
-        int stickerIndex = GetNextStickerIndex(profile);
-        if (stickerIndex < 0)
+        // Check if a sticker was already chosen (persisted from previous session)
+        string pendingKey = $"stree_{profile.id}_pendingSticker";
+        int savedIndex = PlayerPrefs.GetInt(pendingKey, -1);
+
+        int stickerIndex;
+        if (savedIndex >= 0)
         {
-            // All stickers collected — reset flag, don't show bloom
-            _hasStickerReady = false;
-            _pendingStickerIndex = -1;
-            return;
+            // Reuse the previously chosen sticker
+            stickerIndex = savedIndex;
+        }
+        else
+        {
+            // Pick a new one
+            stickerIndex = GetNextStickerIndex(profile);
+            if (stickerIndex < 0)
+            {
+                _hasStickerReady = false;
+                _pendingStickerIndex = -1;
+                return;
+            }
+            // Persist so it doesn't change on scene reload
+            PlayerPrefs.SetInt(pendingKey, stickerIndex);
+            PlayerPrefs.Save();
         }
 
         _hasStickerReady = true;
@@ -287,6 +322,11 @@ public class StickerTreeController : MonoBehaviour
         _hasStickerReady = false;
         _pendingStickerIndex = -1;
         _currentVisualStage = -1; // force visual refresh
+
+        // Clear persisted sticker so a new one is picked next time
+        string pendingKey = $"stree_{profile.id}_pendingSticker";
+        PlayerPrefs.DeleteKey(pendingKey);
+        PlayerPrefs.Save();
 
         // Schedule notification for next sticker if parent enabled notifications
         if (AppSettings.NotificationsEnabled)
