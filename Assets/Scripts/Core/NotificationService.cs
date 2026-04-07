@@ -121,11 +121,9 @@ public class NotificationService : MonoBehaviour
 #if UNITY_ANDROID
         var notification = new AndroidNotification
         {
-            Title = "המדבקה מוכנה!",
-            Text = "בואו לאסוף את המדבקה מעץ המדבקות!",
-            FireTime = fireTimeUtc.ToLocalTime(),
-            SmallIcon = "icon_small",
-            LargeIcon = "icon_large"
+            Title = "\u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05DE\u05D5\u05DB\u05E0\u05D4!",  // המדבקה מוכנה!
+            Text = "\u05D1\u05D5\u05D0\u05D5 \u05DC\u05D0\u05E1\u05D5\u05E3 \u05D0\u05EA \u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05DE\u05E2\u05E5 \u05D4\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA!", // בואו לאסוף את המדבקה מעץ המדבקות!
+            FireTime = fireTimeUtc.ToLocalTime()
         };
         int id = AndroidNotificationCenter.SendNotification(notification, AndroidChannelId);
         PlayerPrefs.SetInt(PrefKey, id);
@@ -188,9 +186,7 @@ public class NotificationService : MonoBehaviour
         {
             Title = title,
             Text = body,
-            FireTime = DateTime.Now.AddSeconds(delaySeconds),
-            SmallIcon = "icon_small",
-            LargeIcon = "icon_large"
+            FireTime = DateTime.Now.AddSeconds(delaySeconds)
         };
         AndroidNotificationCenter.SendNotification(notification, AndroidGeneralChannelId);
 #elif UNITY_IOS
