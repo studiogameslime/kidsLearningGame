@@ -32,6 +32,12 @@ public class ProfileSelectionController : MonoBehaviour
 
         PopulateProfiles();
 
+        // Show first-launch onboarding overlay (once ever)
+        // The overlay sits on top of everything and dismisses itself.
+        var canvas = GetComponentInParent<Canvas>();
+        if (canvas != null)
+            FirstLaunchOverlay.TryShow(canvas.transform);
+
         // Play "Who playing?" sound
         if (whoPlayingSound != null && audioSource != null)
         {
