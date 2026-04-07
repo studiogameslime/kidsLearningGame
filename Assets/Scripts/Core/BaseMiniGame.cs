@@ -407,12 +407,16 @@ public abstract class BaseMiniGame : MonoBehaviour
         var candidates = new List<GameItemData>();
         var fallbacks = new List<GameItemData>(); // visited but still eligible
 
+        Debug.Log($"[AutoSwitch] Found GameDatabase with {db.games.Count} games");
+
         foreach (var game in db.games)
         {
+            if (game == null) { Debug.Log("[AutoSwitch] null game entry"); continue; }
             if (game.id == GameId) continue;
             if (NoSwitchGames.Contains(game.id)) continue;
 
             var visibility = GameVisibilityService.Evaluate(profile, game);
+            Debug.Log($"[AutoSwitch] Game {game.id}: visible={visibility.isVisible}");
             if (!visibility.isVisible) continue;
 
             if (_visitedGamesThisSession.Contains(game.id))
@@ -423,7 +427,12 @@ public abstract class BaseMiniGame : MonoBehaviour
 
         // Prefer unvisited, fall back to visited if all exhausted
         var pool = candidates.Count > 0 ? candidates : fallbacks;
-        if (pool.Count == 0) return; // no games to switch to
+        Debug.Log($"[AutoSwitch] candidates={candidates.Count}, fallbacks={fallbacks.Count}, pool={pool.Count}");
+        if (pool.Count == 0)
+        {
+            Debug.LogWarning("[AutoSwitch] No eligible games to switch to!");
+            return;
+        }
 
         // Pick random from pool
         var nextGame = pool[Random.Range(0, pool.Count)];
