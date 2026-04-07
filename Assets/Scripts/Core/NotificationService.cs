@@ -110,21 +110,20 @@ public class NotificationService : MonoBehaviour
     /// </summary>
     public void ScheduleStickerReady(DateTime fireTimeUtc, string childName = "")
     {
-        CancelStickerNotification();
+        string profileId = ProfileManager.ActiveProfile?.id ?? "default";
+        CancelStickerNotification(profileId);
 
-        // Respect global notification toggle from parent settings
         if (!AppSettings.NotificationsEnabled) return;
 
         var delay = fireTimeUtc - DateTime.UtcNow;
-        if (delay.TotalSeconds <= 0) return; // already ready
+        if (delay.TotalSeconds <= 0) return;
 
-        // Personalized message for parents
         string title = string.IsNullOrEmpty(childName)
-            ? "\u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05DE\u05D5\u05DB\u05E0\u05D4!"  // המדבקה מוכנה!
-            : $"\u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05E9\u05DC {childName} \u05DE\u05D5\u05DB\u05E0\u05D4!"; // המדבקה של מתן מוכנה!
+            ? "\u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05DE\u05D5\u05DB\u05E0\u05D4!"
+            : $"\u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05E9\u05DC {childName} \u05DE\u05D5\u05DB\u05E0\u05D4!";
         string body = string.IsNullOrEmpty(childName)
-            ? "\u05DB\u05E0\u05E1\u05D5 \u05DC\u05D0\u05E1\u05D5\u05E3 \u05D0\u05EA \u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05DE\u05E2\u05E5 \u05D4\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA!" // כנסו לאסוף את המדבקה מעץ המדבקות!
-            : $"\u05DB\u05E0\u05E1\u05D5 \u05DC\u05D0\u05E1\u05D5\u05E3 \u05DC-{childName} \u05D0\u05EA \u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05DE\u05E2\u05E5 \u05D4\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA!"; // כנסו לאסוף ל-מתן את המדבקה מעץ המדבקות!
+            ? "\u05DB\u05E0\u05E1\u05D5 \u05DC\u05D0\u05E1\u05D5\u05E3 \u05D0\u05EA \u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05DE\u05E2\u05E5 \u05D4\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA!"
+            : $"\u05DB\u05E0\u05E1\u05D5 \u05DC\u05D0\u05E1\u05D5\u05E3 \u05DC-{childName} \u05D0\u05EA \u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05DE\u05E2\u05E5 \u05D4\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA!";
 
 #if UNITY_ANDROID
         var notification = new AndroidNotification
@@ -134,7 +133,7 @@ public class NotificationService : MonoBehaviour
             FireTime = fireTimeUtc.ToLocalTime()
         };
         int id = AndroidNotificationCenter.SendNotification(notification, AndroidChannelId);
-        PlayerPrefs.SetInt(PrefKey, id);
+        PlayerPrefs.SetInt($"{PrefKey}_{profileId}", id);
         PlayerPrefs.Save();
 #elif UNITY_IOS
         var timeTrigger = new iOSNotificationTimeIntervalTrigger
@@ -144,7 +143,7 @@ public class NotificationService : MonoBehaviour
         };
         var notification = new iOSNotification
         {
-            Identifier = StickerNotifTag,
+            Identifier = $"{StickerNotifTag}_{profileId}",
             Title = title,
             Body = body,
             ShowInForeground = false,
@@ -155,19 +154,22 @@ public class NotificationService : MonoBehaviour
     }
 
     /// <summary>
-    /// Cancel any pending sticker notification.
+    /// Cancel pending sticker notification for a specific profile.
     /// </summary>
-    public void CancelStickerNotification()
+    public void CancelStickerNotification(string profileId = null)
     {
+        if (profileId == null) profileId = ProfileManager.ActiveProfile?.id ?? "default";
 #if UNITY_ANDROID
-        if (PlayerPrefs.HasKey(PrefKey))
+        string key = $"{PrefKey}_{profileId}";
+        if (PlayerPrefs.HasKey(key))
         {
-            AndroidNotificationCenter.CancelNotification(PlayerPrefs.GetInt(PrefKey));
-            PlayerPrefs.DeleteKey(PrefKey);
+            AndroidNotificationCenter.CancelNotification(PlayerPrefs.GetInt(key));
+            PlayerPrefs.DeleteKey(key);
         }
 #elif UNITY_IOS
-        iOSNotificationCenter.RemoveScheduledNotification(StickerNotifTag);
-        iOSNotificationCenter.RemoveDeliveredNotification(StickerNotifTag);
+        string iosId = $"{StickerNotifTag}_{profileId}";
+        iOSNotificationCenter.RemoveScheduledNotification(iosId);
+        iOSNotificationCenter.RemoveDeliveredNotification(iosId);
 #endif
     }
 
