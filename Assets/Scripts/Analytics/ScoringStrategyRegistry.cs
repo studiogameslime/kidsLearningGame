@@ -79,9 +79,6 @@ public static class ScoringStrategyRegistry
         if (id.Contains("colormixing") || id.Contains("colormix"))
             return new ColorMixingScoringStrategy();
 
-        if (id.Contains("tower"))
-            return new TowerBuilderScoringStrategy();
-
         if (id.Contains("ballmaze"))
             return new BallMazeScoringStrategy();
 

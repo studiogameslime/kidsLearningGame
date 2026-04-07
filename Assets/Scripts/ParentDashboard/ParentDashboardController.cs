@@ -3485,10 +3485,6 @@ public class ParentDashboardController : MonoBehaviour
                 return tier == 0 ? "\u05DE\u05E1\u05DC\u05D5\u05DC \u05E7\u05E6\u05E8"   // מסלול קצר
                      : tier == 1 ? "\u05DE\u05E1\u05DC\u05D5\u05DC \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9" // מסלול בינוני
                      :              "\u05DE\u05E1\u05DC\u05D5\u05DC \u05D0\u05E8\u05D5\u05DA"; // מסלול ארוך
-            case "towerbuilder":
-                return tier == 0 ? "3-4 \u05DC\u05D1\u05E0\u05D9\u05DD"   // 3-4 לבנים
-                     : tier == 1 ? "6-8 \u05DC\u05D1\u05E0\u05D9\u05DD"   // 6-8 לבנים
-                     :              "10+ \u05DC\u05D1\u05E0\u05D9\u05DD";  // 10+ לבנים
             default:
                 return tier == 0 ? "\u05E7\u05DC" : tier == 1 ? "\u05D1\u05D9\u05E0\u05D5\u05E0\u05D9" : "\u05E7\u05E9\u05D4"; // קל/בינוני/קשה
         }

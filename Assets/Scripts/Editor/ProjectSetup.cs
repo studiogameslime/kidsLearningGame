@@ -164,10 +164,6 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Laundry Sorting…", 0.966f);
             LaundrySortingSetup.RunSetupSilent();
 
-
-            EditorUtility.DisplayProgressBar("Setting up project…", "Building Tower Builder…", 0.968f);
-            TowerBuilderSetup.RunSetupSilent();
-
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Ball Maze…", 0.969f);
             BallMazeSetup.RunSetupSilent();
 
@@ -729,16 +725,6 @@ public class ProjectSetup : EditorWindow
         ballMaze.nameClip = LoadAudioClip("Assets/Sounds/Games Names/Maze.mp3");
         EditorUtility.SetDirty(ballMaze);
 
-        // ── Tower Builder ──
-        var tower = CreateSO<GameItemData>($"{DataPath}/TowerBuilder.asset");
-        tower.id = "towerbuilder";
-        tower.title = "Tower Builder";
-        tower.cardColor = HexColor("#42A5F5");
-        tower.targetSceneName = "TowerBuilder";
-        tower.thumbnail = LoadSprite($"{previewPath}/Lego.png");
-        tower.hasSubItems = false; // Direct launch — difficulty chosen by adaptive system
-        EditorUtility.SetDirty(tower);
-
         // ── Shared Sticker (Spot It) ──
         var sharedSticker = CreateSO<GameItemData>($"{DataPath}/SharedSticker.asset");
         sharedSticker.id = "sharedsticker";
@@ -941,7 +927,7 @@ public class ProjectSetup : EditorWindow
         EditorUtility.SetDirty(letterBubbles);
 
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, tower, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, sizeSort, colorSort, colorCatch, fruitPuzzle, letterBubbles };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, sizeSort, colorSort, colorCatch, fruitPuzzle, letterBubbles };
         EditorUtility.SetDirty(db);
 
         // Copy GameDatabase to Resources so Resources.Load works at runtime
@@ -1541,7 +1527,6 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/ShadowMatch.unity",
             $"{ScenesPath}/FindTheAnimal.unity",
             $"{ScenesPath}/CountingGame.unity",
-            $"{ScenesPath}/TowerBuilder.unity",
             $"{ScenesPath}/BallMaze.unity",
             $"{ScenesPath}/SharedSticker.unity",
             $"{ScenesPath}/FlappyBird.unity",
