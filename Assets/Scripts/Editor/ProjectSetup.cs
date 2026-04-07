@@ -926,7 +926,7 @@ public class ProjectSetup : EditorWindow
         letterBubbles.cardColor = HexColor("#7E57C2");
         letterBubbles.targetSceneName = "LetterBubbles";
         letterBubbles.hasSubItems = false;
-        letterBubbles.thumbnail = LoadSprite($"{previewPath}/Letter Bubbles.png");
+        letterBubbles.thumbnail = LoadSprite($"{previewPath}/LettersPops.png");
         EditorUtility.SetDirty(letterBubbles);
 
         // ── Tower Builder (Lego) ──
