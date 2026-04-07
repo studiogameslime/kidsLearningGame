@@ -118,13 +118,13 @@ public class NotificationService : MonoBehaviour
         var delay = fireTimeUtc - DateTime.UtcNow;
         if (delay.TotalSeconds <= 0) return; // already ready
 
-        // Personalized message with child's name
+        // Personalized message for parents
         string title = string.IsNullOrEmpty(childName)
             ? "\u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05DE\u05D5\u05DB\u05E0\u05D4!"  // המדבקה מוכנה!
-            : $"{childName}, \u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05E9\u05DC\u05DA \u05DE\u05D5\u05DB\u05E0\u05D4!"; // מתן, המדבקה שלך מוכנה!
+            : $"\u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05E9\u05DC {childName} \u05DE\u05D5\u05DB\u05E0\u05D4!"; // המדבקה של מתן מוכנה!
         string body = string.IsNullOrEmpty(childName)
-            ? "\u05D1\u05D5\u05D0\u05D5 \u05DC\u05D0\u05E1\u05D5\u05E3 \u05D0\u05EA \u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05DE\u05E2\u05E5 \u05D4\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA!" // בואו לאסוף את המדבקה מעץ המדבקות!
-            : $"\u05D1\u05D5\u05D0\u05D5 \u05DC\u05E2\u05D6\u05D5\u05E8 \u05DC-{childName} \u05DC\u05D0\u05E1\u05D5\u05E3 \u05D0\u05EA \u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05D4\u05D7\u05D3\u05E9\u05D4!"; // בואו לעזור ל-מתן לאסוף את המדבקה החדשה!
+            ? "\u05DB\u05E0\u05E1\u05D5 \u05DC\u05D0\u05E1\u05D5\u05E3 \u05D0\u05EA \u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05DE\u05E2\u05E5 \u05D4\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA!" // כנסו לאסוף את המדבקה מעץ המדבקות!
+            : $"\u05DB\u05E0\u05E1\u05D5 \u05DC\u05D0\u05E1\u05D5\u05E3 \u05DC-{childName} \u05D0\u05EA \u05D4\u05DE\u05D3\u05D1\u05E7\u05D4 \u05DE\u05E2\u05E5 \u05D4\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA!"; // כנסו לאסוף ל-מתן את המדבקה מעץ המדבקות!
 
 #if UNITY_ANDROID
         var notification = new AndroidNotification
