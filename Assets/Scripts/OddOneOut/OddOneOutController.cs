@@ -41,11 +41,26 @@ public class OddOneOutController : BaseMiniGame
     private int _hintsUsed;
     private float _lastInteractionTime;
 
+    private enum OddMode { Animals, Numbers, Letters }
+    private OddMode _currentMode;
+
     private int _oddIndex; // which slot is the odd one
     private string _majorAnimal;
     private string _oddAnimal;
     private string _lastMajor;
     private string _lastOdd;
+
+    // Confusing number pairs
+    private static readonly int[][] ConfusingNumbers = {
+        new[]{6, 9}, new[]{1, 7}, new[]{3, 8}, new[]{2, 5}
+    };
+
+    // Confusing letter pairs
+    private static readonly char[][] ConfusingLetterPairs = {
+        new[]{'ב','כ'}, new[]{'ד','ר'}, new[]{'ח','ה'},
+        new[]{'ו','ז'}, new[]{'ס','ם'}, new[]{'ע','צ'},
+        new[]{'ג','נ'}, new[]{'ש','מ'}
+    };
 
     private List<GameObject> _slotObjects = new List<GameObject>();
     private UISpriteAnimator[] _animators;
@@ -66,14 +81,10 @@ public class OddOneOutController : BaseMiniGame
 
     protected override void OnRoundSetup()
     {
-        // Difficulty scaling: easy(1-3)=4, medium(4-6)=6, hard(7-10)=8
-        int tier = Difficulty <= 3 ? 0 : Difficulty <= 6 ? 1 : 2;
-        switch (tier)
-        {
-            case 0: _animalCount = 4; break;
-            case 1: _animalCount = 6; break;
-            case 2: _animalCount = 8; break;
-        }
+        // Difficulty scaling: easy=animals, medium=numbers, hard=letters
+        if (Difficulty <= 3)      { _currentMode = OddMode.Animals; _animalCount = 4; }
+        else if (Difficulty <= 6) { _currentMode = OddMode.Numbers; _animalCount = 6; }
+        else                      { _currentMode = OddMode.Letters; _animalCount = 6; }
         _animators = new UISpriteAnimator[_animalCount];
 
         _attemptsThisRound = 0;
@@ -139,28 +150,57 @@ public class OddOneOutController : BaseMiniGame
 
     private void PickAnimals()
     {
-        string[] pool;
-        if (Difficulty <= 3)
-            pool = EasyPool;
-        else if (Difficulty <= 7)
-            pool = MediumPool;
-        else
-            pool = AllAnimals;
-
-        int safety = 0;
-        do
+        switch (_currentMode)
         {
-            _majorAnimal = pool[Random.Range(0, pool.Length)];
-            safety++;
-        } while (_majorAnimal == _lastMajor && safety < 20);
+            case OddMode.Numbers:
+                PickConfusingPair(ConfusingNumbers);
+                break;
+            case OddMode.Letters:
+                PickConfusingLetterPair();
+                break;
+            default: // Animals
+                PickAnimalPair();
+                break;
+        }
+    }
+
+    private void PickAnimalPair()
+    {
+        string[] pool = EasyPool;
+        int safety = 0;
+        do { _majorAnimal = pool[Random.Range(0, pool.Length)]; safety++; }
+        while (_majorAnimal == _lastMajor && safety < 20);
 
         safety = 0;
-        do
-        {
-            _oddAnimal = pool[Random.Range(0, pool.Length)];
-            safety++;
-        } while ((_oddAnimal == _majorAnimal || _oddAnimal == _lastOdd) && safety < 20);
+        do { _oddAnimal = pool[Random.Range(0, pool.Length)]; safety++; }
+        while ((_oddAnimal == _majorAnimal || _oddAnimal == _lastOdd) && safety < 20);
 
+        _lastMajor = _majorAnimal;
+        _lastOdd = _oddAnimal;
+    }
+
+    private void PickConfusingPair(int[][] pairs)
+    {
+        var pair = pairs[Random.Range(0, pairs.Length)];
+        int safety = 0;
+        do { pair = pairs[Random.Range(0, pairs.Length)]; safety++; }
+        while (pair[0].ToString() == _lastMajor && safety < 20);
+
+        _majorAnimal = pair[0].ToString();
+        _oddAnimal = pair[1].ToString();
+        _lastMajor = _majorAnimal;
+        _lastOdd = _oddAnimal;
+    }
+
+    private void PickConfusingLetterPair()
+    {
+        var pair = ConfusingLetterPairs[Random.Range(0, ConfusingLetterPairs.Length)];
+        int safety = 0;
+        do { pair = ConfusingLetterPairs[Random.Range(0, ConfusingLetterPairs.Length)]; safety++; }
+        while (pair[0].ToString() == _lastMajor && safety < 20);
+
+        _majorAnimal = pair[0].ToString();
+        _oddAnimal = pair[1].ToString();
         _lastMajor = _majorAnimal;
         _lastOdd = _oddAnimal;
     }
@@ -220,37 +260,58 @@ public class OddOneOutController : BaseMiniGame
         bgImg.color = Color.white;
         bgImg.raycastTarget = true;
 
-        // Animal image
-        var animalGO = new GameObject("Animal");
-        animalGO.transform.SetParent(go.transform, false);
-        var art = animalGO.AddComponent<RectTransform>();
-        art.anchorMin = new Vector2(0.08f, 0.08f);
-        art.anchorMax = new Vector2(0.92f, 0.92f);
-        art.offsetMin = Vector2.zero;
-        art.offsetMax = Vector2.zero;
-        var animalImg = animalGO.AddComponent<Image>();
-        animalImg.preserveAspect = true;
-        animalImg.raycastTarget = false;
-        animalImg.color = Color.white;
-
-        // Load animal animation
-        var animData = AnimalAnimData.Load(animalId);
-        if (animData != null && animData.idleFrames != null && animData.idleFrames.Length > 0)
+        if (_currentMode == OddMode.Animals)
         {
-            animalImg.sprite = animData.idleFrames[0];
-            var anim = animalGO.AddComponent<UISpriteAnimator>();
-            anim.targetImage = animalImg;
-            anim.idleFrames = animData.idleFrames;
-            anim.floatingFrames = animData.floatingFrames;
-            anim.successFrames = animData.successFrames;
-            anim.framesPerSecond = animData.idleFps > 0 ? animData.idleFps : 12f;
-            anim.PlayIdle();
-            _animators[slotIndex] = anim;
+            // Animal image
+            var animalGO = new GameObject("Animal");
+            animalGO.transform.SetParent(go.transform, false);
+            var art = animalGO.AddComponent<RectTransform>();
+            art.anchorMin = new Vector2(0.08f, 0.08f);
+            art.anchorMax = new Vector2(0.92f, 0.92f);
+            art.offsetMin = Vector2.zero;
+            art.offsetMax = Vector2.zero;
+            var animalImg = animalGO.AddComponent<Image>();
+            animalImg.preserveAspect = true;
+            animalImg.raycastTarget = false;
+            animalImg.color = Color.white;
+
+            // Load animal animation
+            var animData = AnimalAnimData.Load(animalId);
+            if (animData != null && animData.idleFrames != null && animData.idleFrames.Length > 0)
+            {
+                animalImg.sprite = animData.idleFrames[0];
+                var anim = animalGO.AddComponent<UISpriteAnimator>();
+                anim.targetImage = animalImg;
+                anim.idleFrames = animData.idleFrames;
+                anim.floatingFrames = animData.floatingFrames;
+                anim.successFrames = animData.successFrames;
+                anim.framesPerSecond = animData.idleFps > 0 ? animData.idleFps : 12f;
+                anim.PlayIdle();
+                _animators[slotIndex] = anim;
+            }
+            else
+            {
+                var sprite = Resources.Load<Sprite>($"AnimalSprites/{animalId}");
+                if (sprite != null) animalImg.sprite = sprite;
+            }
         }
         else
         {
-            var sprite = Resources.Load<Sprite>($"AnimalSprites/{animalId}");
-            if (sprite != null) animalImg.sprite = sprite;
+            // Number or Letter — show as large text
+            var textGO = new GameObject("Text");
+            textGO.transform.SetParent(go.transform, false);
+            var trt = textGO.AddComponent<RectTransform>();
+            trt.anchorMin = Vector2.zero;
+            trt.anchorMax = Vector2.one;
+            trt.offsetMin = Vector2.zero;
+            trt.offsetMax = Vector2.zero;
+            var tmp = textGO.AddComponent<TextMeshProUGUI>();
+            tmp.text = animalId; // animalId holds the number/letter string
+            tmp.fontSize = size * 0.5f;
+            tmp.fontStyle = FontStyles.Bold;
+            tmp.color = HexColor("#2C3E50");
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.raycastTarget = false;
         }
 
         // Button
