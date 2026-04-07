@@ -218,8 +218,7 @@ public class ColoringGameController : BaseMiniGame
 
     private void OnAreaFilled(int pixelCount)
     {
-        // Sound feedback on successful fill
-        SoundLibrary.PlayRandomFeedback();
+        // No voice feedback during coloring — let the child focus
     }
 
     // ── Brush Mode ──
