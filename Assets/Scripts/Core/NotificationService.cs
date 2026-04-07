@@ -131,8 +131,8 @@ public class NotificationService : MonoBehaviour
             Title = title,
             Text = body,
             FireTime = fireTimeUtc.ToLocalTime(),
-            SmallIcon = "game_logo",
-            LargeIcon = "game_logo"
+            SmallIcon = "icon_0",
+            LargeIcon = "icon_1"
         };
         int id = AndroidNotificationCenter.SendNotification(notification, AndroidChannelId);
         PlayerPrefs.SetInt($"{PrefKey}_{profileId}", id);
@@ -199,8 +199,8 @@ public class NotificationService : MonoBehaviour
             Title = title,
             Text = body,
             FireTime = DateTime.Now.AddSeconds(delaySeconds),
-            SmallIcon = "game_logo",
-            LargeIcon = "game_logo"
+            SmallIcon = "icon_0",
+            LargeIcon = "icon_1"
         };
         AndroidNotificationCenter.SendNotification(notification, AndroidGeneralChannelId);
 #elif UNITY_IOS
