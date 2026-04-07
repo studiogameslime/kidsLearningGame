@@ -33,10 +33,13 @@ public class ProfileSelectionController : MonoBehaviour
         PopulateProfiles();
 
         // Show first-launch onboarding overlay (once ever)
-        // The overlay sits on top of everything and dismisses itself.
         var canvas = GetComponentInParent<Canvas>();
         if (canvas != null)
             FirstLaunchOverlay.TryShow(canvas.transform);
+
+        // Add info button (top-right) to re-open the overlay anytime
+        if (canvas != null)
+            CreateInfoButton(canvas.transform);
 
         // Play "Who playing?" sound
         if (whoPlayingSound != null && audioSource != null)
@@ -44,6 +47,46 @@ public class ProfileSelectionController : MonoBehaviour
             audioSource.clip = whoPlayingSound;
             audioSource.Play();
         }
+    }
+
+    private void CreateInfoButton(Transform canvasRoot)
+    {
+        var go = new GameObject("InfoButton");
+        go.transform.SetParent(canvasRoot, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(1, 1);
+        rt.anchorMax = new Vector2(1, 1);
+        rt.pivot = new Vector2(1, 1);
+        rt.sizeDelta = new Vector2(70, 70);
+        rt.anchoredPosition = new Vector2(-16, -16);
+
+        var img = go.AddComponent<Image>();
+        var infoSprite = Resources.Load<Sprite>("UI/info");
+        if (infoSprite != null)
+            img.sprite = infoSprite;
+        else
+        {
+            // Fallback: circle with "?" text
+            img.color = new Color(0.35f, 0.55f, 0.85f, 0.9f);
+            var textGO = new GameObject("QuestionMark");
+            textGO.transform.SetParent(go.transform, false);
+            var trt = textGO.AddComponent<RectTransform>();
+            trt.anchorMin = Vector2.zero; trt.anchorMax = Vector2.one;
+            trt.offsetMin = Vector2.zero; trt.offsetMax = Vector2.zero;
+            var tmp = textGO.AddComponent<TextMeshProUGUI>();
+            tmp.text = "?";
+            tmp.fontSize = 40;
+            tmp.fontStyle = TMPro.FontStyles.Bold;
+            tmp.color = Color.white;
+            tmp.alignment = TMPro.TextAlignmentOptions.Center;
+            tmp.raycastTarget = false;
+        }
+
+        img.raycastTarget = true;
+        var btn = go.AddComponent<Button>();
+        btn.targetGraphic = img;
+        btn.transition = Selectable.Transition.None;
+        btn.onClick.AddListener(() => FirstLaunchOverlay.Show(canvasRoot));
     }
 
     public void PopulateProfiles()

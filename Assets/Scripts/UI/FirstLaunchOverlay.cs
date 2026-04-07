@@ -41,6 +41,7 @@ public class FirstLaunchOverlay : MonoBehaviour
     private Vector2 _swipeStart;
     private bool _isSwiping;
     private bool _isTransitioning;
+    private bool _isFirstLaunch;
 
     // Colors
     private static readonly Color DotActive = new Color(1f, 1f, 1f, 1f);
@@ -55,17 +56,28 @@ public class FirstLaunchOverlay : MonoBehaviour
 
     /// <summary>
     /// Call from ProfileSelectionController.Start().
-    /// Returns true if the overlay is shown (caller may want to delay other init).
+    /// Shows only on first launch. Returns true if shown.
     /// </summary>
     public static bool TryShow(Transform canvasRoot)
     {
         if (PlayerPrefs.GetInt(PrefKey, 0) == 1)
             return false;
 
+        Show(canvasRoot, isFirstLaunch: true);
+        return true;
+    }
+
+    /// <summary>
+    /// Show the overlay (always, regardless of first launch).
+    /// Called from the info button.
+    /// </summary>
+    public static void Show(Transform canvasRoot, bool isFirstLaunch = false)
+    {
         var go = new GameObject("FirstLaunchOverlay");
         go.transform.SetParent(canvasRoot, false);
-        go.transform.SetAsLastSibling(); // on top of everything
+        go.transform.SetAsLastSibling();
         var overlay = go.AddComponent<FirstLaunchOverlay>();
+        overlay._isFirstLaunch = isFirstLaunch;
         overlay.Build(canvasRoot);
         return true;
     }
@@ -364,8 +376,11 @@ public class FirstLaunchOverlay : MonoBehaviour
 
     private void OnStartPressed()
     {
-        PlayerPrefs.SetInt(PrefKey, 1);
-        PlayerPrefs.Save();
+        if (_isFirstLaunch)
+        {
+            PlayerPrefs.SetInt(PrefKey, 1);
+            PlayerPrefs.Save();
+        }
         StartCoroutine(DismissAndDestroy());
     }
 
