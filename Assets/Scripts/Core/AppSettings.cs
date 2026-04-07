@@ -55,7 +55,16 @@ public static class AppSettings
             PlayerPrefs.Save();
             if (!value)
             {
-                NotificationService.Instance?.CancelStickerNotification();
+                // Cancel notifications for ALL profiles
+                if (ProfileManager.Instance != null)
+                {
+                    foreach (var p in ProfileManager.Instance.Profiles)
+                        NotificationService.Instance?.CancelStickerNotification(p.id);
+                }
+                else
+                {
+                    NotificationService.Instance?.CancelStickerNotification();
+                }
             }
             else
             {
