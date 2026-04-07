@@ -33,7 +33,8 @@ public class FirstLaunchOverlay : MonoBehaviour
     private Canvas _canvas;
     private CanvasGroup _canvasGroup;
     private RectTransform _slidesParent;
-    private Image[] _dots;
+    private GameObject _arrowLeft;
+    private GameObject _arrowRight;
     private GameObject _startButton;
     private int _currentSlide;
 
@@ -114,8 +115,11 @@ public class FirstLaunchOverlay : MonoBehaviour
         // Show only first slide
         ShowSlide(0, immediate: true);
 
-        // Dots navigation at bottom
-        CreateDots(rt);
+        // Arrow navigation (left/right like World scene)
+        CreateArrows(rt);
+
+        // Close button (X) in top-right
+        CreateCloseButton(rt);
 
         // Start button (hidden until last slide)
         CreateStartButton(rt);
@@ -176,49 +180,92 @@ public class FirstLaunchOverlay : MonoBehaviour
         slideGO.SetActive(index == 0);
     }
 
-    private void CreateDots(RectTransform parent)
+    private void CreateArrows(RectTransform parent)
     {
-        var dotsGO = CreateChild("Dots", parent);
-        var dotsRT = dotsGO.GetComponent<RectTransform>();
-        dotsRT.anchorMin = new Vector2(0.5f, 0.1f);
-        dotsRT.anchorMax = new Vector2(0.5f, 0.1f);
-        dotsRT.sizeDelta = new Vector2(120, 20);
+        // Left arrow
+        _arrowLeft = CreateChild("ArrowLeft", parent);
+        var leftRT = _arrowLeft.GetComponent<RectTransform>();
+        leftRT.anchorMin = new Vector2(0, 0.5f);
+        leftRT.anchorMax = new Vector2(0, 0.5f);
+        leftRT.pivot = new Vector2(0, 0.5f);
+        leftRT.sizeDelta = new Vector2(70, 70);
+        leftRT.anchoredPosition = new Vector2(16, 0);
 
-        var hlg = dotsGO.AddComponent<HorizontalLayoutGroup>();
-        hlg.spacing = 16;
-        hlg.childAlignment = TextAnchor.MiddleCenter;
-        hlg.childForceExpandWidth = false;
-        hlg.childForceExpandHeight = false;
-        hlg.childControlWidth = false;
-        hlg.childControlHeight = false;
+        var leftImg = _arrowLeft.AddComponent<Image>();
+        leftImg.color = new Color(1f, 1f, 1f, 0.7f);
+        leftImg.raycastTarget = true;
+        var leftText = CreateChild("Text", leftRT);
+        var ltrt = leftText.GetComponent<RectTransform>();
+        ltrt.anchorMin = Vector2.zero; ltrt.anchorMax = Vector2.one;
+        ltrt.offsetMin = Vector2.zero; ltrt.offsetMax = Vector2.zero;
+        var leftTMP = leftText.AddComponent<TextMeshProUGUI>();
+        leftTMP.text = "\u25C0"; // ◀
+        leftTMP.fontSize = 40;
+        leftTMP.alignment = TextAlignmentOptions.Center;
+        leftTMP.color = new Color(0.2f, 0.2f, 0.2f);
+        leftTMP.raycastTarget = false;
+        var leftBtn = _arrowLeft.AddComponent<Button>();
+        leftBtn.targetGraphic = leftImg;
+        leftBtn.transition = Selectable.Transition.None;
+        leftBtn.onClick.AddListener(() => GoToSlide(_currentSlide - 1));
 
-        _dots = new Image[SlideCount];
-        for (int i = 0; i < SlideCount; i++)
-        {
-            var dotGO = CreateChild($"Dot_{i}", dotsRT);
-            var dotLE = dotGO.AddComponent<LayoutElement>();
-            dotLE.preferredWidth = 14;
-            dotLE.preferredHeight = 14;
+        // Right arrow
+        _arrowRight = CreateChild("ArrowRight", parent);
+        var rightRT = _arrowRight.GetComponent<RectTransform>();
+        rightRT.anchorMin = new Vector2(1, 0.5f);
+        rightRT.anchorMax = new Vector2(1, 0.5f);
+        rightRT.pivot = new Vector2(1, 0.5f);
+        rightRT.sizeDelta = new Vector2(70, 70);
+        rightRT.anchoredPosition = new Vector2(-16, 0);
 
-            var dotImg = dotGO.AddComponent<Image>();
-            dotImg.color = i == 0 ? DotActive : DotInactive;
+        var rightImg = _arrowRight.AddComponent<Image>();
+        rightImg.color = new Color(1f, 1f, 1f, 0.7f);
+        rightImg.raycastTarget = true;
+        var rightText = CreateChild("Text", rightRT);
+        var rtrt = rightText.GetComponent<RectTransform>();
+        rtrt.anchorMin = Vector2.zero; rtrt.anchorMax = Vector2.one;
+        rtrt.offsetMin = Vector2.zero; rtrt.offsetMax = Vector2.zero;
+        var rightTMP = rightText.AddComponent<TextMeshProUGUI>();
+        rightTMP.text = "\u25B6"; // ▶
+        rightTMP.fontSize = 40;
+        rightTMP.alignment = TextAlignmentOptions.Center;
+        rightTMP.color = new Color(0.2f, 0.2f, 0.2f);
+        rightTMP.raycastTarget = false;
+        var rightBtn = _arrowRight.AddComponent<Button>();
+        rightBtn.targetGraphic = rightImg;
+        rightBtn.transition = Selectable.Transition.None;
+        rightBtn.onClick.AddListener(() => GoToSlide(_currentSlide + 1));
+    }
 
-            // Make circular — no sprite needed, just use a white circle approach
-            // We'll make it look circular by using the default UI sprite
-            _dots[i] = dotImg;
+    private void CreateCloseButton(RectTransform parent)
+    {
+        var closeGO = CreateChild("CloseButton", parent);
+        var closeRT = closeGO.GetComponent<RectTransform>();
+        closeRT.anchorMin = new Vector2(1, 1);
+        closeRT.anchorMax = new Vector2(1, 1);
+        closeRT.pivot = new Vector2(1, 1);
+        closeRT.sizeDelta = new Vector2(60, 60);
+        closeRT.anchoredPosition = new Vector2(-12, -12);
 
-            // Add click handler for dot navigation
-            int slideIndex = i;
-            var dotBtn = dotGO.AddComponent<Button>();
-            dotBtn.targetGraphic = dotImg;
-            var colors = dotBtn.colors;
-            colors.normalColor = Color.white;
-            colors.highlightedColor = Color.white;
-            colors.pressedColor = Color.white;
-            colors.selectedColor = Color.white;
-            dotBtn.colors = colors;
-            dotBtn.onClick.AddListener(() => GoToSlide(slideIndex));
-        }
+        var closeImg = closeGO.AddComponent<Image>();
+        closeImg.color = new Color(0f, 0f, 0f, 0.3f);
+        closeImg.raycastTarget = true;
+
+        var closeText = CreateChild("X", closeRT);
+        var ctRT = closeText.GetComponent<RectTransform>();
+        ctRT.anchorMin = Vector2.zero; ctRT.anchorMax = Vector2.one;
+        ctRT.offsetMin = Vector2.zero; ctRT.offsetMax = Vector2.zero;
+        var closeTMP = closeText.AddComponent<TextMeshProUGUI>();
+        closeTMP.text = "\u2715"; // ✕
+        closeTMP.fontSize = 36;
+        closeTMP.alignment = TextAlignmentOptions.Center;
+        closeTMP.color = Color.white;
+        closeTMP.raycastTarget = false;
+
+        var closeBtn = closeGO.AddComponent<Button>();
+        closeBtn.targetGraphic = closeImg;
+        closeBtn.transition = Selectable.Transition.None;
+        closeBtn.onClick.AddListener(OnStartPressed);
     }
 
     private void CreateStartButton(RectTransform parent)
@@ -272,15 +319,9 @@ public class FirstLaunchOverlay : MonoBehaviour
                 _slidesParent.GetChild(i).gameObject.SetActive(i == index);
         }
 
-        // Update dots
-        if (_dots != null)
-        {
-            for (int i = 0; i < _dots.Length; i++)
-            {
-                if (_dots[i] != null)
-                    _dots[i].color = i == index ? DotActive : DotInactive;
-            }
-        }
+        // Update arrow visibility
+        if (_arrowLeft != null) _arrowLeft.SetActive(index > 0);
+        if (_arrowRight != null) _arrowRight.SetActive(index < SlideCount - 1);
 
         // Show start button only on last slide
         if (_startButton != null)
