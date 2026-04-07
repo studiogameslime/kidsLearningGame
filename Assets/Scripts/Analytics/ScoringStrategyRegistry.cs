@@ -82,6 +82,9 @@ public static class ScoringStrategyRegistry
         if (id.Contains("ballmaze"))
             return new BallMazeScoringStrategy();
 
+        if (id.Contains("tower"))
+            return new TowerBuilderScoringStrategy();
+
         if (id.Contains("sharedsticker") || id.Contains("shared"))
             return new SharedStickerScoringStrategy();
 

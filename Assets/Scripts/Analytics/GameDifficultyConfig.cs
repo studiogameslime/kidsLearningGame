@@ -299,6 +299,18 @@ public static class GameDifficultyConfig
     }
 
     // ═══════════════════════════════════════════════════════════
+    //  TOWER BUILDER (LEGO)
+    // ═══════════════════════════════════════════════════════════
+
+    public static int TowerBuilderTier(int difficulty)
+    {
+        if (difficulty <= 3) return 0;
+        if (difficulty <= 5) return 1;
+        if (difficulty <= 8) return 2;
+        return 3;
+    }
+
+    // ═══════════════════════════════════════════════════════════
     //  DIFFICULTY IMPACT LABELS (Hebrew, raw unicode)
     // ═══════════════════════════════════════════════════════════
 
@@ -500,6 +512,14 @@ public static class GameDifficultyConfig
             if (difficulty <= 3) return "\u05E6\u05D1\u05E2\u05D9\u05DD \u05D1\u05E1\u05D9\u05E1\u05D9\u05D9\u05DD"; // צבעים בסיסיים
             if (difficulty <= 6) return "\u05E2\u05E8\u05D1\u05D5\u05D1 \u05E6\u05D1\u05E2\u05D9\u05DD"; // ערבוב צבעים
             return "\u05E6\u05D1\u05E2\u05D9\u05DD \u05DE\u05D5\u05E8\u05DB\u05D1\u05D9\u05DD"; // צבעים מורכבים
+        }
+
+        // Tower Builder (Lego)
+        if (id.Contains("tower"))
+        {
+            int tier = TowerBuilderTier(difficulty);
+            string[] labels = { "\u05DC\u05D2\u05D5 \u05E7\u05DC", "\u05DC\u05D2\u05D5 \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9", "\u05DC\u05D2\u05D5 \u05D2\u05D3\u05D5\u05DC", "\u05DC\u05D2\u05D5 \u05E2\u05E0\u05E7" }; // לגו קל/בינוני/גדול/ענק
+            return labels[Mathf.Clamp(tier, 0, labels.Length - 1)];
         }
 
         // Ball Maze

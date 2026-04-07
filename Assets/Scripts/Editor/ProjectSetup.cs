@@ -256,6 +256,9 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Color Catch…", 0.9985f);
             ColorCatchSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Tower Builder (Lego)…", 0.9975f);
+            TowerBuilderSetup.RunSetupSilent();
+
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Fruit Puzzle…", 0.998f);
             FruitPuzzleSetup.RunSetupSilent();
 
@@ -926,8 +929,18 @@ public class ProjectSetup : EditorWindow
         letterBubbles.thumbnail = LoadSprite($"{previewPath}/Letter Bubbles.png");
         EditorUtility.SetDirty(letterBubbles);
 
+        // ── Tower Builder (Lego) ──
+        var tower = CreateSO<GameItemData>($"{DataPath}/TowerBuilder.asset");
+        tower.id = "towerbuilder";
+        tower.title = "Lego";
+        tower.cardColor = HexColor("#FF8A65");
+        tower.targetSceneName = "TowerBuilder";
+        tower.thumbnail = LoadSprite($"{previewPath}/Lego.png");
+        tower.hasSubItems = false;
+        EditorUtility.SetDirty(tower);
+
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, sizeSort, colorSort, colorCatch, fruitPuzzle, letterBubbles };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, sizeSort, colorSort, colorCatch, fruitPuzzle, letterBubbles, tower };
         EditorUtility.SetDirty(db);
 
         // Copy GameDatabase to Resources so Resources.Load works at runtime
@@ -1552,6 +1565,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/SizeSort.unity",
             $"{ScenesPath}/ColorSort.unity",
             $"{ScenesPath}/ColorCatch.unity",
+            $"{ScenesPath}/TowerBuilder.unity",
             $"{ScenesPath}/FruitPuzzle.unity",
             $"{ScenesPath}/LetterBubbles.unity",
             $"{ScenesPath}/SandDrawingScene.unity",
