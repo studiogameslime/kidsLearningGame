@@ -26,11 +26,12 @@ public class LetterBubblesController : BaseMiniGame
     private static readonly Dictionary<char, char[]> ConfusingLetters = new Dictionary<char, char[]>
     {
         {'ב', new[]{'כ','ב'}}, {'כ', new[]{'ב','כ'}},
-        {'ד', new[]{'ר','ד'}}, {'ר', new[]{'ד','ר'}},
+        {'ד', new[]{'ר','ד'}}, {'ר', new[]{'ד','ר','ק'}},
         {'ח', new[]{'ה','ח'}}, {'ה', new[]{'ח','ה'}},
         {'ו', new[]{'ז','ו'}}, {'ז', new[]{'ו','ז'}},
-        {'ס', new[]{'ם','ס'}}, {'ם', new[]{'ס','ם'}},
-        {'ע', new[]{'צ','ע'}}, {'צ', new[]{'ע','צ'}},
+        {'ע', new[]{'צ','ע','ס'}}, {'צ', new[]{'ע','צ'}},
+        {'ג', new[]{'נ','ג'}}, {'נ', new[]{'ג','נ'}},
+        {'ק', new[]{'ר','ק'}}, {'ס', new[]{'ע','ס'}},
     };
 
     // ── Cheerful bubble color palette ──

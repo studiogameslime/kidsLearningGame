@@ -55,11 +55,11 @@ public class OddOneOutController : BaseMiniGame
         new[]{6, 9}, new[]{1, 7}, new[]{3, 8}, new[]{2, 5}
     };
 
-    // Confusing letter pairs
+    // Confusing letter pairs (no final forms)
     private static readonly char[][] ConfusingLetterPairs = {
         new[]{'ב','כ'}, new[]{'ד','ר'}, new[]{'ח','ה'},
-        new[]{'ו','ז'}, new[]{'ס','ם'}, new[]{'ע','צ'},
-        new[]{'ג','נ'}, new[]{'ש','מ'}
+        new[]{'ו','ז'}, new[]{'ע','צ'}, new[]{'ג','נ'},
+        new[]{'ק','ר'}, new[]{'ס','ע'}
     };
 
     private List<GameObject> _slotObjects = new List<GameObject>();
