@@ -102,8 +102,8 @@ public class ParentDashboardSetup : EditorWindow
         var gateTitleGO = MakeTMP(gateGO.transform, "GateTitle",
             "\u05D0\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD", 52, Color.white);
         var gateTitleRT = gateTitleGO.GetComponent<RectTransform>();
-        gateTitleRT.anchorMin = new Vector2(0.1f, 0.72f);
-        gateTitleRT.anchorMax = new Vector2(0.9f, 0.84f);
+        gateTitleRT.anchorMin = new Vector2(0.1f, 0.82f);
+        gateTitleRT.anchorMax = new Vector2(0.9f, 0.94f);
         gateTitleRT.offsetMin = gateTitleRT.offsetMax = Vector2.zero;
         gateTitleGO.GetComponent<TextMeshProUGUI>().fontStyle = FontStyles.Bold;
 
@@ -111,15 +111,15 @@ public class ParentDashboardSetup : EditorWindow
         var gateSubGO = MakeTMP(gateGO.transform, "GateSubtitle",
             "\u05E4\u05EA\u05E8\u05D5 \u05D0\u05EA \u05D4\u05EA\u05E8\u05D2\u05D9\u05DC", 32, new Color(1, 1, 1, 0.7f));
         var gateSubRT = gateSubGO.GetComponent<RectTransform>();
-        gateSubRT.anchorMin = new Vector2(0.1f, 0.62f);
-        gateSubRT.anchorMax = new Vector2(0.9f, 0.72f);
+        gateSubRT.anchorMin = new Vector2(0.1f, 0.72f);
+        gateSubRT.anchorMax = new Vector2(0.9f, 0.82f);
         gateSubRT.offsetMin = gateSubRT.offsetMax = Vector2.zero;
 
         // Question text
         var questionGO = MakeTMP(gateGO.transform, "QuestionText", "? = 5 + 3", 72, Color.white);
         var questionRT = questionGO.GetComponent<RectTransform>();
-        questionRT.anchorMin = new Vector2(0.1f, 0.48f);
-        questionRT.anchorMax = new Vector2(0.9f, 0.62f);
+        questionRT.anchorMin = new Vector2(0.1f, 0.55f);
+        questionRT.anchorMax = new Vector2(0.9f, 0.72f);
         questionRT.offsetMin = questionRT.offsetMax = Vector2.zero;
         var questionTMP = questionGO.GetComponent<TextMeshProUGUI>();
         questionTMP.fontStyle = FontStyles.Bold;
@@ -128,8 +128,8 @@ public class ParentDashboardSetup : EditorWindow
         var inputAreaGO = new GameObject("InputArea");
         inputAreaGO.transform.SetParent(gateGO.transform, false);
         var inputAreaRT = inputAreaGO.AddComponent<RectTransform>();
-        inputAreaRT.anchorMin = new Vector2(0.2f, 0.28f);
-        inputAreaRT.anchorMax = new Vector2(0.8f, 0.42f);
+        inputAreaRT.anchorMin = new Vector2(0.2f, 0.38f);
+        inputAreaRT.anchorMax = new Vector2(0.8f, 0.52f);
         inputAreaRT.offsetMin = Vector2.zero;
         inputAreaRT.offsetMax = Vector2.zero;
 
@@ -200,8 +200,8 @@ public class ParentDashboardSetup : EditorWindow
         var errorGO = MakeTMP(gateGO.transform, "ErrorText",
             "\u05EA\u05E9\u05D5\u05D1\u05D4 \u05DC\u05D0 \u05E0\u05DB\u05D5\u05E0\u05D4", 28, new Color(1f, 0.4f, 0.4f)); // תשובה לא נכונה
         var errorRT = errorGO.GetComponent<RectTransform>();
-        errorRT.anchorMin = new Vector2(0.2f, 0.20f);
-        errorRT.anchorMax = new Vector2(0.8f, 0.28f);
+        errorRT.anchorMin = new Vector2(0.2f, 0.30f);
+        errorRT.anchorMax = new Vector2(0.8f, 0.38f);
         errorRT.offsetMin = Vector2.zero;
         errorRT.offsetMax = Vector2.zero;
         errorGO.SetActive(false);
