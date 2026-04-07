@@ -182,28 +182,27 @@ public class FirstLaunchOverlay : MonoBehaviour
 
     private void CreateArrows(RectTransform parent)
     {
+        // Load arrow sprites from Art/Icons (same as World scene)
+        var arrowLeftSprite = Resources.Load<Sprite>("Icons/arrowLeft");
+        var arrowRightSprite = Resources.Load<Sprite>("Icons/arrowRight");
+        // Fallback: try AssetDatabase path at runtime (won't work in build but handles editor)
+        if (arrowLeftSprite == null) arrowLeftSprite = LoadSpriteFromPath("Assets/Art/Icons/arrowLeft.png");
+        if (arrowRightSprite == null) arrowRightSprite = LoadSpriteFromPath("Assets/Art/Icons/arrowRight.png");
+
         // Left arrow
         _arrowLeft = CreateChild("ArrowLeft", parent);
         var leftRT = _arrowLeft.GetComponent<RectTransform>();
         leftRT.anchorMin = new Vector2(0, 0.5f);
         leftRT.anchorMax = new Vector2(0, 0.5f);
         leftRT.pivot = new Vector2(0, 0.5f);
-        leftRT.sizeDelta = new Vector2(70, 70);
+        leftRT.sizeDelta = new Vector2(80, 80);
         leftRT.anchoredPosition = new Vector2(16, 0);
 
         var leftImg = _arrowLeft.AddComponent<Image>();
-        leftImg.color = new Color(1f, 1f, 1f, 0.7f);
+        if (arrowLeftSprite != null) leftImg.sprite = arrowLeftSprite;
+        leftImg.color = new Color(1f, 1f, 1f, 0.8f);
+        leftImg.preserveAspect = true;
         leftImg.raycastTarget = true;
-        var leftText = CreateChild("Text", leftRT);
-        var ltrt = leftText.GetComponent<RectTransform>();
-        ltrt.anchorMin = Vector2.zero; ltrt.anchorMax = Vector2.one;
-        ltrt.offsetMin = Vector2.zero; ltrt.offsetMax = Vector2.zero;
-        var leftTMP = leftText.AddComponent<TextMeshProUGUI>();
-        leftTMP.text = "\u25C0"; // ◀
-        leftTMP.fontSize = 40;
-        leftTMP.alignment = TextAlignmentOptions.Center;
-        leftTMP.color = new Color(0.2f, 0.2f, 0.2f);
-        leftTMP.raycastTarget = false;
         var leftBtn = _arrowLeft.AddComponent<Button>();
         leftBtn.targetGraphic = leftImg;
         leftBtn.transition = Selectable.Transition.None;
@@ -215,22 +214,14 @@ public class FirstLaunchOverlay : MonoBehaviour
         rightRT.anchorMin = new Vector2(1, 0.5f);
         rightRT.anchorMax = new Vector2(1, 0.5f);
         rightRT.pivot = new Vector2(1, 0.5f);
-        rightRT.sizeDelta = new Vector2(70, 70);
+        rightRT.sizeDelta = new Vector2(80, 80);
         rightRT.anchoredPosition = new Vector2(-16, 0);
 
         var rightImg = _arrowRight.AddComponent<Image>();
-        rightImg.color = new Color(1f, 1f, 1f, 0.7f);
+        if (arrowRightSprite != null) rightImg.sprite = arrowRightSprite;
+        rightImg.color = new Color(1f, 1f, 1f, 0.8f);
+        rightImg.preserveAspect = true;
         rightImg.raycastTarget = true;
-        var rightText = CreateChild("Text", rightRT);
-        var rtrt = rightText.GetComponent<RectTransform>();
-        rtrt.anchorMin = Vector2.zero; rtrt.anchorMax = Vector2.one;
-        rtrt.offsetMin = Vector2.zero; rtrt.offsetMax = Vector2.zero;
-        var rightTMP = rightText.AddComponent<TextMeshProUGUI>();
-        rightTMP.text = "\u25B6"; // ▶
-        rightTMP.fontSize = 40;
-        rightTMP.alignment = TextAlignmentOptions.Center;
-        rightTMP.color = new Color(0.2f, 0.2f, 0.2f);
-        rightTMP.raycastTarget = false;
         var rightBtn = _arrowRight.AddComponent<Button>();
         rightBtn.targetGraphic = rightImg;
         rightBtn.transition = Selectable.Transition.None;
@@ -244,11 +235,11 @@ public class FirstLaunchOverlay : MonoBehaviour
         closeRT.anchorMin = new Vector2(1, 1);
         closeRT.anchorMax = new Vector2(1, 1);
         closeRT.pivot = new Vector2(1, 1);
-        closeRT.sizeDelta = new Vector2(60, 60);
+        closeRT.sizeDelta = new Vector2(70, 70);
         closeRT.anchoredPosition = new Vector2(-12, -12);
 
         var closeImg = closeGO.AddComponent<Image>();
-        closeImg.color = new Color(0f, 0f, 0f, 0.3f);
+        closeImg.color = new Color(0f, 0f, 0f, 0.4f);
         closeImg.raycastTarget = true;
 
         var closeText = CreateChild("X", closeRT);
@@ -257,15 +248,22 @@ public class FirstLaunchOverlay : MonoBehaviour
         ctRT.offsetMin = Vector2.zero; ctRT.offsetMax = Vector2.zero;
         var closeTMP = closeText.AddComponent<TextMeshProUGUI>();
         closeTMP.text = "\u2715"; // ✕
-        closeTMP.fontSize = 36;
+        closeTMP.fontSize = 42;
         closeTMP.alignment = TextAlignmentOptions.Center;
         closeTMP.color = Color.white;
+        closeTMP.fontStyle = FontStyles.Bold;
         closeTMP.raycastTarget = false;
 
         var closeBtn = closeGO.AddComponent<Button>();
         closeBtn.targetGraphic = closeImg;
         closeBtn.transition = Selectable.Transition.None;
         closeBtn.onClick.AddListener(OnStartPressed);
+    }
+
+    private static Sprite LoadSpriteFromPath(string path)
+    {
+        // Runtime fallback — try loading from Resources if copied there
+        return null; // Sprites must be in Resources or wired via setup
     }
 
     private void CreateStartButton(RectTransform parent)
