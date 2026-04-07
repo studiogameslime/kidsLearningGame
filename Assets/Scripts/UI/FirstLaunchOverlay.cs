@@ -235,24 +235,15 @@ public class FirstLaunchOverlay : MonoBehaviour
         closeRT.anchorMin = new Vector2(1, 1);
         closeRT.anchorMax = new Vector2(1, 1);
         closeRT.pivot = new Vector2(1, 1);
-        closeRT.sizeDelta = new Vector2(70, 70);
-        closeRT.anchoredPosition = new Vector2(-12, -12);
+        closeRT.sizeDelta = new Vector2(60, 60);
+        closeRT.anchoredPosition = new Vector2(-16, -16);
 
         var closeImg = closeGO.AddComponent<Image>();
-        closeImg.color = new Color(0f, 0f, 0f, 0.4f);
+        var crossSprite = Resources.Load<Sprite>("Icons/cross");
+        if (crossSprite != null) closeImg.sprite = crossSprite;
+        closeImg.color = Color.white;
+        closeImg.preserveAspect = true;
         closeImg.raycastTarget = true;
-
-        var closeText = CreateChild("X", closeRT);
-        var ctRT = closeText.GetComponent<RectTransform>();
-        ctRT.anchorMin = Vector2.zero; ctRT.anchorMax = Vector2.one;
-        ctRT.offsetMin = Vector2.zero; ctRT.offsetMax = Vector2.zero;
-        var closeTMP = closeText.AddComponent<TextMeshProUGUI>();
-        closeTMP.text = "\u2715"; // ✕
-        closeTMP.fontSize = 42;
-        closeTMP.alignment = TextAlignmentOptions.Center;
-        closeTMP.color = Color.white;
-        closeTMP.fontStyle = FontStyles.Bold;
-        closeTMP.raycastTarget = false;
 
         var closeBtn = closeGO.AddComponent<Button>();
         closeBtn.targetGraphic = closeImg;
