@@ -59,6 +59,13 @@ public static class SoundLibrary
         if (clip != null) BackgroundMusicManager.PlayOneShot(clip);
     }
 
+    // ── Instructions ──
+
+    public static AudioClip PopTheLetterInstruction()
+    {
+        return Resources.Load<AudioClip>("Sounds/Instructions/PopTheLetter");
+    }
+
     // ── Feedback (random win clip) ──
 
     private static readonly string[] FeedbackClips =

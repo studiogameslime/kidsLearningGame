@@ -132,8 +132,8 @@ public class LetterBubblesController : BaseMiniGame
             StartCoroutine(PulseTargetDisplay());
         }
 
-        // Play letter name sound
-        SoundLibrary.PlayLetterName(targetLetter.ToString());
+        // Play "פוצצו את האות..." then the letter name
+        StartCoroutine(PlayLetterInstruction(targetLetter));
 
         // Clear old bubbles
         ClearAllBubbles();
@@ -415,8 +415,8 @@ public class LetterBubblesController : BaseMiniGame
         if (targetLetterText != null)
             HebrewText.SetText(targetLetterText, targetLetter.ToString());
 
-        // Play letter name
-        SoundLibrary.PlayLetterName(targetLetter.ToString());
+        // Play "פוצצו את האות..." then the letter name
+        StartCoroutine(PlayLetterInstruction(targetLetter));
 
         // Pulse target display
         StartCoroutine(PulseTargetDisplay());
@@ -666,6 +666,17 @@ public class LetterBubblesController : BaseMiniGame
         var texts = bubble.go.GetComponentsInChildren<TextMeshProUGUI>(true);
         foreach (var txt in texts)
             txt.enabled = visible;
+    }
+
+    private IEnumerator PlayLetterInstruction(char letter)
+    {
+        var instructionClip = SoundLibrary.PopTheLetterInstruction();
+        if (instructionClip != null)
+        {
+            BackgroundMusicManager.PlayOneShot(instructionClip);
+            yield return new WaitForSeconds(instructionClip.length + 0.2f);
+        }
+        SoundLibrary.PlayLetterName(letter.ToString());
     }
 
     private IEnumerator PulseTargetDisplay()

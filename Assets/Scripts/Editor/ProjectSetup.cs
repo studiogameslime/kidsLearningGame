@@ -736,6 +736,7 @@ public class ProjectSetup : EditorWindow
         sharedSticker.targetSceneName = "SharedSticker";
         sharedSticker.hasSubItems = false;
         sharedSticker.thumbnail = LoadSprite($"{previewPath}/FindTheSimilar.png");
+        sharedSticker.nameClip = LoadAudioClip("Assets/Sounds/Games Names/מה משותף.mp3");
         EditorUtility.SetDirty(sharedSticker);
 
         // ── Flappy Bird ──
@@ -746,6 +747,7 @@ public class ProjectSetup : EditorWindow
         flappyBird.targetSceneName = "FlappyBird";
         flappyBird.thumbnail = LoadSprite($"{previewPath}/FlyingBird.png");
         flappyBird.hasSubItems = false;
+        flappyBird.nameClip = LoadAudioClip("Assets/Sounds/Games Names/הציפור המעופפת.mp3");
         EditorUtility.SetDirty(flappyBird);
 
         // ── Simon Says ──
@@ -756,6 +758,7 @@ public class ProjectSetup : EditorWindow
         simonSays.targetSceneName = "SimonSays";
         simonSays.thumbnail = LoadSprite($"{previewPath}/SimonSays.png");
         simonSays.hasSubItems = false;
+        simonSays.nameClip = LoadAudioClip("Assets/Sounds/Games Names/סיימון.mp3");
         EditorUtility.SetDirty(simonSays);
 
         // ── Pattern Copy ──
@@ -766,6 +769,7 @@ public class ProjectSetup : EditorWindow
         patternCopy.targetSceneName = "PatternCopy";
         patternCopy.thumbnail = LoadSprite($"{previewPath}/PatternCopy.png");
         patternCopy.hasSubItems = false;
+        patternCopy.nameClip = LoadAudioClip("Assets/Sounds/Games Names/להעתיק את הצורה.mp3");
         EditorUtility.SetDirty(patternCopy);
 
         // ── Letters (First Letter) ──
@@ -776,6 +780,7 @@ public class ProjectSetup : EditorWindow
         letters.targetSceneName = "LettersGame";
         letters.thumbnail = LoadSprite($"{previewPath}/MissingLetter.png");
         letters.hasSubItems = false;
+        letters.nameClip = LoadAudioClip("Assets/Sounds/Games Names/האות החסרה.mp3");
         EditorUtility.SetDirty(letters);
 
         // ── Number Maze ──
@@ -786,6 +791,7 @@ public class ProjectSetup : EditorWindow
         numberMaze.targetSceneName = "NumberMaze";
         numberMaze.thumbnail = LoadSprite($"{previewPath}/NumberMaze.png");
         numberMaze.hasSubItems = false;
+        numberMaze.nameClip = LoadAudioClip("Assets/Sounds/Games Names/מבוך המספרים.mp3");
         EditorUtility.SetDirty(numberMaze);
 
         // ── Odd One Out ──
@@ -796,6 +802,7 @@ public class ProjectSetup : EditorWindow
         oddOneOut.targetSceneName = "OddOneOut";
         oddOneOut.thumbnail = LoadSprite($"{previewPath}/FindTheDifferent.png");
         oddOneOut.hasSubItems = false;
+        oddOneOut.nameClip = LoadAudioClip("Assets/Sounds/Games Names/מה יוצא דופן.mp3");
         EditorUtility.SetDirty(oddOneOut);
 
         // ── Quantity Match ──
@@ -806,6 +813,7 @@ public class ProjectSetup : EditorWindow
         quantityMatch.targetSceneName = "QuantityMatch";
         quantityMatch.thumbnail = LoadSprite($"{previewPath}/MatchCount.png");
         quantityMatch.hasSubItems = false;
+        quantityMatch.nameClip = LoadAudioClip("Assets/Sounds/Games Names/כמות ומספר.mp3");
         EditorUtility.SetDirty(quantityMatch);
 
         // ── Number Train ──
@@ -816,6 +824,7 @@ public class ProjectSetup : EditorWindow
         numberTrain.targetSceneName = "NumberTrain";
         numberTrain.thumbnail = LoadSprite($"{previewPath}/NumbersTrain.png");
         numberTrain.hasSubItems = false;
+        numberTrain.nameClip = LoadAudioClip("Assets/Sounds/Games Names/רכבת המספרים.mp3");
         EditorUtility.SetDirty(numberTrain);
 
         // ── Letter Train ──
@@ -826,6 +835,7 @@ public class ProjectSetup : EditorWindow
         letterTrain.targetSceneName = "LetterTrain";
         letterTrain.thumbnail = LoadSprite($"{previewPath}/LettersTrain.png");
         letterTrain.hasSubItems = false;
+        letterTrain.nameClip = LoadAudioClip("Assets/Sounds/Games Names/רכבת האותיות.mp3");
         EditorUtility.SetDirty(letterTrain);
 
         // ── Fishing Game ──
@@ -836,6 +846,7 @@ public class ProjectSetup : EditorWindow
         fishingGame.targetSceneName = "FishingGame";
         fishingGame.hasSubItems = false;
         fishingGame.thumbnail = LoadSprite($"{previewPath}/Fishing.png");
+        fishingGame.nameClip = LoadAudioClip("Assets/Sounds/Games Names/דייג.mp3");
         EditorUtility.SetDirty(fishingGame);
 
         // ── Connect Match ──
@@ -846,6 +857,7 @@ public class ProjectSetup : EditorWindow
         connectMatch.targetSceneName = "ConnectMatch";
         connectMatch.thumbnail = LoadSprite($"{previewPath}/MatchDotsShape.png");
         connectMatch.hasSubItems = false;
+        connectMatch.nameClip = LoadAudioClip("Assets/Sounds/Games Names/חבר וצייר.mp3");
         EditorUtility.SetDirty(connectMatch);
 
         // ── Laundry Sorting ──
@@ -856,6 +868,7 @@ public class ProjectSetup : EditorWindow
         laundrySorting.targetSceneName = "LaundrySorting";
         laundrySorting.thumbnail = LoadSprite("Assets/Art/Washing Machine.png");
         laundrySorting.hasSubItems = false;
+        laundrySorting.nameClip = LoadAudioClip("Assets/Sounds/Games Names/מיון כביסה ופירות.mp3");
         EditorUtility.SetDirty(laundrySorting);
 
         // ── Bakery Game ──
@@ -866,6 +879,7 @@ public class ProjectSetup : EditorWindow
         bakery.targetSceneName = "BakeryGame";
         bakery.hasSubItems = false;
         bakery.thumbnail = LoadSprite($"{previewPath}/Bakery.png");
+        bakery.nameClip = LoadAudioClip("Assets/Sounds/Games Names/מאפייה.mp3");
         EditorUtility.SetDirty(bakery);
 
         // ── Sock Match ──
@@ -875,6 +889,7 @@ public class ProjectSetup : EditorWindow
         sockMatch.cardColor = HexColor("#80DEEA");
         sockMatch.targetSceneName = "SockMatch";
         sockMatch.hasSubItems = false;
+        sockMatch.nameClip = LoadAudioClip("Assets/Sounds/Games Names/מיון גרביים.mp3");
         EditorUtility.SetDirty(sockMatch);
 
 
@@ -887,6 +902,7 @@ public class ProjectSetup : EditorWindow
         sizeSort.targetSceneName = "SizeSort";
         sizeSort.hasSubItems = false;
         sizeSort.thumbnail = LoadSprite($"{previewPath}/SizeSort.png");
+        sizeSort.nameClip = LoadAudioClip("Assets/Sounds/Games Names/מיון לפי גודל.mp3");
         EditorUtility.SetDirty(sizeSort);
 
         // ── Color Sort ──
@@ -897,6 +913,7 @@ public class ProjectSetup : EditorWindow
         colorSort.targetSceneName = "ColorSort";
         colorSort.hasSubItems = false;
         colorSort.thumbnail = LoadSprite($"{previewPath}/Color Sorting.png");
+        colorSort.nameClip = LoadAudioClip("Assets/Sounds/Games Names/מיון צבעים.mp3");
         EditorUtility.SetDirty(colorSort);
 
         // ── Color Catch ──
@@ -907,6 +924,7 @@ public class ProjectSetup : EditorWindow
         colorCatch.targetSceneName = "ColorCatch";
         colorCatch.hasSubItems = false;
         colorCatch.thumbnail = LoadSprite($"{previewPath}/Color Catch.png");
+        colorCatch.nameClip = LoadAudioClip("Assets/Sounds/Games Names/תפוס צבעים.mp3");
         EditorUtility.SetDirty(colorCatch);
 
         // ── Fruit Puzzle ──
@@ -917,6 +935,7 @@ public class ProjectSetup : EditorWindow
         fruitPuzzle.targetSceneName = "FruitPuzzle";
         fruitPuzzle.hasSubItems = false;
         fruitPuzzle.thumbnail = LoadSprite($"{previewPath}/Cars Puzzle.png");
+        fruitPuzzle.nameClip = LoadAudioClip("Assets/Sounds/Games Names/פאזל רכבים.mp3");
         EditorUtility.SetDirty(fruitPuzzle);
 
         // ── Letter Bubbles ──
@@ -927,6 +946,7 @@ public class ProjectSetup : EditorWindow
         letterBubbles.targetSceneName = "LetterBubbles";
         letterBubbles.hasSubItems = false;
         letterBubbles.thumbnail = LoadSprite($"{previewPath}/LettersPops.png");
+        letterBubbles.nameClip = LoadAudioClip("Assets/Sounds/Games Names/בועות של אותיות.mp3");
         EditorUtility.SetDirty(letterBubbles);
 
         // ── Tower Builder (Lego) ──
@@ -937,6 +957,7 @@ public class ProjectSetup : EditorWindow
         tower.targetSceneName = "TowerBuilder";
         tower.thumbnail = LoadSprite($"{previewPath}/Lego.png");
         tower.hasSubItems = false;
+        tower.nameClip = LoadAudioClip("Assets/Sounds/Games Names/לגו.mp3");
         EditorUtility.SetDirty(tower);
 
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
