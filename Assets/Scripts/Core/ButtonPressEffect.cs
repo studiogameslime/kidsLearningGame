@@ -9,22 +9,20 @@ using System.Collections;
 public class ButtonPressEffect : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
     private Coroutine _anim;
-
-    private Vector3 OriginalScale
-    {
-        get
-        {
-            // Always use current scale (or Vector3.one if mid-animation/zero)
-            // Never cache — other animations may modify scale
-            Vector3 s = transform.localScale;
-            return s.x < 0.5f ? Vector3.one : s;
-        }
-    }
+    private Vector3 _savedScale;
+    private bool _scaleSaved;
 
     public void OnPointerDown(PointerEventData eventData)
     {
         if (_anim != null) StopCoroutine(_anim);
-        _anim = StartCoroutine(ScaleTo(OriginalScale * 0.9f, 0.08f));
+        // Save the scale BEFORE pressing down
+        if (!_scaleSaved)
+        {
+            _savedScale = transform.localScale;
+            if (_savedScale.x < 0.5f) _savedScale = Vector3.one;
+            _scaleSaved = true;
+        }
+        _anim = StartCoroutine(ScaleTo(_savedScale * 0.9f, 0.08f));
     }
 
     public void OnPointerUp(PointerEventData eventData)
@@ -50,7 +48,7 @@ public class ButtonPressEffect : MonoBehaviour, IPointerDownHandler, IPointerUpH
 
     private IEnumerator BounceBack()
     {
-        Vector3 target = OriginalScale;
+        Vector3 target = _scaleSaved ? _savedScale : Vector3.one;
         Vector3 start = transform.localScale;
         float duration = 0.15f;
         float elapsed = 0f;
@@ -64,6 +62,7 @@ public class ButtonPressEffect : MonoBehaviour, IPointerDownHandler, IPointerUpH
         }
         transform.localScale = target;
         _anim = null;
+        _scaleSaved = false;
     }
 
     void OnDisable()
@@ -73,6 +72,11 @@ public class ButtonPressEffect : MonoBehaviour, IPointerDownHandler, IPointerUpH
             StopCoroutine(_anim);
             _anim = null;
         }
-        // Don't force scale — other animations may be managing it
+        // Restore original scale if we saved it
+        if (_scaleSaved)
+        {
+            transform.localScale = _savedScale;
+            _scaleSaved = false;
+        }
     }
 }
