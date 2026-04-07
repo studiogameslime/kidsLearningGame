@@ -169,10 +169,8 @@ public class ColoringGameController : BaseMiniGame
         if (mode == ColoringModeOption.AreaFill) return true;
         if (mode == ColoringModeOption.Brush) return false;
 
-        // Auto: resolve by profile age
-        var profile = ProfileManager.ActiveProfile;
-        if (profile == null) return false;
-        return profile.age >= 2 && profile.age <= 4;
+        // Auto: default to area fill for all ages
+        return true;
     }
 
     // ── Area Fill Mode ──

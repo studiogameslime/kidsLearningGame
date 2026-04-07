@@ -307,6 +307,12 @@ public class FirebaseAnalyticsManager : MonoBehaviour
     //  SHARING
     // ══════════════════════════════════
 
+    public static void LogParentImageUploaded()
+    {
+        if (!_initialized) return;
+        FirebaseAnalytics.LogEvent("parent_image_uploaded");
+    }
+
     public static void LogDrawingShared()
     {
         if (!_initialized) return;

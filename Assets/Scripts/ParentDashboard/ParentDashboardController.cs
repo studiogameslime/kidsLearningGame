@@ -702,6 +702,8 @@ public class ParentDashboardController : MonoBehaviour
         });
         ProfileManager.Instance.Save();
 
+        FirebaseAnalyticsManager.LogParentImageUploaded();
+
         // Refresh gallery
         RefreshGalleryTab();
     }
