@@ -340,9 +340,22 @@ public class OddOneOutController : BaseMiniGame
 
         if (slotIndex == _oddIndex)
         {
-            // Correct! Play the odd animal's name
+            // Correct! Play the appropriate sound based on mode
             RecordCorrect("odd_found", _oddAnimal, isLast: true);
-            SoundLibrary.PlayAnimalName(_oddAnimal);
+            switch (_currentMode)
+            {
+                case OddMode.Animals:
+                    SoundLibrary.PlayAnimalName(_oddAnimal);
+                    break;
+                case OddMode.Numbers:
+                    int num;
+                    if (int.TryParse(_oddAnimal, out num))
+                        SoundLibrary.PlayNumberName(num);
+                    break;
+                case OddMode.Letters:
+                    SoundLibrary.PlayLetterName(_oddAnimal);
+                    break;
+            }
             PlayCorrectEffect(_slotObjects[slotIndex].GetComponent<RectTransform>());
             StartCoroutine(OnCorrectSequence(slotIndex));
         }
@@ -372,26 +385,133 @@ public class OddOneOutController : BaseMiniGame
         if (bg != null) bg.color = GameUIConstants.CorrectColor;
 
         // Play success animation on the odd animal
-        if (_animators[correctSlot] != null)
+        if (_animators != null && correctSlot < _animators.Length && _animators[correctSlot] != null)
             _animators[correctSlot].PlaySuccess();
 
-        // Dim the other cards
+        var correctRT = _slotObjects[correctSlot].GetComponent<RectTransform>();
+
+        // Big bounce on the winning card
+        StartCoroutine(WinnerBounce(correctRT));
+
+        // Spawn star particles around the winning card
+        StartCoroutine(SpawnWinStars(correctRT));
+
+        // Dim and shrink the wrong cards with stagger
         for (int i = 0; i < _animalCount; i++)
         {
             if (i == correctSlot) continue;
-            var img = _slotObjects[i].GetComponent<Image>();
-            if (img != null)
-            {
-                var c = img.color;
-                c.a = 0.4f;
-                img.color = c;
-            }
+            StartCoroutine(DimAndShrink(_slotObjects[i], 0.1f + i * 0.05f));
         }
 
-        yield return new WaitForSeconds(0.4f);
+        yield return new WaitForSeconds(1.0f);
 
-        // CompleteRound handles: sound, stats, confetti, round advance, journey check
         CompleteRound();
+    }
+
+    private IEnumerator WinnerBounce(RectTransform rt)
+    {
+        if (rt == null) yield break;
+
+        // Scale up big
+        float dur = 0.2f;
+        float elapsed = 0f;
+        while (elapsed < dur)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / dur;
+            float scale = 1f + Mathf.Sin(t * Mathf.PI) * 0.3f;
+            rt.localScale = Vector3.one * scale;
+            yield return null;
+        }
+
+        // Settle with overshoot
+        elapsed = 0f;
+        dur = 0.25f;
+        while (elapsed < dur)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / dur);
+            float scale = Mathf.Lerp(1.3f, 1.05f, t);
+            rt.localScale = Vector3.one * scale;
+            yield return null;
+        }
+        rt.localScale = Vector3.one * 1.05f;
+    }
+
+    private IEnumerator DimAndShrink(GameObject go, float delay)
+    {
+        if (go == null) yield break;
+        yield return new WaitForSeconds(delay);
+
+        var rt = go.GetComponent<RectTransform>();
+        var img = go.GetComponent<Image>();
+        float dur = 0.3f;
+        float elapsed = 0f;
+        Color startColor = img != null ? img.color : Color.white;
+        Color endColor = new Color(startColor.r, startColor.g, startColor.b, 0.3f);
+
+        while (elapsed < dur)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / dur;
+            if (rt != null) rt.localScale = Vector3.one * Mathf.Lerp(1f, 0.85f, t);
+            if (img != null) img.color = Color.Lerp(startColor, endColor, t);
+            yield return null;
+        }
+    }
+
+    private IEnumerator SpawnWinStars(RectTransform centerRT)
+    {
+        if (centerRT == null) yield break;
+
+        var parent = centerRT.parent as RectTransform;
+        if (parent == null) yield break;
+
+        for (int i = 0; i < 8; i++)
+        {
+            var starGO = new GameObject($"Star_{i}");
+            starGO.transform.SetParent(parent, false);
+            var srt = starGO.AddComponent<RectTransform>();
+            srt.anchoredPosition = centerRT.anchoredPosition;
+            srt.sizeDelta = new Vector2(Random.Range(16f, 28f), Random.Range(16f, 28f));
+            var simg = starGO.AddComponent<Image>();
+            simg.color = new Color(
+                Random.Range(0.9f, 1f),
+                Random.Range(0.7f, 1f),
+                Random.Range(0.2f, 0.5f));
+            simg.raycastTarget = false;
+
+            float angle = Random.Range(0f, Mathf.PI * 2f);
+            float speed = Random.Range(200f, 400f);
+            float lifetime = Random.Range(0.4f, 0.7f);
+            StartCoroutine(AnimateStar(srt, simg, angle, speed, lifetime));
+
+            yield return new WaitForSeconds(0.03f);
+        }
+    }
+
+    private IEnumerator AnimateStar(RectTransform rt, Image img, float angle, float speed, float lifetime)
+    {
+        Vector2 velocity = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * speed;
+        float elapsed = 0f;
+        Color startColor = img.color;
+
+        while (elapsed < lifetime)
+        {
+            elapsed += Time.deltaTime;
+            if (rt == null) yield break;
+
+            float t = elapsed / lifetime;
+            velocity.y += 300f * Time.deltaTime; // float up
+            rt.anchoredPosition += velocity * Time.deltaTime;
+            rt.Rotate(0, 0, 360f * Time.deltaTime);
+            rt.localScale = Vector3.one * Mathf.Lerp(1f, 0.1f, t);
+            img.color = new Color(startColor.r, startColor.g, startColor.b, 1f - t);
+
+            yield return null;
+        }
+
+        if (rt != null) Destroy(rt.gameObject);
     }
 
     // ── ANIMATIONS ──
