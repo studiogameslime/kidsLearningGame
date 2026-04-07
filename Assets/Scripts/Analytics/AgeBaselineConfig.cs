@@ -249,6 +249,7 @@ public static class AgeBaselineConfig
 
             new Entry(3, "laundrysorting"),
             new Entry(3, "letterbubbles", 1),  // 6 bubbles, 2 targets, slow
+            new Entry(3, "patterncopy",   3),   // 3x3 grid
 
             // new Entry(3, "pizzamaker"), // hidden for v1
         };
