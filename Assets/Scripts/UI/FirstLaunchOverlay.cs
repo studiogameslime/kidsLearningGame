@@ -79,7 +79,6 @@ public class FirstLaunchOverlay : MonoBehaviour
         var overlay = go.AddComponent<FirstLaunchOverlay>();
         overlay._isFirstLaunch = isFirstLaunch;
         overlay.Build(canvasRoot);
-        return true;
     }
 
     private void Build(Transform canvasRoot)
