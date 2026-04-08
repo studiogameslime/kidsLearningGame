@@ -72,7 +72,7 @@ public class OddOneOutController : BaseMiniGame
 
     protected override void OnGameInit()
     {
-        totalRounds = 5;
+        totalRounds = 3;
         contentCategory = SessionContent.Animals;
         playWinSound = true;
         delayBeforeNextRound = 0f; // we handle timing in OnAfterComplete

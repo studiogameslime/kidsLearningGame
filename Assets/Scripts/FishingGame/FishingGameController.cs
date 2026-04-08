@@ -29,7 +29,7 @@ public class FishingGameController : BaseMiniGame
     public float fishSpeedMin = 50f;
     public float fishSpeedMax = 100f;
 
-    private const int TotalCatches = 5;
+    private const int TotalCatches = 3;
 
     // State
     private enum FishingState { WaitingForInput, Casting, RoundTransition }

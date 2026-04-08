@@ -42,7 +42,7 @@ public class SizeSortController : BaseMiniGame
 
     protected override void OnGameInit()
     {
-        totalRounds = 5;
+        totalRounds = 3;
         isEndless = false;
 
         // Load fruit sprites

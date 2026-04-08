@@ -56,7 +56,7 @@ public class LetterGameController : BaseMiniGame
 
     protected override void OnGameInit()
     {
-        totalRounds = 5;
+        totalRounds = 3;
         playWinSound = true;
         delayBeforeNextRound = 1.5f;
         delayAfterFinalRound = 2.0f;

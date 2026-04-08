@@ -47,7 +47,7 @@ public class QuantityMatchController : BaseMiniGame
 
     protected override void OnGameInit()
     {
-        totalRounds = 5;
+        totalRounds = 3;
         contentCategory = "";
         playWinSound = true;
         delayBeforeNextRound = 1.2f;

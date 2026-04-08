@@ -71,7 +71,7 @@ public class LetterBubblesController : BaseMiniGame
     private int targetsPoppedThisRound;
     private int targetsNeededThisRound;
     private int lettersCompletedThisRound;
-    private const int LettersPerRound = 5;
+    private const int LettersPerRound = 3;
     private Sprite circleSprite;
     private List<BubbleData> activeBubbles = new List<BubbleData>();
     private HashSet<char> usedLettersThisSession = new HashSet<char>();

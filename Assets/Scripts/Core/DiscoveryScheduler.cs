@@ -18,7 +18,7 @@ public static class DiscoveryScheduler
                        + (jp.unlockedColorIds != null ? jp.unlockedColorIds.Count : 0);
         int total = jp.totalGamesCompleted;
         Debug.Log($"[Discovery] discovered={discovered}, totalGames={total}, gamesUntilNext={jp.gamesUntilNextDiscovery}");
-        if (discovered < 5) return 1;
+        if (discovered < 5) return 3; // first discoveries every 3 games (was 1 — too frequent)
         if (total < 10) return 3;
         if (total < 25) return 5;
         if (total < 50) return Random.Range(6, 8);
