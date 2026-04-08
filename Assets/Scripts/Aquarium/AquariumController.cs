@@ -73,6 +73,7 @@ public class AquariumController : MonoBehaviour
     private Button _spongeButton;
     private float _totalDirtyPixels;
     private float _cleanedPixels;
+    private float _cleanProgressAccum; // accumulates cleaned amount, awards point every threshold
     private GameObject _spongeCursor; // follows finger while cleaning
     private RectTransform _spongeCursorRT;
     private bool _dirtGrowing;
@@ -1417,8 +1418,10 @@ public class AquariumController : MonoBehaviour
                 int idx = (py * DirtyTexW + px) * 4;
                 if (_dirtyPixels[idx + 3] > 0)
                 {
-                    _cleanedPixels += _dirtyPixels[idx + 3] / 255f;
-                    _dirtyPixels[idx + 3] = 0; // clear alpha
+                    float amount = _dirtyPixels[idx + 3] / 255f;
+                    _cleanedPixels += amount;
+                    _cleanProgressAccum += amount;
+                    _dirtyPixels[idx + 3] = 0;
                     anyChanged = true;
                 }
             }
@@ -1432,6 +1435,14 @@ public class AquariumController : MonoBehaviour
             // Spawn sparkle at cleaned spot
             if (ambience != null)
                 SpawnCleanSparkle(texX, texY);
+
+            // Award 1 progress point for every 20% of dirt cleaned
+            float pointThreshold = _totalDirtyPixels > 0 ? _totalDirtyPixels / 5f : 50f;
+            while (_cleanProgressAccum >= pointThreshold && pointThreshold > 0)
+            {
+                _cleanProgressAccum -= pointThreshold;
+                AddProgress(1);
+            }
 
             // Check if mostly clean (80% threshold)
             if (_totalDirtyPixels > 0 && _cleanedPixels / _totalDirtyPixels > 0.80f)
@@ -1458,7 +1469,6 @@ public class AquariumController : MonoBehaviour
         DestroySpongeCursor();
 
         SoundLibrary.PlayRandomFeedback();
-        AddProgress(5); // cleaning = 5 points
 
         // Clear remaining dirt visually
         for (int i = 0; i < _dirtyPixels.Length; i += 4)
