@@ -635,8 +635,8 @@ public class WorldController : MonoBehaviour
         // Sand Drawing sandbox on LEFT screen
         SpawnSandbox(viewportWidth, 0f);
 
-        // Xylophone on RIGHT screen
-        SpawnXylophone(viewportWidth, centerOffset * 2f);
+        // Xylophone — hidden for now (needs sound assets)
+        // SpawnXylophone(viewportWidth, centerOffset * 2f);
 
         // Bubble Lab on LEFT screen
         // SpawnBubbleLab(viewportWidth, 0f); // hidden for now
