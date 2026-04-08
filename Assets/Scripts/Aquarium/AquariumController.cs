@@ -32,7 +32,7 @@ public class AquariumController : MonoBehaviour
     public AquariumAmbience ambience;
 
     [Header("Settings")]
-    public float fishSize = 80f;
+    public float fishSize = 120f;
     public float decorationSize = 140f;
     public float feedProximityRadius = 300f;
     public int maxFeedResponders = 4;
@@ -77,8 +77,14 @@ public class AquariumController : MonoBehaviour
     private RectTransform _spongeCursorRT;
     private bool _dirtGrowing;
     private float _dirtGrowTimer;
-    private float _dirtGrowInterval = 3f; // seconds between adding a dirt spot
-    private byte[] _dirtPattern; // full dirt pattern to grow towards
+    private float _dirtGrowInterval = 3f;
+    private byte[] _dirtPattern;
+
+    // XP system
+    private const int XpPerFeed = 50;
+    private const int XpPerBubblePop = 5;
+    private const int XpPerClean = 20;
+    private const int XpPerLevel = 100;
 
     private void Start()
     {
@@ -812,6 +818,7 @@ public class AquariumController : MonoBehaviour
     public void OnFoodEaten()
     {
         FirebaseAnalyticsManager.LogAquariumFeed();
+        AddXP(XpPerFeed);
         if (giftActive) return;
         if (!HasMoreRewards()) return;
 
@@ -1277,7 +1284,7 @@ public class AquariumController : MonoBehaviour
         _spongeCursor.transform.SetParent(gameplayArea, false);
         _spongeCursor.transform.SetAsLastSibling();
         _spongeCursorRT = _spongeCursor.AddComponent<RectTransform>();
-        _spongeCursorRT.sizeDelta = new Vector2(100, 100);
+        _spongeCursorRT.sizeDelta = new Vector2(180, 180);
         var cursorImg = _spongeCursor.AddComponent<Image>();
         var spongeSprite = Resources.Load<Sprite>("Aquarium/Sponge");
         if (spongeSprite != null) cursorImg.sprite = spongeSprite;
@@ -1371,7 +1378,6 @@ public class AquariumController : MonoBehaviour
 
         _dirtyMask.LoadRawTextureData(_dirtyPixels);
         _dirtyMask.Apply();
-        _dirtGrowing = false;
     }
 
     private void CleanAt(float texX, float texY)
@@ -1436,9 +1442,8 @@ public class AquariumController : MonoBehaviour
         _spongeButton.GetComponent<RectTransform>().localScale = Vector3.one;
         DestroySpongeCursor();
 
-        // Celebrate!
-        if (ConfettiController.Instance != null)
-            ConfettiController.Instance.Play();
+        // XP for cleaning
+        AddXP(XpPerClean);
 
         SoundLibrary.PlayRandomFeedback();
 
@@ -1451,6 +1456,36 @@ public class AquariumController : MonoBehaviour
         // Dirt grows back gradually
         _dirtGrowTimer = 0f;
         _dirtGrowing = true;
+    }
+
+    // ── XP System ──
+
+    private void AddXP(int amount)
+    {
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null) return;
+
+        int oldLevel = profile.aquarium.level;
+        profile.aquarium.xp += amount;
+
+        // Check level up
+        int newLevel = profile.aquarium.xp / XpPerLevel;
+        if (newLevel > oldLevel)
+        {
+            profile.aquarium.level = newLevel;
+            // Celebrate level up!
+            if (ConfettiController.Instance != null)
+                ConfettiController.Instance.Play();
+
+            // Award a star per level
+            if (profile.journey != null)
+            {
+                profile.journey.totalStars++;
+                profile.journey.totalGamesCompleted++;
+            }
+        }
+
+        ProfileManager.Instance.Save();
     }
 
     private void GrowDirtStep()

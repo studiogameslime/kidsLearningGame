@@ -184,6 +184,8 @@ public class AquariumCollection
     public List<AquariumItemPlacement> decorationPlacements = new List<AquariumItemPlacement>();
     public int feedProgress;                // current feeding progress toward next gift (0 to feedsPerGift)
     public int nextRewardIndex;             // index into AquariumRewardOrder for next unlock
+    public int xp;                          // total XP earned in aquarium
+    public int level;                       // current aquarium level (0-based)
 }
 
 [Serializable]
