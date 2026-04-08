@@ -80,11 +80,6 @@ public class AquariumController : MonoBehaviour
     private float _dirtGrowInterval = 3f;
     private byte[] _dirtPattern;
 
-    // XP system
-    private const int XpPerFeed = 50;
-    private const int XpPerBubblePop = 5;
-    private const int XpPerClean = 20;
-    private const int XpPerLevel = 100;
 
     private void Start()
     {
@@ -818,7 +813,6 @@ public class AquariumController : MonoBehaviour
     public void OnFoodEaten()
     {
         FirebaseAnalyticsManager.LogAquariumFeed();
-        AddXP(XpPerFeed);
         if (giftActive) return;
         if (!HasMoreRewards()) return;
 
@@ -987,6 +981,14 @@ public class AquariumController : MonoBehaviour
         {
             profile.aquarium.feedProgress = 0;
             profile.aquarium.nextRewardIndex++;
+
+            // Award a star for each aquarium gift
+            if (profile.journey != null)
+            {
+                profile.journey.totalStars++;
+                profile.journey.totalGamesCompleted++;
+            }
+
             ProfileManager.Instance.Save();
         }
 
@@ -1442,9 +1444,6 @@ public class AquariumController : MonoBehaviour
         _spongeButton.GetComponent<RectTransform>().localScale = Vector3.one;
         DestroySpongeCursor();
 
-        // XP for cleaning
-        AddXP(XpPerClean);
-
         SoundLibrary.PlayRandomFeedback();
 
         // Clear remaining dirt visually
@@ -1456,36 +1455,6 @@ public class AquariumController : MonoBehaviour
         // Dirt grows back gradually
         _dirtGrowTimer = 0f;
         _dirtGrowing = true;
-    }
-
-    // ── XP System ──
-
-    private void AddXP(int amount)
-    {
-        var profile = ProfileManager.ActiveProfile;
-        if (profile == null) return;
-
-        int oldLevel = profile.aquarium.level;
-        profile.aquarium.xp += amount;
-
-        // Check level up
-        int newLevel = profile.aquarium.xp / XpPerLevel;
-        if (newLevel > oldLevel)
-        {
-            profile.aquarium.level = newLevel;
-            // Celebrate level up!
-            if (ConfettiController.Instance != null)
-                ConfettiController.Instance.Play();
-
-            // Award a star per level
-            if (profile.journey != null)
-            {
-                profile.journey.totalStars++;
-                profile.journey.totalGamesCompleted++;
-            }
-        }
-
-        ProfileManager.Instance.Save();
     }
 
     private void GrowDirtStep()
