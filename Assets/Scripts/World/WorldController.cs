@@ -1207,48 +1207,49 @@ public class WorldController : MonoBehaviour
             var header = headerTitleTMP.transform.parent;
             if (header == null) return;
 
-            // Container
+            // Container with HorizontalLayoutGroup for auto-sizing
             var containerGO = new GameObject("StarCounter");
             containerGO.transform.SetParent(header, false);
             var containerRT = containerGO.AddComponent<RectTransform>();
             containerRT.anchorMin = new Vector2(0, 0.5f);
             containerRT.anchorMax = new Vector2(0, 0.5f);
             containerRT.pivot = new Vector2(0, 0.5f);
-            containerRT.sizeDelta = new Vector2(130, 50);
             containerRT.anchoredPosition = new Vector2(100, 0);
+            var hlg = containerGO.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing = 6;
+            hlg.childAlignment = TextAnchor.MiddleLeft;
+            hlg.childForceExpandWidth = false;
+            hlg.childForceExpandHeight = false;
+            hlg.childControlWidth = false;
+            hlg.childControlHeight = false;
+            var csf = containerGO.AddComponent<ContentSizeFitter>();
+            csf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             // Star icon sprite
             var iconGO = new GameObject("StarIcon");
             iconGO.transform.SetParent(containerGO.transform, false);
-            var iconRT = iconGO.AddComponent<RectTransform>();
-            iconRT.anchorMin = new Vector2(0, 0.5f);
-            iconRT.anchorMax = new Vector2(0, 0.5f);
-            iconRT.pivot = new Vector2(0, 0.5f);
-            iconRT.sizeDelta = new Vector2(72, 72);
-            iconRT.anchoredPosition = Vector2.zero;
             _starIconImage = iconGO.AddComponent<Image>();
             var starSprite = Resources.Load<Sprite>("Icons/star");
             if (starSprite != null) _starIconImage.sprite = starSprite;
             _starIconImage.color = Color.white;
             _starIconImage.preserveAspect = true;
             _starIconImage.raycastTarget = false;
+            var iconLE = iconGO.AddComponent<LayoutElement>();
+            iconLE.preferredWidth = 50;
+            iconLE.preferredHeight = 50;
 
             // Number text
             var textGO = new GameObject("Count");
             textGO.transform.SetParent(containerGO.transform, false);
-            var textRT = textGO.AddComponent<RectTransform>();
-            textRT.anchorMin = new Vector2(0, 0.5f);
-            textRT.anchorMax = new Vector2(0, 0.5f);
-            textRT.pivot = new Vector2(0, 0.5f);
-            textRT.sizeDelta = new Vector2(80, 50);
-            textRT.anchoredPosition = new Vector2(40, 0);
-
             _starCounterTMP = textGO.AddComponent<TMPro.TextMeshProUGUI>();
-            _starCounterTMP.fontSize = 28;
+            _starCounterTMP.fontSize = 32;
             _starCounterTMP.fontStyle = TMPro.FontStyles.Bold;
             _starCounterTMP.color = Color.white;
             _starCounterTMP.alignment = TMPro.TextAlignmentOptions.Left;
             _starCounterTMP.raycastTarget = false;
+            var textLE = textGO.AddComponent<LayoutElement>();
+            textLE.preferredHeight = 50;
         }
 
         _starCounterTMP.text = stars.ToString();
