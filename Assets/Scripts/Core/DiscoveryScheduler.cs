@@ -16,9 +16,9 @@ public static class DiscoveryScheduler
         // gets animals and the sub-item games (memory/puzzle/coloring) feel varied
         int discovered = (jp.unlockedAnimalIds != null ? jp.unlockedAnimalIds.Count : 0)
                        + (jp.unlockedColorIds != null ? jp.unlockedColorIds.Count : 0);
-        if (discovered < 5) return 1; // starter: 1 chosen color + 1 favorite animal = 2, first 3 discoveries are instant
-
         int total = jp.totalGamesCompleted;
+        Debug.Log($"[Discovery] discovered={discovered}, totalGames={total}, gamesUntilNext={jp.gamesUntilNextDiscovery}");
+        if (discovered < 5) return 1;
         if (total < 10) return 3;
         if (total < 25) return 5;
         if (total < 50) return Random.Range(6, 8);
