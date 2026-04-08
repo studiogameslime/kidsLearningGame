@@ -1200,10 +1200,10 @@ public class WorldController : MonoBehaviour
         if (shelf != null)
             ApplyLock(shelf.gameObject, FeatureUnlockManager.Feature.GameCollection);
 
-        // Aquarium
-        var aquariumIcon = FindObjectOfType<WorldAquarium>();
-        if (aquariumIcon != null)
-            ApplyLock(aquariumIcon.gameObject, FeatureUnlockManager.Feature.Aquarium);
+        // Sandbox (sand drawing)
+        var sandboxIcon = FindObjectOfType<WorldSandbox>();
+        if (sandboxIcon != null)
+            ApplyLock(sandboxIcon.gameObject, FeatureUnlockManager.Feature.Sandbox);
 
         // Sticker Tree
         var tree = FindObjectOfType<StickerTreeController>();
