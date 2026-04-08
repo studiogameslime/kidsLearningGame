@@ -264,11 +264,11 @@ public class AquariumController : MonoBehaviour
 
             if (_isDraggingSponge && Input.GetMouseButton(0))
             {
-                // Move sponge to finger position
-                Vector2 localPos;
-                RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    _spongeRT.parent as RectTransform, Input.mousePosition, null, out localPos);
-                _spongeRT.anchoredPosition = localPos;
+                // Move sponge to exact finger position
+                Vector3 worldPos;
+                RectTransformUtility.ScreenPointToWorldPointInRectangle(
+                    _spongeRT.parent as RectTransform, Input.mousePosition, null, out worldPos);
+                _spongeRT.position = worldPos;
 
                 // Clean at sponge position (convert to dirty overlay coords)
                 Vector2 dirtyLocal;

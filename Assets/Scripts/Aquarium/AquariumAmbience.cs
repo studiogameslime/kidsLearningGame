@@ -250,7 +250,7 @@ public class AquariumAmbience : MonoBehaviour
         go.transform.SetParent(areaRT, false);
 
         var rt = go.AddComponent<RectTransform>();
-        float size = Random.Range(80f, 160f);
+        float size = Random.Range(40f, 80f);
         rt.sizeDelta = new Vector2(size, size);
         rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
