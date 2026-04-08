@@ -61,6 +61,19 @@ public class AquariumController : MonoBehaviour
     private float foodScanTimer;
     private const float FoodScanInterval = 0.5f;
 
+    // Glass cleaning
+    private bool isCleaningMode;
+    private RawImage _dirtyOverlay;
+    private Texture2D _dirtyMask;
+    private byte[] _dirtyPixels;
+    private bool _dirtyMaskDirty;
+    private const int DirtyTexW = 512;
+    private const int DirtyTexH = 288;
+    private int _cleanBrushRadius = 40;
+    private Button _spongeButton;
+    private float _totalDirtyPixels;
+    private float _cleanedPixels;
+
     private void Start()
     {
         circleSprite = Resources.Load<Sprite>("Circle");
@@ -87,6 +100,8 @@ public class AquariumController : MonoBehaviour
         LoadAquariumContent();
         UpdateProgressBar(false);
         UpdateEmptyHint();
+        CreateSpongeButton();
+        CreateDirtyGlass();
 
         // Play intro voice guide
         StartCoroutine(PlayIntroGuide());
@@ -221,8 +236,23 @@ public class AquariumController : MonoBehaviour
             }
         }
 
+        // Cleaning mode — wipe dirty glass
+        if (isCleaningMode && Input.GetMouseButton(0) && _dirtyOverlay != null)
+        {
+            Vector2 localPos;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                _dirtyOverlay.rectTransform, Input.mousePosition, null, out localPos);
+            Rect rect = _dirtyOverlay.rectTransform.rect;
+            float nx = (localPos.x - rect.x) / rect.width;
+            float ny = (localPos.y - rect.y) / rect.height;
+            if (nx >= 0 && nx <= 1 && ny >= 0 && ny <= 1)
+            {
+                CleanAt(nx * DirtyTexW, ny * DirtyTexH);
+            }
+        }
+
         // Track finger position for fish attraction
-        if (Input.GetMouseButton(0) && !isPlacingFood && !giftActive)
+        if (Input.GetMouseButton(0) && !isPlacingFood && !giftActive && !isCleaningMode)
         {
             Vector2 localPos;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(
@@ -1147,5 +1177,221 @@ public class AquariumController : MonoBehaviour
         emptyHintText.gameObject.SetActive(isEmpty);
         if (isEmpty)
             HebrewText.SetText(emptyHintText, "\u05D4\u05D0\u05DB\u05D9\u05DC\u05D5 \u05D0\u05EA \u05D4\u05D3\u05D2\u05D9\u05DD \u05DB\u05D3\u05D9 \u05DC\u05E7\u05D1\u05DC \u05DE\u05EA\u05E0\u05D5\u05EA!");
+    }
+
+    // ── Glass Cleaning ──
+
+    private void CreateSpongeButton()
+    {
+        // Find the safe area (where food button lives)
+        var safeArea = foodButton != null ? foodButton.transform.parent : null;
+        if (safeArea == null) return;
+
+        var spongeGO = new GameObject("SpongeButton");
+        spongeGO.transform.SetParent(safeArea, false);
+        var spongeRT = spongeGO.AddComponent<RectTransform>();
+        spongeRT.anchorMin = new Vector2(1, 1);
+        spongeRT.anchorMax = new Vector2(1, 1);
+        spongeRT.pivot = new Vector2(1, 1);
+        spongeRT.sizeDelta = new Vector2(200, 200);
+
+        // Position below food button
+        var foodRT = foodButton.GetComponent<RectTransform>();
+        float foodBottom = foodRT.anchoredPosition.y - foodRT.sizeDelta.y;
+        spongeRT.anchoredPosition = new Vector2(foodRT.anchoredPosition.x, foodBottom - 16);
+
+        var spongeImg = spongeGO.AddComponent<Image>();
+        // Try load sponge sprite, fallback to colored square
+        var spongeSprite = Resources.Load<Sprite>("Aquarium/Sponge");
+        if (spongeSprite != null)
+        {
+            spongeImg.sprite = spongeSprite;
+            spongeImg.preserveAspect = true;
+        }
+        else
+        {
+            spongeImg.color = new Color(0.95f, 0.85f, 0.2f, 0.9f); // yellow square placeholder
+        }
+        spongeImg.raycastTarget = true;
+
+        _spongeButton = spongeGO.AddComponent<Button>();
+        _spongeButton.targetGraphic = spongeImg;
+        _spongeButton.transition = Selectable.Transition.None;
+        _spongeButton.onClick.AddListener(OnSpongePressed);
+    }
+
+    private void OnSpongePressed()
+    {
+        if (giftActive) return;
+
+        isCleaningMode = !isCleaningMode;
+        isPlacingFood = false; // exit food mode if active
+
+        if (isCleaningMode && _dirtyOverlay != null)
+        {
+            _dirtyOverlay.gameObject.SetActive(true);
+            // Highlight sponge button
+            _spongeButton.GetComponent<RectTransform>().localScale = Vector3.one * 1.15f;
+        }
+        else
+        {
+            isCleaningMode = false;
+            _spongeButton.GetComponent<RectTransform>().localScale = Vector3.one;
+        }
+    }
+
+    private void CreateDirtyGlass()
+    {
+        // Create a RawImage overlay on top of gameplay area
+        var dirtyGO = new GameObject("DirtyGlass");
+        dirtyGO.transform.SetParent(gameplayArea, false);
+        dirtyGO.transform.SetAsLastSibling();
+
+        var dirtyRT = dirtyGO.AddComponent<RectTransform>();
+        dirtyRT.anchorMin = Vector2.zero;
+        dirtyRT.anchorMax = Vector2.one;
+        dirtyRT.offsetMin = Vector2.zero;
+        dirtyRT.offsetMax = Vector2.zero;
+
+        _dirtyOverlay = dirtyGO.AddComponent<RawImage>();
+        _dirtyOverlay.raycastTarget = false; // let touches pass through to fish/decorations
+
+        // Create dirty mask texture
+        _dirtyMask = new Texture2D(DirtyTexW, DirtyTexH, TextureFormat.RGBA32, false);
+        _dirtyMask.filterMode = FilterMode.Bilinear;
+        _dirtyMask.wrapMode = TextureWrapMode.Clamp;
+        _dirtyPixels = new byte[DirtyTexW * DirtyTexH * 4];
+
+        // Generate algae/dirt pattern using Perlin noise
+        GenerateDirtyPattern();
+
+        _dirtyOverlay.texture = _dirtyMask;
+        _dirtyOverlay.color = Color.white;
+
+        // Start hidden — shown when sponge is pressed
+        dirtyGO.SetActive(false);
+    }
+
+    private void GenerateDirtyPattern()
+    {
+        _totalDirtyPixels = 0;
+        _cleanedPixels = 0;
+
+        for (int y = 0; y < DirtyTexH; y++)
+        {
+            for (int x = 0; x < DirtyTexW; x++)
+            {
+                int idx = (y * DirtyTexW + x) * 4;
+
+                // Multi-octave Perlin noise for organic algae look
+                float n1 = Mathf.PerlinNoise(x * 0.02f + 42f, y * 0.02f + 42f);
+                float n2 = Mathf.PerlinNoise(x * 0.05f + 100f, y * 0.05f + 100f) * 0.5f;
+                float n3 = Mathf.PerlinNoise(x * 0.12f + 200f, y * 0.12f + 200f) * 0.2f;
+                float n = n1 + n2 + n3;
+
+                // Only create dirt where noise is above threshold (patchy, not uniform)
+                if (n > 0.85f)
+                {
+                    float intensity = Mathf.Clamp01((n - 0.85f) / 0.4f);
+                    // Green-brown algae color with varying alpha
+                    _dirtyPixels[idx]     = (byte)(40 + intensity * 30);   // R
+                    _dirtyPixels[idx + 1] = (byte)(80 + intensity * 40);   // G
+                    _dirtyPixels[idx + 2] = (byte)(30 + intensity * 20);   // B
+                    _dirtyPixels[idx + 3] = (byte)(intensity * 120);       // A — semi-transparent
+                    _totalDirtyPixels += intensity;
+                }
+                else
+                {
+                    _dirtyPixels[idx] = 0;
+                    _dirtyPixels[idx + 1] = 0;
+                    _dirtyPixels[idx + 2] = 0;
+                    _dirtyPixels[idx + 3] = 0;
+                }
+            }
+        }
+
+        _dirtyMask.LoadRawTextureData(_dirtyPixels);
+        _dirtyMask.Apply();
+    }
+
+    private void CleanAt(float texX, float texY)
+    {
+        int cx = Mathf.RoundToInt(texX);
+        int cy = Mathf.RoundToInt(texY);
+        int r = _cleanBrushRadius;
+        bool anyChanged = false;
+
+        for (int dy = -r; dy <= r; dy++)
+        {
+            int py = cy + dy;
+            if (py < 0 || py >= DirtyTexH) continue;
+
+            for (int dx = -r; dx <= r; dx++)
+            {
+                int px = cx + dx;
+                if (px < 0 || px >= DirtyTexW) continue;
+
+                if (dx * dx + dy * dy > r * r) continue;
+
+                int idx = (py * DirtyTexW + px) * 4;
+                if (_dirtyPixels[idx + 3] > 0)
+                {
+                    _cleanedPixels += _dirtyPixels[idx + 3] / 255f;
+                    _dirtyPixels[idx + 3] = 0; // clear alpha
+                    anyChanged = true;
+                }
+            }
+        }
+
+        if (anyChanged)
+        {
+            _dirtyMask.LoadRawTextureData(_dirtyPixels);
+            _dirtyMask.Apply();
+
+            // Spawn sparkle at cleaned spot
+            if (ambience != null)
+                SpawnCleanSparkle(texX, texY);
+
+            // Check if mostly clean
+            if (_totalDirtyPixels > 0 && _cleanedPixels / _totalDirtyPixels > 0.85f)
+            {
+                OnGlassClean();
+            }
+        }
+    }
+
+    private void SpawnCleanSparkle(float texX, float texY)
+    {
+        // Convert texture coords to gameplay area local coords
+        Rect rect = _dirtyOverlay.rectTransform.rect;
+        float localX = rect.x + (texX / DirtyTexW) * rect.width;
+        float localY = rect.y + (texY / DirtyTexH) * rect.height;
+
+        SpawnBubblesAt(new Vector2(localX, localY), 1);
+    }
+
+    private void OnGlassClean()
+    {
+        isCleaningMode = false;
+        _spongeButton.GetComponent<RectTransform>().localScale = Vector3.one;
+
+        // Hide dirty overlay
+        if (_dirtyOverlay != null)
+            _dirtyOverlay.gameObject.SetActive(false);
+
+        // Celebrate!
+        if (ConfettiController.Instance != null)
+            ConfettiController.Instance.Play();
+
+        SoundLibrary.PlayRandomFeedback();
+
+        // Regenerate dirt for next time
+        StartCoroutine(RegenerateDirtAfterDelay(30f));
+    }
+
+    private System.Collections.IEnumerator RegenerateDirtAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        GenerateDirtyPattern();
     }
 }
