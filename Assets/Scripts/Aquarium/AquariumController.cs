@@ -129,19 +129,25 @@ public class AquariumController : MonoBehaviour
     {
         giftActive = true;
 
-        // Create gift in center of gameplay area
-        var giftGO = new GameObject("FirstFishGift");
-        giftGO.transform.SetParent(gameplayArea, false);
-        var giftRT = giftGO.AddComponent<RectTransform>();
-        giftRT.anchorMin = new Vector2(0.5f, 0.5f);
-        giftRT.anchorMax = new Vector2(0.5f, 0.5f);
-        giftRT.sizeDelta = new Vector2(200, 200);
-        giftRT.anchoredPosition = Vector2.zero;
+        // Create gift in center of gameplay area (same pattern as SpawnGift)
+        var go = new GameObject("FirstFishGift");
+        go.transform.SetParent(gameplayArea, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.sizeDelta = new Vector2(200, 200);
+        rt.anchoredPosition = Vector2.zero;
+        rt.localScale = Vector3.zero;
 
-        var gift = giftGO.AddComponent<GiftBoxController>();
-        gift.giftSprite = giftSprite;
+        var img = go.AddComponent<Image>();
+        img.preserveAspect = true;
+        img.raycastTarget = true;
+        if (giftSprite != null) img.sprite = giftSprite;
+
+        var gift = go.AddComponent<GiftBoxController>();
+        gift.boxImage = img;
         gift.circleSprite = circleSprite;
-        gift.onOpened = () =>
+        gift.onRewardRevealed = (g) =>
         {
             // Unlock first fish
             var profile = ProfileManager.ActiveProfile;
@@ -164,6 +170,7 @@ public class AquariumController : MonoBehaviour
         };
 
         activeGift = gift;
+        StartCoroutine(PopInGift(rt));
     }
 
     private void LoadFoodSprites()
