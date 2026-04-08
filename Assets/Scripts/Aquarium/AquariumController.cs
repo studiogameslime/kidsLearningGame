@@ -94,7 +94,11 @@ public class AquariumController : MonoBehaviour
 
     private System.Collections.IEnumerator PlayIntroGuide()
     {
+        if (!_isFirstVisit) yield break; // Only play intro on first visit
+
         yield return new WaitForSeconds(0.5f);
+
+        // "This is your aquarium"
         var introClip = SoundLibrary.AquariumIntro();
         if (introClip != null)
         {
@@ -102,24 +106,23 @@ public class AquariumController : MonoBehaviour
             yield return new WaitForSeconds(introClip.length + 0.3f);
         }
 
-        if (_isFirstVisit)
+        // "Here you can feed all your fishes"
+        var feedClip = SoundLibrary.AquariumFeedFishes();
+        if (feedClip != null)
         {
-            // First visit: show gift with first fish instead of "feed the fishes"
-            var openGiftClip = SoundLibrary.WorldOpenFirstGift();
-            if (openGiftClip != null)
-            {
-                BackgroundMusicManager.PlayOneShot(openGiftClip);
-                yield return new WaitForSeconds(openGiftClip.length + 0.2f);
-            }
-            // Spawn the first fish gift
-            SpawnFirstFishGift();
+            BackgroundMusicManager.PlayOneShot(feedClip);
+            yield return new WaitForSeconds(feedClip.length + 0.3f);
         }
-        else
+
+        // "Let's open your first gift"
+        var openGiftClip = SoundLibrary.WorldOpenFirstGift();
+        if (openGiftClip != null)
         {
-            var feedClip = SoundLibrary.AquariumFeedFishes();
-            if (feedClip != null)
-                BackgroundMusicManager.PlayOneShot(feedClip);
+            BackgroundMusicManager.PlayOneShot(openGiftClip);
+            yield return new WaitForSeconds(openGiftClip.length + 0.2f);
         }
+
+        SpawnFirstFishGift();
     }
 
     private void SpawnFirstFishGift()

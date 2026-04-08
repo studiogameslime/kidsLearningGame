@@ -1200,15 +1200,20 @@ public class WorldController : MonoBehaviour
         if (shelf != null)
             ApplyLock(shelf.gameObject, FeatureUnlockManager.Feature.GameCollection);
 
-        // Easel / Gallery
-        var easel = FindObjectOfType<WorldEasel>();
-        if (easel != null)
-            ApplyLock(easel.gameObject, FeatureUnlockManager.Feature.Gallery);
+        // Aquarium
+        var aquariumIcon = FindObjectOfType<WorldAquarium>();
+        if (aquariumIcon != null)
+            ApplyLock(aquariumIcon.gameObject, FeatureUnlockManager.Feature.Aquarium);
 
         // Sticker Tree
         var tree = FindObjectOfType<StickerTreeController>();
         if (tree != null)
             ApplyLock(tree.gameObject, FeatureUnlockManager.Feature.StickerTree);
+
+        // Easel / Gallery
+        var easel = FindObjectOfType<WorldEasel>();
+        if (easel != null)
+            ApplyLock(easel.gameObject, FeatureUnlockManager.Feature.Gallery);
     }
 
     private void ApplyLock(GameObject featureGO, FeatureUnlockManager.Feature feature)

@@ -10,15 +10,17 @@ public static class FeatureUnlockManager
     public enum Feature
     {
         GameCollection,  // always unlocked
-        Gallery,         // 10 stars
-        StickerTree,     // 15 stars
+        Aquarium,        // 5 stars
+        StickerTree,     // 7 stars
+        Gallery,         // 15 stars
     }
 
     private static readonly Dictionary<Feature, int> Thresholds = new Dictionary<Feature, int>
     {
         { Feature.GameCollection, 0 },
-        { Feature.Gallery,        10 },
-        { Feature.StickerTree,    15 },
+        { Feature.Aquarium,       5 },
+        { Feature.StickerTree,    7 },
+        { Feature.Gallery,        15 },
     };
 
     /// <summary>Returns whether the feature is unlocked for the active profile.</summary>
