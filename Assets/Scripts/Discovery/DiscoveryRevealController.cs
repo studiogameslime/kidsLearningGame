@@ -450,11 +450,59 @@ public class DiscoveryRevealController : MonoBehaviour
         if (ConfettiController.Instance != null)
             ConfettiController.Instance.PlayBig();
 
-        // Wait then return to world (gift box will appear there)
+        // Wait then return to the game (or auto-switch to another)
         yield return new WaitForSeconds(3f);
 
         isComplete = true;
-        NavigationManager.GoToHome();
+        ReturnToGame();
+    }
+
+    private void ReturnToGame()
+    {
+        var currentGame = GameContext.CurrentGame;
+
+        // If auto-switch is enabled, pick a different game
+        var profile = ProfileManager.ActiveProfile;
+        if (profile != null && profile.autoSwitchGames && currentGame != null)
+        {
+            var db = Resources.Load<GameDatabase>("GameDatabase");
+            if (db == null)
+            {
+                var dbs = Resources.FindObjectsOfTypeAll<GameDatabase>();
+                if (dbs.Length > 0) db = dbs[0];
+            }
+
+            if (db != null && db.games != null)
+            {
+                var candidates = new System.Collections.Generic.List<GameItemData>();
+                foreach (var game in db.games)
+                {
+                    if (game == null || game.id == currentGame.id) continue;
+                    if (game.id == "coloring") continue; // skip sandboxes
+                    var vis = GameVisibilityService.Evaluate(profile, game);
+                    if (vis.isVisible) candidates.Add(game);
+                }
+
+                if (candidates.Count > 0)
+                {
+                    var nextGame = candidates[Random.Range(0, candidates.Count)];
+                    GameContext.CurrentGame = nextGame;
+                    GameContext.CurrentSelection = null;
+                    BubbleTransition.LoadScene(nextGame.targetSceneName);
+                    return;
+                }
+            }
+        }
+
+        // Default: return to the same game
+        if (currentGame != null)
+        {
+            BubbleTransition.LoadScene(currentGame.targetSceneName);
+        }
+        else
+        {
+            NavigationManager.GoToHome();
+        }
     }
 
     private IEnumerator BounceReveal(RectTransform rt)
