@@ -70,7 +70,7 @@ public class SimonGameController : BaseMiniGame
     protected override void OnGameInit()
     {
         isEndless = true;
-        playConfettiOnRoundWin = false;
+        playConfettiOnRoundWin = true;
         playConfettiOnSessionWin = false;
         delayBeforeNextRound = 0f;
 

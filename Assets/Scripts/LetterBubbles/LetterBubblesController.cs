@@ -99,7 +99,7 @@ public class LetterBubblesController : BaseMiniGame
     protected override void OnGameInit()
     {
         isEndless = true;
-        playConfettiOnRoundWin = false;
+        playConfettiOnRoundWin = true;
         playConfettiOnSessionWin = true;
         playWinSound = true;
         delayBeforeNextRound = 0.3f;

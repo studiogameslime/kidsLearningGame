@@ -98,6 +98,7 @@ public class ColorCatchController : BaseMiniGame
     {
         isEndless = true;
         totalRounds = 1;
+        playConfettiOnRoundWin = true;
 
         itemSprites = Resources.LoadAll<Sprite>("ColorSort/item");
         var basketSprites = Resources.LoadAll<Sprite>("ColorSort/ColoredBasket");

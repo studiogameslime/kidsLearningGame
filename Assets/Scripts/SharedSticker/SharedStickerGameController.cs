@@ -39,7 +39,7 @@ public class SharedStickerGameController : BaseMiniGame
     protected override void OnGameInit()
     {
         isEndless = true;
-        playConfettiOnRoundWin = false;   // we manually play confetti every 3 rounds
+        playConfettiOnRoundWin = true;
         playConfettiOnSessionWin = false;  // endless game, no session win
         internalRound = 0;
     }

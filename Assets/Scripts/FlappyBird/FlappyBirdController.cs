@@ -68,9 +68,9 @@ public class FlappyBirdController : BaseMiniGame
     protected override void OnGameInit()
     {
         isEndless = true;
-        playConfettiOnRoundWin = false;
+        playConfettiOnRoundWin = true;
         playConfettiOnSessionWin = false;
-        playWinSound = false;
+        playWinSound = true;
         delayBeforeNextRound = 0f;
     }
 
@@ -423,8 +423,15 @@ public class FlappyBirdController : BaseMiniGame
             ProfileManager.Instance?.Save();
         }
 
-        // Death visuals then restart (don't use CompleteRound — flappy manages its own loop)
-        StartCoroutine(DeathSequence());
+        // Award star via CompleteRound if scored, otherwise just restart
+        if (score >= 1)
+        {
+            CompleteRound();
+        }
+        else
+        {
+            StartCoroutine(DeathSequence());
+        }
     }
 
     private IEnumerator DeathSequence()

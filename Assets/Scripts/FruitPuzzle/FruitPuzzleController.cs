@@ -37,6 +37,7 @@ public class FruitPuzzleController : BaseMiniGame
     {
         isEndless = true;
         totalRounds = 1;
+        playConfettiOnRoundWin = true;
         vehicleSprites = Resources.LoadAll<Sprite>("VehiclePuzzle/cars");
     }
 

@@ -50,6 +50,7 @@ public class ColorSortController : BaseMiniGame
     {
         isEndless = true;
         totalRounds = 1;
+        playConfettiOnRoundWin = true;
 
         // Load sprites
         itemSprites = Resources.LoadAll<Sprite>("ColorSort/item");

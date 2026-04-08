@@ -104,7 +104,7 @@ public class LetterTrainController : BaseMiniGame
     {
         totalRounds = 1;
         isEndless = true;
-        playConfettiOnRoundWin = false; // we trigger confetti manually before train exit
+        playConfettiOnRoundWin = true;
         playWinSound = true;
         delayBeforeNextRound = 0.5f;
     }
