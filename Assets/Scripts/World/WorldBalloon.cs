@@ -123,7 +123,12 @@ public class WorldBalloon : MonoBehaviour
 
     private void Respawn()
     {
-        float x = Random.Range(padding, skyWidth - padding);
+        // Respawn near original X position (same screen area, not random across all screens)
+        float screenWidth = skyWidth / 3f; // 3 screens
+        float originalScreen = Mathf.Floor(basePosition.x / screenWidth);
+        float screenMinX = originalScreen * screenWidth + padding;
+        float screenMaxX = (originalScreen + 1f) * screenWidth - padding;
+        float x = Random.Range(screenMinX, screenMaxX);
         float y = Random.Range(skyHeight * 0.2f, skyHeight * 0.8f);
         basePosition = new Vector2(x, y);
         rt.anchoredPosition = basePosition;
