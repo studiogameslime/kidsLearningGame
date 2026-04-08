@@ -1196,6 +1196,7 @@ public class WorldController : MonoBehaviour
     }
 
     private TMPro.TextMeshProUGUI _starCounterTMP;
+    private Image _starIconImage;
 
     private void CreateOrUpdateStarCounter(UserProfile profile)
     {
@@ -1203,29 +1204,61 @@ public class WorldController : MonoBehaviour
 
         if (_starCounterTMP == null)
         {
-            // Find the header (TopBar) — parent of headerTitleTMP
             var header = headerTitleTMP.transform.parent;
             if (header == null) return;
 
-            // Star container on left side
-            var starGO = new UnityEngine.GameObject("StarCounter");
-            starGO.transform.SetParent(header, false);
-            var starRT = starGO.AddComponent<UnityEngine.RectTransform>();
-            starRT.anchorMin = new UnityEngine.Vector2(0, 0.5f);
-            starRT.anchorMax = new UnityEngine.Vector2(0, 0.5f);
-            starRT.pivot = new UnityEngine.Vector2(0, 0.5f);
-            starRT.sizeDelta = new UnityEngine.Vector2(120, 50);
-            starRT.anchoredPosition = new UnityEngine.Vector2(100, 0); // after home button
+            // Container
+            var containerGO = new GameObject("StarCounter");
+            containerGO.transform.SetParent(header, false);
+            var containerRT = containerGO.AddComponent<RectTransform>();
+            containerRT.anchorMin = new Vector2(0, 0.5f);
+            containerRT.anchorMax = new Vector2(0, 0.5f);
+            containerRT.pivot = new Vector2(0, 0.5f);
+            containerRT.sizeDelta = new Vector2(130, 50);
+            containerRT.anchoredPosition = new Vector2(100, 0);
 
-            _starCounterTMP = starGO.AddComponent<TMPro.TextMeshProUGUI>();
+            // Star icon sprite
+            var iconGO = new GameObject("StarIcon");
+            iconGO.transform.SetParent(containerGO.transform, false);
+            var iconRT = iconGO.AddComponent<RectTransform>();
+            iconRT.anchorMin = new Vector2(0, 0.5f);
+            iconRT.anchorMax = new Vector2(0, 0.5f);
+            iconRT.pivot = new Vector2(0, 0.5f);
+            iconRT.sizeDelta = new Vector2(36, 36);
+            iconRT.anchoredPosition = Vector2.zero;
+            _starIconImage = iconGO.AddComponent<Image>();
+            var starSprite = Resources.Load<Sprite>("Icons/star");
+            if (starSprite == null)
+            {
+                // Try Art/Icons path
+                var allStars = Resources.LoadAll<Sprite>("Journey");
+                foreach (var s in allStars)
+                    if (s.name.Contains("star") && !s.name.Contains("outline")) { starSprite = s; break; }
+            }
+            if (starSprite != null) _starIconImage.sprite = starSprite;
+            _starIconImage.color = new Color(1f, 0.85f, 0.1f); // golden yellow
+            _starIconImage.preserveAspect = true;
+            _starIconImage.raycastTarget = false;
+
+            // Number text
+            var textGO = new GameObject("Count");
+            textGO.transform.SetParent(containerGO.transform, false);
+            var textRT = textGO.AddComponent<RectTransform>();
+            textRT.anchorMin = new Vector2(0, 0.5f);
+            textRT.anchorMax = new Vector2(0, 0.5f);
+            textRT.pivot = new Vector2(0, 0.5f);
+            textRT.sizeDelta = new Vector2(80, 50);
+            textRT.anchoredPosition = new Vector2(40, 0);
+
+            _starCounterTMP = textGO.AddComponent<TMPro.TextMeshProUGUI>();
             _starCounterTMP.fontSize = 28;
             _starCounterTMP.fontStyle = TMPro.FontStyles.Bold;
-            _starCounterTMP.color = new UnityEngine.Color(1f, 0.95f, 0.4f); // golden
+            _starCounterTMP.color = Color.white;
             _starCounterTMP.alignment = TMPro.TextAlignmentOptions.Left;
             _starCounterTMP.raycastTarget = false;
         }
 
-        _starCounterTMP.text = $"\u2B50 {stars}"; // ⭐ 5
+        _starCounterTMP.text = stars.ToString();
     }
 
     private void ApplyFeatureLocks()
