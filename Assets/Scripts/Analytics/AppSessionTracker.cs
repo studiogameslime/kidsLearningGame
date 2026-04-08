@@ -67,13 +67,5 @@ public class AppSessionTracker : MonoBehaviour
         _logged = true;
         float duration = Time.realtimeSinceStartup - _sessionStartTime;
         FirebaseAnalyticsManager.LogAppSessionDuration(duration);
-
-        // TEST: notification 5 minutes after app closes
-        NotificationService.Instance?.ScheduleOneShot(
-            "test_5min",
-            "\u05D4\u05D9\u05D9 \u05D6\u05D4 \u05D8\u05E1\u05D8!", // היי זה טסט!
-            "\u05D4\u05D4\u05EA\u05E8\u05D0\u05D4 \u05E2\u05D5\u05D1\u05D3\u05EA!", // ההתראה עובדת!
-            delaySeconds: 300 // 5 minutes
-        );
     }
 }
