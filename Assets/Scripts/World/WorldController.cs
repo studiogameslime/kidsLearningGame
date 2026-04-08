@@ -87,8 +87,8 @@ public class WorldController : MonoBehaviour
         BuildAnimalSpriteLookup();
         UpdateProfileAvatar();
         UpdateHeaderTitle();
-        ApplyFeatureLocks();
         BuildWorld();
+        ApplyFeatureLocks();
 
         // Wire screen navigation arrows
         if (arrowLeftButton != null) arrowLeftButton.onClick.AddListener(GoScreenLeft);
