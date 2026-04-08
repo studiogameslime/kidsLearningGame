@@ -1227,14 +1227,10 @@ public class WorldController : MonoBehaviour
             iconRT.sizeDelta = new Vector2(36, 36);
             iconRT.anchoredPosition = Vector2.zero;
             _starIconImage = iconGO.AddComponent<Image>();
-            var starSprite = Resources.Load<Sprite>("Icons/star");
-            if (starSprite == null)
-            {
-                // Try Art/Icons path
-                var allStars = Resources.LoadAll<Sprite>("Journey");
-                foreach (var s in allStars)
-                    if (s.name.Contains("star") && !s.name.Contains("outline")) { starSprite = s; break; }
-            }
+            Sprite starSprite = null;
+            var starSprites = Resources.LoadAll<Sprite>("Icons/star");
+            if (starSprites != null && starSprites.Length > 0)
+                starSprite = starSprites[0];
             if (starSprite != null) _starIconImage.sprite = starSprite;
             _starIconImage.color = new Color(1f, 0.85f, 0.1f); // golden yellow
             _starIconImage.preserveAspect = true;
