@@ -225,6 +225,7 @@ public class WorldInputHandler : MonoBehaviour
             var aquarium = go.GetComponent<WorldAquarium>();
             if (aquarium != null)
             {
+                if (!FeatureUnlockManager.IsUnlocked(FeatureUnlockManager.Feature.Aquarium)) return;
                 aquarium.OnTap();
                 return;
             }
@@ -233,6 +234,7 @@ public class WorldInputHandler : MonoBehaviour
             var sandbox = go.GetComponent<WorldSandbox>();
             if (sandbox != null)
             {
+                if (!FeatureUnlockManager.IsUnlocked(FeatureUnlockManager.Feature.Sandbox)) return;
                 sandbox.OnTap();
                 return;
             }
