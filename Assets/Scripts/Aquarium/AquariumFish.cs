@@ -34,7 +34,7 @@ public class AquariumFish : MonoBehaviour
     // Finger attraction — fish swim toward finger when nearby
     public static bool FingerActive;
     public static Vector2 FingerPos;
-    private const float AttractionRadius = 250f;
+    private const float AttractionRadius = 750f;
     private const float AttractionSpeed = 1.3f;
 
     private void Awake()
