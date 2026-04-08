@@ -84,6 +84,7 @@ public class AquariumController : MonoBehaviour
     private void Start()
     {
         circleSprite = Resources.Load<Sprite>("Circle");
+        if (ambience != null) ambience.controller = this;
         if (giftSprite == null)
         {
             var giftSprites = Resources.LoadAll<Sprite>("Gift");
@@ -819,7 +820,19 @@ public class AquariumController : MonoBehaviour
         var profile = ProfileManager.ActiveProfile;
         if (profile == null) return;
 
-        profile.aquarium.feedProgress++;
+        AddProgress(10); // feeding = 10 points
+    }
+
+    /// <summary>Add points to aquarium progress bar. Feeding=10, Bubble=1, Cleaning=5.</summary>
+    public void AddProgress(int points)
+    {
+        if (giftActive) return;
+        if (!HasMoreRewards()) return;
+
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null) return;
+
+        profile.aquarium.feedProgress += points;
         ProfileManager.Instance.Save();
 
         UpdateProgressBar(true);
@@ -1118,9 +1131,9 @@ public class AquariumController : MonoBehaviour
     {
         var profile = ProfileManager.ActiveProfile;
         int rewardIndex = profile?.aquarium?.nextRewardIndex ?? 0;
-        // First reward after 2 feeds, then 5, 7, 9, 11...
-        if (rewardIndex <= 1) return 2;
-        return Mathf.Min(baseFeedsPerGift + (rewardIndex - 1) * 2, 20);
+        // Points needed: first=20, then 50, 70, 90... (x10 of old system)
+        if (rewardIndex <= 1) return 20;
+        return Mathf.Min((baseFeedsPerGift + (rewardIndex - 1) * 2) * 10, 200);
     }
 
     private bool HasMoreRewards()
@@ -1445,6 +1458,7 @@ public class AquariumController : MonoBehaviour
         DestroySpongeCursor();
 
         SoundLibrary.PlayRandomFeedback();
+        AddProgress(5); // cleaning = 5 points
 
         // Clear remaining dirt visually
         for (int i = 0; i < _dirtyPixels.Length; i += 4)

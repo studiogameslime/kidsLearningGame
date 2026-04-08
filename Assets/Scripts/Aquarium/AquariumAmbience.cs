@@ -10,6 +10,7 @@ public class AquariumAmbience : MonoBehaviour
 {
     public RectTransform areaRT;
     public Sprite circleSprite;
+    public AquariumController controller;
 
     private float bubbleTimer;
     private float sparkleTimer;
@@ -291,6 +292,7 @@ public class AquariumAmbience : MonoBehaviour
         // Add pop behavior
         var popper = go.AddComponent<PoppableBubble>();
         popper.ambience = this;
+        popper.controller = controller;
 
         StartCoroutine(RiseBubble(rt, img, bounds));
     }

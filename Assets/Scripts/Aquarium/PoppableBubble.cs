@@ -8,6 +8,7 @@ using UnityEngine.EventSystems;
 public class PoppableBubble : MonoBehaviour, IPointerClickHandler
 {
     public AquariumAmbience ambience;
+    public AquariumController controller;
 
     public void OnPointerClick(PointerEventData eventData)
     {
@@ -21,6 +22,7 @@ public class PoppableBubble : MonoBehaviour, IPointerClickHandler
 
         SoundLibrary.PlayBubblePop();
         FirebaseAnalyticsManager.LogAquariumBubblePopped();
+        if (controller != null) controller.AddProgress(1); // bubble = 1 point
         Destroy(gameObject);
     }
 }
