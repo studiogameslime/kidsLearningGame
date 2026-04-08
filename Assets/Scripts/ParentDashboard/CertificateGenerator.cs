@@ -128,6 +128,7 @@ public static class CertificateGenerator
         if (string.IsNullOrEmpty(filePath)) yield break;
 
         // ── Share ──
+        FirebaseAnalyticsManager.LogCertificateShared();
         string fallbackText = BuildFallbackText(data);
 
         #if UNITY_ANDROID && !UNITY_EDITOR

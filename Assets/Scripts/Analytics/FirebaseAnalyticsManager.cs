@@ -313,6 +313,12 @@ public class FirebaseAnalyticsManager : MonoBehaviour
         FirebaseAnalytics.LogEvent("parent_image_uploaded");
     }
 
+    public static void LogCertificateShared()
+    {
+        if (!_initialized) return;
+        FirebaseAnalytics.LogEvent("certificate_shared");
+    }
+
     public static void LogDrawingShared()
     {
         if (!_initialized) return;
