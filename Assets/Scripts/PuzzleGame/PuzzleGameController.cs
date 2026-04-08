@@ -408,7 +408,6 @@ public class PuzzleGameController : BaseMiniGame
         Stats?.RecordCorrect();
         Stats?.SetCustom("piecesPlaced", placedCount + 1);
         if (pieceRT != null) PlayCorrectEffect(pieceRT);
-        SoundLibrary.PlayRandomFeedback();
         placedCount++;
         if (placedCount >= totalPieces)
         {

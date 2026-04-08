@@ -337,7 +337,6 @@ public class FlappyBirdController : BaseMiniGame
                 pipes[i] = pair;
                 score++;
                 Stats?.RecordCorrect();
-                SoundLibrary.PlayRandomFeedback();
             }
 
             // Collision check (AABB) — tight to visible pipe

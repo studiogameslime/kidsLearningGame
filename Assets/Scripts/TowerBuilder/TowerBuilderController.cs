@@ -595,7 +595,6 @@ public class TowerBuilderController : BaseMiniGame
             brick.SnapToSlot(slot.slotRT, this);
             Stats?.RecordCorrect();
             PlayCorrectEffect(brickRT);
-            SoundLibrary.PlayRandomFeedback();
             placedCount++;
 
             if (placedCount >= currentLevel.bricks.Length)

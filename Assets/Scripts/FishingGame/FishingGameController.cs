@@ -291,8 +291,6 @@ public class FishingGameController : BaseMiniGame
         Stats?.RecordCorrect("catch", fish.fishId);
         Stats?.SetCustom($"round{successfulCatches}_time", Time.time - roundStartTime);
 
-        SoundLibrary.PlayRandomFeedback();
-
         // Pull fish to rod tip (convert rod position to fish's parent space)
         Vector2 rodInFishSpace = GetPositionInParent(rodTipRT, swimArea);
         fishingLine.PullFish(fish.rt, rodInFishSpace, 0.8f, () =>
