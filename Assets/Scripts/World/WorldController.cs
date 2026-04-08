@@ -635,6 +635,9 @@ public class WorldController : MonoBehaviour
         // Sand Drawing sandbox on LEFT screen
         SpawnSandbox(viewportWidth, 0f);
 
+        // Xylophone on RIGHT screen
+        SpawnXylophone(viewportWidth, centerOffset * 2f);
+
         // Bubble Lab on LEFT screen
         // SpawnBubbleLab(viewportWidth, 0f); // hidden for now
 
@@ -949,6 +952,43 @@ public class WorldController : MonoBehaviour
 
         var sandbox = go.AddComponent<WorldSandbox>();
         sandbox.circleSprite = circleSprite;
+    }
+
+    private void SpawnXylophone(float screenWidth, float xOffset = 0f)
+    {
+        if (grassArea == null) return;
+
+        float xyloSize = 200f;
+
+        var shadowGO = new GameObject("XylophoneShadow");
+        shadowGO.transform.SetParent(grassArea, false);
+        var shadowRT = shadowGO.AddComponent<RectTransform>();
+        shadowRT.anchorMin = Vector2.zero;
+        shadowRT.anchorMax = Vector2.zero;
+        shadowRT.pivot = new Vector2(0.5f, 0.5f);
+        shadowRT.sizeDelta = new Vector2(xyloSize * 0.7f, xyloSize * 0.18f);
+        shadowRT.anchoredPosition = new Vector2(xOffset + screenWidth * 0.5f, 134f);
+        var shadowImg = shadowGO.AddComponent<Image>();
+        if (circleSprite != null) shadowImg.sprite = circleSprite;
+        shadowImg.color = new Color(0f, 0f, 0f, 0.12f);
+        shadowImg.raycastTarget = false;
+
+        var go = new GameObject("Xylophone");
+        go.transform.SetParent(grassArea, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.zero;
+        rt.pivot = new Vector2(0.5f, 0f);
+        rt.sizeDelta = new Vector2(xyloSize, xyloSize);
+        rt.anchoredPosition = new Vector2(xOffset + screenWidth * 0.5f, 139f);
+
+        var img = go.AddComponent<Image>();
+        if (circleSprite != null) img.sprite = circleSprite;
+        img.color = new Color(0.95f, 0.6f, 0.2f); // orange placeholder
+        img.preserveAspect = true;
+        img.raycastTarget = true;
+
+        go.AddComponent<WorldXylophone>();
     }
 
     private void SpawnBubbleLab(float screenWidth, float xOffset = 0f)

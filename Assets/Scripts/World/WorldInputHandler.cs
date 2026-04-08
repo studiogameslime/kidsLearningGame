@@ -239,6 +239,14 @@ public class WorldInputHandler : MonoBehaviour
                 return;
             }
 
+            // Check for xylophone
+            var xylophone = go.GetComponent<WorldXylophone>();
+            if (xylophone != null)
+            {
+                xylophone.OnTap();
+                return;
+            }
+
             // Check for bubble lab
             var bubbleLab = go.GetComponent<WorldBubbleLab>();
             if (bubbleLab != null)
