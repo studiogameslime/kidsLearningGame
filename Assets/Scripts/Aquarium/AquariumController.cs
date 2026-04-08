@@ -33,7 +33,7 @@ public class AquariumController : MonoBehaviour
 
     [Header("Settings")]
     public float fishSize = 80f;
-    public float decorationSize = 70f;
+    public float decorationSize = 140f;
     public float feedProximityRadius = 300f;
     public int maxFeedResponders = 4;
     public int baseFeedsPerGift = 5;
@@ -219,6 +219,20 @@ public class AquariumController : MonoBehaviour
                 // Interactive taps (fish > decoration > water)
                 HandleInteractiveTap(Input.mousePosition);
             }
+        }
+
+        // Track finger position for fish attraction
+        if (Input.GetMouseButton(0) && !isPlacingFood && !giftActive)
+        {
+            Vector2 localPos;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                gameplayArea, Input.mousePosition, null, out localPos);
+            AquariumFish.FingerActive = true;
+            AquariumFish.FingerPos = localPos;
+        }
+        else
+        {
+            AquariumFish.FingerActive = false;
         }
 
         // Periodic food scanning — fish detect food while swimming near it

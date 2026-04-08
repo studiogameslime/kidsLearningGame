@@ -249,7 +249,7 @@ public class AquariumAmbience : MonoBehaviour
         go.transform.SetParent(areaRT, false);
 
         var rt = go.AddComponent<RectTransform>();
-        float size = Random.Range(45f, 85f);
+        float size = Random.Range(80f, 160f);
         rt.sizeDelta = new Vector2(size, size);
         rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
@@ -258,7 +258,7 @@ public class AquariumAmbience : MonoBehaviour
         // Main bubble
         var img = go.AddComponent<Image>();
         img.sprite = circleSprite;
-        img.color = new Color(0.85f, 0.95f, 1f, 0.4f);
+        img.color = new Color(0.85f, 0.95f, 1f, 0.25f);
         img.raycastTarget = true; // tappable!
 
         // Shine highlight

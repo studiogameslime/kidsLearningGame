@@ -31,6 +31,12 @@ public class AquariumFish : MonoBehaviour
     public AquariumFood TargetFood => targetFood;
     public System.Action onFinishedEating;
 
+    // Finger attraction — fish swim toward finger when nearby
+    public static bool FingerActive;
+    public static Vector2 FingerPos;
+    private const float AttractionRadius = 250f;
+    private const float AttractionSpeed = 1.3f;
+
     private void Awake()
     {
         rt = GetComponent<RectTransform>();
@@ -62,9 +68,22 @@ public class AquariumFish : MonoBehaviour
             PickNewTarget();
         }
 
-        Vector2 target = (isChasing && targetFood != null)
-            ? targetFood.GetComponent<RectTransform>().anchoredPosition + foodOffset
-            : targetPos;
+        // Priority: food > finger > random swim target
+        Vector2 target;
+        bool attractedToFinger = false;
+        if (isChasing && targetFood != null)
+        {
+            target = targetFood.GetComponent<RectTransform>().anchoredPosition + foodOffset;
+        }
+        else if (FingerActive && Vector2.Distance(rt.anchoredPosition, FingerPos) < AttractionRadius)
+        {
+            target = FingerPos;
+            attractedToFinger = true;
+        }
+        else
+        {
+            target = targetPos;
+        }
 
         Vector2 pos = rt.anchoredPosition;
         Vector2 dir = target - pos;
@@ -85,7 +104,7 @@ public class AquariumFish : MonoBehaviour
             return;
         }
 
-        float speed = isChasing ? baseSpeed * 1.5f : baseSpeed;
+        float speed = isChasing ? baseSpeed * 1.5f : attractedToFinger ? baseSpeed * AttractionSpeed : baseSpeed;
         float step = speed * Time.deltaTime;
         Vector2 move = dir.normalized * Mathf.Min(step, dist);
 
