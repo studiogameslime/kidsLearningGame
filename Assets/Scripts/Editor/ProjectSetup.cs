@@ -262,8 +262,11 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Fruit Puzzle…", 0.998f);
             FruitPuzzleSetup.RunSetupSilent();
 
-            EditorUtility.DisplayProgressBar("Setting up project…", "Building Letter Bubbles…", 0.999f);
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Letter Bubbles…", 0.998f);
             LetterBubblesSetup.RunSetupSilent();
+
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Xylophone…", 0.999f);
+            XylophoneSetup.RunSetupSilent();
 
             // Color Studio — hidden for now
             // EditorUtility.DisplayProgressBar("Setting up project…", "Building Color Studio…", 0.9995f);
@@ -1591,6 +1594,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/LetterBubbles.unity",
             $"{ScenesPath}/SandDrawingScene.unity",
             $"{ScenesPath}/BubbleLabScene.unity",
+            $"{ScenesPath}/XylophoneScene.unity",
             // $"{ScenesPath}/ColorStudioScene.unity", // hidden for now
         };
 

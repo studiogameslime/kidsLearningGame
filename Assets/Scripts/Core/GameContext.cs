@@ -116,6 +116,13 @@ public static class NavigationManager
         BubbleTransition.LoadScene("BubbleLabScene");
     }
 
+    /// <summary>Go to the Xylophone sandbox.</summary>
+    public static void GoToXylophone()
+    {
+        GameContext.Clear();
+        BubbleTransition.LoadScene("XylophoneScene");
+    }
+
     /// <summary>Go to the drawing gallery.</summary>
     public static void GoToDrawingGallery()
     {
