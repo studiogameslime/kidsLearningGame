@@ -1229,7 +1229,7 @@ public class WorldController : MonoBehaviour
             _starIconImage = iconGO.AddComponent<Image>();
             var starSprite = Resources.Load<Sprite>("Icons/star");
             if (starSprite != null) _starIconImage.sprite = starSprite;
-            _starIconImage.color = new Color(1f, 0.85f, 0.1f); // golden yellow
+            _starIconImage.color = Color.white;
             _starIconImage.preserveAspect = true;
             _starIconImage.raycastTarget = false;
 
