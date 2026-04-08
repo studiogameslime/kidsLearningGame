@@ -62,7 +62,6 @@ public class AquariumController : MonoBehaviour
     private const float FoodScanInterval = 0.5f;
 
     // Glass cleaning
-    private bool isCleaningMode;
     private RawImage _dirtyOverlay;
     private Texture2D _dirtyMask;
     private byte[] _dirtyPixels;
@@ -245,37 +244,54 @@ public class AquariumController : MonoBehaviour
             }
         }
 
-        // Cleaning mode — wipe dirty glass with sponge cursor
-        if (isCleaningMode && _dirtyOverlay != null)
+        // Draggable sponge — detect drag start on sponge, drag to clean, release to snap back
+        if (_spongeRT != null && _dirtyOverlay != null)
         {
-            if (Input.GetMouseButton(0))
+            if (Input.GetMouseButtonDown(0) && !_isDraggingSponge)
             {
+                // Check if touching the sponge
+                Vector2 spongeLocal;
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    _spongeRT, Input.mousePosition, null, out spongeLocal);
+                if (_spongeRT.rect.Contains(spongeLocal))
+                {
+                    _isDraggingSponge = true;
+                    isPlacingFood = false;
+                    _spongeRT.SetAsLastSibling();
+                    _spongeRT.localScale = Vector3.one * 1.1f;
+                }
+            }
+
+            if (_isDraggingSponge && Input.GetMouseButton(0))
+            {
+                // Move sponge to finger position
                 Vector2 localPos;
                 RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    _dirtyOverlay.rectTransform, Input.mousePosition, null, out localPos);
+                    _spongeRT.parent as RectTransform, Input.mousePosition, null, out localPos);
+                _spongeRT.anchoredPosition = localPos;
+
+                // Clean at sponge position (convert to dirty overlay coords)
+                Vector2 dirtyLocal;
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    _dirtyOverlay.rectTransform, Input.mousePosition, null, out dirtyLocal);
                 Rect rect = _dirtyOverlay.rectTransform.rect;
-                float nx = (localPos.x - rect.x) / rect.width;
-                float ny = (localPos.y - rect.y) / rect.height;
-
-                // Show and move sponge cursor
-                if (_spongeCursor != null)
-                {
-                    _spongeCursor.SetActive(true);
-                    _spongeCursorRT.anchoredPosition = localPos;
-                }
-
+                float nx = (dirtyLocal.x - rect.x) / rect.width;
+                float ny = (dirtyLocal.y - rect.y) / rect.height;
                 if (nx >= 0 && nx <= 1 && ny >= 0 && ny <= 1)
                     CleanAt(nx * DirtyTexW, ny * DirtyTexH);
             }
-            else
+
+            if (_isDraggingSponge && Input.GetMouseButtonUp(0))
             {
-                // Hide sponge cursor when finger is up
-                if (_spongeCursor != null) _spongeCursor.SetActive(false);
+                // Snap sponge back home
+                _isDraggingSponge = false;
+                _spongeRT.localScale = Vector3.one;
+                StartCoroutine(SnapSpongeHome());
             }
         }
 
         // Track finger position for fish attraction
-        if (Input.GetMouseButton(0) && !isPlacingFood && !giftActive && !isCleaningMode)
+        if (Input.GetMouseButton(0) && !isPlacingFood && !giftActive && !_isDraggingSponge)
         {
             Vector2 localPos;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(
@@ -289,7 +305,7 @@ public class AquariumController : MonoBehaviour
         }
 
         // Gradual dirt regrowth
-        if (_dirtGrowing && _dirtPattern != null && !isCleaningMode)
+        if (_dirtGrowing && _dirtPattern != null && !_isDraggingSponge)
         {
             _dirtGrowTimer += Time.deltaTime;
             if (_dirtGrowTimer >= _dirtGrowInterval)
@@ -1235,27 +1251,29 @@ public class AquariumController : MonoBehaviour
 
     // ── Glass Cleaning ──
 
+    private RectTransform _spongeRT;
+    private Vector2 _spongeHomePos;
+    private bool _isDraggingSponge;
+
     private void CreateSpongeButton()
     {
-        // Find the safe area (where food button lives)
         var safeArea = foodButton != null ? foodButton.transform.parent : null;
         if (safeArea == null) return;
 
-        var spongeGO = new GameObject("SpongeButton");
+        var spongeGO = new GameObject("Sponge");
         spongeGO.transform.SetParent(safeArea, false);
-        var spongeRT = spongeGO.AddComponent<RectTransform>();
-        spongeRT.anchorMin = new Vector2(1, 1);
-        spongeRT.anchorMax = new Vector2(1, 1);
-        spongeRT.pivot = new Vector2(1, 1);
-        spongeRT.sizeDelta = new Vector2(200, 200);
+        _spongeRT = spongeGO.AddComponent<RectTransform>();
+        _spongeRT.anchorMin = new Vector2(1, 1);
+        _spongeRT.anchorMax = new Vector2(1, 1);
+        _spongeRT.pivot = new Vector2(0.5f, 0.5f);
+        _spongeRT.sizeDelta = new Vector2(180, 180);
 
-        // Position below food button
         var foodRT = foodButton.GetComponent<RectTransform>();
         float foodBottom = foodRT.anchoredPosition.y - foodRT.sizeDelta.y;
-        spongeRT.anchoredPosition = new Vector2(foodRT.anchoredPosition.x, foodBottom - 16);
+        _spongeRT.anchoredPosition = new Vector2(foodRT.anchoredPosition.x - 90, foodBottom - 100);
+        _spongeHomePos = _spongeRT.anchoredPosition;
 
         var spongeImg = spongeGO.AddComponent<Image>();
-        // Try load sponge sprite, fallback to colored square
         var spongeSprite = Resources.Load<Sprite>("Aquarium/Sponge");
         if (spongeSprite != null)
         {
@@ -1264,55 +1282,24 @@ public class AquariumController : MonoBehaviour
         }
         else
         {
-            spongeImg.color = new Color(0.95f, 0.85f, 0.2f, 0.9f); // yellow square placeholder
+            spongeImg.color = new Color(0.95f, 0.85f, 0.2f, 0.9f);
         }
         spongeImg.raycastTarget = true;
-
-        _spongeButton = spongeGO.AddComponent<Button>();
-        _spongeButton.targetGraphic = spongeImg;
-        _spongeButton.transition = Selectable.Transition.None;
-        _spongeButton.onClick.AddListener(OnSpongePressed);
     }
 
-    private void OnSpongePressed()
+    private IEnumerator SnapSpongeHome()
     {
-        if (giftActive) return;
-
-        isCleaningMode = !isCleaningMode;
-        isPlacingFood = false;
-
-        if (isCleaningMode)
+        Vector2 start = _spongeRT.anchoredPosition;
+        float dur = 0.25f;
+        float elapsed = 0f;
+        while (elapsed < dur)
         {
-            _spongeButton.GetComponent<RectTransform>().localScale = Vector3.one * 1.15f;
-            CreateSpongeCursor();
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0, 1, elapsed / dur);
+            _spongeRT.anchoredPosition = Vector2.Lerp(start, _spongeHomePos, t);
+            yield return null;
         }
-        else
-        {
-            _spongeButton.GetComponent<RectTransform>().localScale = Vector3.one;
-            DestroySpongeCursor();
-        }
-    }
-
-    private void CreateSpongeCursor()
-    {
-        if (_spongeCursor != null) return;
-        _spongeCursor = new GameObject("SpongeCursor");
-        _spongeCursor.transform.SetParent(gameplayArea, false);
-        _spongeCursor.transform.SetAsLastSibling();
-        _spongeCursorRT = _spongeCursor.AddComponent<RectTransform>();
-        _spongeCursorRT.sizeDelta = new Vector2(180, 180);
-        var cursorImg = _spongeCursor.AddComponent<Image>();
-        var spongeSprite = Resources.Load<Sprite>("Aquarium/Sponge");
-        if (spongeSprite != null) cursorImg.sprite = spongeSprite;
-        else cursorImg.color = new Color(0.95f, 0.85f, 0.2f, 0.8f);
-        cursorImg.preserveAspect = true;
-        cursorImg.raycastTarget = false;
-        _spongeCursor.SetActive(false); // shown only while finger is down
-    }
-
-    private void DestroySpongeCursor()
-    {
-        if (_spongeCursor != null) { Destroy(_spongeCursor); _spongeCursor = null; _spongeCursorRT = null; }
+        _spongeRT.anchoredPosition = _spongeHomePos;
     }
 
     private void CreateDirtyGlass()
@@ -1464,10 +1451,6 @@ public class AquariumController : MonoBehaviour
 
     private void OnGlassClean()
     {
-        isCleaningMode = false;
-        _spongeButton.GetComponent<RectTransform>().localScale = Vector3.one;
-        DestroySpongeCursor();
-
         SoundLibrary.PlayRandomFeedback();
 
         // Clear remaining dirt visually
