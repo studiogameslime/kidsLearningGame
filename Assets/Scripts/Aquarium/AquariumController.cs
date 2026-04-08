@@ -75,6 +75,10 @@ public class AquariumController : MonoBehaviour
     private float _cleanedPixels;
     private GameObject _spongeCursor; // follows finger while cleaning
     private RectTransform _spongeCursorRT;
+    private bool _dirtGrowing;
+    private float _dirtGrowTimer;
+    private float _dirtGrowInterval = 3f; // seconds between adding a dirt spot
+    private byte[] _dirtPattern; // full dirt pattern to grow towards
 
     private void Start()
     {
@@ -279,6 +283,17 @@ public class AquariumController : MonoBehaviour
         else
         {
             AquariumFish.FingerActive = false;
+        }
+
+        // Gradual dirt regrowth
+        if (_dirtGrowing && _dirtPattern != null && !isCleaningMode)
+        {
+            _dirtGrowTimer += Time.deltaTime;
+            if (_dirtGrowTimer >= _dirtGrowInterval)
+            {
+                _dirtGrowTimer = 0f;
+                GrowDirtStep();
+            }
         }
 
         // Periodic food scanning — fish detect food while swimming near it
@@ -1312,6 +1327,11 @@ public class AquariumController : MonoBehaviour
     {
         _totalDirtyPixels = 0;
         _cleanedPixels = 0;
+        _dirtPattern = new byte[DirtyTexW * DirtyTexH * 4];
+
+        // Use random offset so each generation looks different
+        float offsetX = Random.Range(0f, 500f);
+        float offsetY = Random.Range(0f, 500f);
 
         for (int y = 0; y < DirtyTexH; y++)
         {
@@ -1319,35 +1339,39 @@ public class AquariumController : MonoBehaviour
             {
                 int idx = (y * DirtyTexW + x) * 4;
 
-                // Multi-octave Perlin noise for organic algae look
-                float n1 = Mathf.PerlinNoise(x * 0.02f + 42f, y * 0.02f + 42f);
-                float n2 = Mathf.PerlinNoise(x * 0.05f + 100f, y * 0.05f + 100f) * 0.5f;
-                float n3 = Mathf.PerlinNoise(x * 0.12f + 200f, y * 0.12f + 200f) * 0.2f;
+                float n1 = Mathf.PerlinNoise(x * 0.02f + offsetX, y * 0.02f + offsetY);
+                float n2 = Mathf.PerlinNoise(x * 0.05f + offsetX + 100f, y * 0.05f + offsetY + 100f) * 0.5f;
+                float n3 = Mathf.PerlinNoise(x * 0.12f + offsetX + 200f, y * 0.12f + offsetY + 200f) * 0.2f;
                 float n = n1 + n2 + n3;
 
-                // Only create dirt where noise is above threshold (patchy, not uniform)
                 if (n > 0.85f)
                 {
                     float intensity = Mathf.Clamp01((n - 0.85f) / 0.4f);
-                    // Green-brown algae color with varying alpha
-                    _dirtyPixels[idx]     = (byte)(40 + intensity * 30);   // R
-                    _dirtyPixels[idx + 1] = (byte)(80 + intensity * 40);   // G
-                    _dirtyPixels[idx + 2] = (byte)(30 + intensity * 20);   // B
-                    _dirtyPixels[idx + 3] = (byte)(intensity * 120);       // A — semi-transparent
+                    _dirtPattern[idx]     = (byte)(40 + intensity * 30);
+                    _dirtPattern[idx + 1] = (byte)(80 + intensity * 40);
+                    _dirtPattern[idx + 2] = (byte)(30 + intensity * 20);
+                    _dirtPattern[idx + 3] = (byte)(intensity * 120);
                     _totalDirtyPixels += intensity;
                 }
                 else
                 {
-                    _dirtyPixels[idx] = 0;
-                    _dirtyPixels[idx + 1] = 0;
-                    _dirtyPixels[idx + 2] = 0;
-                    _dirtyPixels[idx + 3] = 0;
+                    _dirtPattern[idx] = 0;
+                    _dirtPattern[idx + 1] = 0;
+                    _dirtPattern[idx + 2] = 0;
+                    _dirtPattern[idx + 3] = 0;
                 }
+
+                // Copy to active pixels
+                _dirtyPixels[idx]     = _dirtPattern[idx];
+                _dirtyPixels[idx + 1] = _dirtPattern[idx + 1];
+                _dirtyPixels[idx + 2] = _dirtPattern[idx + 2];
+                _dirtyPixels[idx + 3] = _dirtPattern[idx + 3];
             }
         }
 
         _dirtyMask.LoadRawTextureData(_dirtyPixels);
         _dirtyMask.Apply();
+        _dirtGrowing = false;
     }
 
     private void CleanAt(float texX, float texY)
@@ -1418,29 +1442,75 @@ public class AquariumController : MonoBehaviour
 
         SoundLibrary.PlayRandomFeedback();
 
-        // Award a star for cleaning
-        var profile = ProfileManager.ActiveProfile;
-        if (profile != null && profile.journey != null)
-        {
-            profile.journey.totalStars++;
-            profile.journey.totalGamesCompleted++;
-            ProfileManager.Instance.Save();
-            FirebaseAnalyticsManager.UpdateUserProperties();
-        }
-
         // Clear remaining dirt visually
         for (int i = 0; i < _dirtyPixels.Length; i += 4)
             _dirtyPixels[i + 3] = 0;
         _dirtyMask.LoadRawTextureData(_dirtyPixels);
         _dirtyMask.Apply();
 
-        // Regenerate dirt after 2 minutes
-        StartCoroutine(RegenerateDirtAfterDelay(120f));
+        // Dirt grows back gradually
+        _dirtGrowTimer = 0f;
+        _dirtGrowing = true;
     }
 
-    private System.Collections.IEnumerator RegenerateDirtAfterDelay(float delay)
+    private void GrowDirtStep()
     {
-        yield return new WaitForSeconds(delay);
-        GenerateDirtyPattern();
+        if (_dirtPattern == null || _dirtyPixels == null) return;
+
+        // Pick a random cluster of pixels and restore their dirt from the pattern
+        int centerX = Random.Range(20, DirtyTexW - 20);
+        int centerY = Random.Range(20, DirtyTexH - 20);
+        int radius = Random.Range(15, 35);
+        bool anyChanged = false;
+
+        for (int dy = -radius; dy <= radius; dy++)
+        {
+            int py = centerY + dy;
+            if (py < 0 || py >= DirtyTexH) continue;
+            for (int dx = -radius; dx <= radius; dx++)
+            {
+                int px = centerX + dx;
+                if (px < 0 || px >= DirtyTexW) continue;
+                if (dx * dx + dy * dy > radius * radius) continue;
+
+                int idx = (py * DirtyTexW + px) * 4;
+                byte targetAlpha = _dirtPattern[idx + 3];
+                if (targetAlpha > 0 && _dirtyPixels[idx + 3] < targetAlpha)
+                {
+                    // Grow towards target gradually
+                    int newAlpha = Mathf.Min(targetAlpha, _dirtyPixels[idx + 3] + 8);
+                    _dirtyPixels[idx]     = _dirtPattern[idx];
+                    _dirtyPixels[idx + 1] = _dirtPattern[idx + 1];
+                    _dirtyPixels[idx + 2] = _dirtPattern[idx + 2];
+                    _dirtyPixels[idx + 3] = (byte)newAlpha;
+                    anyChanged = true;
+                }
+            }
+        }
+
+        if (anyChanged)
+        {
+            _dirtyMask.LoadRawTextureData(_dirtyPixels);
+            _dirtyMask.Apply();
+
+            // Reset counters for cleaning detection
+            _cleanedPixels = 0;
+            _totalDirtyPixels = 0;
+            for (int i = 0; i < _dirtyPixels.Length; i += 4)
+                if (_dirtyPixels[i + 3] > 0)
+                    _totalDirtyPixels += _dirtyPixels[i + 3] / 255f;
+        }
+
+        // Check if fully regrown — stop growing
+        bool fullyGrown = true;
+        for (int i = 0; i < _dirtyPixels.Length; i += 4)
+        {
+            if (_dirtPattern[i + 3] > 0 && _dirtyPixels[i + 3] < _dirtPattern[i + 3])
+            {
+                fullyGrown = false;
+                break;
+            }
+        }
+        if (fullyGrown) _dirtGrowing = false;
     }
 }
