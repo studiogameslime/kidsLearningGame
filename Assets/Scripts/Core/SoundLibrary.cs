@@ -59,6 +59,20 @@ public static class SoundLibrary
         if (clip != null) BackgroundMusicManager.PlayOneShot(clip);
     }
 
+    // ── Aquarium SFX ──
+
+    public static void PlayFishEat()
+    {
+        var clip = Resources.Load<AudioClip>("Sounds/Fish Eat");
+        if (clip != null) BackgroundMusicManager.PlayOneShot(clip);
+    }
+
+    public static void PlayBubblePop()
+    {
+        var clip = Resources.Load<AudioClip>("Sounds/Bubble Pop");
+        if (clip != null) BackgroundMusicManager.PlayOneShot(clip);
+    }
+
     // ── Instructions ──
 
     public static AudioClip PopTheLetterInstruction()

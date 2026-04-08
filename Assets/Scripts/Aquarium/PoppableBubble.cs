@@ -19,6 +19,7 @@ public class PoppableBubble : MonoBehaviour, IPointerClickHandler
         if (ambience != null)
             ambience.PopBubbleAt(pos, size);
 
+        SoundLibrary.PlayBubblePop();
         FirebaseAnalyticsManager.LogAquariumBubblePopped();
         Destroy(gameObject);
     }

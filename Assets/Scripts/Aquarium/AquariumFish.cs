@@ -95,6 +95,7 @@ public class AquariumFish : MonoBehaviour
             {
                 // Arrived at food — eat it
                 targetFood.OnEaten(this);
+                SoundLibrary.PlayFishEat();
                 isChasing = false;
                 targetFood = null;
                 feedCooldown = FeedCooldownDuration;
