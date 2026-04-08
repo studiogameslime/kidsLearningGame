@@ -101,9 +101,66 @@ public class AquariumController : MonoBehaviour
             BackgroundMusicManager.PlayOneShot(introClip);
             yield return new WaitForSeconds(introClip.length + 0.3f);
         }
-        var feedClip = SoundLibrary.AquariumFeedFishes();
-        if (feedClip != null)
-            BackgroundMusicManager.PlayOneShot(feedClip);
+
+        if (_isFirstVisit)
+        {
+            // First visit: show gift with first fish instead of "feed the fishes"
+            var openGiftClip = SoundLibrary.WorldOpenFirstGift();
+            if (openGiftClip != null)
+            {
+                BackgroundMusicManager.PlayOneShot(openGiftClip);
+                yield return new WaitForSeconds(openGiftClip.length + 0.2f);
+            }
+            // Spawn the first fish gift
+            SpawnFirstFishGift();
+        }
+        else
+        {
+            var feedClip = SoundLibrary.AquariumFeedFishes();
+            if (feedClip != null)
+                BackgroundMusicManager.PlayOneShot(feedClip);
+        }
+    }
+
+    private void SpawnFirstFishGift()
+    {
+        giftActive = true;
+
+        // Create gift in center of gameplay area
+        var giftGO = new GameObject("FirstFishGift");
+        giftGO.transform.SetParent(gameplayArea, false);
+        var giftRT = giftGO.AddComponent<RectTransform>();
+        giftRT.anchorMin = new Vector2(0.5f, 0.5f);
+        giftRT.anchorMax = new Vector2(0.5f, 0.5f);
+        giftRT.sizeDelta = new Vector2(200, 200);
+        giftRT.anchoredPosition = Vector2.zero;
+
+        var gift = giftGO.AddComponent<GiftBoxController>();
+        gift.giftSprite = giftSprite;
+        gift.circleSprite = circleSprite;
+        gift.onOpened = () =>
+        {
+            // Unlock first fish
+            var profile = ProfileManager.ActiveProfile;
+            if (profile != null)
+            {
+                profile.aquarium.unlockedFishIds.Add("Fish_0");
+                profile.aquarium.nextRewardIndex = Mathf.Max(profile.aquarium.nextRewardIndex, 1);
+                ProfileManager.Instance.Save();
+                FirebaseAnalyticsManager.LogAquariumGiftOpened("Fish_0");
+
+                // Spawn the fish
+                var fishSprites = LoadSpriteSheet("Aquarium/Fish");
+                var sprite = FindSprite(fishSprites, "Fish_0");
+                if (sprite != null)
+                    SpawnFish("Fish_0", sprite);
+            }
+            giftActive = false;
+            _isFirstVisit = false;
+            UpdateEmptyHint();
+        };
+
+        activeGift = gift;
     }
 
     private void LoadFoodSprites()
@@ -303,6 +360,8 @@ public class AquariumController : MonoBehaviour
 
     // ── Content Loading ──
 
+    private bool _isFirstVisit;
+
     private void LoadAquariumContent()
     {
         var profile = ProfileManager.ActiveProfile;
@@ -310,14 +369,9 @@ public class AquariumController : MonoBehaviour
 
         var aquarium = profile.aquarium;
 
-        // Seed starter fish for new profiles
-        if (aquarium.unlockedFishIds.Count == 0)
-        {
-            aquarium.unlockedFishIds.Add("Fish_0");
-            // Skip Fish_0 in the reward order
-            aquarium.nextRewardIndex = Mathf.Max(aquarium.nextRewardIndex, 1);
-            ProfileManager.Instance.Save();
-        }
+        // First visit: no fish — gift will appear after Alin's intro
+        _isFirstVisit = aquarium.unlockedFishIds.Count == 0;
+        if (_isFirstVisit) return; // don't spawn anything yet
 
         var fishSprites = LoadSpriteSheet("Aquarium/Fish");
         foreach (var fishId in aquarium.unlockedFishIds)
@@ -970,8 +1024,9 @@ public class AquariumController : MonoBehaviour
     {
         var profile = ProfileManager.ActiveProfile;
         int rewardIndex = profile?.aquarium?.nextRewardIndex ?? 0;
-        // 5, 7, 9, 11, 13, 15, 17, 19, 20, 20...
-        return Mathf.Min(baseFeedsPerGift + rewardIndex * 2, 20);
+        // First reward after 2 feeds, then 5, 7, 9, 11...
+        if (rewardIndex <= 1) return 2;
+        return Mathf.Min(baseFeedsPerGift + (rewardIndex - 1) * 2, 20);
     }
 
     private bool HasMoreRewards()
