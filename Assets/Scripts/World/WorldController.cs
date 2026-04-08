@@ -1224,7 +1224,7 @@ public class WorldController : MonoBehaviour
             iconRT.anchorMin = new Vector2(0, 0.5f);
             iconRT.anchorMax = new Vector2(0, 0.5f);
             iconRT.pivot = new Vector2(0, 0.5f);
-            iconRT.sizeDelta = new Vector2(36, 36);
+            iconRT.sizeDelta = new Vector2(72, 72);
             iconRT.anchoredPosition = Vector2.zero;
             _starIconImage = iconGO.AddComponent<Image>();
             var starSprite = Resources.Load<Sprite>("Icons/star");
