@@ -1189,8 +1189,43 @@ public class WorldController : MonoBehaviour
         if (profile == null) return;
 
         string name = profile.displayName ?? "";
+        HebrewText.SetText(headerTitleTMP, $"\u05D4\u05E2\u05D5\u05DC\u05DD \u05E9\u05DC {name}"); // העולם של מתן
+
+        // Star counter on the left side of the header
+        CreateOrUpdateStarCounter(profile);
+    }
+
+    private TMPro.TextMeshProUGUI _starCounterTMP;
+
+    private void CreateOrUpdateStarCounter(UserProfile profile)
+    {
         int stars = profile.journey?.totalStars ?? 0;
-        HebrewText.SetText(headerTitleTMP, $"\u05D4\u05E2\u05D5\u05DC\u05DD \u05E9\u05DC {name} \u2B50 {stars}");
+
+        if (_starCounterTMP == null)
+        {
+            // Find the header (TopBar) — parent of headerTitleTMP
+            var header = headerTitleTMP.transform.parent;
+            if (header == null) return;
+
+            // Star container on left side
+            var starGO = new UnityEngine.GameObject("StarCounter");
+            starGO.transform.SetParent(header, false);
+            var starRT = starGO.AddComponent<UnityEngine.RectTransform>();
+            starRT.anchorMin = new UnityEngine.Vector2(0, 0.5f);
+            starRT.anchorMax = new UnityEngine.Vector2(0, 0.5f);
+            starRT.pivot = new UnityEngine.Vector2(0, 0.5f);
+            starRT.sizeDelta = new UnityEngine.Vector2(120, 50);
+            starRT.anchoredPosition = new UnityEngine.Vector2(100, 0); // after home button
+
+            _starCounterTMP = starGO.AddComponent<TMPro.TextMeshProUGUI>();
+            _starCounterTMP.fontSize = 28;
+            _starCounterTMP.fontStyle = TMPro.FontStyles.Bold;
+            _starCounterTMP.color = new UnityEngine.Color(1f, 0.95f, 0.4f); // golden
+            _starCounterTMP.alignment = TMPro.TextAlignmentOptions.Left;
+            _starCounterTMP.raycastTarget = false;
+        }
+
+        _starCounterTMP.text = $"\u2B50 {stars}"; // ⭐ 5
     }
 
     private void ApplyFeatureLocks()
