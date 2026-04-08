@@ -73,6 +73,8 @@ public class AquariumController : MonoBehaviour
     private Button _spongeButton;
     private float _totalDirtyPixels;
     private float _cleanedPixels;
+    private GameObject _spongeCursor; // follows finger while cleaning
+    private RectTransform _spongeCursorRT;
 
     private void Start()
     {
@@ -236,18 +238,32 @@ public class AquariumController : MonoBehaviour
             }
         }
 
-        // Cleaning mode — wipe dirty glass
-        if (isCleaningMode && Input.GetMouseButton(0) && _dirtyOverlay != null)
+        // Cleaning mode — wipe dirty glass with sponge cursor
+        if (isCleaningMode && _dirtyOverlay != null)
         {
-            Vector2 localPos;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                _dirtyOverlay.rectTransform, Input.mousePosition, null, out localPos);
-            Rect rect = _dirtyOverlay.rectTransform.rect;
-            float nx = (localPos.x - rect.x) / rect.width;
-            float ny = (localPos.y - rect.y) / rect.height;
-            if (nx >= 0 && nx <= 1 && ny >= 0 && ny <= 1)
+            if (Input.GetMouseButton(0))
             {
-                CleanAt(nx * DirtyTexW, ny * DirtyTexH);
+                Vector2 localPos;
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    _dirtyOverlay.rectTransform, Input.mousePosition, null, out localPos);
+                Rect rect = _dirtyOverlay.rectTransform.rect;
+                float nx = (localPos.x - rect.x) / rect.width;
+                float ny = (localPos.y - rect.y) / rect.height;
+
+                // Show and move sponge cursor
+                if (_spongeCursor != null)
+                {
+                    _spongeCursor.SetActive(true);
+                    _spongeCursorRT.anchoredPosition = localPos;
+                }
+
+                if (nx >= 0 && nx <= 1 && ny >= 0 && ny <= 1)
+                    CleanAt(nx * DirtyTexW, ny * DirtyTexH);
+            }
+            else
+            {
+                // Hide sponge cursor when finger is up
+                if (_spongeCursor != null) _spongeCursor.SetActive(false);
             }
         }
 
@@ -1225,19 +1241,40 @@ public class AquariumController : MonoBehaviour
         if (giftActive) return;
 
         isCleaningMode = !isCleaningMode;
-        isPlacingFood = false; // exit food mode if active
+        isPlacingFood = false;
 
-        if (isCleaningMode && _dirtyOverlay != null)
+        if (isCleaningMode)
         {
-            _dirtyOverlay.gameObject.SetActive(true);
-            // Highlight sponge button
             _spongeButton.GetComponent<RectTransform>().localScale = Vector3.one * 1.15f;
+            CreateSpongeCursor();
         }
         else
         {
-            isCleaningMode = false;
             _spongeButton.GetComponent<RectTransform>().localScale = Vector3.one;
+            DestroySpongeCursor();
         }
+    }
+
+    private void CreateSpongeCursor()
+    {
+        if (_spongeCursor != null) return;
+        _spongeCursor = new GameObject("SpongeCursor");
+        _spongeCursor.transform.SetParent(gameplayArea, false);
+        _spongeCursor.transform.SetAsLastSibling();
+        _spongeCursorRT = _spongeCursor.AddComponent<RectTransform>();
+        _spongeCursorRT.sizeDelta = new Vector2(100, 100);
+        var cursorImg = _spongeCursor.AddComponent<Image>();
+        var spongeSprite = Resources.Load<Sprite>("Aquarium/Sponge");
+        if (spongeSprite != null) cursorImg.sprite = spongeSprite;
+        else cursorImg.color = new Color(0.95f, 0.85f, 0.2f, 0.8f);
+        cursorImg.preserveAspect = true;
+        cursorImg.raycastTarget = false;
+        _spongeCursor.SetActive(false); // shown only while finger is down
+    }
+
+    private void DestroySpongeCursor()
+    {
+        if (_spongeCursor != null) { Destroy(_spongeCursor); _spongeCursor = null; _spongeCursorRT = null; }
     }
 
     private void CreateDirtyGlass()
@@ -1268,8 +1305,7 @@ public class AquariumController : MonoBehaviour
         _dirtyOverlay.texture = _dirtyMask;
         _dirtyOverlay.color = Color.white;
 
-        // Start hidden — shown when sponge is pressed
-        dirtyGO.SetActive(false);
+        // Dirt is always visible — sponge button activates cleaning mode
     }
 
     private void GenerateDirtyPattern()
@@ -1352,8 +1388,8 @@ public class AquariumController : MonoBehaviour
             if (ambience != null)
                 SpawnCleanSparkle(texX, texY);
 
-            // Check if mostly clean
-            if (_totalDirtyPixels > 0 && _cleanedPixels / _totalDirtyPixels > 0.85f)
+            // Check if mostly clean (80% threshold)
+            if (_totalDirtyPixels > 0 && _cleanedPixels / _totalDirtyPixels > 0.80f)
             {
                 OnGlassClean();
             }
@@ -1374,10 +1410,7 @@ public class AquariumController : MonoBehaviour
     {
         isCleaningMode = false;
         _spongeButton.GetComponent<RectTransform>().localScale = Vector3.one;
-
-        // Hide dirty overlay
-        if (_dirtyOverlay != null)
-            _dirtyOverlay.gameObject.SetActive(false);
+        DestroySpongeCursor();
 
         // Celebrate!
         if (ConfettiController.Instance != null)
@@ -1385,8 +1418,24 @@ public class AquariumController : MonoBehaviour
 
         SoundLibrary.PlayRandomFeedback();
 
-        // Regenerate dirt for next time
-        StartCoroutine(RegenerateDirtAfterDelay(30f));
+        // Award a star for cleaning
+        var profile = ProfileManager.ActiveProfile;
+        if (profile != null && profile.journey != null)
+        {
+            profile.journey.totalStars++;
+            profile.journey.totalGamesCompleted++;
+            ProfileManager.Instance.Save();
+            FirebaseAnalyticsManager.UpdateUserProperties();
+        }
+
+        // Clear remaining dirt visually
+        for (int i = 0; i < _dirtyPixels.Length; i += 4)
+            _dirtyPixels[i + 3] = 0;
+        _dirtyMask.LoadRawTextureData(_dirtyPixels);
+        _dirtyMask.Apply();
+
+        // Regenerate dirt after 2 minutes
+        StartCoroutine(RegenerateDirtAfterDelay(120f));
     }
 
     private System.Collections.IEnumerator RegenerateDirtAfterDelay(float delay)
