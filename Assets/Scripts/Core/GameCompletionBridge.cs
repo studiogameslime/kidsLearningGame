@@ -149,16 +149,29 @@ public class GameCompletionBridge : MonoBehaviour
     }
 
     /// <summary>
-    /// Award sticker only (no star, no discovery). Used on non-confetti rounds
-    /// so sticker pacing works independently of confetti/star logic.
+    /// Award sticker + track stats on non-confetti rounds.
+    /// Stars and discoveries are skipped, but sticker pacing, game stats,
+    /// and achievement milestones still run every round.
     /// </summary>
     public void AwardStickerOnly()
     {
         string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : null;
         var profile = ProfileManager.ActiveProfile;
         if (profile == null) return;
-        TryAwardSticker(gameId, profile.journey);
-        if (LastAwardedStickerId != null)
+
+        var jp = profile.journey;
+
+        // Increment per-game stat (needed for achievement tracking)
+        if (!string.IsNullOrEmpty(gameId))
+        {
+            var stat = jp.GetOrCreateStat(gameId);
+            stat.timesPlayedInJourney++;
+        }
+
+        TryAwardSticker(gameId, jp);
+        TryAwardAchievement(gameId, jp);
+
+        if (LastAwardedStickerId != null || LastAwardedAchievementId != null)
             ProfileManager.Instance.Save();
     }
 
