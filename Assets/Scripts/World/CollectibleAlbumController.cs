@@ -862,19 +862,17 @@ public class CollectibleAlbumController : MonoBehaviour
             starsLayout.childForceExpandWidth = false;
             starsLayout.spacing = 2;
 
+            var starSprite = Resources.Load<Sprite>("Icons/star");
             for (int s = 0; s < 3; s++)
             {
                 var starGO = new GameObject($"Star_{s}");
                 starGO.transform.SetParent(starsGO.transform, false);
                 var starRT = starGO.AddComponent<RectTransform>();
-                starRT.sizeDelta = new Vector2(16, 16);
-                var starTMP = starGO.AddComponent<TextMeshProUGUI>();
-                starTMP.text = "\u2605"; // ★
-                starTMP.fontSize = 16;
-                starTMP.alignment = TextAlignmentOptions.Center;
-                starTMP.raycastTarget = false;
-                // Filled stars up to tier, empty after
-                starTMP.color = s < tier ? starColor : new Color(0.7f, 0.7f, 0.7f, 0.3f);
+                starRT.sizeDelta = new Vector2(18, 18);
+                var starImg = starGO.AddComponent<Image>();
+                if (starSprite != null) starImg.sprite = starSprite;
+                starImg.raycastTarget = false;
+                starImg.color = s < tier ? starColor : new Color(0.7f, 0.7f, 0.7f, 0.3f);
             }
         }
     }
