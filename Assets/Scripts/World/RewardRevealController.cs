@@ -196,6 +196,7 @@ public class RewardRevealController : MonoBehaviour
             {
                 jp.collectedStickerIds.Add(stickerId);
                 _pendingPopupStickerId = stickerId;
+                ProfileManager.Instance.Save();
                 Debug.Log($"[Sticker] Awarded {stickerId} from discovery {gift.reward.type}/{gift.reward.id}");
             }
         }

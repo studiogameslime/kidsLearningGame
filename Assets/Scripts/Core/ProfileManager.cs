@@ -77,6 +77,12 @@ public class ProfileManager : MonoBehaviour
                 if (p.aquarium.unlockedFishIds == null) p.aquarium.unlockedFishIds = new List<string>();
                 if (p.aquarium.unlockedDecorationIds == null) p.aquarium.unlockedDecorationIds = new List<string>();
                 if (p.aquarium.decorationPlacements == null) p.aquarium.decorationPlacements = new List<AquariumItemPlacement>();
+                // Sticker pacing: default 0 from old JSON → upgrade to 3
+                if (p.journey != null && p.journey.roundsUntilNextSticker <= 0)
+                    p.journey.roundsUntilNextSticker = 3;
+                // Migrate old sticker IDs: "sticker_X" → remove (can't map to new names)
+                if (p.journey != null && p.journey.collectedStickerIds != null)
+                    p.journey.collectedStickerIds.RemoveAll(id => id != null && id.StartsWith("sticker_"));
             }
         }
 

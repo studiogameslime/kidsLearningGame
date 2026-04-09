@@ -11,9 +11,6 @@ public static class StickerPopup
 {
     private static bool _isShowing;
 
-    /// <summary>
-    /// Show the sticker popup. Call from a MonoBehaviour via StartCoroutine.
-    /// </summary>
     public static IEnumerator Show(string stickerId)
     {
         if (_isShowing) yield break;
@@ -21,11 +18,10 @@ public static class StickerPopup
         Sprite sprite = StickerSpriteBank.GetSprite(stickerId);
         if (sprite == null) yield break;
 
-        _isShowing = true;
-
-        // Find or create a canvas
         var canvas = Object.FindObjectOfType<Canvas>();
-        if (canvas == null) { _isShowing = false; yield break; }
+        if (canvas == null) yield break;
+
+        _isShowing = true;
 
         // Root container
         var rootGO = new GameObject("StickerPopup");
@@ -67,14 +63,15 @@ public static class StickerPopup
         float popDur = 0.4f;
         while (t < popDur)
         {
+            if (rootGO == null) { _isShowing = false; yield break; }
             t += Time.deltaTime;
             float p = Mathf.Clamp01(t / popDur);
             float scale = EaseOutElastic(p);
             stickerRT.localScale = Vector3.one * scale;
-            // Subtle rotation during pop
             stickerRT.localRotation = Quaternion.Euler(0, 0, Mathf.Sin(p * Mathf.PI * 3f) * 8f * (1f - p));
             yield return null;
         }
+        if (rootGO == null) { _isShowing = false; yield break; }
         stickerRT.localScale = Vector3.one;
         stickerRT.localRotation = Quaternion.identity;
 
@@ -88,26 +85,36 @@ public static class StickerPopup
         float holdDur = 0.6f;
         while (t < holdDur)
         {
+            if (rootGO == null) { _isShowing = false; yield break; }
             t += Time.deltaTime;
             float p = t / holdDur;
             float pulse = 1f + Mathf.Sin(p * Mathf.PI * 2f) * 0.05f;
             stickerRT.localScale = Vector3.one * pulse;
-            // Glow pulse
             float glowAlpha = 0.3f + Mathf.Sin(p * Mathf.PI * 3f) * 0.1f;
             glowImg.color = new Color(1f, 0.95f, 0.5f, glowAlpha);
             yield return null;
         }
 
-        // ── Phase 3: Fly to bottom-left corner and shrink (0.5s) ──
+        // ── Phase 3: Fly to bottom-left using anchors (aspect-ratio safe) ──
+        if (rootGO == null) { _isShowing = false; yield break; }
+        // Switch to anchor-based positioning for the fly-out
+        stickerRT.anchorMin = new Vector2(0.5f, 0.5f);
+        stickerRT.anchorMax = new Vector2(0.5f, 0.5f);
         Vector2 startPos = stickerRT.anchoredPosition;
-        Vector2 endPos = new Vector2(-550, -300); // bottom-left area
+        // Target: 10% from left, 10% from bottom (safe on all aspect ratios)
+        var canvasRT = canvas.GetComponent<RectTransform>();
+        float canvasW = canvasRT != null ? canvasRT.rect.width : 1920f;
+        float canvasH = canvasRT != null ? canvasRT.rect.height : 1080f;
+        Vector2 endPos = new Vector2(-canvasW * 0.35f, -canvasH * 0.35f);
+
         t = 0f;
         float flyDur = 0.5f;
         while (t < flyDur)
         {
+            if (rootGO == null) { _isShowing = false; yield break; }
             t += Time.deltaTime;
             float p = Mathf.Clamp01(t / flyDur);
-            float ease = p * p; // ease in
+            float ease = p * p;
             stickerRT.anchoredPosition = Vector2.Lerp(startPos, endPos, ease);
             float scale = Mathf.Lerp(1f, 0.15f, ease);
             stickerRT.localScale = Vector3.one * scale;
@@ -116,7 +123,7 @@ public static class StickerPopup
             yield return null;
         }
 
-        Object.Destroy(rootGO);
+        if (rootGO != null) Object.Destroy(rootGO);
         _isShowing = false;
     }
 
@@ -133,7 +140,6 @@ public static class StickerPopup
             rt.anchoredPosition = center.anchoredPosition;
 
             var img = go.AddComponent<Image>();
-            // Alternate gold and white sparkles
             img.color = i % 2 == 0
                 ? new Color(1f, 0.9f, 0.3f, 0.9f)
                 : new Color(1f, 1f, 1f, 0.8f);
@@ -179,7 +185,7 @@ public class SparkleParticle : MonoBehaviour
 
         float p = _elapsed / lifetime;
         _rt.anchoredPosition += velocity * Time.deltaTime;
-        velocity *= 0.92f; // drag
+        velocity *= 0.92f;
         _rt.localScale = Vector3.one * (1f - p * 0.8f);
         var c = _img.color;
         _img.color = new Color(c.r, c.g, c.b, c.a * (1f - p));

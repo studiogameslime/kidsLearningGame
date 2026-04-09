@@ -96,26 +96,7 @@ public class GameCompletionBridge : MonoBehaviour
         }
 
         // ── Award sticker (every 3-5 rounds, from game's category) ──
-        LastAwardedStickerId = null;
-        if (!string.IsNullOrEmpty(gameId))
-        {
-            string prefix = StickerCatalog.GetCategoryForGame(gameId);
-            if (prefix != null)
-            {
-                jp.roundsUntilNextSticker--;
-                if (jp.roundsUntilNextSticker <= 0)
-                {
-                    string stickerId = StickerCatalog.PickRandomSticker(prefix, jp.collectedStickerIds);
-                    if (stickerId != null)
-                    {
-                        jp.collectedStickerIds.Add(stickerId);
-                        LastAwardedStickerId = stickerId;
-                        Debug.Log($"[Sticker] Awarded {stickerId} from game {gameId}");
-                    }
-                    jp.roundsUntilNextSticker = Random.Range(3, 6);
-                }
-            }
-        }
+        TryAwardSticker(gameId, jp);
 
         // ── Check for discovery ──
         if (DiscoveryCatalog.HasMore(jp))
@@ -159,6 +140,42 @@ public class GameCompletionBridge : MonoBehaviour
 
         ProfileManager.Instance.Save();
         return false; // No discovery — caller may advance to next round
+    }
+
+    /// <summary>
+    /// Award sticker only (no star, no discovery). Used on non-confetti rounds
+    /// so sticker pacing works independently of confetti/star logic.
+    /// </summary>
+    public void AwardStickerOnly()
+    {
+        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : null;
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null) return;
+        TryAwardSticker(gameId, profile.journey);
+        if (LastAwardedStickerId != null)
+            ProfileManager.Instance.Save();
+    }
+
+    private void TryAwardSticker(string gameId, JourneyProgress jp)
+    {
+        LastAwardedStickerId = null;
+        if (string.IsNullOrEmpty(gameId)) return;
+
+        string prefix = StickerCatalog.GetCategoryForGame(gameId);
+        if (prefix == null) return;
+
+        jp.roundsUntilNextSticker--;
+        if (jp.roundsUntilNextSticker <= 0)
+        {
+            string stickerId = StickerCatalog.PickRandomSticker(prefix, jp.collectedStickerIds);
+            if (stickerId != null)
+            {
+                jp.collectedStickerIds.Add(stickerId);
+                LastAwardedStickerId = stickerId;
+                Debug.Log($"[Sticker] Awarded {stickerId} from game {gameId}");
+            }
+            jp.roundsUntilNextSticker = Random.Range(3, 6);
+        }
     }
 
     /// <summary>

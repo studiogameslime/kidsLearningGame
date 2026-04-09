@@ -313,10 +313,16 @@ public abstract class BaseMiniGame : MonoBehaviour
         while (ConfettiController.Instance != null && ConfettiController.Instance.IsPlaying)
             yield return null;
 
-        // ── Award star + check discovery BEFORE advancing ──
-        if (shouldPlayConfetti && GameCompletionBridge.Instance != null)
+        // ── Award star + sticker + check discovery BEFORE advancing ──
+        if (GameCompletionBridge.Instance != null)
         {
-            bool discoveryLoaded = GameCompletionBridge.Instance.AwardAndCheckDiscovery();
+            bool discoveryLoaded = shouldPlayConfetti
+                ? GameCompletionBridge.Instance.AwardAndCheckDiscovery()
+                : false;
+
+            // Award sticker even without confetti (sticker pacing is independent)
+            if (!shouldPlayConfetti)
+                GameCompletionBridge.Instance.AwardStickerOnly();
 
             // Show sticker popup if one was awarded this round
             string awardedSticker = GameCompletionBridge.Instance.LastAwardedStickerId;

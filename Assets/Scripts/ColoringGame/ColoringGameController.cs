@@ -604,6 +604,7 @@ public class ColoringGameController : BaseMiniGame
 
     private void SelectSticker(int index)
     {
+        if (index < 0 || index >= _collectedSprites.Count) return;
         selectedStickerIndex = index;
         isEraserActive = false;
         drawingCanvas.SetEraser(false);

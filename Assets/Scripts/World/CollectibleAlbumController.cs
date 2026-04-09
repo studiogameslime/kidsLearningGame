@@ -42,6 +42,8 @@ public class CollectibleAlbumController : MonoBehaviour
     private bool _isOpen;
     private bool _isAnimating;
     private int _currentPage;
+    private readonly List<Image> _tabImages = new List<Image>();
+    private readonly List<Image> _tabBgs = new List<Image>();
     private RectTransform _pageTurnOverlay;
 
     // Swipe detection
@@ -190,7 +192,8 @@ public class CollectibleAlbumController : MonoBehaviour
         _bookRT = bookGO.AddComponent<RectTransform>();
         _bookRT.anchorMin = new Vector2(0.5f, 0.5f);
         _bookRT.anchorMax = new Vector2(0.5f, 0.5f);
-        _bookRT.sizeDelta = new Vector2(1500, 820);
+        _bookRT.sizeDelta = new Vector2(1500, 700);
+        _bookRT.anchoredPosition = new Vector2(0, -80);
         var coverImg = bookGO.AddComponent<Image>();
         if (roundedRect != null) { coverImg.sprite = roundedRect; coverImg.type = Image.Type.Sliced; }
         Color coverColor = BookCover;
@@ -302,6 +305,9 @@ public class CollectibleAlbumController : MonoBehaviour
         _pageIndicatorTMP.fontSize = 20; _pageIndicatorTMP.color = new Color(1, 1, 1, 0.7f);
         _pageIndicatorTMP.alignment = TextAlignmentOptions.Center; _pageIndicatorTMP.raycastTarget = false;
 
+        // Category tabs (top of book)
+        BuildCategoryTabs(bookGO.transform);
+
         // Close button
         var closeGO = new GameObject("Close");
         closeGO.transform.SetParent(bookGO.transform, false);
@@ -329,6 +335,179 @@ public class CollectibleAlbumController : MonoBehaviour
         _nextButton.onClick.AddListener(() => TurnPage(1));
 
         _overlayRoot.SetActive(false);
+    }
+
+    // ── Category Tabs ──
+
+    private void BuildCategoryTabs(Transform bookParent)
+    {
+        _tabImages.Clear();
+        _tabBgs.Clear();
+
+        int validCount = 0;
+        foreach (var c in _categories)
+            if (c.sprites != null && c.sprites.Length > 0) validCount++;
+        if (validCount == 0) return;
+
+        float bookWidth = 1500f;
+        float margin = 40f; // padding from book edges
+        float gap = 4f;
+        float usableWidth = bookWidth - margin * 2f;
+        float tabWidth = (usableWidth - (validCount - 1) * gap) / validCount;
+        float tabHeight = 78f;
+        float startX = -bookWidth / 2f + margin + tabWidth / 2f;
+
+        int pageIdx = 0;
+        for (int i = 0; i < _categories.Length; i++)
+        {
+            var cat = _categories[i];
+            if (cat.sprites == null || cat.sprites.Length == 0) continue;
+
+            int targetPage = pageIdx;
+            float xPos = startX + pageIdx * (tabWidth + gap);
+            pageIdx++;
+
+            // Tab container — anchored to top of book, sticking out above
+            var tabGO = new GameObject($"Tab_{cat.prefix}");
+            tabGO.transform.SetParent(bookParent, false);
+            var tabRT = tabGO.AddComponent<RectTransform>();
+            tabRT.anchorMin = new Vector2(0.5f, 1f);
+            tabRT.anchorMax = new Vector2(0.5f, 1f);
+            tabRT.pivot = new Vector2(0.5f, 0f);
+            tabRT.anchoredPosition = new Vector2(xPos, -10f);
+            tabRT.sizeDelta = new Vector2(tabWidth, tabHeight);
+
+            // Tab background — rounded rectangle
+            var bgImg = tabGO.AddComponent<Image>();
+            if (roundedRect != null) { bgImg.sprite = roundedRect; bgImg.type = Image.Type.Sliced; }
+            bgImg.color = new Color(_coverColor.r * 1.1f, _coverColor.g * 1.1f, _coverColor.b * 1.1f, 0.85f);
+            bgImg.raycastTarget = true;
+
+            var btn = tabGO.AddComponent<Button>();
+            btn.targetGraphic = bgImg;
+            int page = targetPage;
+            btn.onClick.AddListener(() => JumpToPage(page));
+
+            // Icon sprite inside tab
+            Sprite tabSprite = GetTabSprite(cat);
+            if (tabSprite != null)
+            {
+                var iconGO = new GameObject("Icon");
+                iconGO.transform.SetParent(tabGO.transform, false);
+                var iconRT = iconGO.AddComponent<RectTransform>();
+                iconRT.anchorMin = new Vector2(0.1f, 0.12f);
+                iconRT.anchorMax = new Vector2(0.9f, 0.92f);
+                iconRT.offsetMin = Vector2.zero;
+                iconRT.offsetMax = Vector2.zero;
+                var iconImg = iconGO.AddComponent<Image>();
+                iconImg.sprite = tabSprite;
+                iconImg.preserveAspect = true;
+                iconImg.raycastTarget = false;
+                _tabImages.Add(iconImg);
+            }
+            else
+            {
+                _tabImages.Add(null);
+            }
+
+            _tabBgs.Add(bgImg);
+        }
+    }
+
+    private Sprite GetTabSprite(StickerCategory cat)
+    {
+        if (cat.sprites == null || cat.sprites.Length == 0) return null;
+
+        var profile = ProfileManager.ActiveProfile;
+
+        switch (cat.prefix)
+        {
+            case "animal_":
+                // Favorite animal
+                string favAnimal = profile?.favoriteAnimalId;
+                if (!string.IsNullOrEmpty(favAnimal))
+                {
+                    string lower = favAnimal.ToLower();
+                    foreach (var spr in cat.sprites)
+                        if (spr != null && spr.name.ToLower() == lower) return spr;
+                }
+                return cat.sprites[0];
+
+            case "balloon_":
+                // Favorite color (from avatar)
+                string avatarHex = profile?.avatarColorHex;
+                if (!string.IsNullOrEmpty(avatarHex))
+                {
+                    string colorId = AvatarHexToColorName(avatarHex);
+                    if (!string.IsNullOrEmpty(colorId))
+                    {
+                        string lower = colorId.ToLower();
+                        foreach (var spr in cat.sprites)
+                            if (spr != null && spr.name.ToLower() == lower) return spr;
+                    }
+                }
+                return cat.sprites[0];
+
+            case "letter_":
+                // א (alef)
+                foreach (var spr in cat.sprites)
+                    if (spr != null && spr.name == "\u05D0") return spr;
+                return cat.sprites[0];
+
+            case "number_":
+                // 2
+                foreach (var spr in cat.sprites)
+                    if (spr != null && spr.name == "2") return spr;
+                return cat.sprites[0];
+
+            default:
+                return cat.sprites[0];
+        }
+    }
+
+    private static string AvatarHexToColorName(string hex)
+    {
+        if (string.IsNullOrEmpty(hex)) return null;
+        switch (hex.ToUpper())
+        {
+            case "#EF9A9A": return "Red";
+            case "#F48FB1": return "Pink";
+            case "#CE93D8": case "#B39DDB": return "Purple";
+            case "#90CAF9": return "Blue";
+            case "#80DEEA": return "Cyan";
+            case "#80CBC4": case "#A5D6A7": return "Green";
+            case "#FFF59D": return "Yellow";
+            case "#FFCC80": case "#FFAB91": return "Orange";
+            case "#BCAAA4": return "Brown";
+            default: return null;
+        }
+    }
+
+    private void JumpToPage(int targetPage)
+    {
+        if (_isAnimating || targetPage == _currentPage) return;
+        if (targetPage < 0 || targetPage >= _totalPages) return;
+        _currentPage = targetPage;
+        PopulatePages(_currentPage);
+    }
+
+    private void UpdateTabHighlight()
+    {
+        for (int i = 0; i < _tabBgs.Count; i++)
+        {
+            if (_tabBgs[i] == null) continue;
+            var tabRT = _tabBgs[i].GetComponent<RectTransform>();
+            bool active = i == _currentPage;
+
+            // Active tab: taller, page-colored; inactive: shorter, cover-colored
+            float w = tabRT.sizeDelta.x;
+            tabRT.sizeDelta = new Vector2(w, active ? 85f : 68f);
+            tabRT.anchoredPosition = new Vector2(tabRT.anchoredPosition.x, active ? -6f : -12f);
+
+            _tabBgs[i].color = active
+                ? PageColor
+                : new Color(_coverColor.r * 1.15f, _coverColor.g * 1.15f, _coverColor.b * 1.15f, 0.7f);
+        }
     }
 
     // ── Pages ──
@@ -505,6 +684,7 @@ public class CollectibleAlbumController : MonoBehaviour
 
         _prevButton.gameObject.SetActive(_currentPage > 0);
         _nextButton.gameObject.SetActive(_currentPage < _totalPages - 1);
+        UpdateTabHighlight();
     }
 
     // ── Page Turn ──
