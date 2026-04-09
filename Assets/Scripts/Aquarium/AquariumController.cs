@@ -1521,11 +1521,25 @@ public class AquariumController : MonoBehaviour
         _dirtyMask.LoadRawTextureData(_dirtyPixels);
         _dirtyMask.Apply();
 
-        // Save cleaning timestamp
+        // Save cleaning timestamp + award ocean sticker
         var profile = ProfileManager.ActiveProfile;
         if (profile != null && profile.aquarium != null)
         {
             profile.aquarium.lastCleanedAt = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+            // Award a random ocean sticker for cleaning
+            var jp = profile.journey;
+            if (jp != null)
+            {
+                string stickerId = StickerCatalog.PickRandomSticker("ocean_", jp.collectedStickerIds);
+                if (stickerId != null)
+                {
+                    jp.collectedStickerIds.Add(stickerId);
+                    StartCoroutine(StickerPopup.Show(stickerId));
+                    Debug.Log($"[Sticker] Awarded {stickerId} from aquarium cleaning");
+                }
+            }
+
             ProfileManager.Instance.Save();
         }
 
