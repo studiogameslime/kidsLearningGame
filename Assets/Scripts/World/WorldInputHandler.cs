@@ -247,6 +247,14 @@ public class WorldInputHandler : MonoBehaviour
                 return;
             }
 
+            // Check for sticker album
+            if (go.name == "StickerAlbum")
+            {
+                var album = go.GetComponentInParent<Canvas>()?.GetComponent<CollectibleAlbumController>();
+                if (album != null) album.Open();
+                return;
+            }
+
             // Check for bubble lab
             var bubbleLab = go.GetComponent<WorldBubbleLab>();
             if (bubbleLab != null)

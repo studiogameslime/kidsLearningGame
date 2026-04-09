@@ -20,7 +20,7 @@ public class WorldController : MonoBehaviour
     public Button homeButton;
     public Button gamesButton;
     public Button parentAreaButton;
-    public Button albumButton;
+    // albumButton removed — now a tappable world object
 
     [Header("Star Display")]
     public TMPro.TextMeshProUGUI headerTitleTMP;
@@ -78,7 +78,7 @@ public class WorldController : MonoBehaviour
         if (homeButton != null) homeButton.gameObject.SetActive(false);
         if (gamesButton != null) gamesButton.onClick.AddListener(OnGamesPressed);
         if (parentAreaButton != null) parentAreaButton.onClick.AddListener(OnParentAreaPressed);
-        if (albumButton != null) albumButton.onClick.AddListener(OnAlbumPressed);
+        // Album is now a tappable world object, handled by WorldInputHandler
 
         // Hide header games button — game shelf in the world replaces it
         if (gamesButton != null)
@@ -643,6 +643,9 @@ public class WorldController : MonoBehaviour
 
         // Color Studio — hidden for now
         // SpawnColorStudio(viewportWidth, centerOffset);
+
+        // Sticker Album on CENTER screen (near sticker tree)
+        SpawnStickerAlbum(viewportWidth, centerOffset);
     }
 
     private void SpawnAnimals(List<string> animalIds, float screenWidth, float xOffset = 0f)
@@ -902,6 +905,50 @@ public class WorldController : MonoBehaviour
 
         var aquarium = go.AddComponent<WorldAquarium>();
         aquarium.circleSprite = circleSprite;
+    }
+
+    private void SpawnStickerAlbum(float screenWidth, float xOffset = 0f)
+    {
+        if (grassArea == null) return;
+
+        var albumSprite = Resources.Load<Sprite>("Icons/StickerAlbum");
+        if (albumSprite == null)
+        {
+            // Fallback: try Art folder directly (won't work in builds, but OK for editor)
+            Debug.LogWarning("[WorldController] StickerAlbum icon not found in Resources/Icons/");
+            return;
+        }
+
+        float albumSize = 160f;
+
+        // Shadow
+        var shadowGO = new GameObject("AlbumShadow");
+        shadowGO.transform.SetParent(grassArea, false);
+        var shadowRT = shadowGO.AddComponent<RectTransform>();
+        shadowRT.anchorMin = Vector2.zero;
+        shadowRT.anchorMax = Vector2.zero;
+        shadowRT.pivot = new Vector2(0.5f, 0.5f);
+        shadowRT.sizeDelta = new Vector2(albumSize * 0.7f, albumSize * 0.18f);
+        shadowRT.anchoredPosition = new Vector2(xOffset + screenWidth * 0.65f, 134f);
+        var shadowImg = shadowGO.AddComponent<Image>();
+        if (circleSprite != null) shadowImg.sprite = circleSprite;
+        shadowImg.color = new Color(0f, 0f, 0f, 0.12f);
+        shadowImg.raycastTarget = false;
+
+        // Album icon
+        var go = new GameObject("StickerAlbum");
+        go.transform.SetParent(grassArea, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.zero;
+        rt.pivot = new Vector2(0.5f, 0f);
+        rt.sizeDelta = new Vector2(albumSize, albumSize);
+        rt.anchoredPosition = new Vector2(xOffset + screenWidth * 0.65f, 139f);
+
+        var img = go.AddComponent<Image>();
+        img.sprite = albumSprite;
+        img.preserveAspect = true;
+        img.raycastTarget = true;
     }
 
     private void SpawnSandbox(float screenWidth, float xOffset = 0f)

@@ -344,12 +344,6 @@ public class WorldSceneSetup : EditorWindow
             new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f),
             new Vector2(-100, 0), new Vector2(90, 90));
 
-        // Album button — Sticker Album image
-        var stickerAlbumIcon = LoadSprite("Assets/Art/Sticker Album.png");
-        var albumBtn = CreateIconButton(topBar.transform, "AlbumButton", stickerAlbumIcon,
-            new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f),
-            new Vector2(-235, 0), new Vector2(90, 90));
-
         // Parent dashboard button (UI_1_4 gear, top-right, icon + label "איזור הורים")
         var parentIcon = UISheetHelper.GearIcon;
         var roundedRect = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Sprites/RoundedRect.png");
@@ -865,7 +859,7 @@ public class WorldSceneSetup : EditorWindow
         controller.grassArea = grassAreaRT;
         controller.homeButton = homeGO.GetComponent<Button>();
         controller.gamesButton = gamesGO.GetComponent<Button>();
-        controller.albumButton = albumBtn.GetComponent<Button>();
+        // albumButton removed from header — now a world object
         controller.parentAreaButton = parentDashBtn.GetComponent<Button>();
         controller.environment = envComponent;
         controller.cloudSystem = cloudSystemComp;
@@ -918,7 +912,7 @@ public class WorldSceneSetup : EditorWindow
         album.circleSprite = circleSprite;
         album.roundedRect = roundedRectSprite;
         album.gameDatabase = controller.gameDatabase;
-        album.achievementTabSprite = LoadSprite("Assets/Art/Games Collection.png");
+        album.achievementTabSprite = LoadSprite("Assets/Art/Toy Box.png");
 
         // Wire sticker category arrays from individual sprite sheets
         album.animalsStickers  = LoadStickerSheet("animalsStickers");
