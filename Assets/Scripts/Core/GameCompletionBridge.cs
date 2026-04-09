@@ -172,9 +172,14 @@ public class GameCompletionBridge : MonoBehaviour
             {
                 jp.collectedStickerIds.Add(stickerId);
                 LastAwardedStickerId = stickerId;
+                jp.roundsUntilNextSticker = Random.Range(3, 6);
                 Debug.Log($"[Sticker] Awarded {stickerId} from game {gameId}");
             }
-            jp.roundsUntilNextSticker = Random.Range(3, 6);
+            else
+            {
+                // No stickers available (bank empty or all collected) — retry next round
+                jp.roundsUntilNextSticker = 1;
+            }
         }
     }
 
