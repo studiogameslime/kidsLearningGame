@@ -201,6 +201,8 @@ public class AquariumCollection
     public int nextRewardIndex;             // index into AquariumRewardOrder for next unlock
     public int xp;                          // total XP earned in aquarium
     public int level;                       // current aquarium level (0-based)
+    public long lastCleanedAt;              // Unix timestamp of last glass cleaning (0 = never)
+    public int dirtSeed;                    // Perlin noise seed for consistent dirt pattern
 }
 
 [Serializable]

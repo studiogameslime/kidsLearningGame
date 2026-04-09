@@ -1339,9 +1339,17 @@ public class AquariumController : MonoBehaviour
         _cleanedPixels = 0;
         _dirtPattern = new byte[DirtyTexW * DirtyTexH * 4];
 
-        // Use random offset so each generation looks different
-        float offsetX = Random.Range(0f, 500f);
-        float offsetY = Random.Range(0f, 500f);
+        // Use persistent seed so the pattern is the same between visits
+        var profile = ProfileManager.ActiveProfile;
+        var aquarium = profile?.aquarium;
+        if (aquarium != null && aquarium.dirtSeed == 0)
+        {
+            aquarium.dirtSeed = Random.Range(1, 100000);
+            ProfileManager.Instance.Save();
+        }
+        int seed = aquarium != null ? aquarium.dirtSeed : Random.Range(1, 100000);
+        float offsetX = (seed % 500);
+        float offsetY = (seed / 500f) % 500f;
 
         for (int y = 0; y < DirtyTexH; y++)
         {
@@ -1371,7 +1379,6 @@ public class AquariumController : MonoBehaviour
                     _dirtPattern[idx + 3] = 0;
                 }
 
-                // Start clean — active pixels begin transparent
                 _dirtyPixels[idx]     = 0;
                 _dirtyPixels[idx + 1] = 0;
                 _dirtyPixels[idx + 2] = 0;
@@ -1379,10 +1386,61 @@ public class AquariumController : MonoBehaviour
             }
         }
 
+        // Calculate how many grow steps elapsed since last cleaning
+        long lastCleaned = aquarium != null ? aquarium.lastCleanedAt : 0;
+        int elapsedSteps = 0;
+        if (lastCleaned > 0)
+        {
+            long now = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            float elapsedSeconds = Mathf.Max(0, now - lastCleaned);
+            elapsedSteps = Mathf.FloorToInt(elapsedSeconds / _dirtGrowInterval);
+        }
+        else
+        {
+            // Never cleaned — simulate dirt from a while ago
+            elapsedSteps = 20;
+        }
+
+        // Apply accumulated dirt instantly
+        if (elapsedSteps > 0)
+        {
+            // Use a local random to not affect global Random state
+            var rng = new System.Random(seed + 999);
+            int maxSteps = Mathf.Min(elapsedSteps, 200); // cap to prevent huge computation
+            for (int s = 0; s < maxSteps; s++)
+            {
+                int centerX = rng.Next(20, DirtyTexW - 20);
+                int centerY = rng.Next(20, DirtyTexH - 20);
+                int radius = rng.Next(20, 45);
+
+                for (int dy = -radius; dy <= radius; dy++)
+                {
+                    int py = centerY + dy;
+                    if (py < 0 || py >= DirtyTexH) continue;
+                    for (int dx = -radius; dx <= radius; dx++)
+                    {
+                        int px = centerX + dx;
+                        if (px < 0 || px >= DirtyTexW) continue;
+                        if (dx * dx + dy * dy > radius * radius) continue;
+
+                        int idx = (py * DirtyTexW + px) * 4;
+                        byte targetAlpha = _dirtPattern[idx + 3];
+                        if (targetAlpha > 0 && _dirtyPixels[idx + 3] < targetAlpha)
+                        {
+                            int newAlpha = Mathf.Min(targetAlpha, _dirtyPixels[idx + 3] + 20);
+                            _dirtyPixels[idx]     = _dirtPattern[idx];
+                            _dirtyPixels[idx + 1] = _dirtPattern[idx + 1];
+                            _dirtyPixels[idx + 2] = _dirtPattern[idx + 2];
+                            _dirtyPixels[idx + 3] = (byte)newAlpha;
+                        }
+                    }
+                }
+            }
+        }
+
         _dirtyMask.LoadRawTextureData(_dirtyPixels);
         _dirtyMask.Apply();
 
-        // Start growing dirt immediately
         _dirtGrowing = true;
         _dirtGrowTimer = 0f;
     }
@@ -1462,6 +1520,14 @@ public class AquariumController : MonoBehaviour
             _dirtyPixels[i + 3] = 0;
         _dirtyMask.LoadRawTextureData(_dirtyPixels);
         _dirtyMask.Apply();
+
+        // Save cleaning timestamp
+        var profile = ProfileManager.ActiveProfile;
+        if (profile != null && profile.aquarium != null)
+        {
+            profile.aquarium.lastCleanedAt = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            ProfileManager.Instance.Save();
+        }
 
         // Dirt grows back gradually
         _dirtGrowTimer = 0f;
