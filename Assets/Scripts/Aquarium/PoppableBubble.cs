@@ -22,7 +22,7 @@ public class PoppableBubble : MonoBehaviour, IPointerClickHandler
 
         SoundLibrary.PlayBubblePop();
         FirebaseAnalyticsManager.LogAquariumBubblePopped();
-        if (controller != null) controller.AddProgress(1); // bubble = 1 point
+        if (controller != null) controller.AddProgress(1, 0.05f); // bubble = 1 point, 5% sticker chance
         Destroy(gameObject);
     }
 }

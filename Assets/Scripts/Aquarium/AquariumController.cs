@@ -837,11 +837,13 @@ public class AquariumController : MonoBehaviour
         var profile = ProfileManager.ActiveProfile;
         if (profile == null) return;
 
-        AddProgress(10); // feeding = 10 points
+        AddProgress(10, 0.15f); // feeding = 10 points, 15% sticker chance
     }
 
-    /// <summary>Add points to aquarium progress bar. Feeding=10, Bubble=1, Cleaning=5.</summary>
-    public void AddProgress(int points)
+    /// <summary>Add points to aquarium progress bar. Feeding=10, Bubble=1, Cleaning=gradual.</summary>
+    /// <param name="points">Points to add.</param>
+    /// <param name="stickerChance">Chance (0-1) to award an ocean sticker. 0 = no chance.</param>
+    public void AddProgress(int points, float stickerChance = 0f)
     {
         if (giftActive) return;
         if (!HasMoreRewards()) return;
@@ -854,6 +856,10 @@ public class AquariumController : MonoBehaviour
 
         UpdateProgressBar(true);
 
+        // Chance-based sticker award
+        if (stickerChance > 0f)
+            TryAwardOceanSticker(stickerChance);
+
         if (profile.aquarium.feedProgress >= GetFeedsForNextGift())
         {
             // Exit food placement mode
@@ -863,6 +869,25 @@ public class AquariumController : MonoBehaviour
             HideFoodModeIndicator();
 
             StartCoroutine(SpawnGiftDelayed());
+        }
+    }
+
+    private void TryAwardOceanSticker(float chance)
+    {
+        if (Random.value > chance) return;
+
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null) return;
+        var jp = profile.journey;
+        if (jp == null) return;
+
+        string stickerId = StickerCatalog.PickRandomSticker("ocean_", jp.collectedStickerIds);
+        if (stickerId != null)
+        {
+            jp.collectedStickerIds.Add(stickerId);
+            ProfileManager.Instance.Save();
+            StartCoroutine(StickerPopup.Show(stickerId));
+            Debug.Log($"[Sticker] Awarded {stickerId} from aquarium (chance={chance:P0})");
         }
     }
 
@@ -1490,7 +1515,7 @@ public class AquariumController : MonoBehaviour
             while (_cleanProgressAccum >= pointThreshold && pointThreshold > 0)
             {
                 _cleanProgressAccum -= pointThreshold;
-                AddProgress(1);
+                AddProgress(1, 0.03f); // cleaning progress = 3% sticker chance per point
             }
 
             // Check if mostly clean (80% threshold)
@@ -1521,27 +1546,16 @@ public class AquariumController : MonoBehaviour
         _dirtyMask.LoadRawTextureData(_dirtyPixels);
         _dirtyMask.Apply();
 
-        // Save cleaning timestamp + award ocean sticker
+        // Save cleaning timestamp
         var profile = ProfileManager.ActiveProfile;
         if (profile != null && profile.aquarium != null)
         {
             profile.aquarium.lastCleanedAt = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
-            // Award a random ocean sticker for cleaning
-            var jp = profile.journey;
-            if (jp != null)
-            {
-                string stickerId = StickerCatalog.PickRandomSticker("ocean_", jp.collectedStickerIds);
-                if (stickerId != null)
-                {
-                    jp.collectedStickerIds.Add(stickerId);
-                    StartCoroutine(StickerPopup.Show(stickerId));
-                    Debug.Log($"[Sticker] Awarded {stickerId} from aquarium cleaning");
-                }
-            }
-
             ProfileManager.Instance.Save();
         }
+
+        // 50% chance for ocean sticker on full clean
+        TryAwardOceanSticker(0.5f);
 
         // Dirt grows back gradually
         _dirtGrowTimer = 0f;
