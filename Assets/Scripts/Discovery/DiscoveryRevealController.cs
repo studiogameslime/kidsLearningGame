@@ -446,6 +446,9 @@ public class DiscoveryRevealController : MonoBehaviour
         if (revealImage != null)
             UIEffects.SpawnSparkles(revealImage.rectTransform, 12);
 
+        // Unlock the discovery immediately (don't wait for World gift box)
+        UnlockDiscovery(discovery);
+
         // Big confetti
         if (ConfettiController.Instance != null)
             ConfettiController.Instance.PlayBig();
@@ -455,6 +458,30 @@ public class DiscoveryRevealController : MonoBehaviour
 
         isComplete = true;
         ReturnToGame();
+    }
+
+    private void UnlockDiscovery(DiscoveryEntry discovery)
+    {
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null || discovery == null) return;
+        var jp = profile.journey;
+        if (jp == null) return;
+
+        if (discovery.type == "animal")
+        {
+            if (!jp.unlockedAnimalIds.Contains(discovery.id))
+                jp.unlockedAnimalIds.Add(discovery.id);
+        }
+        else if (discovery.type == "color")
+        {
+            if (!jp.unlockedColorIds.Contains(discovery.id))
+                jp.unlockedColorIds.Add(discovery.id);
+        }
+
+        // Remove from pending rewards — already unlocked, no need for World gift box
+        jp.pendingWorldRewards.RemoveAll(r => r.type == discovery.type && r.id == discovery.id);
+
+        ProfileManager.Instance.Save();
     }
 
     private void ReturnToGame()
