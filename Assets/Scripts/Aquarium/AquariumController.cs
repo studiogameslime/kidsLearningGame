@@ -77,7 +77,7 @@ public class AquariumController : MonoBehaviour
     private RectTransform _spongeCursorRT;
     private bool _dirtGrowing;
     private float _dirtGrowTimer;
-    private float _dirtGrowInterval = 1f;
+    private float _dirtGrowInterval = 3f;
     private byte[] _dirtPattern;
 
 
@@ -1474,8 +1474,7 @@ public class AquariumController : MonoBehaviour
 
         bool anyChanged = false;
 
-        // Grow multiple clusters per step for visible progress
-        int clusters = 5;
+        int clusters = 1;
         for (int c = 0; c < clusters; c++)
         {
             int centerX = Random.Range(20, DirtyTexW - 20);
