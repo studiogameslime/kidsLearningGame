@@ -94,8 +94,9 @@ public class StickerTreeController : MonoBehaviour
             return;
         }
 
-        // Visual-only watering — fun interaction, no effect on timer
+        // Watering — speeds up growth by 1 minute
         StartCoroutine(WaterSequence());
+        SpeedUpGrowth(60);
     }
 
     // ── Time-Based Growth ──
@@ -459,6 +460,20 @@ public class StickerTreeController : MonoBehaviour
             stickerRT.localScale = Vector3.one * scale;
             yield return null;
         }
+    }
+
+    /// <summary>Subtract seconds from the growth timer by moving lastCollect backwards.</summary>
+    private void SpeedUpGrowth(int seconds)
+    {
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null) return;
+
+        long lastCollect = GetLastCollectionTime(profile);
+        if (lastCollect <= 0) return; // no collection yet — tree already has a sticker
+
+        // Move lastCollect backwards = as if more time has passed
+        lastCollect -= seconds;
+        SetLastCollectionTime(profile, lastCollect);
     }
 
     // ── State Persistence ──
