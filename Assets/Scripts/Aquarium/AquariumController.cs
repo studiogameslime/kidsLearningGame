@@ -77,7 +77,7 @@ public class AquariumController : MonoBehaviour
     private RectTransform _spongeCursorRT;
     private bool _dirtGrowing;
     private float _dirtGrowTimer;
-    private float _dirtGrowInterval = 3f;
+    private float _dirtGrowInterval = 1f;
     private byte[] _dirtPattern;
 
 
@@ -1472,33 +1472,37 @@ public class AquariumController : MonoBehaviour
     {
         if (_dirtPattern == null || _dirtyPixels == null) return;
 
-        // Pick a random cluster of pixels and restore their dirt from the pattern
-        int centerX = Random.Range(20, DirtyTexW - 20);
-        int centerY = Random.Range(20, DirtyTexH - 20);
-        int radius = Random.Range(15, 35);
         bool anyChanged = false;
 
-        for (int dy = -radius; dy <= radius; dy++)
+        // Grow multiple clusters per step for visible progress
+        int clusters = 5;
+        for (int c = 0; c < clusters; c++)
         {
-            int py = centerY + dy;
-            if (py < 0 || py >= DirtyTexH) continue;
-            for (int dx = -radius; dx <= radius; dx++)
-            {
-                int px = centerX + dx;
-                if (px < 0 || px >= DirtyTexW) continue;
-                if (dx * dx + dy * dy > radius * radius) continue;
+            int centerX = Random.Range(20, DirtyTexW - 20);
+            int centerY = Random.Range(20, DirtyTexH - 20);
+            int radius = Random.Range(20, 45);
 
-                int idx = (py * DirtyTexW + px) * 4;
-                byte targetAlpha = _dirtPattern[idx + 3];
-                if (targetAlpha > 0 && _dirtyPixels[idx + 3] < targetAlpha)
+            for (int dy = -radius; dy <= radius; dy++)
+            {
+                int py = centerY + dy;
+                if (py < 0 || py >= DirtyTexH) continue;
+                for (int dx = -radius; dx <= radius; dx++)
                 {
-                    // Grow towards target gradually
-                    int newAlpha = Mathf.Min(targetAlpha, _dirtyPixels[idx + 3] + 8);
-                    _dirtyPixels[idx]     = _dirtPattern[idx];
-                    _dirtyPixels[idx + 1] = _dirtPattern[idx + 1];
-                    _dirtyPixels[idx + 2] = _dirtPattern[idx + 2];
-                    _dirtyPixels[idx + 3] = (byte)newAlpha;
-                    anyChanged = true;
+                    int px = centerX + dx;
+                    if (px < 0 || px >= DirtyTexW) continue;
+                    if (dx * dx + dy * dy > radius * radius) continue;
+
+                    int idx = (py * DirtyTexW + px) * 4;
+                    byte targetAlpha = _dirtPattern[idx + 3];
+                    if (targetAlpha > 0 && _dirtyPixels[idx + 3] < targetAlpha)
+                    {
+                        int newAlpha = Mathf.Min(targetAlpha, _dirtyPixels[idx + 3] + 20);
+                        _dirtyPixels[idx]     = _dirtPattern[idx];
+                        _dirtyPixels[idx + 1] = _dirtPattern[idx + 1];
+                        _dirtyPixels[idx + 2] = _dirtPattern[idx + 2];
+                        _dirtyPixels[idx + 3] = (byte)newAlpha;
+                        anyChanged = true;
+                    }
                 }
             }
         }
