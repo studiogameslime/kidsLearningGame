@@ -1371,16 +1371,20 @@ public class AquariumController : MonoBehaviour
                     _dirtPattern[idx + 3] = 0;
                 }
 
-                // Copy to active pixels
-                _dirtyPixels[idx]     = _dirtPattern[idx];
-                _dirtyPixels[idx + 1] = _dirtPattern[idx + 1];
-                _dirtyPixels[idx + 2] = _dirtPattern[idx + 2];
-                _dirtyPixels[idx + 3] = _dirtPattern[idx + 3];
+                // Start clean — active pixels begin transparent
+                _dirtyPixels[idx]     = 0;
+                _dirtyPixels[idx + 1] = 0;
+                _dirtyPixels[idx + 2] = 0;
+                _dirtyPixels[idx + 3] = 0;
             }
         }
 
         _dirtyMask.LoadRawTextureData(_dirtyPixels);
         _dirtyMask.Apply();
+
+        // Start growing dirt immediately
+        _dirtGrowing = true;
+        _dirtGrowTimer = 0f;
     }
 
     private void CleanAt(float texX, float texY)
