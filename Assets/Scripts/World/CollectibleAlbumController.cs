@@ -854,7 +854,7 @@ public class CollectibleAlbumController : MonoBehaviour
             starsRT.anchorMax = new Vector2(1f, 0f);
             starsRT.pivot = new Vector2(0.5f, 0f);
             starsRT.anchoredPosition = new Vector2(0, 2);
-            starsRT.sizeDelta = new Vector2(0, 18);
+            starsRT.sizeDelta = new Vector2(0, 36);
             var starsLayout = starsGO.AddComponent<HorizontalLayoutGroup>();
             starsLayout.childAlignment = TextAnchor.MiddleCenter;
             starsLayout.childControlWidth = false;
@@ -868,7 +868,7 @@ public class CollectibleAlbumController : MonoBehaviour
                 var starGO = new GameObject($"Star_{s}");
                 starGO.transform.SetParent(starsGO.transform, false);
                 var starRT = starGO.AddComponent<RectTransform>();
-                starRT.sizeDelta = new Vector2(18, 18);
+                starRT.sizeDelta = new Vector2(36, 36);
                 var starImg = starGO.AddComponent<Image>();
                 if (starSprite != null) starImg.sprite = starSprite;
                 starImg.raycastTarget = false;
