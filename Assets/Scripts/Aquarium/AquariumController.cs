@@ -837,7 +837,7 @@ public class AquariumController : MonoBehaviour
         var profile = ProfileManager.ActiveProfile;
         if (profile == null) return;
 
-        AddProgress(10, 0.15f); // feeding = 10 points, 15% sticker chance
+        AddProgress(10, 0.10f); // feeding = 10 points, 10% sticker chance
     }
 
     /// <summary>Add points to aquarium progress bar. Feeding=10, Bubble=1, Cleaning=gradual.</summary>
@@ -1515,7 +1515,7 @@ public class AquariumController : MonoBehaviour
             while (_cleanProgressAccum >= pointThreshold && pointThreshold > 0)
             {
                 _cleanProgressAccum -= pointThreshold;
-                AddProgress(1, 0.03f); // cleaning progress = 3% sticker chance per point
+                AddProgress(1, 0.02f); // cleaning progress = 2% sticker chance per point
             }
 
             // Check if mostly clean (80% threshold)
@@ -1554,8 +1554,7 @@ public class AquariumController : MonoBehaviour
             ProfileManager.Instance.Save();
         }
 
-        // 50% chance for ocean sticker on full clean
-        TryAwardOceanSticker(0.5f);
+        // Sticker chance handled per cleaning point in CleanAt, not here
 
         // Dirt grows back gradually
         _dirtGrowTimer = 0f;
