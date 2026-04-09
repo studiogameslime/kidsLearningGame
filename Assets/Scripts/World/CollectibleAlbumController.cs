@@ -218,8 +218,8 @@ public class CollectibleAlbumController : MonoBehaviour
         _bookRT = bookGO.AddComponent<RectTransform>();
         _bookRT.anchorMin = new Vector2(0.5f, 0.5f);
         _bookRT.anchorMax = new Vector2(0.5f, 0.5f);
-        _bookRT.sizeDelta = new Vector2(1500, 700);
-        _bookRT.anchoredPosition = new Vector2(0, -80);
+        _bookRT.sizeDelta = new Vector2(1560, 750);
+        _bookRT.anchoredPosition = new Vector2(0, -70);
         var coverImg = bookGO.AddComponent<Image>();
         if (roundedRect != null) { coverImg.sprite = roundedRect; coverImg.type = Image.Type.Sliced; }
         Color coverColor = BookCover;
@@ -378,7 +378,7 @@ public class CollectibleAlbumController : MonoBehaviour
         validCount += achievementPages;
         if (validCount == 0) return;
 
-        float bookWidth = 1500f;
+        float bookWidth = 1560f;
         float margin = 40f; // padding from book edges
         float gap = 4f;
         float usableWidth = bookWidth - margin * 2f;
