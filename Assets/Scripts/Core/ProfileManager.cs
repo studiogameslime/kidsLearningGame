@@ -83,6 +83,28 @@ public class ProfileManager : MonoBehaviour
                 // Migrate old sticker IDs: "sticker_X" → remove (can't map to new names)
                 if (p.journey != null && p.journey.collectedStickerIds != null)
                     p.journey.collectedStickerIds.RemoveAll(id => id != null && id.StartsWith("sticker_"));
+                // Catch-up: award stickers for already-discovered animals and colors
+                if (p.journey != null)
+                {
+                    if (p.journey.unlockedAnimalIds != null)
+                    {
+                        foreach (var animalId in p.journey.unlockedAnimalIds)
+                        {
+                            string stId = StickerCatalog.GetStickerForDiscovery("animal", animalId);
+                            if (stId != null && !p.journey.collectedStickerIds.Contains(stId))
+                                p.journey.collectedStickerIds.Add(stId);
+                        }
+                    }
+                    if (p.journey.unlockedColorIds != null)
+                    {
+                        foreach (var colorId in p.journey.unlockedColorIds)
+                        {
+                            string stId = StickerCatalog.GetStickerForDiscovery("color", colorId);
+                            if (stId != null && !p.journey.collectedStickerIds.Contains(stId))
+                                p.journey.collectedStickerIds.Add(stId);
+                        }
+                    }
+                }
                 // Catch-up: award achievement stickers for games already played enough
                 if (p.journey != null && p.journey.gameStats != null)
                 {
