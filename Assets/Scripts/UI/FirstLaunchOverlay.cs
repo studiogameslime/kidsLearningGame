@@ -285,7 +285,7 @@ public class FirstLaunchOverlay : MonoBehaviour
         btnText.color = BgSlide2;
         btnText.fontStyle = FontStyles.Bold;
         btnText.raycastTarget = false;
-        HebrewText.SetText(btnText, "!בואו נתחיל");
+        HebrewText.SetText(btnText, "\u05D1\u05D5\u05D0\u05D5 \u05E0\u05EA\u05D7\u05D9\u05DC!");
 
         _startButton.SetActive(false);
     }
