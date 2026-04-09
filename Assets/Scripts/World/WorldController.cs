@@ -919,7 +919,7 @@ public class WorldController : MonoBehaviour
             return;
         }
 
-        float albumSize = 160f;
+        float albumSize = 220f;
 
         // Shadow
         var shadowGO = new GameObject("AlbumShadow");
