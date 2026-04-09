@@ -301,31 +301,13 @@ public class SharedStickerSetup : EditorWindow
 
     private static Sprite[] LoadStickerSprites()
     {
-        var stickerSprites = new List<Sprite>();
-        var guids = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Art/Stickers" });
-        foreach (var guid in guids)
-        {
-            string path = AssetDatabase.GUIDToAssetPath(guid);
-            var allAssets = AssetDatabase.LoadAllAssetsAtPath(path);
-            if (allAssets == null) continue;
+        // Use animal stickers (19 cute animals — perfect variety for the shared sticker game)
+        var sprites = new List<Sprite>();
+        var allAssets = AssetDatabase.LoadAllAssetsAtPath("Assets/Art/Stickers/animalsStickers.png");
+        if (allAssets != null)
             foreach (var asset in allAssets)
-            {
-                if (asset is Sprite spr)
-                    stickerSprites.Add(spr);
-            }
-        }
-        stickerSprites.Sort((a, b) =>
-        {
-            int sheetCmp = string.Compare(a.texture.name, b.texture.name, System.StringComparison.Ordinal);
-            if (sheetCmp != 0) return sheetCmp;
-            int numA = 0, numB = 0;
-            var partsA = a.name.Split('_');
-            var partsB = b.name.Split('_');
-            if (partsA.Length > 1) int.TryParse(partsA[partsA.Length - 1], out numA);
-            if (partsB.Length > 1) int.TryParse(partsB[partsB.Length - 1], out numB);
-            return numA.CompareTo(numB);
-        });
-        return stickerSprites.ToArray();
+                if (asset is Sprite spr) sprites.Add(spr);
+        return sprites.ToArray();
     }
 
     // ── HELPERS ──────────────────────────────────────────────────
