@@ -19,6 +19,9 @@ public class CollectibleAlbumController : MonoBehaviour
     [Header("Game Data")]
     public GameDatabase gameDatabase;
 
+    [Header("Tab Icons")]
+    public Sprite achievementTabSprite; // Games Collection icon for achievement tabs
+
     [Header("Sticker Sheets (sliced)")]
     public Sprite[] animalsStickers;   // 19 — dog..donkey
     public Sprite[] lettersStickers;   // 22 — א..ת
@@ -465,25 +468,8 @@ public class CollectibleAlbumController : MonoBehaviour
             int page = targetPage;
             btn.onClick.AddListener(() => JumpToPage(page));
 
-            // Use a game thumbnail with gold tint as achievement tab icon
-            Sprite achTabSprite = null;
-            if (_achievementGames != null && _achievementGames.Count > 0)
-            {
-                // Pick a game the child has played most, or first available
-                var profile2 = ProfileManager.ActiveProfile;
-                if (profile2 != null && profile2.journey != null)
-                {
-                    int bestPlayed = 0;
-                    foreach (var g in _achievementGames)
-                    {
-                        var stat = profile2.journey.GetOrCreateStat(g.id);
-                        if (stat.timesPlayedInJourney > bestPlayed && g.thumbnail != null)
-                        { bestPlayed = stat.timesPlayedInJourney; achTabSprite = g.thumbnail; }
-                    }
-                }
-                if (achTabSprite == null) achTabSprite = _achievementGames[0].thumbnail;
-            }
-
+            // Achievement tab icon — Games Collection image
+            Sprite achTabSprite = achievementTabSprite;
             if (achTabSprite != null)
             {
                 var iconGO = new GameObject("Icon");
@@ -497,18 +483,6 @@ public class CollectibleAlbumController : MonoBehaviour
                 iconImg.sprite = achTabSprite;
                 iconImg.preserveAspect = true;
                 iconImg.raycastTarget = false;
-                // Gold tint border behind icon
-                var borderGO = new GameObject("GoldBorder");
-                borderGO.transform.SetParent(tabGO.transform, false);
-                borderGO.transform.SetAsFirstSibling();
-                var borderRT = borderGO.AddComponent<RectTransform>();
-                borderRT.anchorMin = new Vector2(0.02f, 0.03f);
-                borderRT.anchorMax = new Vector2(0.98f, 0.97f);
-                borderRT.offsetMin = Vector2.zero;
-                borderRT.offsetMax = Vector2.zero;
-                var borderImg = borderGO.AddComponent<Image>();
-                borderImg.color = new Color(1f, 0.84f, 0f, 0.6f);
-                borderImg.raycastTarget = false;
                 _tabImages.Add(iconImg);
             }
             else

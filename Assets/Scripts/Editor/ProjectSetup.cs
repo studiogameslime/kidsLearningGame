@@ -792,7 +792,7 @@ public class ProjectSetup : EditorWindow
         numberMaze.title = "Number Maze";
         numberMaze.cardColor = HexColor("#42A5F5");
         numberMaze.targetSceneName = "NumberMaze";
-        numberMaze.thumbnail = LoadSprite($"{previewPath}/NumberMaze.png");
+        numberMaze.thumbnail = LoadSprite($"{previewPath}/NumbersMaze.png");
         numberMaze.hasSubItems = false;
         numberMaze.nameClip = LoadAudioClip("Assets/Sounds/Games Names/מבוך המספרים.mp3");
         EditorUtility.SetDirty(numberMaze);
@@ -858,7 +858,7 @@ public class ProjectSetup : EditorWindow
         connectMatch.title = "Connect Match";
         connectMatch.cardColor = HexColor("#26A69A");
         connectMatch.targetSceneName = "ConnectMatch";
-        connectMatch.thumbnail = LoadSprite($"{previewPath}/MatchDotsShape.png");
+        connectMatch.thumbnail = LoadSprite($"{previewPath}/ConnectMatch.png");
         connectMatch.hasSubItems = false;
         connectMatch.nameClip = LoadAudioClip("Assets/Sounds/Games Names/חבר וצייר.mp3");
         EditorUtility.SetDirty(connectMatch);
@@ -869,7 +869,7 @@ public class ProjectSetup : EditorWindow
         laundrySorting.title = "Laundry Sorting";
         laundrySorting.cardColor = HexColor("#42A5F5");
         laundrySorting.targetSceneName = "LaundrySorting";
-        laundrySorting.thumbnail = LoadSprite("Assets/Art/Washing Machine.png");
+        laundrySorting.thumbnail = LoadSprite($"{previewPath}/LaundrySorting.png");
         laundrySorting.hasSubItems = false;
         laundrySorting.nameClip = LoadAudioClip("Assets/Sounds/Games Names/מיון כביסה ופירות.mp3");
         EditorUtility.SetDirty(laundrySorting);

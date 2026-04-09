@@ -344,9 +344,9 @@ public class WorldSceneSetup : EditorWindow
             new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f),
             new Vector2(-100, 0), new Vector2(90, 90));
 
-        // Album button (UI_1_1, white silhouette)
-        var albumIcon = UISheetHelper.AlbumIcon;
-        var albumBtn = CreateIconButton(topBar.transform, "AlbumButton", albumIcon,
+        // Album button — Sticker Album image
+        var stickerAlbumIcon = LoadSprite("Assets/Art/Sticker Album.png");
+        var albumBtn = CreateIconButton(topBar.transform, "AlbumButton", stickerAlbumIcon,
             new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f),
             new Vector2(-235, 0), new Vector2(90, 90));
 
@@ -918,6 +918,7 @@ public class WorldSceneSetup : EditorWindow
         album.circleSprite = circleSprite;
         album.roundedRect = roundedRectSprite;
         album.gameDatabase = controller.gameDatabase;
+        album.achievementTabSprite = LoadSprite("Assets/Art/Games Collection.png");
 
         // Wire sticker category arrays from individual sprite sheets
         album.animalsStickers  = LoadStickerSheet("animalsStickers");
