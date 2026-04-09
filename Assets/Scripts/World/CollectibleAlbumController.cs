@@ -813,69 +813,68 @@ public class CollectibleAlbumController : MonoBehaviour
             cell.transform.SetParent(gridGO.transform, false);
             cell.AddComponent<RectTransform>();
 
-            if (tier == 0)
+            // Thumbnail (always shown — silhouette if not earned, vivid if earned)
+            var imgGO = new GameObject("Img");
+            imgGO.transform.SetParent(cell.transform, false);
+            var imgRT = imgGO.AddComponent<RectTransform>();
+            Stretch(imgRT);
+            imgRT.offsetMin = new Vector2(8, 20);
+            imgRT.offsetMax = new Vector2(-8, -4);
+            var img = imgGO.AddComponent<Image>();
+            img.sprite = game.thumbnail;
+            img.preserveAspect = true;
+            img.raycastTarget = false;
+            img.color = tier > 0 ? Color.white : SilhouetteColor;
+
+            if (tier > 0)
             {
-                // Not earned — black silhouette
-                var imgGO = new GameObject("Img");
-                imgGO.transform.SetParent(cell.transform, false);
-                var imgRT = imgGO.AddComponent<RectTransform>();
-                Stretch(imgRT);
-                imgRT.offsetMin = new Vector2(8, 8);
-                imgRT.offsetMax = new Vector2(-8, -8);
-                var img = imgGO.AddComponent<Image>();
-                img.sprite = game.thumbnail;
-                img.preserveAspect = true;
-                img.raycastTarget = false;
-                img.color = SilhouetteColor;
+                // Soft shadow behind image
+                var shadowGO = new GameObject("Shadow");
+                shadowGO.transform.SetParent(cell.transform, false);
+                shadowGO.transform.SetAsFirstSibling();
+                var shadowRT = shadowGO.AddComponent<RectTransform>();
+                shadowRT.anchorMin = new Vector2(0.15f, 0f);
+                shadowRT.anchorMax = new Vector2(0.85f, 0.08f);
+                shadowRT.offsetMin = Vector2.zero;
+                shadowRT.offsetMax = Vector2.zero;
+                var shadowImg = shadowGO.AddComponent<Image>();
+                if (circleSprite != null) shadowImg.sprite = circleSprite;
+                shadowImg.color = new Color(0, 0, 0, 0.08f);
+                shadowImg.raycastTarget = false;
             }
-            else
+
+            // Stars bar at bottom — shows tier (1/2/3 stars)
+            Color starColor = tier == 3 ? GoldFrame : tier == 2 ? SilverFrame : tier == 1 ? BronzeFrame : SilhouetteColor;
+            int starCount = tier > 0 ? tier : 3; // show 3 grey stars if not earned
+
+            var starsGO = new GameObject("Stars");
+            starsGO.transform.SetParent(cell.transform, false);
+            var starsRT = starsGO.AddComponent<RectTransform>();
+            starsRT.anchorMin = new Vector2(0f, 0f);
+            starsRT.anchorMax = new Vector2(1f, 0f);
+            starsRT.pivot = new Vector2(0.5f, 0f);
+            starsRT.anchoredPosition = new Vector2(0, 2);
+            starsRT.sizeDelta = new Vector2(0, 18);
+            var starsLayout = starsGO.AddComponent<HorizontalLayoutGroup>();
+            starsLayout.childAlignment = TextAnchor.MiddleCenter;
+            starsLayout.childControlWidth = false;
+            starsLayout.childControlHeight = false;
+            starsLayout.childForceExpandWidth = false;
+            starsLayout.spacing = 2;
+
+            for (int s = 0; s < 3; s++)
             {
-                // Earned — show with metallic frame
-                Color frameColor = tier == 3 ? GoldFrame : tier == 2 ? SilverFrame : BronzeFrame;
-
-                // Frame
-                var frameGO = new GameObject("Frame");
-                frameGO.transform.SetParent(cell.transform, false);
-                var frameRT = frameGO.AddComponent<RectTransform>();
-                Stretch(frameRT);
-                frameRT.offsetMin = new Vector2(4, 4);
-                frameRT.offsetMax = new Vector2(-4, -4);
-                var frameImg = frameGO.AddComponent<Image>();
-                if (roundedRect != null) { frameImg.sprite = roundedRect; frameImg.type = Image.Type.Sliced; }
-                frameImg.color = frameColor;
-                frameImg.raycastTarget = false;
-
-                // Thumbnail inside frame
-                var imgGO = new GameObject("Img");
-                imgGO.transform.SetParent(frameGO.transform, false);
-                var imgRT = imgGO.AddComponent<RectTransform>();
-                Stretch(imgRT);
-                imgRT.offsetMin = new Vector2(6, 6);
-                imgRT.offsetMax = new Vector2(-6, -6);
-                var img = imgGO.AddComponent<Image>();
-                img.sprite = game.thumbnail;
-                img.preserveAspect = true;
-                img.raycastTarget = false;
-                img.color = Color.white;
-
-                // Gold stars at corners
-                if (tier == 3 && circleSprite != null)
-                {
-                    for (int c = 0; c < 4; c++)
-                    {
-                        var starGO = new GameObject($"Star_{c}");
-                        starGO.transform.SetParent(cell.transform, false);
-                        var starRT = starGO.AddComponent<RectTransform>();
-                        float sx = c % 2 == 0 ? 0f : 1f;
-                        float sy = c < 2 ? 1f : 0f;
-                        starRT.anchorMin = starRT.anchorMax = new Vector2(sx, sy);
-                        starRT.sizeDelta = new Vector2(22, 22);
-                        var starImg = starGO.AddComponent<Image>();
-                        starImg.sprite = circleSprite;
-                        starImg.color = GoldFrame;
-                        starImg.raycastTarget = false;
-                    }
-                }
+                var starGO = new GameObject($"Star_{s}");
+                starGO.transform.SetParent(starsGO.transform, false);
+                var starRT = starGO.AddComponent<RectTransform>();
+                starRT.sizeDelta = new Vector2(16, 16);
+                var starTMP = starGO.AddComponent<TextMeshProUGUI>();
+                starTMP.text = "\u2605"; // ★
+                starTMP.fontSize = 16;
+                starTMP.alignment = TextAlignmentOptions.Center;
+                starTMP.raycastTarget = false;
+                // Filled stars up to tier, empty after
+                starTMP.color = s < tier ? starColor : new Color(0.7f, 0.7f, 0.7f, 0.3f);
             }
         }
     }
