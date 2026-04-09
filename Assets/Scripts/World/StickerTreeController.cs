@@ -474,6 +474,19 @@ public class StickerTreeController : MonoBehaviour
         // Move lastCollect backwards = as if more time has passed
         lastCollect -= seconds;
         SetLastCollectionTime(profile, lastCollect);
+
+        // Reschedule notification to match new expected ready time
+        if (AppSettings.NotificationsEnabled)
+        {
+            long readyAt = lastCollect + (long)growDurationSeconds;
+            long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            if (readyAt > now)
+            {
+                var fireUtc = DateTimeOffset.FromUnixTimeSeconds(readyAt).UtcDateTime;
+                string childName = profile.displayName ?? "";
+                NotificationService.Instance?.ScheduleStickerReady(fireUtc, childName);
+            }
+        }
     }
 
     // ── State Persistence ──
