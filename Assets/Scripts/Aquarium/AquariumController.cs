@@ -887,6 +887,7 @@ public class AquariumController : MonoBehaviour
             jp.collectedStickerIds.Add(stickerId);
             ProfileManager.Instance.Save();
             StartCoroutine(StickerPopup.Show(stickerId));
+            FirebaseAnalyticsManager.LogStickerCollected(stickerId, "aquarium");
             Debug.Log($"[Sticker] Awarded {stickerId} from aquarium (chance={chance:P0})");
         }
     }

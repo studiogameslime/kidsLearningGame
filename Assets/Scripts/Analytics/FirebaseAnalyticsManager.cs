@@ -105,10 +105,12 @@ public class FirebaseAnalyticsManager : MonoBehaviour
     public static void LogGameStarted(string gameId, int difficulty)
     {
         if (!_initialized) return;
-        string gameName = ParentDashboardViewModel.GetGameName(gameId);
+        // Per-game event for easy filtering in Firebase (e.g. play_fishing, play_letters)
+        FirebaseAnalytics.LogEvent($"play_{gameId}",
+            new Parameter("difficulty", difficulty));
+        // Generic event with parameters for aggregate queries
         FirebaseAnalytics.LogEvent("game_started",
             new Parameter("game_id", gameId),
-            new Parameter("game_name", gameName),
             new Parameter("difficulty", difficulty));
     }
 
@@ -116,10 +118,8 @@ public class FirebaseAnalyticsManager : MonoBehaviour
         float score, int mistakes, float duration)
     {
         if (!_initialized) return;
-        string gameName = ParentDashboardViewModel.GetGameName(gameId);
         FirebaseAnalytics.LogEvent("game_completed",
             new Parameter("game_id", gameId),
-            new Parameter("game_name", gameName),
             new Parameter("difficulty", difficulty),
             new Parameter("score", (double)score),
             new Parameter("mistakes", mistakes),
@@ -129,10 +129,20 @@ public class FirebaseAnalyticsManager : MonoBehaviour
     public static void LogGameExited(string gameId)
     {
         if (!_initialized) return;
-        string gameName = ParentDashboardViewModel.GetGameName(gameId);
         FirebaseAnalytics.LogEvent("game_exited",
-            new Parameter("game_id", gameId),
-            new Parameter("game_name", gameName));
+            new Parameter("game_id", gameId));
+    }
+
+    // ══════════════════════════════════
+    //  STICKER EVENTS
+    // ══════════════════════════════════
+
+    public static void LogStickerCollected(string stickerId, string source)
+    {
+        if (!_initialized) return;
+        FirebaseAnalytics.LogEvent("sticker_collected",
+            new Parameter("sticker_id", stickerId),
+            new Parameter("source", source));
     }
 
     // ══════════════════════════════════

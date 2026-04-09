@@ -315,7 +315,10 @@ public class StickerTreeController : MonoBehaviour
         if (profile.journey.collectedStickerIds == null)
             profile.journey.collectedStickerIds = new List<string>();
         if (!profile.journey.collectedStickerIds.Contains(stickerId))
+        {
             profile.journey.collectedStickerIds.Add(stickerId);
+            FirebaseAnalyticsManager.LogStickerCollected(stickerId, "sticker_tree");
+        }
 
         // Reset timer — set last collection to now
         long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();

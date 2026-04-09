@@ -192,6 +192,7 @@ public class GameCompletionBridge : MonoBehaviour
                 jp.collectedStickerIds.Add(stickerId);
                 LastAwardedStickerId = stickerId;
                 jp.roundsUntilNextSticker = Random.Range(3, 6);
+                FirebaseAnalyticsManager.LogStickerCollected(stickerId, $"game_{gameId}");
                 Debug.Log($"[Sticker] Awarded {stickerId} from game {gameId}");
             }
             else
@@ -213,6 +214,7 @@ public class GameCompletionBridge : MonoBehaviour
         {
             jp.collectedStickerIds.Add(achievementId);
             LastAwardedAchievementId = achievementId;
+            FirebaseAnalyticsManager.LogStickerCollected(achievementId, $"achievement_{gameId}");
             Debug.Log($"[Achievement] Awarded {achievementId} (played {stat.timesPlayedInJourney}x)");
         }
     }

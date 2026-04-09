@@ -197,6 +197,7 @@ public class RewardRevealController : MonoBehaviour
                 jp.collectedStickerIds.Add(stickerId);
                 _pendingPopupStickerId = stickerId;
                 ProfileManager.Instance.Save();
+                FirebaseAnalyticsManager.LogStickerCollected(stickerId, $"discovery_{gift.reward.type}");
                 Debug.Log($"[Sticker] Awarded {stickerId} from discovery {gift.reward.type}/{gift.reward.id}");
             }
         }
