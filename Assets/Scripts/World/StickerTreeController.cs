@@ -97,6 +97,7 @@ public class StickerTreeController : MonoBehaviour
         // Watering — speeds up growth by 1 minute
         StartCoroutine(WaterSequence());
         SpeedUpGrowth(60);
+        FirebaseAnalyticsManager.LogStickerTreeWatered();
     }
 
     // ── Time-Based Growth ──

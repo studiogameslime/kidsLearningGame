@@ -289,6 +289,18 @@ public class FirebaseAnalyticsManager : MonoBehaviour
             new Parameter("animal_id", animalId));
     }
 
+    public static void LogAquariumCleaned()
+    {
+        if (!_initialized) return;
+        FirebaseAnalytics.LogEvent("aquarium_cleaned");
+    }
+
+    public static void LogStickerTreeWatered()
+    {
+        if (!_initialized) return;
+        FirebaseAnalytics.LogEvent("sticker_tree_watered");
+    }
+
     public static void LogAquariumBubblePopped()
     {
         if (!_initialized || Time.realtimeSinceStartup - _lastBubblePop < ThrottleSeconds) return;

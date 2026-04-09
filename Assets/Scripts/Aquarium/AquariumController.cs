@@ -1540,6 +1540,7 @@ public class AquariumController : MonoBehaviour
     private void OnGlassClean()
     {
         SoundLibrary.PlayRandomFeedback();
+        FirebaseAnalyticsManager.LogAquariumCleaned();
 
         // Clear remaining dirt visually
         for (int i = 0; i < _dirtyPixels.Length; i += 4)
