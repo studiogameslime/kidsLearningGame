@@ -46,7 +46,7 @@ public class FruitPuzzleController : BaseMiniGame
         ClearRound();
         placedCount = 0;
 
-        int difficulty = GameDifficultyConfig.GetLevel("fruitpuzzle");
+        int difficulty = GameDifficultyConfig.GetLevel("vehiclepuzzle");
 
         // Easy: 1 vehicle, Medium: 2, Hard: 3
         if (difficulty <= 3)      vehicleCount = 1;
@@ -95,7 +95,7 @@ public class FruitPuzzleController : BaseMiniGame
     }
 
     protected override void OnRoundCleanup() => ClearRound();
-    protected override string GetFallbackGameId() => "fruitpuzzle";
+    protected override string GetFallbackGameId() => "vehiclepuzzle";
     public void OnHomePressed() => ExitGame();
 
     private void ClearRound()

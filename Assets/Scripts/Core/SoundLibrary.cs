@@ -73,6 +73,15 @@ public static class SoundLibrary
         if (clip != null) BackgroundMusicManager.PlayOneShot(clip);
     }
 
+    // ── Sticker ──
+
+    public static void PlayStickerCollected()
+    {
+        // Reuse the positive feedback sound — distinct enough for sticker collection
+        var clip = Resources.Load<AudioClip>("Sounds/Bubble Pop");
+        if (clip != null) BackgroundMusicManager.PlayOneShot(clip);
+    }
+
     // ── Instructions ──
 
     public static AudioClip PopTheLetterInstruction()

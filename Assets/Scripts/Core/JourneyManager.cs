@@ -92,6 +92,14 @@ public class JourneyManager : MonoBehaviour
             if (!jp.unlockedColorIds.Contains(starterColor))
                 jp.unlockedColorIds.Add(starterColor);
 
+            // Award matching stickers for starter animal and color
+            string animalSticker = StickerCatalog.GetStickerForDiscovery("animal", favAnimal);
+            if (animalSticker != null && !jp.collectedStickerIds.Contains(animalSticker))
+                jp.collectedStickerIds.Add(animalSticker);
+            string colorSticker = StickerCatalog.GetStickerForDiscovery("color", starterColor);
+            if (colorSticker != null && !jp.collectedStickerIds.Contains(colorSticker))
+                jp.collectedStickerIds.Add(colorSticker);
+
             jp.gamesUntilNextDiscovery = 1;
             ProfileManager.Instance.Save();
         }

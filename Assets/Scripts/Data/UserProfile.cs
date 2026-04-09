@@ -77,6 +77,9 @@ public class JourneyProgress
     // Pending rewards to show as gift boxes in WorldScene (empty = none)
     public List<DiscoveryEntry> pendingWorldRewards = new List<DiscoveryEntry>();
 
+    // Sticker award pacing — counts down rounds until next sticker
+    public int roundsUntilNextSticker = 3;
+
     // True after the world intro sound has played once
     public bool hasPlayedWorldIntroSound;
 
@@ -95,6 +98,18 @@ public class DiscoveryEntry
 {
     public string type;   // "animal", "color", "game"
     public string id;     // "Bear", "Red", "Maze"
+
+    public override bool Equals(object obj)
+    {
+        if (obj is DiscoveryEntry other)
+            return type == other.type && id == other.id;
+        return false;
+    }
+
+    public override int GetHashCode()
+    {
+        return (type ?? "").GetHashCode() ^ (id ?? "").GetHashCode();
+    }
 }
 
 [Serializable]

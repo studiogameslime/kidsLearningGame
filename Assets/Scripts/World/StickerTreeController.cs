@@ -283,7 +283,9 @@ public class StickerTreeController : MonoBehaviour
 
         int stickerIndex = _pendingStickerIndex;
         if (stickerIndex < 0) { _isAnimating = false; yield break; }
-        string stickerId = $"sticker_{stickerIndex}";
+        string spriteName = (stickerSprites != null && stickerIndex < stickerSprites.Length && stickerSprites[stickerIndex] != null)
+            ? stickerSprites[stickerIndex].name.ToLower() : $"{stickerIndex}";
+        string stickerId = $"nature_{spriteName}";
 
         // Fly sticker up and fade
         if (_stickerGO != null)
@@ -480,12 +482,13 @@ public class StickerTreeController : MonoBehaviour
     private int GetNextStickerIndex(UserProfile profile)
     {
         var collected = profile.journey.collectedStickerIds ?? new List<string>();
-        int total = (stickerSprites != null && stickerSprites.Length > 0) ? stickerSprites.Length : 12;
+        if (stickerSprites == null || stickerSprites.Length == 0) return -1;
 
         var available = new List<int>();
-        for (int i = 0; i < total; i++)
+        for (int i = 0; i < stickerSprites.Length; i++)
         {
-            if (!collected.Contains($"sticker_{i}"))
+            string spriteName = stickerSprites[i] != null ? stickerSprites[i].name.ToLower() : $"{i}";
+            if (!collected.Contains($"nature_{spriteName}"))
                 available.Add(i);
         }
 

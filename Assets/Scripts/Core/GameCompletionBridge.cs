@@ -22,6 +22,9 @@ public class GameCompletionBridge : MonoBehaviour
 
     public GameStatsCollector ActiveCollector { get; set; }
 
+    /// <summary>Sticker ID awarded in the most recent round, or null if none.</summary>
+    public string LastAwardedStickerId { get; private set; }
+
     /// <summary>True while celebration is playing — used to block exit buttons.</summary>
     public static bool IsCelebrating => Instance != null && Instance._navigationLocked;
 
@@ -90,6 +93,28 @@ public class GameCompletionBridge : MonoBehaviour
         {
             var stat = jp.GetOrCreateStat(gameId);
             stat.timesPlayedInJourney++;
+        }
+
+        // ── Award sticker (every 3-5 rounds, from game's category) ──
+        LastAwardedStickerId = null;
+        if (!string.IsNullOrEmpty(gameId))
+        {
+            string prefix = StickerCatalog.GetCategoryForGame(gameId);
+            if (prefix != null)
+            {
+                jp.roundsUntilNextSticker--;
+                if (jp.roundsUntilNextSticker <= 0)
+                {
+                    string stickerId = StickerCatalog.PickRandomSticker(prefix, jp.collectedStickerIds);
+                    if (stickerId != null)
+                    {
+                        jp.collectedStickerIds.Add(stickerId);
+                        LastAwardedStickerId = stickerId;
+                        Debug.Log($"[Sticker] Awarded {stickerId} from game {gameId}");
+                    }
+                    jp.roundsUntilNextSticker = Random.Range(3, 6);
+                }
+            }
         }
 
         // ── Check for discovery ──

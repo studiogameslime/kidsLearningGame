@@ -179,7 +179,7 @@ public class AnalyticsSetup : EditorWindow
             W(SkillCategory.Memory, 0.20f)));
 
         // ── Fruit Puzzle ──
-        mapping.entries.Add(Entry("fruitpuzzle",
+        mapping.entries.Add(Entry("vehiclepuzzle",
             W(SkillCategory.VisualMatching, 0.40f),
             W(SkillCategory.Attention, 0.30f),
             W(SkillCategory.ProblemSolving, 0.30f)));
@@ -217,7 +217,7 @@ public class AnalyticsSetup : EditorWindow
             "ballmaze", "sharedsticker",
             "flappybird", "simonsays", "patterncopy", "letters", "numbermaze",
             "oddoneout", "quantitymatch", "connectmatch", "numbertrain",
-            "lettertrain", "laundrysorting", "bakery", "sockmatch", "sizesort", "colorsort", "fruitpuzzle"
+            "lettertrain", "laundrysorting", "bakery", "sockmatch", "sizesort", "colorsort", "vehiclepuzzle"
         };
 
         // ── Age 2–2.5 years (24–30 months) ──

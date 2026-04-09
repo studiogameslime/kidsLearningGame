@@ -26,7 +26,8 @@ public static class CertificateGenerator
     /// Generates a certificate PNG and shares it via the native OS share sheet.
     /// Call via StartCoroutine from a MonoBehaviour.
     /// </summary>
-    public static IEnumerator GenerateAndShare(ParentDashboardData data, Sprite roundedRect)
+    public static IEnumerator GenerateAndShare(ParentDashboardData data, Sprite roundedRect,
+        DashboardStoryBuilder.StoryData? storyData = null)
     {
         if (data == null || _isSharing) yield break;
 
@@ -81,7 +82,7 @@ public static class CertificateGenerator
         Color profileColor = ThemeManager.HeaderColor;
 
         // ── Build certificate layout ──
-        BuildCertificate(canvasGO.transform, data, roundedRect, profileColor);
+        BuildCertificate(canvasGO.transform, data, roundedRect, profileColor, storyData);
 
         // Set all children to layer 31
         SetLayerRecursive(rootGO, 31);
@@ -148,7 +149,7 @@ public static class CertificateGenerator
     // ════════════════════════════════════════════════════════════════
 
     private static void BuildCertificate(Transform canvasRoot, ParentDashboardData data,
-        Sprite roundedRect, Color profileColor)
+        Sprite roundedRect, Color profileColor, DashboardStoryBuilder.StoryData? storyData)
     {
         // ── Outer white background (full canvas) ──
         var bgGO = MakeRect(canvasRoot, "Background", Vector2.zero, Vector2.one, Color.white, null);
@@ -235,8 +236,8 @@ public static class CertificateGenerator
                 animalImg.raycastTarget = false;
 
                 var le = animalGO.AddComponent<LayoutElement>();
-                le.preferredHeight = 400;
-                le.preferredWidth = 400;
+                le.preferredHeight = 300;
+                le.preferredWidth = 300;
                 hasAnimal = true;
             }
         }
@@ -270,10 +271,14 @@ public static class CertificateGenerator
         AddSpacer(contentGO.transform, 20);
 
         // ── Stats grid (2×2) ──
-        bool hasData = data.totalSessions > 0;
+        int gamesCompleted = 0;
+        var profile2 = ProfileManager.ActiveProfile;
+        if (profile2 != null && profile2.journey != null)
+            gamesCompleted = profile2.journey.totalGamesCompleted;
+        bool hasData = gamesCompleted > 0;
         if (hasData)
         {
-            BuildStatsGrid(contentGO.transform, data, profileColor);
+            BuildStatsGrid(contentGO.transform, data, profileColor, gamesCompleted);
         }
         else
         {
@@ -282,7 +287,16 @@ public static class CertificateGenerator
                 36, TextMedium, true);
         }
 
-        AddSpacer(contentGO.transform, 20);
+        AddSpacer(contentGO.transform, 15);
+
+        // ── Insights & Strengths ──
+        if (hasData && storyData.HasValue)
+        {
+            var story = storyData.Value;
+            BuildInsightsSection(contentGO.transform, story, profileColor);
+        }
+
+        AddSpacer(contentGO.transform, 15);
 
         // ── Overall score ──
         if (hasData)
@@ -293,17 +307,18 @@ public static class CertificateGenerator
                 44, TextDark, true);
         }
 
-        AddSpacer(contentGO.transform, 30);
+        AddSpacer(contentGO.transform, 20);
 
         // ── Bottom divider ──
         AddDividerLine(contentGO.transform, TextMedium, 0.5f);
-        AddSpacer(contentGO.transform, 12);
+        AddSpacer(contentGO.transform, 8);
 
         // ── App branding ──
         AddCenteredText(contentGO.transform, "\u05DC\u05D5\u05DE\u05D3\u05D9\u05DD \u05E2\u05DD \u05D0\u05DC\u05D9\u05DF", 34, BrandColor, true); // לומדים עם אלין
     }
 
-    private static void BuildStatsGrid(Transform parent, ParentDashboardData data, Color accentColor)
+    private static void BuildStatsGrid(Transform parent, ParentDashboardData data,
+        Color accentColor, int gamesCompleted)
     {
         // 2×2 grid using a vertical + horizontal layout
         var gridGO = new GameObject("StatsGrid");
@@ -318,15 +333,117 @@ public static class CertificateGenerator
         gridLayout.spacing = 10;
         gridGO.AddComponent<LayoutElement>().preferredHeight = 200;
 
-        // Row 1: sessions + animals
+        // Row 1: completed games + animals
         var row1 = MakeHRow(gridGO.transform);
-        AddStatCell(row1.transform, $"{data.totalSessions}", "\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD", accentColor); // משחקים
+        AddStatCell(row1.transform, $"{gamesCompleted}", "\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD", accentColor); // משחקים
         AddStatCell(row1.transform, $"{data.discoveredAnimals}", "\u05D7\u05D9\u05D5\u05EA", accentColor); // חיות
 
         // Row 2: colors + stickers
         var row2 = MakeHRow(gridGO.transform);
         AddStatCell(row2.transform, $"{data.discoveredColors}", "\u05E6\u05D1\u05E2\u05D9\u05DD", accentColor); // צבעים
         AddStatCell(row2.transform, $"{data.collectedStickers}", "\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA", accentColor); // מדבקות
+    }
+
+    private static void BuildInsightsSection(Transform parent,
+        DashboardStoryBuilder.StoryData story, Color profileColor)
+    {
+        // ── Strengths ──
+        if (story.strengths != null && story.strengths.Count > 0)
+        {
+            AddDividerLine(parent, profileColor, 0.4f);
+            AddSpacer(parent, 6);
+            AddCenteredText(parent, "\u05D7\u05D5\u05D6\u05E7\u05D5\u05EA", 30, GoldDark, true); // חוזקות
+            AddSpacer(parent, 4);
+
+            string strengthsText = string.Join(" \u00B7 ", story.strengths); // dot separator
+            AddCenteredText(parent, strengthsText, 28, TextDark, false);
+            AddSpacer(parent, 8);
+        }
+
+        // ── Strength insights (behavioral observations) ──
+        if (story.strengthInsights != null && story.strengthInsights.Count > 0)
+        {
+            if (story.strengths == null || story.strengths.Count == 0)
+            {
+                AddDividerLine(parent, profileColor, 0.4f);
+                AddSpacer(parent, 6);
+                AddCenteredText(parent, "\u05EA\u05D5\u05D1\u05E0\u05D5\u05EA", 30, GoldDark, true); // תובנות
+                AddSpacer(parent, 4);
+            }
+
+            // Show up to 2 insights to keep it concise
+            int count = Mathf.Min(story.strengthInsights.Count, 2);
+            for (int i = 0; i < count; i++)
+            {
+                var tmp = AddCenteredText(parent, story.strengthInsights[i], 24, TextMedium, false);
+                tmp.enableWordWrapping = true;
+                tmp.gameObject.GetComponent<LayoutElement>().preferredHeight = 36;
+            }
+            AddSpacer(parent, 6);
+        }
+
+        // ── Category bars (top 3 strongest areas) ──
+        if (story.categoryBars != null && story.categoryBars.Count > 0)
+        {
+            AddDividerLine(parent, profileColor, 0.4f);
+            AddSpacer(parent, 6);
+            AddCenteredText(parent, "\u05EA\u05D7\u05D5\u05DE\u05D9 \u05D4\u05EA\u05E4\u05EA\u05D7\u05D5\u05EA", 30, GoldDark, true); // תחומי התפתחות
+            AddSpacer(parent, 4);
+
+            int barCount = Mathf.Min(story.categoryBars.Count, 3);
+            for (int i = 0; i < barCount; i++)
+            {
+                var (catName, catScore) = story.categoryBars[i];
+                BuildCategoryBar(parent, catName, catScore, profileColor);
+            }
+            AddSpacer(parent, 6);
+        }
+    }
+
+    private static void BuildCategoryBar(Transform parent, string name, int score, Color accentColor)
+    {
+        var rowGO = new GameObject("CatBar");
+        rowGO.transform.SetParent(parent, false);
+        rowGO.AddComponent<RectTransform>();
+        var hLayout = rowGO.AddComponent<HorizontalLayoutGroup>();
+        hLayout.childAlignment = TextAnchor.MiddleCenter;
+        hLayout.childControlWidth = true;
+        hLayout.childControlHeight = true;
+        hLayout.childForceExpandWidth = false;
+        hLayout.spacing = 10;
+        hLayout.padding = new RectOffset(40, 40, 0, 0);
+        rowGO.AddComponent<LayoutElement>().preferredHeight = 34;
+
+        // Score number (left)
+        var scoreTMP = AddTMP(rowGO.transform, $"{score}", 22, accentColor, TextAlignmentOptions.Left, true);
+        scoreTMP.gameObject.GetComponent<LayoutElement>().preferredWidth = 50;
+
+        // Bar background
+        var barBgGO = new GameObject("BarBg");
+        barBgGO.transform.SetParent(rowGO.transform, false);
+        barBgGO.AddComponent<RectTransform>();
+        var barBgImg = barBgGO.AddComponent<Image>();
+        barBgImg.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+        barBgImg.raycastTarget = false;
+        var barBgLE = barBgGO.AddComponent<LayoutElement>();
+        barBgLE.flexibleWidth = 1;
+        barBgLE.preferredHeight = 16;
+
+        // Bar fill
+        var barFillGO = new GameObject("BarFill");
+        barFillGO.transform.SetParent(barBgGO.transform, false);
+        var barFillRT = barFillGO.AddComponent<RectTransform>();
+        barFillRT.anchorMin = Vector2.zero;
+        barFillRT.anchorMax = new Vector2(Mathf.Clamp01(score / 100f), 1f);
+        barFillRT.offsetMin = Vector2.zero;
+        barFillRT.offsetMax = Vector2.zero;
+        var barFillImg = barFillGO.AddComponent<Image>();
+        barFillImg.color = new Color(accentColor.r, accentColor.g, accentColor.b, 0.7f);
+        barFillImg.raycastTarget = false;
+
+        // Category name (right)
+        var nameTMP = AddTMP(rowGO.transform, name, 22, TextDark, TextAlignmentOptions.Right, false);
+        nameTMP.gameObject.GetComponent<LayoutElement>().preferredWidth = 160;
     }
 
     private static GameObject MakeHRow(Transform parent)
@@ -490,10 +607,11 @@ public static class CertificateGenerator
     private static string BuildFallbackText(ParentDashboardData data)
     {
         string name = data.profileName ?? "";
-        int sessions = data.totalSessions;
+        var profile = ProfileManager.ActiveProfile;
+        int games = profile != null && profile.journey != null ? profile.journey.totalGamesCompleted : 0;
         int animals = data.discoveredAnimals;
         return $"\u05D4\u05D9\u05DC\u05D3 \u05E9\u05DC\u05D9 {name} \u05DC\u05D5\u05DE\u05D3 \u05D5\u05DE\u05E9\u05D7\u05E7 \u05E2\u05DD Alin Teaching Kids!\n" +
-               $"\u05DB\u05D1\u05E8 \u05E9\u05D9\u05D7\u05E7 \u05D1-{sessions} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05D5\u05D2\u05D9\u05DC\u05D4 {animals} \u05D7\u05D9\u05D5\u05EA!\n" +
+               $"\u05DB\u05D1\u05E8 \u05E1\u05D9\u05D9\u05DD {games} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05D5\u05D2\u05D9\u05DC\u05D4 {animals} \u05D7\u05D9\u05D5\u05EA!\n" +
                $"https://play.google.com/store/apps/details?id={Application.identifier}";
     }
 

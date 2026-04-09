@@ -478,33 +478,7 @@ public class ColoringGameSetup : EditorWindow
         var brushMedium = LoadSprite("Assets/Art/Brushes/Medium Brush.png");
         var brushBig    = LoadSprite("Assets/Art/Brushes/Big Brush.png");
 
-        // Load all sliced sprites from all sticker sprite sheets in Assets/Art/Stickers/
-        var stickerSprites = new List<Sprite>();
-        var stickerGuids = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Art/Stickers" });
-        foreach (var guid in stickerGuids)
-        {
-            string path = AssetDatabase.GUIDToAssetPath(guid);
-            var allAssets = AssetDatabase.LoadAllAssetsAtPath(path);
-            if (allAssets == null) continue;
-            foreach (var asset in allAssets)
-            {
-                if (asset is Sprite spr)
-                    stickerSprites.Add(spr);
-            }
-        }
-        // Sort: by sheet name first, then by sprite index within sheet
-        stickerSprites.Sort((a, b) =>
-        {
-            int sheetCmp = string.Compare(a.texture.name, b.texture.name, System.StringComparison.Ordinal);
-            if (sheetCmp != 0) return sheetCmp;
-            int numA = 0, numB = 0;
-            var partsA = a.name.Split('_');
-            var partsB = b.name.Split('_');
-            if (partsA.Length > 1) int.TryParse(partsA[partsA.Length - 1], out numA);
-            if (partsB.Length > 1) int.TryParse(partsB[partsB.Length - 1], out numB);
-            return numA.CompareTo(numB);
-        });
-
+        // Load sticker category sprite sheets
         // ═══════════════════════════════════
         //  CONTROLLER
         // ═══════════════════════════════════
@@ -526,7 +500,17 @@ public class ColoringGameSetup : EditorWindow
         ctrl.doneButton = doneGO.GetComponent<Button>();
         ctrl.brushIcons = new Sprite[] { brushSmall, brushMedium, brushBig };
         ctrl.stickerContainer = stickerContentGO.transform;
-        ctrl.stickerSprites = stickerSprites.ToArray();
+
+        // Wire sticker category arrays
+        ctrl.animalsStickers  = LoadStickerSheet("animalsStickers");
+        ctrl.lettersStickers  = LoadStickerSheet("lettersStickers");
+        ctrl.numbersStickers  = LoadStickerSheet("numbersStickers");
+        ctrl.balloonsStickers = LoadStickerSheet("ballonsStickers");
+        ctrl.aquariumStickers = LoadStickerSheet("aquatiumStickers");
+        ctrl.carsStickers     = LoadStickerSheet("carsStickers");
+        ctrl.foodStickers     = LoadStickerSheet("foodStickers");
+        ctrl.artStickers      = LoadStickerSheet("artStickers");
+        ctrl.natureStickers   = LoadStickerSheet("natureStickers");
 
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
             homeGO.GetComponent<Button>().onClick, ctrl.OnHomePressed);
@@ -635,6 +619,24 @@ public class ColoringGameSetup : EditorWindow
         var all = AssetDatabase.LoadAllAssetsAtPath(path);
         if (all != null) foreach (var o in all) if (o is Sprite sp) return sp;
         return null;
+    }
+
+    private static Sprite[] LoadStickerSheet(string textureName)
+    {
+        string path = $"Assets/Art/Stickers/{textureName}.png";
+        var allAssets = AssetDatabase.LoadAllAssetsAtPath(path);
+        if (allAssets == null) return new Sprite[0];
+        var sprites = new List<Sprite>();
+        foreach (var asset in allAssets)
+            if (asset is Sprite spr) sprites.Add(spr);
+        // Sort by position in sprite sheet: top-to-bottom rows, left-to-right within row
+        sprites.Sort((a, b) =>
+        {
+            int rowCmp = b.rect.y.CompareTo(a.rect.y);
+            if (rowCmp != 0) return rowCmp;
+            return a.rect.x.CompareTo(b.rect.x);
+        });
+        return sprites.ToArray();
     }
 
     private static Color HexColor(string hex)

@@ -7,9 +7,6 @@ using System.Collections.Generic;
 /// </summary>
 public static class DiscoveryCatalog
 {
-    // Starter content (seeded on first journey)
-    public static readonly string[] StarterColors = { "Red" };
-
     // Discovery order (includes Cat/Dog/Bear since only the favorite is seeded)
     private static readonly string[] AnimalOrder =
     {
@@ -18,9 +15,11 @@ public static class DiscoveryCatalog
         "Elephant", "Giraffe", "Zebra", "Turtle", "Snake", "Sheep", "Chicken", "Donkey"
     };
 
+    // All discoverable colors (starter color is seeded from avatar, rest via scratch cards)
     private static readonly string[] ColorOrder =
     {
-        "Green", "Orange", "Purple", "Pink", "Cyan", "Brown", "Black", "White", "Grey"
+        "Red", "Blue", "Yellow", "Green", "Orange", "Purple",
+        "Pink", "Cyan", "Brown", "Black", "White", "Light Blue"
     };
 
     /// <summary>

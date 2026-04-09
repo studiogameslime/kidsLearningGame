@@ -38,7 +38,17 @@ public class ColoringGameController : BaseMiniGame
 
     [Header("Stickers")]
     public Transform stickerContainer;
-    public Sprite[] stickerSprites;   // available sticker stamps
+    public Sprite[] stickerSprites;   // legacy — unused, kept for scene compat
+    // Category sticker arrays (wired by setup)
+    public Sprite[] animalsStickers;
+    public Sprite[] lettersStickers;
+    public Sprite[] numbersStickers;
+    public Sprite[] balloonsStickers;
+    public Sprite[] aquariumStickers;
+    public Sprite[] carsStickers;
+    public Sprite[] foodStickers;
+    public Sprite[] artStickers;
+    public Sprite[] natureStickers;
 
     [Header("Settings")]
     public int outlineResolution = 1024;
@@ -513,21 +523,60 @@ public class ColoringGameController : BaseMiniGame
 
     // ── Stickers ──
 
+    // Flat list of collected sprites built from category arrays
+    private readonly List<Sprite> _collectedSprites = new List<Sprite>();
+
     private void BuildStickers()
     {
-        if (stickerContainer == null || stickerSprites == null || stickerSprites.Length == 0) return;
+        if (stickerContainer == null) return;
 
-        for (int i = 0; i < stickerSprites.Length; i++)
+        // Build a map of prefix → sprite array
+        var categories = new (string prefix, Sprite[] sprites)[]
         {
-            if (stickerSprites[i] == null) continue;
+            ("animal_",  animalsStickers),
+            ("letter_",  lettersStickers),
+            ("number_",  numbersStickers),
+            ("balloon_", balloonsStickers),
+            ("ocean_",   aquariumStickers),
+            ("vehicle_", carsStickers),
+            ("food_",    foodStickers),
+            ("art_",     artStickers),
+            ("nature_",  natureStickers),
+        };
 
+        _collectedSprites.Clear();
+        var profile = ProfileManager.ActiveProfile;
+        if (profile != null && profile.journey != null && profile.journey.collectedStickerIds != null)
+        {
+            // Build name→sprite lookup for each category
+            var spriteLookup = new Dictionary<string, Sprite>();
+            foreach (var (prefix, sprites) in categories)
+            {
+                if (sprites == null) continue;
+                foreach (var spr in sprites)
+                    if (spr != null) spriteLookup[$"{prefix}{spr.name.ToLower()}"] = spr;
+            }
+
+            foreach (var id in profile.journey.collectedStickerIds)
+            {
+                if (string.IsNullOrEmpty(id)) continue;
+                Sprite spr;
+                if (spriteLookup.TryGetValue(id, out spr))
+                    _collectedSprites.Add(spr);
+            }
+        }
+
+        if (_collectedSprites.Count == 0) return;
+
+        for (int i = 0; i < _collectedSprites.Count; i++)
+        {
             var go = new GameObject($"Sticker_{i}");
             go.transform.SetParent(stickerContainer, false);
             var rt = go.AddComponent<RectTransform>();
             rt.sizeDelta = new Vector2(58, 58);
 
             var img = go.AddComponent<Image>();
-            img.sprite = stickerSprites[i];
+            img.sprite = _collectedSprites[i];
             img.preserveAspect = true;
             img.raycastTarget = true;
 
@@ -558,7 +607,7 @@ public class ColoringGameController : BaseMiniGame
         selectedStickerIndex = index;
         isEraserActive = false;
         drawingCanvas.SetEraser(false);
-        drawingCanvas.SetStickerMode(stickerSprites[index]);
+        drawingCanvas.SetStickerMode(_collectedSprites[index]);
         UpdateStickerSelection();
         UpdateColorSelection();
         UpdateEraserVisual();

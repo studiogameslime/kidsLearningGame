@@ -917,33 +917,21 @@ public class WorldSceneSetup : EditorWindow
         var album = canvasGO.AddComponent<CollectibleAlbumController>();
         album.circleSprite = circleSprite;
         album.roundedRect = roundedRectSprite;
-        album.gameDatabase = controller.gameDatabase;
 
-        // Load sticker sprites from all sprite sheets in Assets/Art/Stickers/
-        var stickerList = new List<Sprite>();
-        var stickerGuids = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Art/Stickers" });
-        foreach (var guid in stickerGuids)
-        {
-            string path = AssetDatabase.GUIDToAssetPath(guid);
-            var allAssets = AssetDatabase.LoadAllAssetsAtPath(path);
-            if (allAssets == null) continue;
-            foreach (var asset in allAssets)
-                if (asset is Sprite spr) stickerList.Add(spr);
-        }
-        stickerList.Sort((a, b) =>
-        {
-            int sheetCmp = string.Compare(a.texture.name, b.texture.name, System.StringComparison.Ordinal);
-            if (sheetCmp != 0) return sheetCmp;
-            int na = 0, nb = 0;
-            var pa = a.name.Split('_'); if (pa.Length > 1) int.TryParse(pa[pa.Length - 1], out na);
-            var pb = b.name.Split('_'); if (pb.Length > 1) int.TryParse(pb[pb.Length - 1], out nb);
-            return na.CompareTo(nb);
-        });
-        album.stickerSprites = stickerList.ToArray();
+        // Wire sticker category arrays from individual sprite sheets
+        album.animalsStickers  = LoadStickerSheet("animalsStickers");
+        album.lettersStickers  = LoadStickerSheet("lettersStickers");
+        album.numbersStickers  = LoadStickerSheet("numbersStickers");
+        album.balloonsStickers = LoadStickerSheet("ballonsStickers");
+        album.aquariumStickers = LoadStickerSheet("aquatiumStickers");
+        album.carsStickers     = LoadStickerSheet("carsStickers");
+        album.foodStickers     = LoadStickerSheet("foodStickers");
+        album.artStickers      = LoadStickerSheet("artStickers");
+        album.natureStickers   = LoadStickerSheet("natureStickers");
 
-        // Wire sticker sprites to sticker tree too
+        // Wire nature stickers to sticker tree (general/nature category)
         var stCtrl = stickerTreeGO.GetComponent<StickerTreeController>();
-        if (stCtrl != null) stCtrl.stickerSprites = stickerList.ToArray();
+        if (stCtrl != null) stCtrl.stickerSprites = album.natureStickers;
 
         // ── Input Handler ──
         var inputHandler = canvasGO.AddComponent<WorldInputHandler>();
@@ -1101,6 +1089,28 @@ public class WorldSceneSetup : EditorWindow
             foreach (var asset in allAssets)
                 if (asset is Sprite spr && spr.name == spriteName) return spr;
         return null;
+    }
+
+    private static Sprite[] LoadStickerSheet(string textureName)
+    {
+        string path = $"Assets/Art/Stickers/{textureName}.png";
+        var allAssets = AssetDatabase.LoadAllAssetsAtPath(path);
+        if (allAssets == null) return new Sprite[0];
+
+        var sprites = new List<Sprite>();
+        foreach (var asset in allAssets)
+            if (asset is Sprite spr) sprites.Add(spr);
+
+        // Sort by position in sprite sheet: top-to-bottom rows, left-to-right within row
+        sprites.Sort((a, b) =>
+        {
+            // Higher y = higher row (top of texture). Compare descending.
+            int rowCmp = b.rect.y.CompareTo(a.rect.y);
+            if (rowCmp != 0) return rowCmp;
+            // Same row: lower x = further left. Compare ascending.
+            return a.rect.x.CompareTo(b.rect.x);
+        });
+        return sprites.ToArray();
     }
 
     private static Color HexColor(string hex)

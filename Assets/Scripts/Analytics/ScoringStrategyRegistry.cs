@@ -109,7 +109,7 @@ public static class ScoringStrategyRegistry
         if (id.Contains("colorsort"))
             return new ColorSortScoringStrategy();
 
-        if (id.Contains("fruitpuzzle"))
+        if (id.Contains("vehiclepuzzle"))
             return new FruitPuzzleScoringStrategy();
 
         return _default;

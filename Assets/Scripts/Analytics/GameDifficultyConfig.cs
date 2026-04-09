@@ -424,7 +424,7 @@ public static class GameDifficultyConfig
         }
 
         // Vehicle Puzzle
-        if (id.Contains("fruitpuzzle"))
+        if (id.Contains("vehiclepuzzle"))
         {
             int vc, r;
             FruitPuzzleConfig(difficulty, out vc, out r);
@@ -686,7 +686,7 @@ public static class GameDifficultyConfig
         }
 
         // Fruit Puzzle: variant = difficulty directly
-        if (gameId == "fruitpuzzle")
+        if (gameId == "vehiclepuzzle")
         {
             if (variantValue <= 1) return 1;
             if (variantValue <= 3) return 3;

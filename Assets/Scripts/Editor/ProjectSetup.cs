@@ -932,8 +932,8 @@ public class ProjectSetup : EditorWindow
 
         // ── Fruit Puzzle ──
         var fruitPuzzle = CreateSO<GameItemData>($"{DataPath}/FruitPuzzle.asset");
-        fruitPuzzle.id = "fruitpuzzle";
-        fruitPuzzle.title = "Fruit Puzzle";
+        fruitPuzzle.id = "vehiclepuzzle";
+        fruitPuzzle.title = "Vehicle Puzzle";
         fruitPuzzle.cardColor = HexColor("#FF8A65");
         fruitPuzzle.targetSceneName = "FruitPuzzle";
         fruitPuzzle.hasSubItems = false;

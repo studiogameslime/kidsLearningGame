@@ -6,8 +6,8 @@ using TMPro;
 
 /// <summary>
 /// Collectible album that opens as a storybook overlay in the World scene.
-/// Shows Animals, Colors, and Stickers across page spreads with page-turn animation.
-/// Discovered items appear vivid; undiscovered show as grey silhouettes.
+/// Shows stickers organized by category across page spreads with page-turn animation.
+/// Collected stickers appear vivid; uncollected show as grey silhouettes.
 /// Swipe left/right to turn pages.
 /// </summary>
 public class CollectibleAlbumController : MonoBehaviour
@@ -15,8 +15,17 @@ public class CollectibleAlbumController : MonoBehaviour
     [Header("Sprites")]
     public Sprite circleSprite;
     public Sprite roundedRect;
-    public GameDatabase gameDatabase;
-    public Sprite[] stickerSprites; // sliced from Sticker.png, wired by setup
+
+    [Header("Sticker Sheets (sliced)")]
+    public Sprite[] animalsStickers;   // 19 — dog..donkey
+    public Sprite[] lettersStickers;   // 22 — א..ת
+    public Sprite[] numbersStickers;   // 10 — 0..9
+    public Sprite[] balloonsStickers;  // 12 — colors
+    public Sprite[] aquariumStickers;  // 10 — sea creatures
+    public Sprite[] carsStickers;      // 8  — vehicles
+    public Sprite[] foodStickers;      // 8  — food
+    public Sprite[] artStickers;       // 8  — art & crafts
+    public Sprite[] natureStickers;    // 20 — nature & world
 
     // Runtime UI
     private GameObject _overlayRoot;
@@ -40,63 +49,77 @@ public class CollectibleAlbumController : MonoBehaviour
     private Vector2 _swipeStart;
     private const float SwipeThreshold = 80f;
 
-    // Data
-    private static readonly string[] AllAnimalIds = {
-        "Dog", "Cat", "Bear", "Duck", "Fish", "Frog", "Bird", "Cow", "Horse", "Lion",
-        "Monkey", "Elephant", "Giraffe", "Zebra", "Turtle", "Snake", "Sheep", "Chicken", "Donkey"
-    };
+    // ── Sticker Categories ──
 
-    private static readonly string[] AllColorIds = {
-        "Red", "Blue", "Yellow", "Green", "Orange", "Purple", "Pink", "Cyan", "Brown", "Black", "White", "Grey"
-    };
+    private struct StickerCategory
+    {
+        public string title;      // Hebrew title
+        public string prefix;     // sticker ID prefix (e.g. "animal_")
+        public Sprite[] sprites;
+        public bool rtl;          // if true, right page shows first half (Hebrew order)
+    }
 
-    private const int StickersPerSpread = 18; // 9 left + 9 right per book spread
-    private int TotalPages => 2 + StickerPageCount; // Animals + Colors + N sticker pages
-    private int StickerPageCount =>
-        (stickerSprites != null && stickerSprites.Length > 0)
-            ? Mathf.CeilToInt((float)stickerSprites.Length / StickersPerSpread)
-            : 1;
+    private StickerCategory[] _categories;
+    private int _totalPages;
+
+    private void Awake()
+    {
+        // Register all sprite arrays so any scene can look up sticker sprites
+        StickerSpriteBank.Register("animal_",  animalsStickers);
+        StickerSpriteBank.Register("letter_",  lettersStickers);
+        StickerSpriteBank.Register("number_",  numbersStickers);
+        StickerSpriteBank.Register("balloon_", balloonsStickers);
+        StickerSpriteBank.Register("ocean_",   aquariumStickers);
+        StickerSpriteBank.Register("vehicle_", carsStickers);
+        StickerSpriteBank.Register("food_",    foodStickers);
+        StickerSpriteBank.Register("art_",     artStickers);
+        StickerSpriteBank.Register("nature_",  natureStickers);
+    }
+
+    private void BuildCategories()
+    {
+        // Sort letters by Hebrew Unicode order (א=0x05D0 → ת=0x05EA)
+        var sortedLetters = SortByName(lettersStickers, (name) =>
+        {
+            if (string.IsNullOrEmpty(name)) return 9999;
+            return (int)name[0]; // Unicode value gives correct Hebrew order
+        });
+
+        // Sort numbers by numeric value
+        var sortedNumbers = SortByName(numbersStickers, (name) =>
+        {
+            int val;
+            return int.TryParse(name, out val) ? val : 9999;
+        });
+
+        _categories = new StickerCategory[]
+        {
+            new StickerCategory { title = "\u05D7\u05D9\u05D5\u05EA",              prefix = "animal_",  sprites = animalsStickers },   // חיות
+            new StickerCategory { title = "\u05D0\u05D5\u05EA\u05D9\u05D5\u05EA",  prefix = "letter_",  sprites = sortedLetters, rtl = true },  // אותיות
+            new StickerCategory { title = "\u05DE\u05E1\u05E4\u05E8\u05D9\u05DD",  prefix = "number_",  sprites = sortedNumbers },     // מספרים
+            new StickerCategory { title = "\u05D1\u05DC\u05D5\u05E0\u05D9\u05DD",  prefix = "balloon_", sprites = balloonsStickers },  // בלונים
+            new StickerCategory { title = "\u05D9\u05DD",                          prefix = "ocean_",   sprites = aquariumStickers },  // ים
+            new StickerCategory { title = "\u05DB\u05DC\u05D9 \u05EA\u05D7\u05D1\u05D5\u05E8\u05D4", prefix = "vehicle_", sprites = carsStickers }, // כלי תחבורה
+            new StickerCategory { title = "\u05D0\u05D5\u05DB\u05DC",              prefix = "food_",    sprites = foodStickers },      // אוכל
+            new StickerCategory { title = "\u05D9\u05E6\u05D9\u05E8\u05D4",        prefix = "art_",     sprites = artStickers },       // יצירה
+            new StickerCategory { title = "\u05D8\u05D1\u05E2",                    prefix = "nature_",  sprites = natureStickers },    // טבע
+        };
+
+        // Each category = 1 page spread (left + right)
+        _totalPages = 0;
+        foreach (var cat in _categories)
+        {
+            if (cat.sprites != null && cat.sprites.Length > 0)
+                _totalPages++;
+        }
+        if (_totalPages == 0) _totalPages = 1;
+    }
 
     // Colors
     private static readonly Color BookCover = new Color(0.36f, 0.22f, 0.14f);
     private static readonly Color PageColor = new Color(0.98f, 0.96f, 0.90f);
-    private static readonly Color SpineColor = new Color(0.30f, 0.18f, 0.10f);
     private static readonly Color TitleColor = new Color(0.25f, 0.15f, 0.08f);
     private static readonly Color SilhouetteColor = new Color(0.08f, 0.08f, 0.08f, 1f);
-    private static readonly Color LabelColor = new Color(0.45f, 0.38f, 0.30f);
-
-    private static readonly Dictionary<string, Color> ColorMap = new Dictionary<string, Color>
-    {
-        {"Red", new Color(0.94f, 0.27f, 0.27f)}, {"Blue", new Color(0.23f, 0.51f, 0.96f)},
-        {"Yellow", new Color(0.98f, 0.80f, 0.08f)}, {"Green", new Color(0.13f, 0.77f, 0.37f)},
-        {"Orange", new Color(0.98f, 0.45f, 0.09f)}, {"Purple", new Color(0.55f, 0.36f, 0.96f)},
-        {"Pink", new Color(0.93f, 0.29f, 0.60f)}, {"Cyan", new Color(0.02f, 0.71f, 0.83f)},
-        {"Brown", new Color(0.47f, 0.33f, 0.28f)}, {"Black", new Color(0.12f, 0.12f, 0.12f)},
-        {"White", new Color(0.95f, 0.95f, 0.95f)}, {"Grey", new Color(0.6f, 0.6f, 0.6f)}
-    };
-
-    private static readonly Dictionary<string, string> AnimalNames = new Dictionary<string, string>
-    {
-        {"Dog","\u05DB\u05DC\u05D1"}, {"Cat","\u05D7\u05EA\u05D5\u05DC"}, {"Bear","\u05D3\u05D5\u05D1"},
-        {"Duck","\u05D1\u05E8\u05D5\u05D5\u05D6"}, {"Fish","\u05D3\u05D2"}, {"Frog","\u05E6\u05E4\u05E8\u05D3\u05E2"},
-        {"Bird","\u05E6\u05D9\u05E4\u05D5\u05E8"}, {"Cow","\u05E4\u05E8\u05D4"}, {"Horse","\u05E1\u05D5\u05E1"},
-        {"Lion","\u05D0\u05E8\u05D9\u05D4"}, {"Monkey","\u05E7\u05D5\u05E3"}, {"Elephant","\u05E4\u05D9\u05DC"},
-        {"Giraffe","\u05D2\u05D9\u05E8\u05E4\u05D4"}, {"Zebra","\u05D6\u05D1\u05E8\u05D4"},
-        {"Turtle","\u05E6\u05D1"}, {"Snake","\u05E0\u05D7\u05E9"}, {"Sheep","\u05DB\u05D1\u05E9\u05D4"},
-        {"Chicken","\u05EA\u05E8\u05E0\u05D2\u05D5\u05DC"}, {"Donkey","\u05D7\u05DE\u05D5\u05E8"}
-    };
-
-    private static readonly Dictionary<string, string> ColorNames = new Dictionary<string, string>
-    {
-        {"Red","\u05D0\u05D3\u05D5\u05DD"}, {"Blue","\u05DB\u05D7\u05D5\u05DC"},
-        {"Yellow","\u05E6\u05D4\u05D5\u05D1"}, {"Green","\u05D9\u05E8\u05D5\u05E7"},
-        {"Orange","\u05DB\u05EA\u05D5\u05DD"}, {"Purple","\u05E1\u05D2\u05D5\u05DC"},
-        {"Pink","\u05D5\u05E8\u05D5\u05D3"}, {"Cyan","\u05EA\u05DB\u05DC\u05EA"},
-        {"Brown","\u05D7\u05D5\u05DD"}, {"Black","\u05E9\u05D7\u05D5\u05E8"},
-        {"White","\u05DC\u05D1\u05DF"}, {"Grey","\u05D0\u05E4\u05D5\u05E8"}
-    };
-
-    private Dictionary<string, Sprite> _animalSprites;
 
     // ── Swipe Input ──
 
@@ -114,11 +137,7 @@ public class CollectibleAlbumController : MonoBehaviour
             _swipeTracking = false;
             float dx = Input.mousePosition.x - _swipeStart.x;
             if (Mathf.Abs(dx) > SwipeThreshold)
-            {
-                // Swipe left (finger moves left) = next page
-                // Swipe right (finger moves right) = prev page
                 TurnPage(dx < 0 ? 1 : -1);
-            }
         }
     }
 
@@ -126,6 +145,9 @@ public class CollectibleAlbumController : MonoBehaviour
     {
         if (_isOpen || _isAnimating) return;
         FirebaseAnalyticsManager.LogAlbumOpened();
+        BuildCategories();
+        // Destroy old overlay so new sprite arrays take effect
+        if (_overlayRoot != null) { Destroy(_overlayRoot); _overlayRoot = null; }
         BuildUI();
         _currentPage = 0;
         PopulatePages(_currentPage);
@@ -143,7 +165,6 @@ public class CollectibleAlbumController : MonoBehaviour
     private void BuildUI()
     {
         if (_overlayRoot != null) return;
-        BuildAnimalSpriteLookup();
 
         var canvas = GetComponentInParent<Canvas>();
 
@@ -172,17 +193,13 @@ public class CollectibleAlbumController : MonoBehaviour
         _bookRT.sizeDelta = new Vector2(1500, 820);
         var coverImg = bookGO.AddComponent<Image>();
         if (roundedRect != null) { coverImg.sprite = roundedRect; coverImg.type = Image.Type.Sliced; }
-        // Use the child's chosen color for the book cover
         Color coverColor = BookCover;
         var profile = ProfileManager.ActiveProfile;
         if (profile != null && !string.IsNullOrEmpty(profile.avatarColorHex))
         {
             Color parsed;
             if (ColorUtility.TryParseHtmlString(profile.avatarColorHex, out parsed))
-            {
-                // Darken slightly for a rich book cover feel
                 coverColor = new Color(parsed.r * 0.7f, parsed.g * 0.7f, parsed.b * 0.7f);
-            }
         }
         _coverColor = coverColor;
         coverImg.color = _coverColor;
@@ -274,7 +291,7 @@ public class CollectibleAlbumController : MonoBehaviour
         turnGO.AddComponent<Image>().color = PageColor;
         turnGO.SetActive(false);
 
-        // Page dots (bottom center)
+        // Page dots
         var piGO = new GameObject("PageDots");
         piGO.transform.SetParent(bookGO.transform, false);
         var piRT = piGO.AddComponent<RectTransform>();
@@ -302,7 +319,7 @@ public class CollectibleAlbumController : MonoBehaviour
         Stretch(xTMP.GetComponent<RectTransform>());
         xTMP.alignment = TextAlignmentOptions.Center;
 
-        // Nav arrows at bottom corners of book
+        // Nav arrows
         _prevButton = MakeNavButton(bookGO.transform, "PrevPage", "\u25C0",
             new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 0), new Vector2(30, 20));
         _prevButton.onClick.AddListener(() => TurnPage(-1));
@@ -316,257 +333,159 @@ public class CollectibleAlbumController : MonoBehaviour
 
     // ── Pages ──
 
+    private StickerCategory GetCategoryForPage(int page)
+    {
+        int idx = 0;
+        for (int i = 0; i < _categories.Length; i++)
+        {
+            if (_categories[i].sprites == null || _categories[i].sprites.Length == 0) continue;
+            if (idx == page) return _categories[i];
+            idx++;
+        }
+        return _categories[0];
+    }
+
     private void PopulatePages(int page)
     {
         ClearPage(_leftPageContent);
         ClearPage(_rightPageContent);
 
-        var profile = ProfileManager.ActiveProfile;
-        var jp = profile?.journey;
-        var unlockedAnimals = new HashSet<string>(jp?.unlockedAnimalIds ?? new List<string>());
-        var unlockedColors = new HashSet<string>(jp?.unlockedColorIds ?? new List<string>());
+        var cat = GetCategoryForPage(page);
+        HebrewText.SetText(_leftTitleTMP, cat.title);
+        HebrewText.SetText(_rightTitleTMP, cat.title);
 
-        if (page == 0)
+        int halfCount = Mathf.CeilToInt(cat.sprites.Length / 2f);
+        int secondHalf = cat.sprites.Length - halfCount;
+
+        if (cat.rtl)
         {
-            // Animals — 12 left (4×3), 7 right
-            HebrewText.SetText(_leftTitleTMP, "\u05D7\u05D9\u05D5\u05EA"); // חיות
-            HebrewText.SetText(_rightTitleTMP, "\u05D7\u05D9\u05D5\u05EA");
-            BuildAnimalGrid(_leftPageContent, 0, 12, unlockedAnimals, 4);
-            BuildAnimalGrid(_rightPageContent, 12, 7, unlockedAnimals, 4);
-        }
-        else if (page == 1)
-        {
-            // Colors — 9 left (3×3), 3 right
-            HebrewText.SetText(_leftTitleTMP, "\u05E6\u05D1\u05E2\u05D9\u05DD"); // צבעים
-            HebrewText.SetText(_rightTitleTMP, "\u05E6\u05D1\u05E2\u05D9\u05DD");
-            BuildColorGrid(_leftPageContent, 0, 9, unlockedColors);
-            BuildColorGrid(_rightPageContent, 9, 3, unlockedColors);
+            // RTL: right page = first half, left page = second half
+            BuildCategoryStickerGrid(_rightPageContent, cat, 0, halfCount);
+            BuildCategoryStickerGrid(_leftPageContent, cat, halfCount, secondHalf);
         }
         else
         {
-            // Sticker pages (dynamic) — 9 left + 9 right per spread
-            HebrewText.SetText(_leftTitleTMP, "\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA"); // מדבקות
-            HebrewText.SetText(_rightTitleTMP, "\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA");
-            int stickerPage = page - 2;
-            int start = stickerPage * StickersPerSpread;
-            BuildStickerGrid(_leftPageContent, start, 9);
-            BuildStickerGrid(_rightPageContent, start + 9, 9);
+            BuildCategoryStickerGrid(_leftPageContent, cat, 0, halfCount);
+            BuildCategoryStickerGrid(_rightPageContent, cat, halfCount, secondHalf);
         }
 
-        // Page dots: ● ○ ○
-        string dots = "";
-        for (int i = 0; i < TotalPages; i++)
-            dots += (i == page) ? "\u25CF " : "\u25CB "; // ● ○
-        _pageIndicatorTMP.text = dots.Trim();
-
-        _prevButton.gameObject.SetActive(page > 0);
-        _nextButton.gameObject.SetActive(page < TotalPages - 1);
+        UpdateNav();
     }
 
     private void PopulateLeftPage(int page)
     {
         ClearPage(_leftPageContent);
-        var profile = ProfileManager.ActiveProfile;
-        var jp = profile?.journey;
-        var animals = new HashSet<string>(jp?.unlockedAnimalIds ?? new List<string>());
-        var colors = new HashSet<string>(jp?.unlockedColorIds ?? new List<string>());
+        var cat = GetCategoryForPage(page);
+        HebrewText.SetText(_leftTitleTMP, cat.title);
+        int halfCount = Mathf.CeilToInt(cat.sprites.Length / 2f);
 
-        if (page == 0)
-        {
-            HebrewText.SetText(_leftTitleTMP, "\u05D7\u05D9\u05D5\u05EA");
-            BuildAnimalGrid(_leftPageContent, 0, 12, animals, 4);
-        }
-        else if (page == 1)
-        {
-            HebrewText.SetText(_leftTitleTMP, "\u05E6\u05D1\u05E2\u05D9\u05DD");
-            BuildColorGrid(_leftPageContent, 0, 9, colors);
-        }
+        if (cat.rtl)
+            BuildCategoryStickerGrid(_leftPageContent, cat, halfCount, cat.sprites.Length - halfCount);
         else
-        {
-            HebrewText.SetText(_leftTitleTMP, "\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA");
-            int start = (page - 2) * StickersPerSpread;
-            BuildStickerGrid(_leftPageContent, start, 9);
-        }
+            BuildCategoryStickerGrid(_leftPageContent, cat, 0, halfCount);
     }
 
     private void PopulateRightPage(int page)
     {
         ClearPage(_rightPageContent);
-        var profile = ProfileManager.ActiveProfile;
-        var jp = profile?.journey;
-        var animals = new HashSet<string>(jp?.unlockedAnimalIds ?? new List<string>());
-        var colors = new HashSet<string>(jp?.unlockedColorIds ?? new List<string>());
+        var cat = GetCategoryForPage(page);
+        HebrewText.SetText(_rightTitleTMP, cat.title);
+        int halfCount = Mathf.CeilToInt(cat.sprites.Length / 2f);
 
-        if (page == 0)
+        if (cat.rtl)
+            BuildCategoryStickerGrid(_rightPageContent, cat, 0, halfCount);
+        else
+            BuildCategoryStickerGrid(_rightPageContent, cat, halfCount, cat.sprites.Length - halfCount);
+    }
+
+    private static Sprite[] SortByName(Sprite[] source, System.Func<string, int> keyFunc)
+    {
+        if (source == null || source.Length == 0) return source;
+        var list = new List<Sprite>(source);
+        list.Sort((a, b) =>
         {
-            HebrewText.SetText(_rightTitleTMP, "\u05D7\u05D9\u05D5\u05EA");
-            BuildAnimalGrid(_rightPageContent, 12, 7, animals, 4);
+            string na = a != null ? a.name : "";
+            string nb = b != null ? b.name : "";
+            return keyFunc(na).CompareTo(keyFunc(nb));
+        });
+        return list.ToArray();
+    }
+
+    private void BuildCategoryStickerGrid(RectTransform parent, StickerCategory cat, int start, int count)
+    {
+        if (cat.sprites == null || count <= 0) return;
+
+        var gridGO = new GameObject("Grid");
+        gridGO.transform.SetParent(parent, false);
+        Stretch(gridGO.AddComponent<RectTransform>());
+        var grid = gridGO.AddComponent<GridLayoutGroup>();
+
+        // Adapt cell size and columns based on how many stickers
+        int cols;
+        Vector2 cellSize;
+        if (count <= 4)
+        {
+            cols = 2;
+            cellSize = new Vector2(200, 210);
         }
-        else if (page == 1)
+        else if (count <= 6)
         {
-            HebrewText.SetText(_rightTitleTMP, "\u05E6\u05D1\u05E2\u05D9\u05DD");
-            BuildColorGrid(_rightPageContent, 9, 3, colors);
+            cols = 3;
+            cellSize = new Vector2(180, 190);
+        }
+        else if (count <= 9)
+        {
+            cols = 3;
+            cellSize = new Vector2(170, 180);
         }
         else
         {
-            HebrewText.SetText(_rightTitleTMP, "\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA");
-            int start = (page - 2) * StickersPerSpread + 9;
-            BuildStickerGrid(_rightPageContent, start, 9);
+            cols = 4;
+            cellSize = new Vector2(140, 150);
         }
-    }
 
-    private void BuildAnimalGrid(RectTransform parent, int start, int count, HashSet<string> unlocked, int cols)
-    {
-        var gridGO = new GameObject("Grid");
-        gridGO.transform.SetParent(parent, false);
-        Stretch(gridGO.AddComponent<RectTransform>());
-        var grid = gridGO.AddComponent<GridLayoutGroup>();
-        grid.cellSize = new Vector2(155, 195);
-        grid.spacing = new Vector2(4, 2);
-        grid.childAlignment = TextAnchor.UpperCenter;
+        grid.cellSize = cellSize;
+        grid.spacing = new Vector2(6, 4);
         grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         grid.constraintCount = cols;
 
-        for (int i = start; i < start + count && i < AllAnimalIds.Length; i++)
+        if (cat.rtl)
         {
-            string id = AllAnimalIds[i];
-            bool found = unlocked.Contains(id);
-
-            var cell = new GameObject($"A_{id}");
-            cell.transform.SetParent(gridGO.transform, false);
-            var layout = cell.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 0; layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.childForceExpandWidth = true; layout.childForceExpandHeight = false;
-            layout.childControlWidth = true; layout.childControlHeight = true;
-
-            var imgGO = new GameObject("Img");
-            imgGO.transform.SetParent(cell.transform, false);
-            var img = imgGO.AddComponent<Image>();
-            img.preserveAspect = true; img.raycastTarget = false;
-            imgGO.AddComponent<LayoutElement>().preferredHeight = 155;
-
-            Sprite spr = null;
-            if (_animalSprites != null) _animalSprites.TryGetValue(id.ToLower(), out spr);
-
-            if (found && spr != null)
-            {
-                img.sprite = spr;
-                img.color = Color.white;
-            }
-            else if (spr != null)
-            {
-                img.sprite = spr;
-                img.color = SilhouetteColor; // fully grey, opaque
-            }
-            else
-            {
-                if (circleSprite != null) img.sprite = circleSprite;
-                img.color = SilhouetteColor;
-            }
-
-            string label = found ? (AnimalNames.ContainsKey(id) ? AnimalNames[id] : id) : "?";
-            var tmp = AddTMP(cell.transform, "", 16, found ? LabelColor : SilhouetteColor);
-            if (found) HebrewText.SetText(tmp, label); else tmp.text = "?";
-            tmp.alignment = TextAlignmentOptions.Center;
-            tmp.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
+            grid.startCorner = GridLayoutGroup.Corner.UpperRight;
+            grid.childAlignment = TextAnchor.UpperRight;
         }
-    }
-
-    private void BuildColorGrid(RectTransform parent, int start, int count, HashSet<string> unlocked)
-    {
-        var gridGO = new GameObject("Grid");
-        gridGO.transform.SetParent(parent, false);
-        Stretch(gridGO.AddComponent<RectTransform>());
-        var grid = gridGO.AddComponent<GridLayoutGroup>();
-        grid.cellSize = new Vector2(180, 190);
-        grid.spacing = new Vector2(10, 10);
-        grid.childAlignment = TextAnchor.UpperCenter;
-        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = 3;
-
-        for (int i = start; i < start + count && i < AllColorIds.Length; i++)
+        else
         {
-            string id = AllColorIds[i];
-            bool found = unlocked.Contains(id);
-
-            var cell = new GameObject($"C_{id}");
-            cell.transform.SetParent(gridGO.transform, false);
-            var layout = cell.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 6; layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.childForceExpandWidth = false; layout.childForceExpandHeight = false;
-            layout.childControlWidth = true; layout.childControlHeight = true;
-
-            // Force circle: use circleSprite, set equal width/height
-            var circGO = new GameObject("Circle");
-            circGO.transform.SetParent(cell.transform, false);
-            var circImg = circGO.AddComponent<Image>();
-            if (circleSprite != null) circImg.sprite = circleSprite;
-            circImg.raycastTarget = false;
-            var circLE = circGO.AddComponent<LayoutElement>();
-            circLE.preferredWidth = 120;
-            circLE.preferredHeight = 120;
-
-            if (found)
-            {
-                Color c;
-                circImg.color = ColorMap.TryGetValue(id, out c) ? c : Color.gray;
-            }
-            else
-            {
-                circImg.color = SilhouetteColor;
-            }
-
-            circGO.AddComponent<Shadow>().effectColor = new Color(0, 0, 0, 0.12f);
-
-            string label = found ? (ColorNames.ContainsKey(id) ? ColorNames[id] : id) : "?";
-            var tmp = AddTMP(cell.transform, "", 22, found ? LabelColor : SilhouetteColor);
-            if (found) HebrewText.SetText(tmp, label); else tmp.text = "?";
-            tmp.alignment = TextAlignmentOptions.Center;
-            tmp.gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+            grid.startCorner = GridLayoutGroup.Corner.UpperLeft;
+            grid.childAlignment = TextAnchor.UpperCenter;
         }
-    }
 
-    private void BuildStickerGrid(RectTransform parent, int start, int count)
-    {
-        var gridGO = new GameObject("Grid");
-        gridGO.transform.SetParent(parent, false);
-        Stretch(gridGO.AddComponent<RectTransform>());
-        var grid = gridGO.AddComponent<GridLayoutGroup>();
-        grid.cellSize = new Vector2(180, 190);
-        grid.spacing = new Vector2(8, 8);
-        grid.childAlignment = TextAnchor.UpperCenter;
-        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = 3;
-
-        int stickerCount = (stickerSprites != null && stickerSprites.Length > 0) ? stickerSprites.Length : 12;
-        if (stickerSprites == null || stickerSprites.Length == 0)
-            Debug.LogWarning("[Album] No sticker sprites loaded — run Setup World Scene");
-
-        // Get collected stickers from profile
         var profile = ProfileManager.ActiveProfile;
         var collected = profile?.journey?.collectedStickerIds ?? new List<string>();
 
-        for (int i = start; i < start + count && i < stickerCount; i++)
+        for (int i = start; i < start + count && i < cat.sprites.Length; i++)
         {
-            string stickerId = $"sticker_{i}";
+            string spriteName = cat.sprites[i] != null ? cat.sprites[i].name.ToLower() : $"{i}";
+            string stickerId = $"{cat.prefix}{spriteName}";
             bool isCollected = collected.Contains(stickerId);
 
-            var cell = new GameObject($"S_{i}");
+            var cell = new GameObject($"S_{stickerId}");
             cell.transform.SetParent(gridGO.transform, false);
-            var layout = cell.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 2; layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.childForceExpandWidth = true; layout.childForceExpandHeight = false;
-            layout.childControlWidth = true; layout.childControlHeight = true;
+            cell.AddComponent<RectTransform>();
 
             var imgGO = new GameObject("Img");
             imgGO.transform.SetParent(cell.transform, false);
+            var imgRT = imgGO.AddComponent<RectTransform>();
+            Stretch(imgRT);
+            imgRT.offsetMin = new Vector2(4, 4);
+            imgRT.offsetMax = new Vector2(-4, -4);
             var img = imgGO.AddComponent<Image>();
-            img.preserveAspect = true; img.raycastTarget = false;
-            imgGO.AddComponent<LayoutElement>().preferredHeight = 150;
+            img.preserveAspect = true;
+            img.raycastTarget = false;
 
-            if (stickerSprites != null && i < stickerSprites.Length && stickerSprites[i] != null)
+            if (cat.sprites[i] != null)
             {
-                img.sprite = stickerSprites[i];
+                img.sprite = cat.sprites[i];
                 img.color = isCollected ? Color.white : SilhouetteColor;
             }
             else
@@ -574,12 +493,18 @@ public class CollectibleAlbumController : MonoBehaviour
                 if (circleSprite != null) img.sprite = circleSprite;
                 img.color = SilhouetteColor;
             }
-
-            var tmp = AddTMP(cell.transform, isCollected ? "" : "?", 18,
-                isCollected ? TitleColor : SilhouetteColor);
-            tmp.alignment = TextAlignmentOptions.Center;
-            tmp.gameObject.AddComponent<LayoutElement>().preferredHeight = 24;
         }
+    }
+
+    private void UpdateNav()
+    {
+        string dots = "";
+        for (int i = 0; i < _totalPages; i++)
+            dots += (i == _currentPage) ? "\u25CF " : "\u25CB ";
+        _pageIndicatorTMP.text = dots.Trim();
+
+        _prevButton.gameObject.SetActive(_currentPage > 0);
+        _nextButton.gameObject.SetActive(_currentPage < _totalPages - 1);
     }
 
     // ── Page Turn ──
@@ -587,7 +512,7 @@ public class CollectibleAlbumController : MonoBehaviour
     private void TurnPage(int dir)
     {
         int target = _currentPage + dir;
-        if (target < 0 || target >= TotalPages || _isAnimating) return;
+        if (target < 0 || target >= _totalPages || _isAnimating) return;
         StartCoroutine(PageTurnAnimation(dir, target));
     }
 
@@ -599,37 +524,23 @@ public class CollectibleAlbumController : MonoBehaviour
         var turnImg = _pageTurnOverlay.GetComponent<Image>();
         float halfDur = 0.25f;
 
-        // ── Like a real book: page lifts from one side, crosses spine, lands on other side ──
-        // Phase 1: Page folds from the source side toward the spine.
-        //          New content on that side is underneath, gets revealed.
-        // Phase 2: Page crosses spine and folds onto the other side, covering old content.
-        //          When it lands, content underneath switches to new, then page lifts off.
-
         if (goingRight)
         {
-            // ── PHASE 1: Right page folds toward spine, revealing new right content ──
-            // Place new right content underneath
             PopulateRightPage(targetPage);
-            // Overlay covers right half, pivots at spine
             SetTurnOverlay(new Vector2(0.5f, 0), Vector2.one, new Vector2(0, 0.5f));
             _pageTurnOverlay.localScale = Vector3.one;
             turnImg.color = PageColor;
             _pageTurnOverlay.gameObject.SetActive(true);
 
-            // Fold: scaleX 1 → 0 (reveals new right page)
             yield return AnimateFold(turnImg, 1f, 0f, halfDur);
 
-            // ── PHASE 2: Page lands on left side ──
-            // Pivot at spine — page unfolds from spine outward onto left page
             SetTurnOverlay(Vector2.zero, new Vector2(0.5f, 1), new Vector2(1, 0.5f));
             yield return AnimateFold(turnImg, 0f, 1f, halfDur);
 
-            // Page has landed — switch content and remove overlay
             PopulateLeftPage(targetPage);
         }
         else
         {
-            // ── PHASE 1: Left page folds toward spine, revealing new left content ──
             PopulateLeftPage(targetPage);
             SetTurnOverlay(Vector2.zero, new Vector2(0.5f, 1), new Vector2(1, 0.5f));
             _pageTurnOverlay.localScale = Vector3.one;
@@ -638,24 +549,15 @@ public class CollectibleAlbumController : MonoBehaviour
 
             yield return AnimateFold(turnImg, 1f, 0f, halfDur);
 
-            // ── PHASE 2: Page lands on right side ──
-            // Pivot at spine — page unfolds from spine outward onto right page
             SetTurnOverlay(new Vector2(0.5f, 0), Vector2.one, new Vector2(0, 0.5f));
             yield return AnimateFold(turnImg, 0f, 1f, halfDur);
 
-            // Page has landed — switch content and remove overlay
             PopulateRightPage(targetPage);
         }
 
         _currentPage = targetPage;
         FirebaseAnalyticsManager.LogAlbumPageViewed(_currentPage);
-        // Refresh nav buttons and page dots
-        _prevButton.gameObject.SetActive(_currentPage > 0);
-        _nextButton.gameObject.SetActive(_currentPage < TotalPages - 1);
-        string dots = "";
-        for (int i = 0; i < TotalPages; i++)
-            dots += (i == _currentPage) ? "\u25CF " : "\u25CB ";
-        _pageIndicatorTMP.text = dots.Trim();
+        UpdateNav();
 
         _pageTurnOverlay.gameObject.SetActive(false);
         _pageTurnOverlay.localScale = Vector3.one;
@@ -678,11 +580,9 @@ public class CollectibleAlbumController : MonoBehaviour
         {
             t += Time.deltaTime;
             float e = Mathf.Clamp01(t / duration);
-            // Ease: smooth in-out
             e = e * e * (3f - 2f * e);
             float sx = Mathf.Lerp(fromScale, toScale, e);
             _pageTurnOverlay.localScale = new Vector3(sx, 1, 1);
-            // Darken as it folds flat, brighten as it opens
             float flatness = 1f - Mathf.Abs(sx);
             float shade = Mathf.Lerp(1f, 0.7f, flatness);
             turnImg.color = new Color(PageColor.r * shade, PageColor.g * shade, PageColor.b * shade);
@@ -727,26 +627,6 @@ public class CollectibleAlbumController : MonoBehaviour
     }
 
     // ── Helpers ──
-
-    private void BuildAnimalSpriteLookup()
-    {
-        if (_animalSprites != null) return;
-        _animalSprites = new Dictionary<string, Sprite>();
-        if (gameDatabase == null) return;
-        foreach (var game in gameDatabase.games)
-        {
-            if (game.subItems == null) continue;
-            foreach (var sub in game.subItems)
-            {
-                if (sub.thumbnail == null && sub.contentAsset == null) continue;
-                string key = sub.categoryKey;
-                if (string.IsNullOrEmpty(key)) continue;
-                string lower = key.ToLower();
-                if (!_animalSprites.ContainsKey(lower))
-                    _animalSprites[lower] = sub.thumbnail != null ? sub.thumbnail : sub.contentAsset;
-            }
-        }
-    }
 
     private Button MakeNavButton(Transform parent, string name, string label,
         Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 offset)

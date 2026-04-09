@@ -1936,17 +1936,22 @@ public class ParentDashboardController : MonoBehaviour
 
         // מתן כבר שיחק ב-X משחקים וגילה Y חיות, Z צבעים ו-W מדבקות!
         string name = _data.profileName;
-        int sessions = _data.totalSessions;
+        var profile = ProfileManager.ActiveProfile;
+        int games = profile != null && profile.journey != null ? profile.journey.totalGamesCompleted : 0;
         int animals = _data.discoveredAnimals;
         int colors = _data.discoveredColors;
         int stickers = _data.collectedStickers;
 
-        return $"{name} \u05DB\u05D1\u05E8 \u05E9\u05D9\u05D7\u05E7 \u05D1-{sessions} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05D5\u05D2\u05D9\u05DC\u05D4 {animals} \u05D7\u05D9\u05D5\u05EA, {colors} \u05E6\u05D1\u05E2\u05D9\u05DD \u05D5-{stickers} \u05DE\u05D3\u05D1\u05E7\u05D5\u05EA!";
+        return $"{name} \u05DB\u05D1\u05E8 \u05E1\u05D9\u05D9\u05DD {games} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05D5\u05D2\u05D9\u05DC\u05D4 {animals} \u05D7\u05D9\u05D5\u05EA, {colors} \u05E6\u05D1\u05E2\u05D9\u05DD \u05D5-{stickers} \u05DE\u05D3\u05D1\u05E7\u05D5\u05EA!";
     }
 
     private void OnSharePressed()
     {
-        StartCoroutine(CertificateGenerator.GenerateAndShare(_data, roundedRect));
+        var profile = ProfileManager.ActiveProfile;
+        DashboardStoryBuilder.StoryData? story = null;
+        if (profile != null && profile.analytics != null)
+            story = DashboardStoryBuilder.Build(_data, profile.analytics);
+        StartCoroutine(CertificateGenerator.GenerateAndShare(_data, roundedRect, story));
     }
 
     // ═══════════════════════════════════════════════════════════════

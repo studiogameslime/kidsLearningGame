@@ -1128,19 +1128,19 @@ public class WorldController : MonoBehaviour
     {
         switch (colorId)
         {
-            case "Red":    return new Color(0.94f, 0.27f, 0.27f);
-            case "Blue":   return new Color(0.23f, 0.51f, 0.96f);
-            case "Yellow": return new Color(0.98f, 0.80f, 0.08f);
-            case "Green":  return new Color(0.13f, 0.77f, 0.37f);
-            case "Orange": return new Color(0.98f, 0.45f, 0.09f);
-            case "Purple": return new Color(0.55f, 0.36f, 0.96f);
-            case "Pink":   return new Color(0.93f, 0.29f, 0.60f);
-            case "Cyan":   return new Color(0.02f, 0.71f, 0.83f);
-            case "Brown":  return new Color(0.47f, 0.33f, 0.28f);
-            case "Black":  return new Color(0.12f, 0.12f, 0.12f);
-            case "White":  return new Color(0.95f, 0.95f, 0.95f);
-            case "Grey":   return new Color(0.6f, 0.6f, 0.6f);
-            default:       return Color.white;
+            case "Red":        return new Color(0.94f, 0.27f, 0.27f);
+            case "Blue":       return new Color(0.23f, 0.51f, 0.96f);
+            case "Yellow":     return new Color(0.98f, 0.80f, 0.08f);
+            case "Green":      return new Color(0.13f, 0.77f, 0.37f);
+            case "Orange":     return new Color(0.98f, 0.45f, 0.09f);
+            case "Purple":     return new Color(0.55f, 0.36f, 0.96f);
+            case "Pink":       return new Color(0.93f, 0.29f, 0.60f);
+            case "Cyan":       return new Color(0.02f, 0.71f, 0.83f);
+            case "Brown":      return new Color(0.47f, 0.33f, 0.28f);
+            case "Black":      return new Color(0.12f, 0.12f, 0.12f);
+            case "White":      return new Color(0.95f, 0.95f, 0.95f);
+            case "Light Blue": return new Color(0.53f, 0.81f, 0.98f);
+            default:           return Color.white;
         }
     }
 

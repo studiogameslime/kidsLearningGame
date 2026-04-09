@@ -188,7 +188,7 @@ public class FruitPuzzleSetup
         leaderboard.roundedRect = LoadSprite("Assets/UI/Sprites/RoundedRect.png");
         leaderboard.trophySprite = trophyIcon;
         leaderboard.trophyButton = trophyGO.GetComponent<Button>();
-        leaderboard.gameId = "fruitpuzzle";
+        leaderboard.gameId = "vehiclepuzzle";
 
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/FruitPuzzle.unity");
         Debug.Log("[FruitPuzzleSetup] Scene created: Assets/Scenes/FruitPuzzle.unity");

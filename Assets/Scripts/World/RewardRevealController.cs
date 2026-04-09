@@ -22,6 +22,7 @@ public class RewardRevealController : MonoBehaviour
 
     private GiftBoxController activeGift;
     private Dictionary<string, Sprite> _animalSprites;
+    private string _pendingPopupStickerId;
 
     /// <summary>
     /// Called by WorldController after BuildWorld. Checks for pending rewards
@@ -188,6 +189,15 @@ public class RewardRevealController : MonoBehaviour
                     jp.unlockedColorIds.Add(gift.reward.id);
                 Debug.Log($"[StarterFlow] Balloon gift opened -> {gift.reward.id} balloon revealed and unlocked");
             }
+
+            // Award matching sticker for the discovery
+            string stickerId = StickerCatalog.GetStickerForDiscovery(gift.reward.type, gift.reward.id);
+            if (stickerId != null && !jp.collectedStickerIds.Contains(stickerId))
+            {
+                jp.collectedStickerIds.Add(stickerId);
+                _pendingPopupStickerId = stickerId;
+                Debug.Log($"[Sticker] Awarded {stickerId} from discovery {gift.reward.type}/{gift.reward.id}");
+            }
         }
 
         if (gift.reward.type == "animal")
@@ -198,7 +208,7 @@ public class RewardRevealController : MonoBehaviour
         // Remove this reward from the pending list
         if (profile != null)
         {
-            profile.journey.pendingWorldRewards.Remove(gift.reward);
+            profile.journey.pendingWorldRewards.RemoveAll(r => r.type == gift.reward.type && r.id == gift.reward.id);
             ProfileManager.Instance.Save();
 
             // If more rewards remain, spawn the next gift after a delay
@@ -342,6 +352,13 @@ public class RewardRevealController : MonoBehaviour
         // Return to idle
         if (spriteAnim != null)
             spriteAnim.PlayIdle();
+
+        // Show sticker popup
+        if (!string.IsNullOrEmpty(_pendingPopupStickerId))
+        {
+            yield return StartCoroutine(StickerPopup.Show(_pendingPopupStickerId));
+            _pendingPopupStickerId = null;
+        }
     }
 
     // ── Balloon Reward ─────────────────────────────────────────
@@ -459,6 +476,13 @@ public class RewardRevealController : MonoBehaviour
         balloon.skyHeight = skyHeight;
         balloon.padding = 200f;
         balloon.SetBasePosition(floatEnd);
+
+        // Show sticker popup
+        if (!string.IsNullOrEmpty(_pendingPopupStickerId))
+        {
+            yield return StartCoroutine(StickerPopup.Show(_pendingPopupStickerId));
+            _pendingPopupStickerId = null;
+        }
     }
 
     // ── Helpers ─────────────────────────────────────────────────
@@ -609,17 +633,19 @@ public class RewardRevealController : MonoBehaviour
     {
         switch (colorId)
         {
-            case "Red":    return new Color(0.94f, 0.27f, 0.27f);
-            case "Blue":   return new Color(0.23f, 0.51f, 0.96f);
-            case "Yellow": return new Color(0.98f, 0.80f, 0.08f);
-            case "Green":  return new Color(0.13f, 0.77f, 0.37f);
-            case "Orange": return new Color(0.98f, 0.45f, 0.09f);
-            case "Purple": return new Color(0.55f, 0.36f, 0.96f);
-            case "Pink":   return new Color(0.93f, 0.29f, 0.60f);
-            case "Cyan":   return new Color(0.02f, 0.71f, 0.83f);
-            case "Brown":  return new Color(0.47f, 0.33f, 0.28f);
-            case "Black":  return new Color(0.12f, 0.12f, 0.12f);
-            default:       return Color.white;
+            case "Red":        return new Color(0.94f, 0.27f, 0.27f);
+            case "Blue":       return new Color(0.23f, 0.51f, 0.96f);
+            case "Yellow":     return new Color(0.98f, 0.80f, 0.08f);
+            case "Green":      return new Color(0.13f, 0.77f, 0.37f);
+            case "Orange":     return new Color(0.98f, 0.45f, 0.09f);
+            case "Purple":     return new Color(0.55f, 0.36f, 0.96f);
+            case "Pink":       return new Color(0.93f, 0.29f, 0.60f);
+            case "Cyan":       return new Color(0.02f, 0.71f, 0.83f);
+            case "Brown":      return new Color(0.47f, 0.33f, 0.28f);
+            case "Black":      return new Color(0.12f, 0.12f, 0.12f);
+            case "White":      return new Color(0.95f, 0.95f, 0.95f);
+            case "Light Blue": return new Color(0.53f, 0.81f, 0.98f);
+            default:           return Color.white;
         }
     }
 }

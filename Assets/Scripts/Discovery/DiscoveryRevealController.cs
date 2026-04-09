@@ -530,17 +530,19 @@ public class DiscoveryRevealController : MonoBehaviour
     {
         switch (id)
         {
-            case "Red":    return "\u05D0\u05D3\u05D5\u05DD";
-            case "Blue":   return "\u05DB\u05D7\u05D5\u05DC";
-            case "Yellow": return "\u05E6\u05D4\u05D5\u05D1";
-            case "Green":  return "\u05D9\u05E8\u05D5\u05E7";
-            case "Orange": return "\u05DB\u05EA\u05D5\u05DD";
-            case "Purple": return "\u05E1\u05D2\u05D5\u05DC";
-            case "Pink":   return "\u05D5\u05E8\u05D5\u05D3";
-            case "Cyan":   return "\u05EA\u05DB\u05DC\u05EA";
-            case "Brown":  return "\u05D7\u05D5\u05DD";
-            case "Black":  return "\u05E9\u05D7\u05D5\u05E8";
-            default:       return id;
+            case "Red":        return "\u05D0\u05D3\u05D5\u05DD";
+            case "Blue":       return "\u05DB\u05D7\u05D5\u05DC";
+            case "Yellow":     return "\u05E6\u05D4\u05D5\u05D1";
+            case "Green":      return "\u05D9\u05E8\u05D5\u05E7";
+            case "Orange":     return "\u05DB\u05EA\u05D5\u05DD";
+            case "Purple":     return "\u05E1\u05D2\u05D5\u05DC";
+            case "Pink":       return "\u05D5\u05E8\u05D5\u05D3";
+            case "Cyan":       return "\u05EA\u05DB\u05DC\u05EA";
+            case "Brown":      return "\u05D7\u05D5\u05DD";
+            case "Black":      return "\u05E9\u05D7\u05D5\u05E8";
+            case "White":      return "\u05DC\u05D1\u05DF";
+            case "Light Blue": return "\u05EA\u05DB\u05DC\u05EA \u05D1\u05D4\u05D9\u05E8";
+            default:           return id;
         }
     }
 
@@ -548,17 +550,19 @@ public class DiscoveryRevealController : MonoBehaviour
     {
         switch (colorId)
         {
-            case "Red":    return new Color(0.94f, 0.27f, 0.27f);
-            case "Blue":   return new Color(0.23f, 0.51f, 0.96f);
-            case "Yellow": return new Color(0.98f, 0.80f, 0.08f);
-            case "Green":  return new Color(0.13f, 0.77f, 0.37f);
-            case "Orange": return new Color(0.98f, 0.45f, 0.09f);
-            case "Purple": return new Color(0.55f, 0.36f, 0.96f);
-            case "Pink":   return new Color(0.93f, 0.29f, 0.60f);
-            case "Cyan":   return new Color(0.02f, 0.71f, 0.83f);
-            case "Brown":  return new Color(0.47f, 0.33f, 0.28f);
-            case "Black":  return new Color(0.12f, 0.12f, 0.12f);
-            default:       return Color.white;
+            case "Red":        return new Color(0.94f, 0.27f, 0.27f);
+            case "Blue":       return new Color(0.23f, 0.51f, 0.96f);
+            case "Yellow":     return new Color(0.98f, 0.80f, 0.08f);
+            case "Green":      return new Color(0.13f, 0.77f, 0.37f);
+            case "Orange":     return new Color(0.98f, 0.45f, 0.09f);
+            case "Purple":     return new Color(0.55f, 0.36f, 0.96f);
+            case "Pink":       return new Color(0.93f, 0.29f, 0.60f);
+            case "Cyan":       return new Color(0.02f, 0.71f, 0.83f);
+            case "Brown":      return new Color(0.47f, 0.33f, 0.28f);
+            case "Black":      return new Color(0.12f, 0.12f, 0.12f);
+            case "White":      return new Color(0.95f, 0.95f, 0.95f);
+            case "Light Blue": return new Color(0.53f, 0.81f, 0.98f);
+            default:           return Color.white;
         }
     }
 }

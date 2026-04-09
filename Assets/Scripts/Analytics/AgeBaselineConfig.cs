@@ -280,7 +280,7 @@ public static class AgeBaselineConfig
             new Entry(4, "colorcatch",   1),  // 2 colors, 5 catches
             new Entry(4, "bakery"),                   // creative sandbox
             new Entry(4, "sockmatch"),                // match sock pairs
-            new Entry(4, "fruitpuzzle",  1),  // 2x2 grid
+            new Entry(4, "vehiclepuzzle",  1),  // 2x2 grid
             new Entry(4, "numbermaze",    10),  // target 10, 5x3 grid
             new Entry(4, "patterncopy",   3),   // 3x3 grid
             new Entry(4, "letters",       3),   // 2-3 letter words
@@ -315,7 +315,7 @@ public static class AgeBaselineConfig
             new Entry(5, "sizesort",     5),   // moderate size differences
             new Entry(5, "colorsort",    5),  // confusing warm tones
             new Entry(5, "colorcatch",   5),  // 3 colors, 8 catches
-            new Entry(5, "fruitpuzzle",  5),  // 2x3 grid
+            new Entry(5, "vehiclepuzzle",  5),  // 2x3 grid
             new Entry(5, "numbermaze",    15),  // target 15, 6x4 grid
             new Entry(5, "patterncopy",   5),   // 5x5 grid
             new Entry(5, "letters",       4),   // up to 4 letter words

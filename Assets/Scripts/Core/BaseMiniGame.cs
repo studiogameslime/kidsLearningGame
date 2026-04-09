@@ -317,6 +317,12 @@ public abstract class BaseMiniGame : MonoBehaviour
         if (shouldPlayConfetti && GameCompletionBridge.Instance != null)
         {
             bool discoveryLoaded = GameCompletionBridge.Instance.AwardAndCheckDiscovery();
+
+            // Show sticker popup if one was awarded this round
+            string awardedSticker = GameCompletionBridge.Instance.LastAwardedStickerId;
+            if (!string.IsNullOrEmpty(awardedSticker))
+                yield return StartCoroutine(StickerPopup.Show(awardedSticker));
+
             if (discoveryLoaded)
                 yield break; // DiscoveryReveal scene is loading — do NOT start a new round
         }
