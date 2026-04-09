@@ -83,6 +83,18 @@ public class ProfileManager : MonoBehaviour
                 // Migrate old sticker IDs: "sticker_X" → remove (can't map to new names)
                 if (p.journey != null && p.journey.collectedStickerIds != null)
                     p.journey.collectedStickerIds.RemoveAll(id => id != null && id.StartsWith("sticker_"));
+                // Catch-up: award achievement stickers for games already played enough
+                if (p.journey != null && p.journey.gameStats != null)
+                {
+                    foreach (var stat in p.journey.gameStats)
+                    {
+                        if (stat.timesPlayedInJourney < 10) continue;
+                        string achId = StickerCatalog.CheckAchievement(
+                            stat.gameId, stat.timesPlayedInJourney, p.journey.collectedStickerIds);
+                        if (achId != null)
+                            p.journey.collectedStickerIds.Add(achId);
+                    }
+                }
             }
         }
 
