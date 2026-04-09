@@ -446,9 +446,6 @@ public class DiscoveryRevealController : MonoBehaviour
         if (revealImage != null)
             UIEffects.SpawnSparkles(revealImage.rectTransform, 12);
 
-        // Unlock the discovery immediately (don't wait for World gift box)
-        UnlockDiscovery(discovery);
-
         // Big confetti
         if (ConfettiController.Instance != null)
             ConfettiController.Instance.PlayBig();
@@ -460,76 +457,11 @@ public class DiscoveryRevealController : MonoBehaviour
         ReturnToGame();
     }
 
-    private void UnlockDiscovery(DiscoveryEntry discovery)
-    {
-        var profile = ProfileManager.ActiveProfile;
-        if (profile == null || discovery == null) return;
-        var jp = profile.journey;
-        if (jp == null) return;
-
-        if (discovery.type == "animal")
-        {
-            if (!jp.unlockedAnimalIds.Contains(discovery.id))
-                jp.unlockedAnimalIds.Add(discovery.id);
-        }
-        else if (discovery.type == "color")
-        {
-            if (!jp.unlockedColorIds.Contains(discovery.id))
-                jp.unlockedColorIds.Add(discovery.id);
-        }
-
-        // Remove from pending rewards — already unlocked, no need for World gift box
-        jp.pendingWorldRewards.RemoveAll(r => r.type == discovery.type && r.id == discovery.id);
-
-        ProfileManager.Instance.Save();
-    }
-
     private void ReturnToGame()
     {
-        var currentGame = GameContext.CurrentGame;
-
-        // If auto-switch is enabled, pick a different game
-        var profile = ProfileManager.ActiveProfile;
-        if (profile != null && profile.autoSwitchGames && currentGame != null)
-        {
-            var db = Resources.Load<GameDatabase>("GameDatabase");
-            if (db == null)
-            {
-                var dbs = Resources.FindObjectsOfTypeAll<GameDatabase>();
-                if (dbs.Length > 0) db = dbs[0];
-            }
-
-            if (db != null && db.games != null)
-            {
-                var candidates = new System.Collections.Generic.List<GameItemData>();
-                foreach (var game in db.games)
-                {
-                    if (game == null || game.id == currentGame.id) continue;
-                    if (game.id == "coloring") continue; // skip sandboxes
-                    var vis = GameVisibilityService.Evaluate(profile, game);
-                    if (vis.isVisible) candidates.Add(game);
-                }
-
-                if (candidates.Count > 0)
-                {
-                    var nextGame = candidates[Random.Range(0, candidates.Count)];
-                    GameContext.CurrentGame = nextGame;
-                    GameContext.CurrentSelection = null;
-                    BubbleTransition.LoadScene(nextGame.targetSceneName);
-                    return;
-                }
-            }
-        }
-
-        // Default: return to the same game
-        if (currentGame != null)
-        {
-            BubbleTransition.LoadScene(currentGame.targetSceneName);
-        }
-        else
-        {
-            NavigationManager.GoToHome();
-        }
+        // Always go to World after discovery — gift box appears there
+        // The child opens the gift in the World to unlock the animal/color
+        NavigationManager.GoToHome();
     }
 
     private IEnumerator BounceReveal(RectTransform rt)
