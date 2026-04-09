@@ -16,6 +16,9 @@ public class CollectibleAlbumController : MonoBehaviour
     public Sprite circleSprite;
     public Sprite roundedRect;
 
+    [Header("Game Data")]
+    public GameDatabase gameDatabase;
+
     [Header("Sticker Sheets (sliced)")]
     public Sprite[] animalsStickers;   // 19 — dog..donkey
     public Sprite[] lettersStickers;   // 22 — א..ת
@@ -59,6 +62,7 @@ public class CollectibleAlbumController : MonoBehaviour
         public string prefix;     // sticker ID prefix (e.g. "animal_")
         public Sprite[] sprites;
         public bool rtl;          // if true, right page shows first half (Hebrew order)
+        public bool isAchievements; // special page — shows game thumbnails with frames
     }
 
     private StickerCategory[] _categories;
@@ -107,6 +111,15 @@ public class CollectibleAlbumController : MonoBehaviour
             new StickerCategory { title = "\u05D8\u05D1\u05E2",                    prefix = "nature_",  sprites = natureStickers },    // טבע
         };
 
+        // Build achievements page from game thumbnails
+        _achievementGames = new List<GameItemData>();
+        if (gameDatabase != null)
+        {
+            foreach (var game in gameDatabase.games)
+                if (game != null && game.thumbnail != null)
+                    _achievementGames.Add(game);
+        }
+
         // Each category = 1 page spread (left + right)
         _totalPages = 0;
         foreach (var cat in _categories)
@@ -114,8 +127,18 @@ public class CollectibleAlbumController : MonoBehaviour
             if (cat.sprites != null && cat.sprites.Length > 0)
                 _totalPages++;
         }
+        // Add achievements pages (2 spreads for ~30 games: 15 left+right each)
+        if (_achievementGames.Count > 0)
+        {
+            _achievementStartPage = _totalPages;
+            int achievementPages = Mathf.CeilToInt(_achievementGames.Count / 14f); // 7 per page side
+            _totalPages += achievementPages;
+        }
         if (_totalPages == 0) _totalPages = 1;
     }
+
+    private List<GameItemData> _achievementGames;
+    private int _achievementStartPage = -1;
 
     // Colors
     private static readonly Color BookCover = new Color(0.36f, 0.22f, 0.14f);
@@ -347,6 +370,9 @@ public class CollectibleAlbumController : MonoBehaviour
         int validCount = 0;
         foreach (var c in _categories)
             if (c.sprites != null && c.sprites.Length > 0) validCount++;
+        // Add achievement tabs
+        int achievementPages = _achievementStartPage >= 0 ? _totalPages - _achievementStartPage : 0;
+        validCount += achievementPages;
         if (validCount == 0) return;
 
         float bookWidth = 1500f;
@@ -410,6 +436,49 @@ public class CollectibleAlbumController : MonoBehaviour
                 _tabImages.Add(null);
             }
 
+            _tabBgs.Add(bgImg);
+        }
+
+        // Achievement tabs (one per achievements page)
+        for (int ap = 0; ap < achievementPages; ap++)
+        {
+            int targetPage = _achievementStartPage + ap;
+            float xPos = startX + pageIdx * (tabWidth + gap);
+            pageIdx++;
+
+            var tabGO = new GameObject($"Tab_achievements_{ap}");
+            tabGO.transform.SetParent(bookParent, false);
+            var tabRT = tabGO.AddComponent<RectTransform>();
+            tabRT.anchorMin = new Vector2(0.5f, 1f);
+            tabRT.anchorMax = new Vector2(0.5f, 1f);
+            tabRT.pivot = new Vector2(0.5f, 0f);
+            tabRT.anchoredPosition = new Vector2(xPos, -10f);
+            tabRT.sizeDelta = new Vector2(tabWidth, tabHeight);
+
+            var bgImg = tabGO.AddComponent<Image>();
+            if (roundedRect != null) { bgImg.sprite = roundedRect; bgImg.type = Image.Type.Sliced; }
+            bgImg.color = new Color(_coverColor.r * 1.1f, _coverColor.g * 1.1f, _coverColor.b * 1.1f, 0.85f);
+            bgImg.raycastTarget = true;
+
+            var btn = tabGO.AddComponent<Button>();
+            btn.targetGraphic = bgImg;
+            int page = targetPage;
+            btn.onClick.AddListener(() => JumpToPage(page));
+
+            // Trophy icon — use gold color star
+            var iconGO = new GameObject("Icon");
+            iconGO.transform.SetParent(tabGO.transform, false);
+            var iconRT = iconGO.AddComponent<RectTransform>();
+            iconRT.anchorMin = new Vector2(0.15f, 0.15f);
+            iconRT.anchorMax = new Vector2(0.85f, 0.85f);
+            iconRT.offsetMin = Vector2.zero;
+            iconRT.offsetMax = Vector2.zero;
+            var iconTMP = iconGO.AddComponent<TextMeshProUGUI>();
+            iconTMP.text = "\u2B50"; // ⭐
+            iconTMP.fontSize = 30;
+            iconTMP.alignment = TextAlignmentOptions.Center;
+            iconTMP.raycastTarget = false;
+            _tabImages.Add(null);
             _tabBgs.Add(bgImg);
         }
     }
@@ -524,28 +593,41 @@ public class CollectibleAlbumController : MonoBehaviour
         return _categories[0];
     }
 
+    private bool IsAchievementPage(int page) => _achievementStartPage >= 0 && page >= _achievementStartPage;
+
     private void PopulatePages(int page)
     {
         ClearPage(_leftPageContent);
         ClearPage(_rightPageContent);
 
-        var cat = GetCategoryForPage(page);
-        HebrewText.SetText(_leftTitleTMP, cat.title);
-        HebrewText.SetText(_rightTitleTMP, cat.title);
-
-        int halfCount = Mathf.CeilToInt(cat.sprites.Length / 2f);
-        int secondHalf = cat.sprites.Length - halfCount;
-
-        if (cat.rtl)
+        if (IsAchievementPage(page))
         {
-            // RTL: right page = first half, left page = second half
-            BuildCategoryStickerGrid(_rightPageContent, cat, 0, halfCount);
-            BuildCategoryStickerGrid(_leftPageContent, cat, halfCount, secondHalf);
+            HebrewText.SetText(_leftTitleTMP, "\u05D4\u05D9\u05E9\u05D2\u05D9\u05DD"); // הישגים
+            HebrewText.SetText(_rightTitleTMP, "\u05D4\u05D9\u05E9\u05D2\u05D9\u05DD");
+            int achPage = page - _achievementStartPage;
+            int start = achPage * 14;
+            BuildAchievementGrid(_leftPageContent, start, 7);
+            BuildAchievementGrid(_rightPageContent, start + 7, 7);
         }
         else
         {
-            BuildCategoryStickerGrid(_leftPageContent, cat, 0, halfCount);
-            BuildCategoryStickerGrid(_rightPageContent, cat, halfCount, secondHalf);
+            var cat = GetCategoryForPage(page);
+            HebrewText.SetText(_leftTitleTMP, cat.title);
+            HebrewText.SetText(_rightTitleTMP, cat.title);
+
+            int halfCount = Mathf.CeilToInt(cat.sprites.Length / 2f);
+            int secondHalf = cat.sprites.Length - halfCount;
+
+            if (cat.rtl)
+            {
+                BuildCategoryStickerGrid(_rightPageContent, cat, 0, halfCount);
+                BuildCategoryStickerGrid(_leftPageContent, cat, halfCount, secondHalf);
+            }
+            else
+            {
+                BuildCategoryStickerGrid(_leftPageContent, cat, 0, halfCount);
+                BuildCategoryStickerGrid(_rightPageContent, cat, halfCount, secondHalf);
+            }
         }
 
         UpdateNav();
@@ -554,27 +636,41 @@ public class CollectibleAlbumController : MonoBehaviour
     private void PopulateLeftPage(int page)
     {
         ClearPage(_leftPageContent);
-        var cat = GetCategoryForPage(page);
-        HebrewText.SetText(_leftTitleTMP, cat.title);
-        int halfCount = Mathf.CeilToInt(cat.sprites.Length / 2f);
-
-        if (cat.rtl)
-            BuildCategoryStickerGrid(_leftPageContent, cat, halfCount, cat.sprites.Length - halfCount);
+        if (IsAchievementPage(page))
+        {
+            HebrewText.SetText(_leftTitleTMP, "\u05D4\u05D9\u05E9\u05D2\u05D9\u05DD");
+            BuildAchievementGrid(_leftPageContent, (page - _achievementStartPage) * 14, 7);
+        }
         else
-            BuildCategoryStickerGrid(_leftPageContent, cat, 0, halfCount);
+        {
+            var cat = GetCategoryForPage(page);
+            HebrewText.SetText(_leftTitleTMP, cat.title);
+            int halfCount = Mathf.CeilToInt(cat.sprites.Length / 2f);
+            if (cat.rtl)
+                BuildCategoryStickerGrid(_leftPageContent, cat, halfCount, cat.sprites.Length - halfCount);
+            else
+                BuildCategoryStickerGrid(_leftPageContent, cat, 0, halfCount);
+        }
     }
 
     private void PopulateRightPage(int page)
     {
         ClearPage(_rightPageContent);
-        var cat = GetCategoryForPage(page);
-        HebrewText.SetText(_rightTitleTMP, cat.title);
-        int halfCount = Mathf.CeilToInt(cat.sprites.Length / 2f);
-
-        if (cat.rtl)
-            BuildCategoryStickerGrid(_rightPageContent, cat, 0, halfCount);
+        if (IsAchievementPage(page))
+        {
+            HebrewText.SetText(_rightTitleTMP, "\u05D4\u05D9\u05E9\u05D2\u05D9\u05DD");
+            BuildAchievementGrid(_rightPageContent, (page - _achievementStartPage) * 14 + 7, 7);
+        }
         else
-            BuildCategoryStickerGrid(_rightPageContent, cat, halfCount, cat.sprites.Length - halfCount);
+        {
+            var cat = GetCategoryForPage(page);
+            HebrewText.SetText(_rightTitleTMP, cat.title);
+            int halfCount = Mathf.CeilToInt(cat.sprites.Length / 2f);
+            if (cat.rtl)
+                BuildCategoryStickerGrid(_rightPageContent, cat, 0, halfCount);
+            else
+                BuildCategoryStickerGrid(_rightPageContent, cat, halfCount, cat.sprites.Length - halfCount);
+        }
     }
 
     private static Sprite[] SortByName(Sprite[] source, System.Func<string, int> keyFunc)
@@ -671,6 +767,108 @@ public class CollectibleAlbumController : MonoBehaviour
             {
                 if (circleSprite != null) img.sprite = circleSprite;
                 img.color = SilhouetteColor;
+            }
+        }
+    }
+
+    // ── Achievement Grid ──
+
+    private static readonly Color BronzeFrame = new Color(0.8f, 0.5f, 0.2f);
+    private static readonly Color SilverFrame = new Color(0.75f, 0.75f, 0.78f);
+    private static readonly Color GoldFrame   = new Color(1f, 0.84f, 0f);
+
+    private void BuildAchievementGrid(RectTransform parent, int start, int count)
+    {
+        if (_achievementGames == null || _achievementGames.Count == 0) return;
+
+        var gridGO = new GameObject("Grid");
+        gridGO.transform.SetParent(parent, false);
+        Stretch(gridGO.AddComponent<RectTransform>());
+        var grid = gridGO.AddComponent<GridLayoutGroup>();
+        grid.cellSize = new Vector2(170, 180);
+        grid.spacing = new Vector2(6, 6);
+        grid.childAlignment = TextAnchor.UpperCenter;
+        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        grid.constraintCount = 3; // 3 columns, fits ~7 items (3+3+1)
+
+        // Pad count=7 → at most 3 rows
+        // With cell height 180 and spacing 6: 3*180 + 2*6 = 552px. Page area ~600px. Fits.
+
+        var profile = ProfileManager.ActiveProfile;
+        var collected = profile?.journey?.collectedStickerIds ?? new List<string>();
+
+        for (int i = start; i < start + count && i < _achievementGames.Count; i++)
+        {
+            var game = _achievementGames[i];
+            int tier = StickerCatalog.GetAchievementTier(game.id, collected);
+
+            var cell = new GameObject($"Ach_{game.id}");
+            cell.transform.SetParent(gridGO.transform, false);
+            cell.AddComponent<RectTransform>();
+
+            if (tier == 0)
+            {
+                // Not earned — black silhouette
+                var imgGO = new GameObject("Img");
+                imgGO.transform.SetParent(cell.transform, false);
+                var imgRT = imgGO.AddComponent<RectTransform>();
+                Stretch(imgRT);
+                imgRT.offsetMin = new Vector2(8, 8);
+                imgRT.offsetMax = new Vector2(-8, -8);
+                var img = imgGO.AddComponent<Image>();
+                img.sprite = game.thumbnail;
+                img.preserveAspect = true;
+                img.raycastTarget = false;
+                img.color = SilhouetteColor;
+            }
+            else
+            {
+                // Earned — show with metallic frame
+                Color frameColor = tier == 3 ? GoldFrame : tier == 2 ? SilverFrame : BronzeFrame;
+
+                // Frame
+                var frameGO = new GameObject("Frame");
+                frameGO.transform.SetParent(cell.transform, false);
+                var frameRT = frameGO.AddComponent<RectTransform>();
+                Stretch(frameRT);
+                frameRT.offsetMin = new Vector2(4, 4);
+                frameRT.offsetMax = new Vector2(-4, -4);
+                var frameImg = frameGO.AddComponent<Image>();
+                if (roundedRect != null) { frameImg.sprite = roundedRect; frameImg.type = Image.Type.Sliced; }
+                frameImg.color = frameColor;
+                frameImg.raycastTarget = false;
+
+                // Thumbnail inside frame
+                var imgGO = new GameObject("Img");
+                imgGO.transform.SetParent(frameGO.transform, false);
+                var imgRT = imgGO.AddComponent<RectTransform>();
+                Stretch(imgRT);
+                imgRT.offsetMin = new Vector2(6, 6);
+                imgRT.offsetMax = new Vector2(-6, -6);
+                var img = imgGO.AddComponent<Image>();
+                img.sprite = game.thumbnail;
+                img.preserveAspect = true;
+                img.raycastTarget = false;
+                img.color = Color.white;
+
+                // Gold stars at corners
+                if (tier == 3 && circleSprite != null)
+                {
+                    for (int c = 0; c < 4; c++)
+                    {
+                        var starGO = new GameObject($"Star_{c}");
+                        starGO.transform.SetParent(cell.transform, false);
+                        var starRT = starGO.AddComponent<RectTransform>();
+                        float sx = c % 2 == 0 ? 0f : 1f;
+                        float sy = c < 2 ? 1f : 0f;
+                        starRT.anchorMin = starRT.anchorMax = new Vector2(sx, sy);
+                        starRT.sizeDelta = new Vector2(22, 22);
+                        var starImg = starGO.AddComponent<Image>();
+                        starImg.sprite = circleSprite;
+                        starImg.color = GoldFrame;
+                        starImg.raycastTarget = false;
+                    }
+                }
             }
         }
     }

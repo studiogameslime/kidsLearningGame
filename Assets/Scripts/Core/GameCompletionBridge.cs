@@ -25,6 +25,9 @@ public class GameCompletionBridge : MonoBehaviour
     /// <summary>Sticker ID awarded in the most recent round, or null if none.</summary>
     public string LastAwardedStickerId { get; private set; }
 
+    /// <summary>Achievement sticker ID awarded this round, or null.</summary>
+    public string LastAwardedAchievementId { get; private set; }
+
     /// <summary>True while celebration is playing — used to block exit buttons.</summary>
     public static bool IsCelebrating => Instance != null && Instance._navigationLocked;
 
@@ -97,6 +100,9 @@ public class GameCompletionBridge : MonoBehaviour
 
         // ── Award sticker (every 3-5 rounds, from game's category) ──
         TryAwardSticker(gameId, jp);
+
+        // ── Check achievement milestone (10/30/50 rounds) ──
+        TryAwardAchievement(gameId, jp);
 
         // ── Check for discovery ──
         if (DiscoveryCatalog.HasMore(jp))
@@ -180,6 +186,21 @@ public class GameCompletionBridge : MonoBehaviour
                 // No stickers available (bank empty or all collected) — retry next round
                 jp.roundsUntilNextSticker = 1;
             }
+        }
+    }
+
+    private void TryAwardAchievement(string gameId, JourneyProgress jp)
+    {
+        LastAwardedAchievementId = null;
+        if (string.IsNullOrEmpty(gameId)) return;
+
+        var stat = jp.GetOrCreateStat(gameId);
+        string achievementId = StickerCatalog.CheckAchievement(gameId, stat.timesPlayedInJourney, jp.collectedStickerIds);
+        if (achievementId != null)
+        {
+            jp.collectedStickerIds.Add(achievementId);
+            LastAwardedAchievementId = achievementId;
+            Debug.Log($"[Achievement] Awarded {achievementId} (played {stat.timesPlayedInJourney}x)");
         }
     }
 

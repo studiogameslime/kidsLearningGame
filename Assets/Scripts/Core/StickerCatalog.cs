@@ -65,6 +65,60 @@ public static class StickerCatalog
         return null;
     }
 
+    // ── Achievement Stickers ──
+
+    private static readonly int[] AchievementThresholds = { 10, 30, 50 };
+    private static readonly string[] AchievementTiers = { "bronze", "silver", "gold" };
+
+    /// <summary>
+    /// Check if a game has reached a new achievement tier.
+    /// Returns the new sticker ID (e.g. "achievement_fishing_gold") or null.
+    /// Automatically removes lower tier from collectedIds when upgrading.
+    /// </summary>
+    public static string CheckAchievement(string gameId, int timesPlayed, List<string> collectedIds)
+    {
+        if (string.IsNullOrEmpty(gameId)) return null;
+
+        // Find highest tier reached
+        int tierIndex = -1;
+        for (int i = AchievementThresholds.Length - 1; i >= 0; i--)
+        {
+            if (timesPlayed >= AchievementThresholds[i])
+            {
+                tierIndex = i;
+                break;
+            }
+        }
+
+        if (tierIndex < 0) return null; // hasn't reached 10 yet
+
+        string newId = $"achievement_{gameId}_{AchievementTiers[tierIndex]}";
+        if (collectedIds.Contains(newId)) return null; // already has this tier
+
+        // Remove lower tiers
+        for (int i = 0; i < tierIndex; i++)
+        {
+            string lowerId = $"achievement_{gameId}_{AchievementTiers[i]}";
+            collectedIds.Remove(lowerId);
+        }
+
+        return newId;
+    }
+
+    /// <summary>
+    /// Get the current achievement tier for a game (0=none, 1=bronze, 2=silver, 3=gold).
+    /// </summary>
+    public static int GetAchievementTier(string gameId, List<string> collectedIds)
+    {
+        if (string.IsNullOrEmpty(gameId) || collectedIds == null) return 0;
+        for (int i = AchievementTiers.Length - 1; i >= 0; i--)
+        {
+            if (collectedIds.Contains($"achievement_{gameId}_{AchievementTiers[i]}"))
+                return i + 1;
+        }
+        return 0;
+    }
+
     /// <summary>
     /// Pick a random uncollected sticker from the given category.
     /// Uses StickerSpriteBank to know all available stickers.

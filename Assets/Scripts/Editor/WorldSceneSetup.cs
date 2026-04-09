@@ -917,6 +917,7 @@ public class WorldSceneSetup : EditorWindow
         var album = canvasGO.AddComponent<CollectibleAlbumController>();
         album.circleSprite = circleSprite;
         album.roundedRect = roundedRectSprite;
+        album.gameDatabase = controller.gameDatabase;
 
         // Wire sticker category arrays from individual sprite sheets
         album.animalsStickers  = LoadStickerSheet("animalsStickers");

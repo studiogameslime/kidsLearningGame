@@ -329,6 +329,11 @@ public abstract class BaseMiniGame : MonoBehaviour
             if (!string.IsNullOrEmpty(awardedSticker))
                 yield return StartCoroutine(StickerPopup.Show(awardedSticker));
 
+            // Show achievement popup if a milestone was reached
+            string awardedAchievement = GameCompletionBridge.Instance.LastAwardedAchievementId;
+            if (!string.IsNullOrEmpty(awardedAchievement))
+                yield return StartCoroutine(StickerPopup.ShowAchievement(awardedAchievement));
+
             if (discoveryLoaded)
                 yield break; // DiscoveryReveal scene is loading — do NOT start a new round
         }

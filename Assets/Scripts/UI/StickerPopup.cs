@@ -127,6 +127,176 @@ public static class StickerPopup
         _isShowing = false;
     }
 
+    // ── Achievement variant ──
+
+    private static readonly Color BronzeColor = new Color(0.8f, 0.5f, 0.2f);
+    private static readonly Color SilverColor = new Color(0.75f, 0.75f, 0.78f);
+    private static readonly Color GoldColor   = new Color(1f, 0.84f, 0f);
+
+    /// <summary>
+    /// Show achievement popup with metallic frame around the game thumbnail.
+    /// achievementId format: "achievement_fishing_gold"
+    /// </summary>
+    public static IEnumerator ShowAchievement(string achievementId)
+    {
+        if (_isShowing) yield break;
+        if (string.IsNullOrEmpty(achievementId)) yield break;
+
+        // Parse tier from ID
+        string tier = "bronze";
+        if (achievementId.EndsWith("_gold")) tier = "gold";
+        else if (achievementId.EndsWith("_silver")) tier = "silver";
+
+        // Extract gameId: "achievement_fishing_gold" → "fishing"
+        string withoutPrefix = achievementId.Substring("achievement_".Length);
+        string gameId = withoutPrefix.Substring(0, withoutPrefix.LastIndexOf('_'));
+
+        // Find game thumbnail
+        Sprite thumbnail = null;
+        var db = Resources.Load<GameDatabase>("GameDatabase");
+        if (db != null)
+        {
+            foreach (var game in db.games)
+                if (game != null && game.id == gameId && game.thumbnail != null)
+                { thumbnail = game.thumbnail; break; }
+        }
+        if (thumbnail == null) yield break;
+
+        var canvas = Object.FindObjectOfType<Canvas>();
+        if (canvas == null) yield break;
+
+        _isShowing = true;
+
+        Color frameColor = tier == "gold" ? GoldColor : tier == "silver" ? SilverColor : BronzeColor;
+
+        // Root
+        var rootGO = new GameObject("AchievementPopup");
+        rootGO.transform.SetParent(canvas.transform, false);
+        rootGO.transform.SetAsLastSibling();
+        var rootRT = rootGO.AddComponent<RectTransform>();
+        rootRT.anchorMin = Vector2.zero; rootRT.anchorMax = Vector2.one;
+        rootRT.offsetMin = Vector2.zero; rootRT.offsetMax = Vector2.zero;
+
+        // Container (centered)
+        var containerGO = new GameObject("Container");
+        containerGO.transform.SetParent(rootGO.transform, false);
+        var containerRT = containerGO.AddComponent<RectTransform>();
+        containerRT.anchorMin = new Vector2(0.5f, 0.5f);
+        containerRT.anchorMax = new Vector2(0.5f, 0.5f);
+        containerRT.sizeDelta = new Vector2(230, 230);
+        containerRT.localScale = Vector3.zero;
+
+        // Metallic frame (outer glow)
+        var glowGO = new GameObject("FrameGlow");
+        glowGO.transform.SetParent(containerGO.transform, false);
+        var glowRT = glowGO.AddComponent<RectTransform>();
+        glowRT.anchorMin = new Vector2(-0.08f, -0.08f);
+        glowRT.anchorMax = new Vector2(1.08f, 1.08f);
+        glowRT.offsetMin = Vector2.zero;
+        glowRT.offsetMax = Vector2.zero;
+        var glowImg = glowGO.AddComponent<Image>();
+        glowImg.color = new Color(frameColor.r, frameColor.g, frameColor.b, 0.4f);
+        glowImg.raycastTarget = false;
+
+        // Metallic frame
+        var frameGO = new GameObject("Frame");
+        frameGO.transform.SetParent(containerGO.transform, false);
+        var frameRT = frameGO.AddComponent<RectTransform>();
+        frameRT.anchorMin = new Vector2(-0.04f, -0.04f);
+        frameRT.anchorMax = new Vector2(1.04f, 1.04f);
+        frameRT.offsetMin = Vector2.zero;
+        frameRT.offsetMax = Vector2.zero;
+        var frameImg = frameGO.AddComponent<Image>();
+        frameImg.color = frameColor;
+        frameImg.raycastTarget = false;
+
+        // Game thumbnail
+        var imgGO = new GameObject("Thumbnail");
+        imgGO.transform.SetParent(containerGO.transform, false);
+        var imgRT = imgGO.AddComponent<RectTransform>();
+        imgRT.anchorMin = Vector2.zero;
+        imgRT.anchorMax = Vector2.one;
+        imgRT.offsetMin = Vector2.zero;
+        imgRT.offsetMax = Vector2.zero;
+        var img = imgGO.AddComponent<Image>();
+        img.sprite = thumbnail;
+        img.preserveAspect = true;
+        img.raycastTarget = false;
+
+        // Corner stars for gold
+        if (tier == "gold")
+        {
+            for (int c = 0; c < 4; c++)
+            {
+                var starGO = new GameObject($"Star_{c}");
+                starGO.transform.SetParent(containerGO.transform, false);
+                var starRT = starGO.AddComponent<RectTransform>();
+                float sx = c % 2 == 0 ? -0.02f : 1.02f;
+                float sy = c < 2 ? 1.02f : -0.02f;
+                starRT.anchorMin = starRT.anchorMax = new Vector2(sx, sy);
+                starRT.sizeDelta = new Vector2(28, 28);
+                var starImg = starGO.AddComponent<Image>();
+                starImg.color = GoldColor;
+                starImg.raycastTarget = false;
+            }
+        }
+
+        // ── Phase 1: Pop in (0.4s) ──
+        float t = 0f;
+        while (t < 0.4f)
+        {
+            if (rootGO == null) { _isShowing = false; yield break; }
+            t += Time.deltaTime;
+            float p = Mathf.Clamp01(t / 0.4f);
+            containerRT.localScale = Vector3.one * EaseOutElastic(p);
+            yield return null;
+        }
+        if (rootGO == null) { _isShowing = false; yield break; }
+        containerRT.localScale = Vector3.one;
+
+        SoundLibrary.PlayStickerCollected();
+        SpawnSparkles(rootGO.transform, containerRT);
+
+        // ── Phase 2: Shimmer frame (1.0s) ──
+        t = 0f;
+        while (t < 1.0f)
+        {
+            if (rootGO == null) { _isShowing = false; yield break; }
+            t += Time.deltaTime;
+            float p = t / 1.0f;
+            // Frame shimmer
+            float shimmer = 0.85f + Mathf.Sin(p * Mathf.PI * 4f) * 0.15f;
+            frameImg.color = new Color(frameColor.r * shimmer, frameColor.g * shimmer, frameColor.b * shimmer);
+            // Gentle pulse
+            float pulse = 1f + Mathf.Sin(p * Mathf.PI * 2f) * 0.03f;
+            containerRT.localScale = Vector3.one * pulse;
+            yield return null;
+        }
+
+        // ── Phase 3: Fly out (0.5s) ──
+        if (rootGO == null) { _isShowing = false; yield break; }
+        Vector2 startPos = containerRT.anchoredPosition;
+        var canvasRT = canvas.GetComponent<RectTransform>();
+        float cW = canvasRT != null ? canvasRT.rect.width : 1920f;
+        float cH = canvasRT != null ? canvasRT.rect.height : 1080f;
+        Vector2 endPos = new Vector2(-cW * 0.35f, -cH * 0.35f);
+
+        t = 0f;
+        while (t < 0.5f)
+        {
+            if (rootGO == null) { _isShowing = false; yield break; }
+            t += Time.deltaTime;
+            float p = Mathf.Clamp01(t / 0.5f);
+            float ease = p * p;
+            containerRT.anchoredPosition = Vector2.Lerp(startPos, endPos, ease);
+            containerRT.localScale = Vector3.one * Mathf.Lerp(1f, 0.15f, ease);
+            yield return null;
+        }
+
+        if (rootGO != null) Object.Destroy(rootGO);
+        _isShowing = false;
+    }
+
     private static void SpawnSparkles(Transform parent, RectTransform center)
     {
         for (int i = 0; i < 8; i++)
