@@ -134,7 +134,7 @@ public class CollectibleAlbumController : MonoBehaviour
         if (_achievementGames.Count > 0)
         {
             _achievementStartPage = _totalPages;
-            int achievementPages = Mathf.CeilToInt(_achievementGames.Count / 14f); // 7 per page side
+            int achievementPages = Mathf.CeilToInt(_achievementGames.Count / 18f); // 9 per page side
             _totalPages += achievementPages;
         }
         if (_totalPages == 0) _totalPages = 1;
@@ -615,9 +615,9 @@ public class CollectibleAlbumController : MonoBehaviour
             HebrewText.SetText(_leftTitleTMP, "\u05D4\u05D9\u05E9\u05D2\u05D9\u05DD"); // הישגים
             HebrewText.SetText(_rightTitleTMP, "\u05D4\u05D9\u05E9\u05D2\u05D9\u05DD");
             int achPage = page - _achievementStartPage;
-            int start = achPage * 14;
-            BuildAchievementGrid(_leftPageContent, start, 7);
-            BuildAchievementGrid(_rightPageContent, start + 7, 7);
+            int start = achPage * 18;
+            BuildAchievementGrid(_leftPageContent, start, 9);
+            BuildAchievementGrid(_rightPageContent, start + 9, 9);
         }
         else
         {
@@ -649,7 +649,7 @@ public class CollectibleAlbumController : MonoBehaviour
         if (IsAchievementPage(page))
         {
             HebrewText.SetText(_leftTitleTMP, "\u05D4\u05D9\u05E9\u05D2\u05D9\u05DD");
-            BuildAchievementGrid(_leftPageContent, (page - _achievementStartPage) * 14, 7);
+            BuildAchievementGrid(_leftPageContent, (page - _achievementStartPage) * 18, 9);
         }
         else
         {
@@ -669,7 +669,7 @@ public class CollectibleAlbumController : MonoBehaviour
         if (IsAchievementPage(page))
         {
             HebrewText.SetText(_rightTitleTMP, "\u05D4\u05D9\u05E9\u05D2\u05D9\u05DD");
-            BuildAchievementGrid(_rightPageContent, (page - _achievementStartPage) * 14 + 7, 7);
+            BuildAchievementGrid(_rightPageContent, (page - _achievementStartPage) * 18 + 9, 9);
         }
         else
         {
@@ -795,14 +795,11 @@ public class CollectibleAlbumController : MonoBehaviour
         gridGO.transform.SetParent(parent, false);
         Stretch(gridGO.AddComponent<RectTransform>());
         var grid = gridGO.AddComponent<GridLayoutGroup>();
-        grid.cellSize = new Vector2(170, 180);
-        grid.spacing = new Vector2(6, 6);
+        grid.cellSize = new Vector2(150, 160);
+        grid.spacing = new Vector2(4, 4);
         grid.childAlignment = TextAnchor.UpperCenter;
         grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = 3; // 3 columns, fits ~7 items (3+3+1)
-
-        // Pad count=7 → at most 3 rows
-        // With cell height 180 and spacing 6: 3*180 + 2*6 = 552px. Page area ~600px. Fits.
+        grid.constraintCount = 3; // 3x3 = 9 per page side
 
         var profile = ProfileManager.ActiveProfile;
         var collected = profile?.journey?.collectedStickerIds ?? new List<string>();
