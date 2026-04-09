@@ -143,6 +143,14 @@ public class FirebaseAnalyticsManager : MonoBehaviour
         FirebaseAnalytics.LogEvent("sticker_collected",
             new Parameter("sticker_id", stickerId),
             new Parameter("source", source));
+
+        // Per-category event: earned_sticker_animal, earned_sticker_letter, etc.
+        int underscoreIdx = stickerId.IndexOf('_');
+        if (underscoreIdx > 0)
+        {
+            string category = stickerId.Substring(0, underscoreIdx);
+            FirebaseAnalytics.LogEvent($"earned_sticker_{category}");
+        }
     }
 
     // ══════════════════════════════════
@@ -342,6 +350,9 @@ public class FirebaseAnalyticsManager : MonoBehaviour
     public static void LogSandboxSession(string sandboxId, float durationSeconds)
     {
         if (!_initialized || durationSeconds < 2f) return; // ignore very short sessions
+        // Per-sandbox event: play_sandbox_coloring, play_sandbox_sandDrawing, etc.
+        FirebaseAnalytics.LogEvent($"play_sandbox_{sandboxId}",
+            new Parameter("duration_seconds", (double)durationSeconds));
         FirebaseAnalytics.LogEvent("sandbox_session",
             new Parameter("sandbox_id", sandboxId),
             new Parameter("duration_seconds", (double)durationSeconds));
