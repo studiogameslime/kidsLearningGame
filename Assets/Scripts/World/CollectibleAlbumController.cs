@@ -380,7 +380,7 @@ public class CollectibleAlbumController : MonoBehaviour
         float gap = 4f;
         float usableWidth = bookWidth - margin * 2f;
         float tabWidth = (usableWidth - (validCount - 1) * gap) / validCount;
-        float tabHeight = 78f;
+        float tabHeight = 95f;
         float startX = -bookWidth / 2f + margin + tabWidth / 2f;
 
         int pageIdx = 0;
@@ -421,8 +421,8 @@ public class CollectibleAlbumController : MonoBehaviour
                 var iconGO = new GameObject("Icon");
                 iconGO.transform.SetParent(tabGO.transform, false);
                 var iconRT = iconGO.AddComponent<RectTransform>();
-                iconRT.anchorMin = new Vector2(0.1f, 0.12f);
-                iconRT.anchorMax = new Vector2(0.9f, 0.92f);
+                iconRT.anchorMin = new Vector2(0.05f, 0.06f);
+                iconRT.anchorMax = new Vector2(0.95f, 0.94f);
                 iconRT.offsetMin = Vector2.zero;
                 iconRT.offsetMax = Vector2.zero;
                 var iconImg = iconGO.AddComponent<Image>();
@@ -465,20 +465,56 @@ public class CollectibleAlbumController : MonoBehaviour
             int page = targetPage;
             btn.onClick.AddListener(() => JumpToPage(page));
 
-            // Trophy icon — use gold color star
-            var iconGO = new GameObject("Icon");
-            iconGO.transform.SetParent(tabGO.transform, false);
-            var iconRT = iconGO.AddComponent<RectTransform>();
-            iconRT.anchorMin = new Vector2(0.15f, 0.15f);
-            iconRT.anchorMax = new Vector2(0.85f, 0.85f);
-            iconRT.offsetMin = Vector2.zero;
-            iconRT.offsetMax = Vector2.zero;
-            var iconTMP = iconGO.AddComponent<TextMeshProUGUI>();
-            iconTMP.text = "\u2B50"; // ⭐
-            iconTMP.fontSize = 30;
-            iconTMP.alignment = TextAlignmentOptions.Center;
-            iconTMP.raycastTarget = false;
-            _tabImages.Add(null);
+            // Use a game thumbnail with gold tint as achievement tab icon
+            Sprite achTabSprite = null;
+            if (_achievementGames != null && _achievementGames.Count > 0)
+            {
+                // Pick a game the child has played most, or first available
+                var profile2 = ProfileManager.ActiveProfile;
+                if (profile2 != null && profile2.journey != null)
+                {
+                    int bestPlayed = 0;
+                    foreach (var g in _achievementGames)
+                    {
+                        var stat = profile2.journey.GetOrCreateStat(g.id);
+                        if (stat.timesPlayedInJourney > bestPlayed && g.thumbnail != null)
+                        { bestPlayed = stat.timesPlayedInJourney; achTabSprite = g.thumbnail; }
+                    }
+                }
+                if (achTabSprite == null) achTabSprite = _achievementGames[0].thumbnail;
+            }
+
+            if (achTabSprite != null)
+            {
+                var iconGO = new GameObject("Icon");
+                iconGO.transform.SetParent(tabGO.transform, false);
+                var iconRT = iconGO.AddComponent<RectTransform>();
+                iconRT.anchorMin = new Vector2(0.05f, 0.06f);
+                iconRT.anchorMax = new Vector2(0.95f, 0.94f);
+                iconRT.offsetMin = Vector2.zero;
+                iconRT.offsetMax = Vector2.zero;
+                var iconImg = iconGO.AddComponent<Image>();
+                iconImg.sprite = achTabSprite;
+                iconImg.preserveAspect = true;
+                iconImg.raycastTarget = false;
+                // Gold tint border behind icon
+                var borderGO = new GameObject("GoldBorder");
+                borderGO.transform.SetParent(tabGO.transform, false);
+                borderGO.transform.SetAsFirstSibling();
+                var borderRT = borderGO.AddComponent<RectTransform>();
+                borderRT.anchorMin = new Vector2(0.02f, 0.03f);
+                borderRT.anchorMax = new Vector2(0.98f, 0.97f);
+                borderRT.offsetMin = Vector2.zero;
+                borderRT.offsetMax = Vector2.zero;
+                var borderImg = borderGO.AddComponent<Image>();
+                borderImg.color = new Color(1f, 0.84f, 0f, 0.6f);
+                borderImg.raycastTarget = false;
+                _tabImages.Add(iconImg);
+            }
+            else
+            {
+                _tabImages.Add(null);
+            }
             _tabBgs.Add(bgImg);
         }
     }
@@ -570,8 +606,8 @@ public class CollectibleAlbumController : MonoBehaviour
 
             // Active tab: taller, page-colored; inactive: shorter, cover-colored
             float w = tabRT.sizeDelta.x;
-            tabRT.sizeDelta = new Vector2(w, active ? 85f : 68f);
-            tabRT.anchoredPosition = new Vector2(tabRT.anchoredPosition.x, active ? -6f : -12f);
+            tabRT.sizeDelta = new Vector2(w, active ? 100f : 82f);
+            tabRT.anchoredPosition = new Vector2(tabRT.anchoredPosition.x, active ? -6f : -14f);
 
             _tabBgs[i].color = active
                 ? PageColor
