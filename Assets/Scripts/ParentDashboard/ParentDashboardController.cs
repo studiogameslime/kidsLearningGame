@@ -4466,10 +4466,10 @@ public class ParentDashboardController : MonoBehaviour
         var cardGO = new GameObject("Card");
         cardGO.transform.SetParent(_settingsModal.transform, false);
         var cardRT = cardGO.AddComponent<RectTransform>();
-        cardRT.anchorMin = new Vector2(0.5f, 0.05f);
-        cardRT.anchorMax = new Vector2(0.5f, 0.95f);
+        cardRT.anchorMin = new Vector2(0.5f, 0.15f);
+        cardRT.anchorMax = new Vector2(0.5f, 0.85f);
         cardRT.pivot = new Vector2(0.5f, 0.5f);
-        cardRT.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 620);
+        cardRT.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 750);
 
         var cardImg = cardGO.AddComponent<Image>();
         if (roundedRect != null) { cardImg.sprite = roundedRect; cardImg.type = Image.Type.Sliced; }
@@ -4555,8 +4555,8 @@ public class ParentDashboardController : MonoBehaviour
         contentRT.pivot = new Vector2(0.5f, 1);
         contentRT.sizeDelta = Vector2.zero;
         var contentLayout = contentGO.AddComponent<VerticalLayoutGroup>();
-        contentLayout.spacing = 0;
-        contentLayout.padding = new RectOffset(30, 30, 20, 20);
+        contentLayout.spacing = 8;
+        contentLayout.padding = new RectOffset(20, 20, 16, 16);
         contentLayout.childForceExpandWidth = true;
         contentLayout.childForceExpandHeight = false;
         contentLayout.childControlWidth = true;
@@ -4564,33 +4564,47 @@ public class ParentDashboardController : MonoBehaviour
         contentGO.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         scroll.content = contentRT;
 
-        // ── Profile actions ──
-        MakeSettingsActionButton(contentGO.transform,
+        // ── Action buttons row (2 columns) ──
+        var actionsRow = new GameObject("ActionsRow");
+        actionsRow.transform.SetParent(contentGO.transform, false);
+        actionsRow.AddComponent<RectTransform>();
+        var actionsLayout = actionsRow.AddComponent<HorizontalLayoutGroup>();
+        actionsLayout.spacing = 12;
+        actionsLayout.childForceExpandWidth = true;
+        actionsLayout.childControlWidth = true;
+        actionsLayout.childControlHeight = true;
+        actionsRow.AddComponent<LayoutElement>().preferredHeight = 70;
+
+        MakeSettingsActionButton(actionsRow.transform,
             H("\u05D4\u05D7\u05DC\u05E4\u05EA \u05E4\u05E8\u05D5\u05E4\u05D9\u05DC"), // החלפת פרופיל
             H("\u05DE\u05E2\u05D1\u05E8 \u05DC\u05DE\u05E1\u05DA \u05D1\u05D7\u05D9\u05E8\u05EA \u05D3\u05DE\u05D5\u05EA"), // מעבר למסך בחירת דמות
             () => { CloseSettings(); NavigationManager.GoToProfileSelection(); });
 
-        MakeSettingsDivider(contentGO.transform);
-
-        MakeSettingsActionButton(contentGO.transform,
+        MakeSettingsActionButton(actionsRow.transform,
             H("\u05E9\u05D9\u05E0\u05D5\u05D9 \u05E9\u05DD \u05D4\u05D9\u05DC\u05D3"), // שינוי שם הילד
             H("\u05E2\u05E8\u05D9\u05DB\u05EA \u05E9\u05DD \u05D4\u05EA\u05E6\u05D5\u05D2\u05D4 \u05E9\u05DC \u05D4\u05E4\u05E8\u05D5\u05E4\u05D9\u05DC"), // עריכת שם התצוגה של הפרופיל
             () => ShowRenameChildDialog());
 
         MakeSettingsDivider(contentGO.transform);
 
-        // ── Toggles ──
-        // Music toggle
-        MakeSettingsToggle(contentGO.transform,
+        // ── Toggles (2-column grid) ──
+        var togglesRow1 = new GameObject("TogglesRow1");
+        togglesRow1.transform.SetParent(contentGO.transform, false);
+        togglesRow1.AddComponent<RectTransform>();
+        var tr1Layout = togglesRow1.AddComponent<HorizontalLayoutGroup>();
+        tr1Layout.spacing = 12;
+        tr1Layout.childForceExpandWidth = true;
+        tr1Layout.childControlWidth = true;
+        tr1Layout.childControlHeight = true;
+        togglesRow1.AddComponent<LayoutElement>().preferredHeight = 80;
+
+        MakeSettingsToggle(togglesRow1.transform,
             H("\u05DE\u05D5\u05D6\u05D9\u05E7\u05D4"), // מוזיקה
             H("\u05DE\u05D5\u05D6\u05D9\u05E7\u05EA \u05E8\u05E7\u05E2"), // מוזיקת רקע
             AppSettings.MusicEnabled,
             val => AppSettings.MusicEnabled = val);
 
-        MakeSettingsDivider(contentGO.transform);
-
-        // Voice toggle
-        MakeSettingsToggle(contentGO.transform,
+        MakeSettingsToggle(togglesRow1.transform,
             H("\u05E7\u05D5\u05DC \u05D0\u05DC\u05D9\u05DF"), // קול אלין
             H("\u05E9\u05DE\u05D5\u05EA \u05D7\u05D9\u05D5\u05EA, \u05DE\u05E9\u05D5\u05D1\u05D9\u05DD"), // שמות חיות, משובים
             AppSettings.VoiceEnabled,
@@ -4598,20 +4612,26 @@ public class ParentDashboardController : MonoBehaviour
 
         MakeSettingsDivider(contentGO.transform);
 
-        // Sticker tree notifications toggle
-        MakeSettingsToggle(contentGO.transform,
-            H("\u05D4\u05EA\u05E8\u05D0\u05D5\u05EA \u05E2\u05E5 \u05D4\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA"), // התראות עץ המדבקות
-            H("\u05EA\u05D6\u05DB\u05D5\u05E8\u05EA \u05DB\u05E9\u05DE\u05D3\u05D1\u05E7\u05D4 \u05D7\u05D3\u05E9\u05D4 \u05DE\u05D5\u05DB\u05E0\u05D4 \u05DC\u05D0\u05D9\u05E1\u05D5\u05E3 )\u05DB\u05DC 6 \u05E9\u05E2\u05D5\u05EA("), // תזכורת כשמדבקה חדשה מוכנה לאיסוף )כל 6 שעות( — reversed parens for RTL
+        var togglesRow2 = new GameObject("TogglesRow2");
+        togglesRow2.transform.SetParent(contentGO.transform, false);
+        togglesRow2.AddComponent<RectTransform>();
+        var tr2Layout = togglesRow2.AddComponent<HorizontalLayoutGroup>();
+        tr2Layout.spacing = 12;
+        tr2Layout.childForceExpandWidth = true;
+        tr2Layout.childControlWidth = true;
+        tr2Layout.childControlHeight = true;
+        togglesRow2.AddComponent<LayoutElement>().preferredHeight = 80;
+
+        MakeSettingsToggle(togglesRow2.transform,
+            H("\u05D4\u05EA\u05E8\u05D0\u05D5\u05EA"), // התראות
+            H("\u05EA\u05D6\u05DB\u05D5\u05E8\u05EA \u05DE\u05D3\u05D1\u05E7\u05D4 \u05D7\u05D3\u05E9\u05D4"), // תזכורת מדבקה חדשה
             AppSettings.NotificationsEnabled,
             val => AppSettings.NotificationsEnabled = val);
 
-        MakeSettingsDivider(contentGO.transform);
-
-        // Auto-switch games toggle
         var profile = ProfileManager.ActiveProfile;
-        MakeSettingsToggle(contentGO.transform,
-            H("\u05DE\u05E2\u05D1\u05E8 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9 \u05D1\u05D9\u05DF \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD"), // מעבר אוטומטי בין משחקים
-            H("\u05D4\u05D9\u05DC\u05D3 \u05E2\u05D5\u05D1\u05E8 \u05DC\u05DE\u05E9\u05D7\u05E7 \u05D0\u05D7\u05E8 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA"), // הילד עובר למשחק אחר אוטומטית
+        MakeSettingsToggle(togglesRow2.transform,
+            H("\u05DE\u05E2\u05D1\u05E8 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9"), // מעבר אוטומטי
+            H("\u05D1\u05D9\u05DF \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD"), // בין משחקים
             profile != null && profile.autoSwitchGames,
             val =>
             {

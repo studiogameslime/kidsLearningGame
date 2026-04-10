@@ -128,8 +128,8 @@ public class ParentDashboardSetup : EditorWindow
         var inputAreaGO = new GameObject("InputArea");
         inputAreaGO.transform.SetParent(gateGO.transform, false);
         var inputAreaRT = inputAreaGO.AddComponent<RectTransform>();
-        inputAreaRT.anchorMin = new Vector2(0.2f, 0.38f);
-        inputAreaRT.anchorMax = new Vector2(0.8f, 0.52f);
+        inputAreaRT.anchorMin = new Vector2(0.2f, 0.55f);
+        inputAreaRT.anchorMax = new Vector2(0.8f, 0.69f);
         inputAreaRT.offsetMin = Vector2.zero;
         inputAreaRT.offsetMax = Vector2.zero;
 

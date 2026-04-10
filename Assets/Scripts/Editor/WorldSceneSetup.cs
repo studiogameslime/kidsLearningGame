@@ -355,7 +355,7 @@ public class WorldSceneSetup : EditorWindow
         pdRT.anchorMax = new Vector2(1, 0.5f);
         pdRT.pivot = new Vector2(1, 0.5f);
         pdRT.anchoredPosition = new Vector2(-12, 0);
-        pdRT.sizeDelta = new Vector2(210, 60);
+        pdRT.sizeDelta = new Vector2(240, 70);
 
         var pdBgImg = parentDashBtn.AddComponent<Image>();
         if (roundedRect != null) { pdBgImg.sprite = roundedRect; pdBgImg.type = Image.Type.Sliced; }
