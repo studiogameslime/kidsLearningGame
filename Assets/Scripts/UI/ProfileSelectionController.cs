@@ -111,9 +111,12 @@ public class ProfileSelectionController : MonoBehaviour
             }
         }
 
-        // Move add card to the end
+        // Move add card to the end, hide if max profiles reached
         if (addProfileCard != null)
+        {
+            addProfileCard.SetActive(ProfileManager.Instance.CanCreateProfile);
             addProfileCard.transform.SetAsLastSibling();
+        }
     }
 
     private void OnProfileSelected(UserProfile profile)

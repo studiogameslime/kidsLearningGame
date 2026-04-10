@@ -140,8 +140,18 @@ public class ProfileManager : MonoBehaviour
         }
     }
 
+    public const int MaxProfiles = 4;
+
+    public bool CanCreateProfile => _store == null || _store.profiles.Count < MaxProfiles;
+
     public UserProfile CreateProfile(string name, int age, string colorHex)
     {
+        if (!CanCreateProfile)
+        {
+            Debug.LogWarning($"ProfileManager: Max profiles ({MaxProfiles}) reached.");
+            return null;
+        }
+
         var profile = new UserProfile
         {
             displayName = name,
