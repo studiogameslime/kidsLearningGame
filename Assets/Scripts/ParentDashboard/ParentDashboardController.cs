@@ -234,9 +234,11 @@ public class ParentDashboardController : MonoBehaviour
         LoadData();
         BuildAllTabs();
 
-        // Request store review only after sufficient engagement (3+ visits)
-        int visitCount = PlayerPrefs.GetInt("dashboard_visit_count", 0) + 1;
-        PlayerPrefs.SetInt("dashboard_visit_count", visitCount);
+        // Request store review only after sufficient engagement (3+ visits per profile)
+        var profileId = ProfileManager.ActiveProfile?.id ?? "global";
+        string visitKey = $"dashboard_visits_{profileId}";
+        int visitCount = PlayerPrefs.GetInt(visitKey, 0) + 1;
+        PlayerPrefs.SetInt(visitKey, visitCount);
         if (visitCount >= 3)
             StoreReviewManager.TryRequestReview();
 

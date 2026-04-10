@@ -2,7 +2,8 @@ using UnityEngine;
 
 /// <summary>
 /// Google Play In-App Updates — shows native update dialog when a new version is available.
-/// Uses FLEXIBLE update type: shows a non-blocking banner, user can continue playing.
+/// Uses FLEXIBLE update type: non-blocking download, then prompts to install.
+/// Falls back to IMMEDIATE if flexible is not available.
 /// Auto-checks on app start via RuntimeInitializeOnLoadMethod.
 /// </summary>
 public class InAppUpdateManager : MonoBehaviour
@@ -11,7 +12,6 @@ public class InAppUpdateManager : MonoBehaviour
 
 #if UNITY_ANDROID && !UNITY_EDITOR
     private AndroidJavaObject _appUpdateManager;
-    private AndroidJavaObject _appUpdateInfo;
 #endif
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -28,6 +28,12 @@ public class InAppUpdateManager : MonoBehaviour
         CheckForUpdate();
     }
 
+    /// <summary>Re-check on resume in case an update completed while backgrounded.</summary>
+    private void OnApplicationPause(bool paused)
+    {
+        if (!paused) CheckForUpdate();
+    }
+
     private void CheckForUpdate()
     {
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -35,8 +41,12 @@ public class InAppUpdateManager : MonoBehaviour
         {
             var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
             var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
-            var factory = new AndroidJavaClass("com.google.android.play.core.appupdate.AppUpdateManagerFactory");
-            _appUpdateManager = factory.CallStatic<AndroidJavaObject>("create", activity);
+
+            if (_appUpdateManager == null)
+            {
+                var factory = new AndroidJavaClass("com.google.android.play.core.appupdate.AppUpdateManagerFactory");
+                _appUpdateManager = factory.CallStatic<AndroidJavaObject>("create", activity);
+            }
 
             var appUpdateInfoTask = _appUpdateManager.Call<AndroidJavaObject>("getAppUpdateInfo");
             appUpdateInfoTask.Call<AndroidJavaObject>("addOnSuccessListener",
@@ -52,15 +62,26 @@ public class InAppUpdateManager : MonoBehaviour
     }
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-    private void StartFlexibleUpdate(AndroidJavaObject appUpdateInfo, AndroidJavaObject activity)
+    private void StartUpdate(AndroidJavaObject appUpdateInfo, AndroidJavaObject activity, bool immediate)
     {
         try
         {
-            // AppUpdateType.FLEXIBLE = 0
-            int FLEXIBLE = 0;
-            _appUpdateManager.Call<AndroidJavaObject>("startUpdateFlowForResult",
-                appUpdateInfo, activity, FLEXIBLE, 100); // requestCode = 100
-            Debug.Log("[InAppUpdate] Flexible update flow started");
+            // Build AppUpdateOptions
+            int updateType = immediate ? 1 : 0; // IMMEDIATE=1, FLEXIBLE=0
+            var optionsBuilder = new AndroidJavaClass("com.google.android.play.core.appupdate.AppUpdateOptions")
+                .CallStatic<AndroidJavaObject>("newBuilder", updateType);
+            var options = optionsBuilder.Call<AndroidJavaObject>("build");
+
+            // Register install state listener for flexible updates
+            if (!immediate)
+            {
+                _appUpdateManager.Call("registerListener", new InstallStateListener(this));
+            }
+
+            var updateTask = _appUpdateManager.Call<AndroidJavaObject>(
+                "startUpdateFlowForResult", appUpdateInfo, activity, options);
+
+            Debug.Log($"[InAppUpdate] {(immediate ? "Immediate" : "Flexible")} update flow started");
         }
         catch (System.Exception e)
         {
@@ -68,21 +89,21 @@ public class InAppUpdateManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Called when a flexible update is downloaded. Triggers install.
-    /// </summary>
+    /// <summary>Install a downloaded flexible update.</summary>
     public void CompleteUpdate()
     {
         try
         {
-            if (_appUpdateManager != null)
-                _appUpdateManager.Call("completeUpdate");
+            _appUpdateManager?.Call("completeUpdate");
+            Debug.Log("[InAppUpdate] Completing update (app will restart)");
         }
         catch (System.Exception e)
         {
             Debug.Log($"[InAppUpdate] Complete update failed: {e.Message}");
         }
     }
+
+    // ── Listeners ──
 
     private class UpdateInfoListener : AndroidJavaProxy
     {
@@ -100,40 +121,30 @@ public class InAppUpdateManager : MonoBehaviour
         {
             try
             {
-                // UpdateAvailability.UPDATE_AVAILABLE = 2
                 int availability = appUpdateInfo.Call<int>("updateAvailability");
                 Debug.Log($"[InAppUpdate] Availability: {availability}");
 
                 if (availability == 2) // UPDATE_AVAILABLE
                 {
-                    // Check if flexible update is allowed
-                    // AppUpdateType.FLEXIBLE = 0
                     bool isFlexibleAllowed = appUpdateInfo.Call<bool>("isUpdateTypeAllowed", 0);
+                    bool isImmediateAllowed = appUpdateInfo.Call<bool>("isUpdateTypeAllowed", 1);
 
                     if (isFlexibleAllowed)
                     {
-                        Debug.Log("[InAppUpdate] Flexible update available — starting flow");
-                        _manager.StartFlexibleUpdate(appUpdateInfo, _activity);
+                        _manager.StartUpdate(appUpdateInfo, _activity, false);
+                    }
+                    else if (isImmediateAllowed)
+                    {
+                        _manager.StartUpdate(appUpdateInfo, _activity, true);
                     }
                     else
                     {
-                        // Try immediate update (AppUpdateType.IMMEDIATE = 1)
-                        bool isImmediateAllowed = appUpdateInfo.Call<bool>("isUpdateTypeAllowed", 1);
-                        if (isImmediateAllowed)
-                        {
-                            Debug.Log("[InAppUpdate] Immediate update available — starting flow");
-                            var factory = new AndroidJavaClass("com.google.android.play.core.appupdate.AppUpdateManagerFactory");
-                            var mgr = factory.CallStatic<AndroidJavaObject>("create", _activity);
-                            mgr.Call<AndroidJavaObject>("startUpdateFlowForResult",
-                                appUpdateInfo, _activity, 1, 101);
-                        }
+                        Debug.Log("[InAppUpdate] Update available but no allowed type");
                     }
                 }
                 else if (availability == 3) // DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS
                 {
-                    // Resume a previously started update
-                    Debug.Log("[InAppUpdate] Resuming in-progress update");
-                    _manager.StartFlexibleUpdate(appUpdateInfo, _activity);
+                    _manager.StartUpdate(appUpdateInfo, _activity, true);
                 }
                 else
                 {
@@ -143,6 +154,38 @@ public class InAppUpdateManager : MonoBehaviour
             catch (System.Exception e)
             {
                 Debug.Log($"[InAppUpdate] Info check error: {e.Message}");
+            }
+        }
+    }
+
+    /// <summary>Listens for flexible update download completion.</summary>
+    private class InstallStateListener : AndroidJavaProxy
+    {
+        private readonly InAppUpdateManager _manager;
+
+        public InstallStateListener(InAppUpdateManager manager)
+            : base("com.google.android.play.core.install.InstallStateUpdatedListener")
+        {
+            _manager = manager;
+        }
+
+        public void onStateUpdate(AndroidJavaObject installState)
+        {
+            try
+            {
+                int status = installState.Call<int>("installStatus");
+                Debug.Log($"[InAppUpdate] Install status: {status}");
+
+                // InstallStatus.DOWNLOADED = 11
+                if (status == 11)
+                {
+                    Debug.Log("[InAppUpdate] Download complete — triggering install");
+                    _manager.CompleteUpdate();
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.Log($"[InAppUpdate] State update error: {e.Message}");
             }
         }
     }
