@@ -107,14 +107,6 @@ public class ParentDashboardSetup : EditorWindow
         gateTitleRT.offsetMin = gateTitleRT.offsetMax = Vector2.zero;
         gateTitleGO.GetComponent<TextMeshProUGUI>().fontStyle = FontStyles.Bold;
 
-        // Gate subtitle
-        var gateSubGO = MakeTMP(gateGO.transform, "GateSubtitle",
-            "\u05E4\u05EA\u05E8\u05D5 \u05D0\u05EA \u05D4\u05EA\u05E8\u05D2\u05D9\u05DC", 32, new Color(1, 1, 1, 0.7f));
-        var gateSubRT = gateSubGO.GetComponent<RectTransform>();
-        gateSubRT.anchorMin = new Vector2(0.1f, 0.85f);
-        gateSubRT.anchorMax = new Vector2(0.9f, 0.93f);
-        gateSubRT.offsetMin = gateSubRT.offsetMax = Vector2.zero;
-
         // Question text
         var questionGO = MakeTMP(gateGO.transform, "QuestionText", "? = 5 + 3", 72, Color.white);
         var questionRT = questionGO.GetComponent<RectTransform>();
