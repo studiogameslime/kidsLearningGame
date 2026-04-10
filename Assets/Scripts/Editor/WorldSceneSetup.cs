@@ -385,7 +385,7 @@ public class WorldSceneSetup : EditorWindow
         pdLabelRT.offsetMin = new Vector2(12, 0); pdLabelRT.offsetMax = new Vector2(-52, 0);
         var pdLabelTMP = pdLabelGO.AddComponent<TextMeshProUGUI>();
         HebrewText.SetText(pdLabelTMP, "\u05D0\u05D9\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD"); // איזור הורים
-        pdLabelTMP.fontSize = 20; pdLabelTMP.fontStyle = FontStyles.Bold;
+        pdLabelTMP.fontSize = 26; pdLabelTMP.fontStyle = FontStyles.Bold;
         pdLabelTMP.color = Color.white;
         pdLabelTMP.alignment = TextAlignmentOptions.Center;
         pdLabelTMP.raycastTarget = false;
