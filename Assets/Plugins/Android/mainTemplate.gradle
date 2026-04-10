@@ -48,8 +48,6 @@ android {
         ndk {
             abiFilters **ABIFILTERS**
             debugSymbolLevel **DEBUGSYMBOLLEVEL**
-            // 16KB page size alignment (required for Android 15+ / Google Play)
-            ldFlags "-Wl,-z,max-page-size=16384"
         }
         versionCode **VERSIONCODE**
         versionName '**VERSIONNAME**'
