@@ -77,17 +77,18 @@ public class GameCardView : MonoBehaviour
         {
             var nameGO = new GameObject("GameNameTop");
             nameGO.transform.SetParent(transform, false);
+            nameGO.transform.SetAsLastSibling();
             var nameRT = nameGO.AddComponent<RectTransform>();
             nameRT.anchorMin = new Vector2(0, 1);
             nameRT.anchorMax = new Vector2(1, 1);
             nameRT.pivot = new Vector2(0.5f, 1);
-            nameRT.anchoredPosition = new Vector2(0, -2);
-            nameRT.sizeDelta = new Vector2(0, 40);
+            nameRT.anchoredPosition = new Vector2(0, -4);
+            nameRT.sizeDelta = new Vector2(-20, 40);
 
             _gameNameLabel = nameGO.AddComponent<TextMeshProUGUI>();
-            _gameNameLabel.fontSize = 30;
+            _gameNameLabel.fontSize = 28;
             _gameNameLabel.fontStyle = FontStyles.Bold;
-            _gameNameLabel.color = new Color(0.2f, 0.2f, 0.2f);
+            _gameNameLabel.color = new Color(0.25f, 0.25f, 0.3f);
             _gameNameLabel.alignment = TextAlignmentOptions.Center;
             _gameNameLabel.raycastTarget = false;
             _gameNameLabel.enableWordWrapping = false;
@@ -102,6 +103,7 @@ public class GameCardView : MonoBehaviour
         {
             var diffGO = new GameObject("DifficultyBottom");
             diffGO.transform.SetParent(transform, false);
+            diffGO.transform.SetAsLastSibling();
             var diffRT = diffGO.AddComponent<RectTransform>();
             diffRT.anchorMin = new Vector2(0, 0);
             diffRT.anchorMax = new Vector2(1, 0);
