@@ -464,13 +464,14 @@ public class ProjectSetup : EditorWindow
         titleGO.SetActive(false);
 
         // Thumbnail mask container (rounded corners via Mask)
+        // Leave space: top 42px for game name, bottom 36px for difficulty
         var thumbMaskGO = new GameObject("ThumbnailMask");
         thumbMaskGO.transform.SetParent(root.transform, false);
         var thumbMaskRT = thumbMaskGO.AddComponent<RectTransform>();
         thumbMaskRT.anchorMin = Vector2.zero;
         thumbMaskRT.anchorMax = Vector2.one;
-        thumbMaskRT.offsetMin = new Vector2(14, 14);
-        thumbMaskRT.offsetMax = new Vector2(-14, -14);
+        thumbMaskRT.offsetMin = new Vector2(14, 40);
+        thumbMaskRT.offsetMax = new Vector2(-14, -44);
         var maskImg = thumbMaskGO.AddComponent<Image>();
         maskImg.sprite = roundedRect;
         maskImg.type = Image.Type.Sliced;
