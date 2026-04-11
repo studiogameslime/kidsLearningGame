@@ -888,8 +888,8 @@ public class AquariumController : MonoBehaviour
             ProfileManager.Instance.Save();
             FirebaseAnalyticsManager.LogStickerCollected(stickerId, "aquarium");
             Debug.Log($"[Sticker] Awarded {stickerId} from aquarium");
-            // No balloon popup in aquarium — just a quick visual hint
-            StartCoroutine(ShowStickerHint(stickerId));
+            StickerPopup.OnStickerCollected = null;
+            StartCoroutine(StickerPopup.Show(stickerId));
         }
     }
 
