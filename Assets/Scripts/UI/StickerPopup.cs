@@ -189,17 +189,21 @@ public static class StickerPopup
         //  ANIMATION
         // ══════════════════════════
 
-        // ── Phase 1: Dim + rise (0.8s) ──
+        // ── Phase 1: Dim + rise (1.5s — slow gentle rise) ──
         Vector2 startPos = balloonContainerRT.anchoredPosition;
         Vector2 endPos = new Vector2(0, 20);
         float t = 0f;
-        while (t < 0.8f)
+        float riseDur = 1.5f;
+        while (t < riseDur)
         {
             if (rootGO == null) { _isShowing = false; yield break; }
             t += Time.deltaTime;
-            float p = Mathf.Clamp01(t / 0.8f);
+            float p = Mathf.Clamp01(t / riseDur);
             float ease = 1f - Mathf.Pow(1f - p, 3f);
             balloonContainerRT.anchoredPosition = Vector2.Lerp(startPos, endPos, ease);
+            // Slight wobble during rise
+            float wobble = Mathf.Sin(p * Mathf.PI * 4f) * 3f * (1f - p);
+            balloonContainerRT.anchoredPosition += new Vector2(wobble, 0);
             dimImg.color = new Color(0, 0, 0, p * 0.6f);
             yield return null;
         }
@@ -232,19 +236,20 @@ public static class StickerPopup
         // Collect the sticker NOW
         OnStickerCollected?.Invoke(stickerId);
 
-        // Hide balloon parts
-        balloonImg.enabled = false;
-        shineGO.SetActive(false);
+        // Hide balloon + tap area
+        balloonGO.SetActive(false);
+        tapGO.SetActive(false);
         stringGO.SetActive(false);
 
-        // Free sticker from mask
+        // Free sticker from mask — reparent to balloonContainer
         stickerMaskGO.transform.SetParent(balloonContainer.transform, true);
         var mask = stickerMaskGO.GetComponent<Mask>();
         if (mask != null) Object.Destroy(mask);
         if (maskImg != null) maskImg.enabled = false;
+        stickerMaskGO.transform.SetAsLastSibling();
 
-        // Pop particles
-        SpawnPopParticles(rootGO.transform, balloonContainerRT.anchoredPosition, balloonColor, circleSprite);
+        // Pop particles — spawn at balloon center position
+        SpawnPopParticles(balloonContainer.transform, new Vector2(0, 30), balloonColor, circleSprite);
 
         // ── Phase 4: Sticker pulse (0.3s) ──
         t = 0f;
@@ -285,19 +290,21 @@ public static class StickerPopup
 
     private static void SpawnPopParticles(Transform parent, Vector2 center, Color balloonColor, Sprite circleSprite)
     {
-        Color lighter = Color.Lerp(balloonColor, Color.white, 0.4f);
-        Color darker = Color.Lerp(balloonColor, Color.black, 0.15f);
+        Color lighter = Color.Lerp(balloonColor, Color.white, 0.5f);
+        Color darker = Color.Lerp(balloonColor, Color.black, 0.1f);
 
-        for (int i = 0; i < 14; i++)
+        // Large shards (balloon pieces)
+        for (int i = 0; i < 18; i++)
         {
-            var go = new GameObject("PopParticle");
+            var go = new GameObject("PopShard");
             go.transform.SetParent(parent, false);
+            go.transform.SetAsLastSibling();
             var rt = go.AddComponent<RectTransform>();
             rt.anchorMin = new Vector2(0.5f, 0.5f);
             rt.anchorMax = new Vector2(0.5f, 0.5f);
-            float size = Random.Range(8f, 22f);
+            float size = Random.Range(12f, 35f);
             rt.sizeDelta = new Vector2(size, size);
-            rt.anchoredPosition = center + Random.insideUnitCircle * 30f;
+            rt.anchoredPosition = center + Random.insideUnitCircle * 40f;
 
             var img = go.AddComponent<Image>();
             if (circleSprite != null) img.sprite = circleSprite;
@@ -308,8 +315,33 @@ public static class StickerPopup
             Vector2 dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
 
             var mono = go.AddComponent<SparkleParticle>();
-            mono.velocity = dir * Random.Range(300f, 600f);
-            mono.lifetime = Random.Range(0.4f, 0.7f);
+            mono.velocity = dir * Random.Range(400f, 900f);
+            mono.lifetime = Random.Range(0.5f, 0.9f);
+        }
+
+        // Small sparkles
+        for (int i = 0; i < 10; i++)
+        {
+            var go = new GameObject("PopSparkle");
+            go.transform.SetParent(parent, false);
+            go.transform.SetAsLastSibling();
+            var rt = go.AddComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(8, 8);
+            rt.anchoredPosition = center;
+
+            var img = go.AddComponent<Image>();
+            if (circleSprite != null) img.sprite = circleSprite;
+            img.color = Color.white;
+            img.raycastTarget = false;
+
+            float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
+            Vector2 dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+
+            var mono = go.AddComponent<SparkleParticle>();
+            mono.velocity = dir * Random.Range(200f, 500f);
+            mono.lifetime = Random.Range(0.3f, 0.5f);
         }
     }
 }
