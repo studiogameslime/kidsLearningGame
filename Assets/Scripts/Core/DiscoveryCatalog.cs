@@ -109,21 +109,27 @@ public static class DiscoveryCatalog
 
     private static DiscoveryEntry NextAnimal(JourneyProgress jp)
     {
+        var available = new System.Collections.Generic.List<string>();
         foreach (var id in AnimalOrder)
         {
             if (!jp.unlockedAnimalIds.Contains(id) && !IsAlreadyPendingOrQueued(jp, "animal", id))
-                return new DiscoveryEntry { type = "animal", id = id };
+                available.Add(id);
         }
-        return null;
+        if (available.Count == 0) return null;
+        string picked = available[UnityEngine.Random.Range(0, available.Count)];
+        return new DiscoveryEntry { type = "animal", id = picked };
     }
 
     private static DiscoveryEntry NextColor(JourneyProgress jp)
     {
+        var available = new System.Collections.Generic.List<string>();
         foreach (var id in ColorOrder)
         {
             if (!jp.unlockedColorIds.Contains(id) && !IsAlreadyPendingOrQueued(jp, "color", id))
-                return new DiscoveryEntry { type = "color", id = id };
+                available.Add(id);
         }
-        return null;
+        if (available.Count == 0) return null;
+        string picked = available[UnityEngine.Random.Range(0, available.Count)];
+        return new DiscoveryEntry { type = "color", id = picked };
     }
 }
