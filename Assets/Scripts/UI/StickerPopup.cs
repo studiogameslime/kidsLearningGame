@@ -294,7 +294,7 @@ public static class StickerPopup
         Color darker = Color.Lerp(balloonColor, Color.black, 0.1f);
 
         // Large shards (balloon pieces)
-        for (int i = 0; i < 18; i++)
+        for (int i = 0; i < 20; i++)
         {
             var go = new GameObject("PopShard");
             go.transform.SetParent(parent, false);
@@ -302,9 +302,9 @@ public static class StickerPopup
             var rt = go.AddComponent<RectTransform>();
             rt.anchorMin = new Vector2(0.5f, 0.5f);
             rt.anchorMax = new Vector2(0.5f, 0.5f);
-            float size = Random.Range(12f, 35f);
+            float size = Random.Range(30f, 70f);
             rt.sizeDelta = new Vector2(size, size);
-            rt.anchoredPosition = center + Random.insideUnitCircle * 40f;
+            rt.anchoredPosition = center + Random.insideUnitCircle * 50f;
 
             var img = go.AddComponent<Image>();
             if (circleSprite != null) img.sprite = circleSprite;
@@ -315,12 +315,12 @@ public static class StickerPopup
             Vector2 dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
 
             var mono = go.AddComponent<SparkleParticle>();
-            mono.velocity = dir * Random.Range(400f, 900f);
-            mono.lifetime = Random.Range(0.5f, 0.9f);
+            mono.velocity = dir * Random.Range(500f, 1200f);
+            mono.lifetime = Random.Range(0.6f, 1.0f);
         }
 
-        // Small sparkles
-        for (int i = 0; i < 10; i++)
+        // Medium sparkles
+        for (int i = 0; i < 12; i++)
         {
             var go = new GameObject("PopSparkle");
             go.transform.SetParent(parent, false);
@@ -328,20 +328,20 @@ public static class StickerPopup
             var rt = go.AddComponent<RectTransform>();
             rt.anchorMin = new Vector2(0.5f, 0.5f);
             rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(8, 8);
+            rt.sizeDelta = new Vector2(20, 20);
             rt.anchoredPosition = center;
 
             var img = go.AddComponent<Image>();
             if (circleSprite != null) img.sprite = circleSprite;
-            img.color = Color.white;
+            img.color = new Color(1f, 1f, 1f, 0.9f);
             img.raycastTarget = false;
 
             float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
             Vector2 dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
 
             var mono = go.AddComponent<SparkleParticle>();
-            mono.velocity = dir * Random.Range(200f, 500f);
-            mono.lifetime = Random.Range(0.3f, 0.5f);
+            mono.velocity = dir * Random.Range(300f, 700f);
+            mono.lifetime = Random.Range(0.4f, 0.7f);
         }
     }
 }
