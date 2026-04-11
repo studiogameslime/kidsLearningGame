@@ -179,9 +179,9 @@ public static class ParentDashboardViewModel
         { "shadows",       "\u05D7\u05D9\u05D4 \u05D5\u05E6\u05DC" },
         { "colormixing",   "\u05E2\u05E8\u05D1\u05D5\u05D1 \u05E6\u05D1\u05E2\u05D9\u05DD" },
         { "ballmaze",      "\u05DE\u05D1\u05D5\u05DA \u05D4\u05DB\u05D3\u05D5\u05E8" },
-        { "sharedsticker", "\u05DE\u05E6\u05D0 \u05D0\u05EA \u05D4\u05D6\u05D4\u05D4" },
-        { "flappybird",    "\u05DE\u05E2\u05D5\u05E3 \u05D4\u05E6\u05D9\u05E4\u05D5\u05E8" },
-        { "simonsays",     "\u05D6\u05DB\u05E8\u05D5 \u05D0\u05EA \u05D4\u05E6\u05D1\u05E2\u05D9\u05DD" },
+        { "sharedsticker", "\u05DE\u05D4 \u05DE\u05E9\u05D5\u05EA\u05E3" }, // מה משותף
+        { "flappybird",    "\u05D4\u05E6\u05D9\u05E4\u05D5\u05E8 \u05D4\u05DE\u05E2\u05D5\u05E4\u05E4\u05EA" }, // הציפור המעופפת
+        { "simonsays",     "\u05E1\u05D9\u05D9\u05DE\u05D5\u05DF" }, // סיימון
         { "towerbuilder",  "\u05DC\u05D2\u05D5" }, // לגו
 
 
@@ -193,9 +193,9 @@ public static class ParentDashboardViewModel
         { "connectmatch",  "\u05D7\u05D1\u05E8 \u05D5\u05E6\u05D9\u05D9\u05E8" },
         { "numbertrain",   "\u05E8\u05DB\u05D1\u05EA \u05D4\u05DE\u05E1\u05E4\u05E8\u05D9\u05DD" },
         { "lettertrain",   "\u05E8\u05DB\u05D1\u05EA \u05D4\u05D0\u05D5\u05EA\u05D9\u05D5\u05EA" },
-        { "laundrysorting","\u05DE\u05D9\u05D9\u05DF \u05D1\u05D2\u05D3\u05D9\u05DD" },
+        { "laundrysorting","\u05DE\u05D9\u05D9\u05DF \u05D1\u05D2\u05D3\u05D9\u05DD \u05D5\u05E4\u05D9\u05E8\u05D5\u05EA" }, // מיין בגדים ופירות
         { "bakery",        "\u05DE\u05D0\u05E4\u05D9\u05D9\u05D4" }, // מאפייה
-        { "sockmatch",    "\u05D2\u05E8\u05D1\u05D9\u05D9\u05DD" }, // גרביים
+        { "sockmatch",    "\u05DE\u05D9\u05D5\u05DF \u05D2\u05E8\u05D1\u05D9\u05D9\u05DD" }, // מיון גרביים
         { "fishing",      "\u05D3\u05D9\u05D2" }, // דיג
         { "sizesort",     "\u05DE\u05D9\u05D5\u05DF \u05DC\u05E4\u05D9 \u05D2\u05D5\u05D3\u05DC" }, // מיון לפי גודל
         { "colorsort",    "\u05DE\u05D9\u05D5\u05DF \u05E6\u05D1\u05E2\u05D9\u05DD" }, // מיון צבעים
