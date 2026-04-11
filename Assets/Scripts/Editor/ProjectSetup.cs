@@ -1026,8 +1026,24 @@ public class ProjectSetup : EditorWindow
         // Header
         var header = CreateHeader(safeArea.transform, "\u05D1\u05D7\u05E8\u05D5 \u05DE\u05E9\u05D7\u05E7", showBack: true, roundedRect, circleSprite); // בחרו משחק
 
-        // Scroll view with grid
-        var scrollContent = CreateScrollGrid(safeArea.transform, HeaderHeight);
+        // Games count hint (between header and grid)
+        var hintGO = new GameObject("GamesCountHint");
+        hintGO.transform.SetParent(safeArea.transform, false);
+        var hintRT = hintGO.AddComponent<RectTransform>();
+        hintRT.anchorMin = new Vector2(0, 1);
+        hintRT.anchorMax = new Vector2(1, 1);
+        hintRT.pivot = new Vector2(0.5f, 1);
+        hintRT.anchoredPosition = new Vector2(0, -HeaderHeight);
+        hintRT.sizeDelta = new Vector2(0, 36);
+        var hintTMP = hintGO.AddComponent<TextMeshProUGUI>();
+        hintTMP.fontSize = 22;
+        hintTMP.color = new Color(0.4f, 0.4f, 0.4f, 0.8f);
+        hintTMP.alignment = TextAlignmentOptions.Center;
+        hintTMP.raycastTarget = false;
+        hintGO.SetActive(false); // shown at runtime if needed
+
+        // Scroll view with grid (shifted down to make room for hint)
+        var scrollContent = CreateScrollGrid(safeArea.transform, HeaderHeight + 36);
 
         // Profile switch button (top-right corner, small avatar circle)
         var profileIcon = LoadSprite("Assets/UI/Sprites/Circle.png");
@@ -1077,6 +1093,7 @@ public class ProjectSetup : EditorWindow
         controller.database = database;
         controller.cardContainer = scrollContent;
         controller.cardPrefab = cardPrefab;
+        controller.gamesCountHint = hintTMP;
         controller.profileButtonImage = profileBtnImg;
         controller.profileButtonPhoto = profilePhotoImg;
         controller.profileButtonInitial = profileInitTMP;
