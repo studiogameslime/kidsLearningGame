@@ -43,7 +43,21 @@ public static class StickerPopup
 
         if (sprite == null) yield break;
 
-        var canvas = Object.FindObjectOfType<Canvas>();
+        // Find the ROOT canvas (not a nested sub-canvas)
+        Canvas canvas = null;
+        foreach (var c in Object.FindObjectsOfType<Canvas>())
+        {
+            if (c.isRootCanvas && c.renderMode == RenderMode.ScreenSpaceOverlay)
+            { canvas = c; break; }
+        }
+        if (canvas == null)
+        {
+            // Fallback: any root canvas
+            foreach (var c in Object.FindObjectsOfType<Canvas>())
+            {
+                if (c.isRootCanvas) { canvas = c; break; }
+            }
+        }
         if (canvas == null) yield break;
 
         var circleSprite = Resources.Load<Sprite>("Circle");
@@ -59,7 +73,7 @@ public static class StickerPopup
         var profile = ProfileManager.ActiveProfile;
         if (profile != null) balloonColor = profile.AvatarColor;
 
-        // ── Root overlay ──
+        // ── Root overlay — IS the dim background ──
         var rootGO = new GameObject("StickerPopup");
         rootGO.transform.SetParent(canvas.transform, false);
         rootGO.transform.SetAsLastSibling();
@@ -67,17 +81,14 @@ public static class StickerPopup
         rootRT.anchorMin = Vector2.zero; rootRT.anchorMax = Vector2.one;
         rootRT.offsetMin = Vector2.zero; rootRT.offsetMax = Vector2.zero;
 
-        // Dim background — blocks background touches AND is visual dimming
-        // Balloon is a LATER sibling so it renders on top and gets raycast priority
-        var dimGO = new GameObject("Dim");
-        dimGO.transform.SetParent(rootGO.transform, false);
-        dimGO.transform.SetAsFirstSibling(); // FIRST child = behind everything
-        var dimRT = dimGO.AddComponent<RectTransform>();
-        dimRT.anchorMin = Vector2.zero; dimRT.anchorMax = Vector2.one;
-        dimRT.offsetMin = Vector2.zero; dimRT.offsetMax = Vector2.zero;
-        var dimImg = dimGO.AddComponent<Image>();
+        // Root itself is the dim — catches all background taps
+        var dimImg = rootGO.AddComponent<Image>();
         dimImg.color = new Color(0, 0, 0, 0);
-        dimImg.raycastTarget = true; // catch and consume background taps
+        dimImg.raycastTarget = true;
+
+        // Ensure this canvas has a GraphicRaycaster (needed for button clicks)
+        if (canvas.GetComponent<UnityEngine.UI.GraphicRaycaster>() == null)
+            canvas.gameObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
 
         // ── Balloon container ──
         var balloonContainer = new GameObject("BalloonContainer");
