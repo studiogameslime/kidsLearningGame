@@ -1314,6 +1314,7 @@ public class AquariumController : MonoBehaviour
 
     private void OnBackPressed()
     {
+        if (StickerPopup.IsActive) return; // can't leave while balloon is showing
         FingerTrail.SetEnabled(true);
         NavigationManager.GoToHome();
     }

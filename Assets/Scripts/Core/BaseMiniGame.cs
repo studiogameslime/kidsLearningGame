@@ -236,6 +236,7 @@ public abstract class BaseMiniGame : MonoBehaviour
     /// <summary>Navigate home / main menu. Abandons stats if still playing.</summary>
     protected void ExitGame()
     {
+        if (StickerPopup.IsActive) return; // can't exit while balloon is showing
         float duration = Time.realtimeSinceStartup - _gameSceneStartTime;
         FirebaseAnalyticsManager.LogGameExited(GameId);
         FirebaseAnalyticsManager.LogGameSessionDuration(GameId, duration);

@@ -11,11 +11,30 @@ using TMPro;
 public static class StickerPopup
 {
     private static bool _isShowing;
+    private static GameObject _activeRoot;
 
     /// <summary>
     /// Optional callback when balloon is popped — used to add sticker to collection.
     /// </summary>
     public static System.Action<string> OnStickerCollected;
+
+    /// <summary>True while balloon is visible — use to block navigation.</summary>
+    public static bool IsActive => _isShowing;
+
+    /// <summary>Force cleanup if scene changes while popup is showing.</summary>
+    [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void Init()
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += (s, m) =>
+        {
+            if (_activeRoot != null)
+            {
+                Object.Destroy(_activeRoot);
+                _activeRoot = null;
+            }
+            _isShowing = false;
+        };
+    }
 
     public static IEnumerator Show(string stickerId)
     {
@@ -80,6 +99,8 @@ public static class StickerPopup
         var rootRT = rootGO.AddComponent<RectTransform>();
         rootRT.anchorMin = Vector2.zero; rootRT.anchorMax = Vector2.one;
         rootRT.offsetMin = Vector2.zero; rootRT.offsetMax = Vector2.zero;
+
+        _activeRoot = rootGO;
 
         // Root itself is the dim — catches all background taps
         var dimImg = rootGO.AddComponent<Image>();
@@ -285,6 +306,7 @@ public static class StickerPopup
         }
 
         if (rootGO != null) Object.Destroy(rootGO);
+        _activeRoot = null;
         _isShowing = false;
     }
 
