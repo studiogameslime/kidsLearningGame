@@ -61,7 +61,7 @@ public class GameCardView : MonoBehaviour
     }
 
     /// <summary>
-    /// Extended setup for main menu — adds profile-colored border, game name, and difficulty.
+    /// Extended setup for main menu — adds profile-colored border, game name above, difficulty below.
     /// </summary>
     public void SetupExtended(string gameId, string hebrewName, Color profileColor, int difficulty)
     {
@@ -72,41 +72,22 @@ public class GameCardView : MonoBehaviour
             backgroundImage.color = tint;
         }
 
-        // Game name label at bottom
-        if (_gameNameLabel == null && thumbnailImage != null)
+        // ── Game name ABOVE the thumbnail ──
+        if (_gameNameLabel == null)
         {
-            var nameGO = new GameObject("GameName");
+            var nameGO = new GameObject("GameNameTop");
             nameGO.transform.SetParent(transform, false);
             var nameRT = nameGO.AddComponent<RectTransform>();
-            nameRT.anchorMin = new Vector2(0, 0);
-            nameRT.anchorMax = new Vector2(1, 0);
-            nameRT.pivot = new Vector2(0.5f, 0);
-            nameRT.anchoredPosition = new Vector2(0, 4);
-            nameRT.sizeDelta = new Vector2(0, 28);
+            nameRT.anchorMin = new Vector2(0, 1);
+            nameRT.anchorMax = new Vector2(1, 1);
+            nameRT.pivot = new Vector2(0.5f, 1);
+            nameRT.anchoredPosition = new Vector2(0, -2);
+            nameRT.sizeDelta = new Vector2(0, 40);
 
-            // Semi-transparent background strip
-            var stripGO = new GameObject("Strip");
-            stripGO.transform.SetParent(nameGO.transform, false);
-            var stripRT = stripGO.AddComponent<RectTransform>();
-            stripRT.anchorMin = Vector2.zero;
-            stripRT.anchorMax = Vector2.one;
-            stripRT.offsetMin = Vector2.zero;
-            stripRT.offsetMax = Vector2.zero;
-            var stripImg = stripGO.AddComponent<Image>();
-            stripImg.color = new Color(0, 0, 0, 0.45f);
-            stripImg.raycastTarget = false;
-
-            var textGO = new GameObject("Text");
-            textGO.transform.SetParent(nameGO.transform, false);
-            var textRT = textGO.AddComponent<RectTransform>();
-            textRT.anchorMin = Vector2.zero;
-            textRT.anchorMax = Vector2.one;
-            textRT.offsetMin = new Vector2(6, 0);
-            textRT.offsetMax = new Vector2(-6, 0);
-
-            _gameNameLabel = textGO.AddComponent<TextMeshProUGUI>();
-            _gameNameLabel.fontSize = 18;
-            _gameNameLabel.color = Color.white;
+            _gameNameLabel = nameGO.AddComponent<TextMeshProUGUI>();
+            _gameNameLabel.fontSize = 30;
+            _gameNameLabel.fontStyle = FontStyles.Bold;
+            _gameNameLabel.color = new Color(0.2f, 0.2f, 0.2f);
             _gameNameLabel.alignment = TextAlignmentOptions.Center;
             _gameNameLabel.raycastTarget = false;
             _gameNameLabel.enableWordWrapping = false;
@@ -114,14 +95,36 @@ public class GameCardView : MonoBehaviour
         }
 
         if (_gameNameLabel != null)
-        {
-            // Difficulty label inline
-            string diffText = "";
-            if (difficulty <= 3) diffText = " \u00B7 \u05E7\u05DC"; // · קל
-            else if (difficulty <= 7) diffText = " \u00B7 \u05D1\u05D9\u05E0\u05D5\u05E0\u05D9"; // · בינוני
-            else diffText = " \u00B7 \u05E7\u05E9\u05D4"; // · קשה
+            HebrewText.SetText(_gameNameLabel, hebrewName);
 
-            HebrewText.SetText(_gameNameLabel, hebrewName + diffText);
+        // ── Difficulty label BELOW the thumbnail ──
+        if (_difficultyLabel == null)
+        {
+            var diffGO = new GameObject("DifficultyBottom");
+            diffGO.transform.SetParent(transform, false);
+            var diffRT = diffGO.AddComponent<RectTransform>();
+            diffRT.anchorMin = new Vector2(0, 0);
+            diffRT.anchorMax = new Vector2(1, 0);
+            diffRT.pivot = new Vector2(0.5f, 0);
+            diffRT.anchoredPosition = new Vector2(0, 4);
+            diffRT.sizeDelta = new Vector2(0, 32);
+
+            _difficultyLabel = diffGO.AddComponent<TextMeshProUGUI>();
+            _difficultyLabel.fontSize = 22;
+            _difficultyLabel.color = new Color(0.4f, 0.4f, 0.4f);
+            _difficultyLabel.alignment = TextAlignmentOptions.Center;
+            _difficultyLabel.raycastTarget = false;
+        }
+
+        if (_difficultyLabel != null)
+        {
+            string diffName;
+            if (difficulty <= 3) diffName = "\u05E7\u05DC"; // קל
+            else if (difficulty <= 7) diffName = "\u05D1\u05D9\u05E0\u05D5\u05E0\u05D9"; // בינוני
+            else diffName = "\u05E7\u05E9\u05D4"; // קשה
+
+            HebrewText.SetText(_difficultyLabel, "\u05E8\u05DE\u05D4 \u05E0\u05D5\u05DB\u05D7\u05D9\u05EA: " + diffName);
+            // רמה נוכחית: קל/בינוני/קשה
         }
     }
 }

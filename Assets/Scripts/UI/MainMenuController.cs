@@ -69,8 +69,8 @@ public class MainMenuController : MonoBehaviour
         {
             if (activeGames < totalGames)
             {
-                string text = $"{activeGames} \u05DE\u05EA\u05D5\u05DA {totalGames} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05E4\u05E2\u05D9\u05DC\u05D9\u05DD  \u00B7  \u05D0\u05D9\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD \u2190";
-                // X מתוך Y משחקים פעילים  ·  איזור הורים ←
+                string text = $"{activeGames} \u05DE\u05EA\u05D5\u05DA {totalGames} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05E4\u05E2\u05D9\u05DC\u05D9\u05DD  \u00B7  \u05D4\u05E4\u05E2\u05DC\u05D5 \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05D5\u05E9\u05E0\u05D5 \u05E8\u05DE\u05EA \u05E7\u05D5\u05E9\u05D9 \u05D1\u05D0\u05D9\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD";
+                // X מתוך Y משחקים פעילים  ·  הפעלו משחקים ושנו רמת קושי באיזור הורים
                 HebrewText.SetText(gamesCountHint, text);
                 gamesCountHint.gameObject.SetActive(true);
             }

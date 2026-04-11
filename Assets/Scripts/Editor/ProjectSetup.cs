@@ -1034,16 +1034,16 @@ public class ProjectSetup : EditorWindow
         hintRT.anchorMax = new Vector2(1, 1);
         hintRT.pivot = new Vector2(0.5f, 1);
         hintRT.anchoredPosition = new Vector2(0, -HeaderHeight);
-        hintRT.sizeDelta = new Vector2(0, 36);
+        hintRT.sizeDelta = new Vector2(0, 44);
         var hintTMP = hintGO.AddComponent<TextMeshProUGUI>();
-        hintTMP.fontSize = 22;
-        hintTMP.color = new Color(0.4f, 0.4f, 0.4f, 0.8f);
+        hintTMP.fontSize = 28;
+        hintTMP.color = new Color(0.35f, 0.35f, 0.35f, 0.85f);
         hintTMP.alignment = TextAlignmentOptions.Center;
         hintTMP.raycastTarget = false;
         hintGO.SetActive(false); // shown at runtime if needed
 
         // Scroll view with grid (shifted down to make room for hint)
-        var scrollContent = CreateScrollGrid(safeArea.transform, HeaderHeight + 36);
+        var scrollContent = CreateScrollGrid(safeArea.transform, HeaderHeight + 44);
 
         // Profile switch button (top-right corner, small avatar circle)
         var profileIcon = LoadSprite("Assets/UI/Sprites/Circle.png");
