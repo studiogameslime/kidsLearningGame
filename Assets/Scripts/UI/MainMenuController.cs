@@ -80,6 +80,8 @@ public class MainMenuController : MonoBehaviour
             }
         }
 
+        Color profileColor = profile != null ? profile.AvatarColor : new Color(0.56f, 0.79f, 0.98f);
+
         foreach (var game in visibleGames)
         {
             var card = Instantiate(cardPrefab, cardContainer);
@@ -91,6 +93,11 @@ public class MainMenuController : MonoBehaviour
                 game.cardColor,
                 () => OnGameCardTapped(capturedGame)
             );
+
+            // Add game name + difficulty + profile color
+            string hebrewName = ParentDashboardViewModel.GetGameName(game.id);
+            int difficulty = GameDifficultyConfig.GetLevel(game.id);
+            card.SetupExtended(game.id, hebrewName, profileColor, difficulty);
         }
     }
 
