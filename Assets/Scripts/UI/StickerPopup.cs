@@ -147,7 +147,7 @@ public static class StickerPopup
         balloonRT.sizeDelta = new Vector2(280, 280);
         var balloonImg = balloonGO.AddComponent<Image>();
         balloonImg.sprite = circleSprite;
-        balloonImg.color = new Color(balloonColor.r, balloonColor.g, balloonColor.b, 0.35f);
+        balloonImg.color = new Color(balloonColor.r, balloonColor.g, balloonColor.b, 0.55f);
         balloonImg.raycastTarget = false; // tap handled by separate TapArea overlay
 
         // Shine
