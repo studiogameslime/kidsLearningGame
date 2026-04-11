@@ -1251,7 +1251,36 @@ public class AquariumController : MonoBehaviour
         int idx = profile.aquarium.nextRewardIndex;
         var order = DiscoveryCatalog.AquariumRewardOrder;
         if (idx >= order.Length) return null;
-        return order[idx];
+
+        // Determine type based on pattern (fish, item, fish, item...)
+        // but pick a RANDOM unlocked item of that type
+        bool shouldBeFish = idx % 2 == 0 && idx < 24; // first 24: alternating fish/item
+
+        var available = new System.Collections.Generic.List<string>();
+        foreach (var id in order)
+        {
+            bool isFish = id.StartsWith("Fish_");
+            if (shouldBeFish && isFish && !profile.aquarium.unlockedFishIds.Contains(id))
+                available.Add(id);
+            else if (!shouldBeFish && !isFish && !profile.aquarium.unlockedDecorationIds.Contains(id))
+                available.Add(id);
+        }
+
+        if (available.Count == 0)
+        {
+            // Fallback: any unlocked item
+            foreach (var id in order)
+            {
+                bool isFish = id.StartsWith("Fish_");
+                bool unlocked = isFish
+                    ? profile.aquarium.unlockedFishIds.Contains(id)
+                    : profile.aquarium.unlockedDecorationIds.Contains(id);
+                if (!unlocked) available.Add(id);
+            }
+        }
+
+        if (available.Count == 0) return null;
+        return available[Random.Range(0, available.Count)];
     }
 
     private void UnlockReward(string itemId)
