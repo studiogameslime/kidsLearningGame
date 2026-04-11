@@ -73,16 +73,11 @@ public class CollectibleAlbumController : MonoBehaviour
 
     private void Awake()
     {
-        // Register all sprite arrays so any scene can look up sticker sprites
-        StickerSpriteBank.Register("animal_",  animalsStickers);
-        StickerSpriteBank.Register("letter_",  lettersStickers);
-        StickerSpriteBank.Register("number_",  numbersStickers);
-        StickerSpriteBank.Register("balloon_", balloonsStickers);
-        StickerSpriteBank.Register("ocean_",   aquariumStickers);
-        StickerSpriteBank.Register("vehicle_", carsStickers);
-        StickerSpriteBank.Register("food_",    foodStickers);
-        StickerSpriteBank.Register("art_",     artStickers);
-        StickerSpriteBank.Register("nature_",  natureStickers);
+        // Persist sprite references via DontDestroyOnLoad so they work in all scenes
+        StickerSpriteBankLoader.Initialize(
+            animalsStickers, lettersStickers, numbersStickers,
+            balloonsStickers, aquariumStickers, carsStickers,
+            foodStickers, artStickers, natureStickers);
     }
 
     private void BuildCategories()
