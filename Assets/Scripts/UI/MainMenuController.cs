@@ -58,10 +58,34 @@ public class MainMenuController : MonoBehaviour
             ? GameVisibilityService.GetVisibleGames(profile, database.games)
             : database.games;
 
+        int totalGames = database.games.Count;
+        int activeGames = visibleGames.Count;
+
+        // Show counter + hint above grid if some games are hidden
+        if (activeGames < totalGames && cardContainer != null)
+        {
+            var hintGO = new GameObject("GamesHint");
+            hintGO.transform.SetParent(cardContainer, false);
+            hintGO.transform.SetAsFirstSibling();
+            var hintRT = hintGO.AddComponent<RectTransform>();
+            var hintLE = hintGO.AddComponent<LayoutElement>();
+            hintLE.preferredHeight = 50;
+            hintLE.flexibleWidth = 1;
+
+            var hintTMP = hintGO.AddComponent<TextMeshProUGUI>();
+            string text = $"{activeGames} \u05DE\u05EA\u05D5\u05DA {totalGames} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05E4\u05E2\u05D9\u05DC\u05D9\u05DD  \u00B7  \u05D0\u05D9\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD \u2190";
+            // X מתוך Y משחקים פעילים  ·  איזור הורים ←
+            HebrewText.SetText(hintTMP, text);
+            hintTMP.fontSize = 22;
+            hintTMP.color = new Color(1f, 1f, 1f, 0.6f);
+            hintTMP.alignment = TextAlignmentOptions.Center;
+            hintTMP.raycastTarget = false;
+        }
+
         foreach (var game in visibleGames)
         {
             var card = Instantiate(cardPrefab, cardContainer);
-            var capturedGame = game; // capture for closure
+            var capturedGame = game;
 
             card.Setup(
                 game.title,
