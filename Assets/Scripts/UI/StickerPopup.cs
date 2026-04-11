@@ -59,7 +59,7 @@ public static class StickerPopup
         var profile = ProfileManager.ActiveProfile;
         if (profile != null) balloonColor = profile.AvatarColor;
 
-        // ── Root overlay (blocks ALL touches) ──
+        // ── Root overlay ──
         var rootGO = new GameObject("StickerPopup");
         rootGO.transform.SetParent(canvas.transform, false);
         rootGO.transform.SetAsLastSibling();
@@ -67,15 +67,17 @@ public static class StickerPopup
         rootRT.anchorMin = Vector2.zero; rootRT.anchorMax = Vector2.one;
         rootRT.offsetMin = Vector2.zero; rootRT.offsetMax = Vector2.zero;
 
-        // Dim background — blocks touches on everything behind
+        // Dim background — blocks background touches AND is visual dimming
+        // Balloon is a LATER sibling so it renders on top and gets raycast priority
         var dimGO = new GameObject("Dim");
         dimGO.transform.SetParent(rootGO.transform, false);
+        dimGO.transform.SetAsFirstSibling(); // FIRST child = behind everything
         var dimRT = dimGO.AddComponent<RectTransform>();
         dimRT.anchorMin = Vector2.zero; dimRT.anchorMax = Vector2.one;
         dimRT.offsetMin = Vector2.zero; dimRT.offsetMax = Vector2.zero;
         var dimImg = dimGO.AddComponent<Image>();
         dimImg.color = new Color(0, 0, 0, 0);
-        dimImg.raycastTarget = true; // blocks ALL touches behind
+        dimImg.raycastTarget = true; // catch and consume background taps
 
         // ── Balloon container ──
         var balloonContainer = new GameObject("BalloonContainer");
@@ -86,8 +88,9 @@ public static class StickerPopup
         balloonContainerRT.sizeDelta = new Vector2(320, 420);
 
         var canvasRT = canvas.GetComponent<RectTransform>();
-        float canvasH = canvasRT != null ? canvasRT.rect.height : 1080f;
-        balloonContainerRT.anchoredPosition = new Vector2(0, -canvasH * 0.7f);
+        float canvasH = canvasRT != null && canvasRT.rect.height > 0 ? canvasRT.rect.height : 1080f;
+        float startY = -(canvasH / 2f + 250f); // below bottom edge of screen
+        balloonContainerRT.anchoredPosition = new Vector2(0, startY);
 
         // ── String ──
         var stringGO = new GameObject("String");
@@ -174,7 +177,7 @@ public static class StickerPopup
             float p = Mathf.Clamp01(t / 0.8f);
             float ease = 1f - Mathf.Pow(1f - p, 3f);
             balloonContainerRT.anchoredPosition = Vector2.Lerp(startPos, endPos, ease);
-            dimImg.color = new Color(0, 0, 0, p * 0.45f);
+            dimImg.color = new Color(0, 0, 0, p * 0.6f);
             yield return null;
         }
         if (rootGO == null) { _isShowing = false; yield break; }
@@ -249,7 +252,7 @@ public static class StickerPopup
             t += Time.deltaTime;
             float p = Mathf.Clamp01(t / 0.4f);
             stickerMaskGO.transform.localScale = Vector3.one * (1f - p * p);
-            dimImg.color = new Color(0, 0, 0, 0.45f * (1f - p));
+            dimImg.color = new Color(0, 0, 0, 0.6f * (1f - p));
             yield return null;
         }
 
