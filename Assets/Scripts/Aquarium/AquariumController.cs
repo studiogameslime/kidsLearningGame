@@ -884,14 +884,66 @@ public class AquariumController : MonoBehaviour
         string stickerId = StickerCatalog.PickRandomSticker("ocean_", jp.collectedStickerIds);
         if (stickerId != null)
         {
-            // Add immediately — balloon popup is visual celebration only
             jp.collectedStickerIds.Add(stickerId);
             ProfileManager.Instance.Save();
             FirebaseAnalyticsManager.LogStickerCollected(stickerId, "aquarium");
             Debug.Log($"[Sticker] Awarded {stickerId} from aquarium");
-            StickerPopup.OnStickerCollected = null;
-            StartCoroutine(StickerPopup.Show(stickerId));
+            // No balloon popup in aquarium — just a quick visual hint
+            StartCoroutine(ShowStickerHint(stickerId));
         }
+    }
+
+    /// <summary>Quick non-blocking sticker hint — small icon pops at top and fades.</summary>
+    private IEnumerator ShowStickerHint(string stickerId)
+    {
+        Sprite sprite = StickerSpriteBank.GetSprite(stickerId);
+        if (sprite == null) yield break;
+
+        var go = new GameObject("StickerHint");
+        go.transform.SetParent(gameplayArea, false);
+        go.transform.SetAsLastSibling();
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 1f);
+        rt.anchorMax = new Vector2(0.5f, 1f);
+        rt.pivot = new Vector2(0.5f, 1f);
+        rt.anchoredPosition = new Vector2(0, -10);
+        rt.sizeDelta = new Vector2(100, 100);
+        rt.localScale = Vector3.zero;
+
+        var img = go.AddComponent<Image>();
+        img.sprite = sprite;
+        img.preserveAspect = true;
+        img.raycastTarget = false;
+
+        SoundLibrary.PlayStickerCollected();
+
+        // Pop in
+        float t = 0f;
+        while (t < 0.3f)
+        {
+            t += Time.deltaTime;
+            float p = Mathf.Clamp01(t / 0.3f);
+            float s = 1f + 0.3f * Mathf.Sin(p * Mathf.PI);
+            rt.localScale = Vector3.one * (p * s);
+            yield return null;
+        }
+        rt.localScale = Vector3.one;
+
+        // Hold
+        yield return new WaitForSeconds(1.0f);
+
+        // Fade out + shrink
+        t = 0f;
+        while (t < 0.4f)
+        {
+            t += Time.deltaTime;
+            float p = Mathf.Clamp01(t / 0.4f);
+            rt.localScale = Vector3.one * (1f - p);
+            img.color = new Color(1, 1, 1, 1f - p);
+            yield return null;
+        }
+
+        Destroy(go);
     }
 
     // ── Progress Bar ──
