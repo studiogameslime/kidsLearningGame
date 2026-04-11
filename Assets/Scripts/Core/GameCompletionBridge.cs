@@ -183,8 +183,8 @@ public class GameCompletionBridge : MonoBehaviour
     }
 
     /// <summary>
-    /// Pick a sticker but do NOT add to collection yet.
-    /// The sticker is added only when the balloon is popped (via OnStickerCollected callback).
+    /// Pick and immediately lock a sticker into the collection.
+    /// The balloon popup is visual-only — the sticker is safe even if user doesn't pop.
     /// </summary>
     private void TryPickSticker(string gameId, JourneyProgress jp)
     {
@@ -200,34 +200,17 @@ public class GameCompletionBridge : MonoBehaviour
             string stickerId = StickerCatalog.PickRandomSticker(prefix, jp.collectedStickerIds);
             if (stickerId != null)
             {
-                // DON'T add to collection — deferred until balloon pop
+                jp.collectedStickerIds.Add(stickerId);
                 LastAwardedStickerId = stickerId;
                 jp.roundsUntilNextSticker = Random.Range(3, 6);
-                Debug.Log($"[Sticker] Picked {stickerId} from game {gameId} (pending balloon pop)");
+                FirebaseAnalyticsManager.LogStickerCollected(stickerId, $"game_{gameId}");
+                Debug.Log($"[Sticker] Awarded {stickerId} from game {gameId}");
             }
             else
             {
                 jp.roundsUntilNextSticker = 1;
             }
         }
-    }
-
-    /// <summary>
-    /// Called by BaseMiniGame when the balloon is popped. Actually adds the sticker to the collection.
-    /// </summary>
-    public static void CollectSticker(string stickerId)
-    {
-        var profile = ProfileManager.ActiveProfile;
-        if (profile == null || string.IsNullOrEmpty(stickerId)) return;
-        var jp = profile.journey;
-        if (jp.collectedStickerIds.Contains(stickerId)) return;
-
-        jp.collectedStickerIds.Add(stickerId);
-        ProfileManager.Instance.Save();
-
-        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "unknown";
-        FirebaseAnalyticsManager.LogStickerCollected(stickerId, $"game_{gameId}");
-        Debug.Log($"[Sticker] Collected {stickerId} (balloon popped)");
     }
 
     private void TryAwardAchievement(string gameId, JourneyProgress jp)
@@ -239,9 +222,11 @@ public class GameCompletionBridge : MonoBehaviour
         string achievementId = StickerCatalog.CheckAchievement(gameId, stat.timesPlayedInJourney, jp.collectedStickerIds);
         if (achievementId != null)
         {
-            // DON'T add to collection — deferred until balloon pop
+            // Add immediately to prevent data loss on crash
+            jp.collectedStickerIds.Add(achievementId);
             LastAwardedAchievementId = achievementId;
-            Debug.Log($"[Achievement] Picked {achievementId} (played {stat.timesPlayedInJourney}x, pending balloon pop)");
+            FirebaseAnalyticsManager.LogStickerCollected(achievementId, $"achievement_{gameId}");
+            Debug.Log($"[Achievement] Awarded {achievementId} (played {stat.timesPlayedInJourney}x)");
         }
     }
 

@@ -331,10 +331,9 @@ public abstract class BaseMiniGame : MonoBehaviour
 
             if (!string.IsNullOrEmpty(popupStickerId))
             {
-                // Wire callback — sticker is added to collection only when balloon is popped
-                StickerPopup.OnStickerCollected = (id) => GameCompletionBridge.CollectSticker(id);
-                yield return StartCoroutine(StickerPopup.Show(popupStickerId));
+                // Sticker already added to collection — balloon is visual celebration only
                 StickerPopup.OnStickerCollected = null;
+                yield return StartCoroutine(StickerPopup.Show(popupStickerId));
             }
 
             if (discoveryLoaded)

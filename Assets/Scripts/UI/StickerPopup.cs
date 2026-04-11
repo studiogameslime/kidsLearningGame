@@ -13,7 +13,7 @@ public static class StickerPopup
     private static bool _isShowing;
 
     /// <summary>
-    /// Callback invoked when the balloon is popped. The caller should add the sticker to the collection here.
+    /// Optional callback invoked when the balloon is popped. Visual only — sticker already collected.
     /// </summary>
     public static System.Action<string> OnStickerCollected;
 
@@ -174,12 +174,17 @@ public static class StickerPopup
         if (rootGO == null) { _isShowing = false; yield break; }
         balloonContainerRT.anchoredPosition = endPos;
 
-        // ── Phase 2: Gentle float + wait for tap ──
+        // Disable tap during rise
+        btn.interactable = true;
+
+        // ── Phase 2: Gentle float + wait for tap (15s timeout) ──
         float floatTime = 0f;
+        const float tapTimeout = 15f;
         while (!popped)
         {
             if (rootGO == null) { _isShowing = false; yield break; }
             floatTime += Time.deltaTime;
+            if (floatTime > tapTimeout) { popped = true; break; } // auto-pop after timeout
             // Gentle bob
             float bobY = Mathf.Sin(floatTime * 1.5f) * 8f;
             float bobX = Mathf.Sin(floatTime * 0.7f) * 4f;
