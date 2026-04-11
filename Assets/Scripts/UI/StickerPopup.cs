@@ -116,7 +116,7 @@ public static class StickerPopup
         var balloonImg = balloonGO.AddComponent<Image>();
         balloonImg.sprite = circleSprite;
         balloonImg.color = new Color(balloonColor.r, balloonColor.g, balloonColor.b, 0.35f);
-        balloonImg.raycastTarget = true;
+        balloonImg.raycastTarget = false; // tap handled by separate TapArea overlay
 
         // Shine
         var shineGO = new GameObject("Shine");
@@ -154,11 +154,23 @@ public static class StickerPopup
         stickerImg.preserveAspect = true;
         stickerImg.raycastTarget = false;
 
-        // ── Tap handler ──
+        // ── Tap handler — separate invisible overlay on top of balloon ──
+        // (Mask component on children blocks raycasts, so button must be a separate GO)
         bool popped = false;
-        var btn = balloonGO.AddComponent<Button>();
-        btn.transition = Selectable.Transition.None; // no visual change on press
-        btn.targetGraphic = balloonImg;
+        var tapGO = new GameObject("TapArea");
+        tapGO.transform.SetParent(balloonContainer.transform, false);
+        tapGO.transform.SetAsLastSibling(); // on top of everything
+        var tapRT = tapGO.AddComponent<RectTransform>();
+        tapRT.anchorMin = new Vector2(0.5f, 0.5f);
+        tapRT.anchorMax = new Vector2(0.5f, 0.5f);
+        tapRT.anchoredPosition = new Vector2(0, 30); // same as balloon
+        tapRT.sizeDelta = new Vector2(300, 300); // slightly larger hit area
+        var tapImg = tapGO.AddComponent<Image>();
+        tapImg.color = new Color(0, 0, 0, 0); // fully transparent
+        tapImg.raycastTarget = true;
+        var btn = tapGO.AddComponent<Button>();
+        btn.transition = Selectable.Transition.None;
+        btn.targetGraphic = tapImg;
         btn.interactable = false; // disabled until rise completes
         btn.onClick.AddListener(() => popped = true);
 
