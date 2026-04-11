@@ -324,15 +324,18 @@ public abstract class BaseMiniGame : MonoBehaviour
             if (!shouldPlayConfetti)
                 GameCompletionBridge.Instance.AwardStickerOnly();
 
-            // Show sticker popup if one was awarded this round
-            string awardedSticker = GameCompletionBridge.Instance.LastAwardedStickerId;
-            if (!string.IsNullOrEmpty(awardedSticker))
-                yield return StartCoroutine(StickerPopup.Show(awardedSticker));
-
-            // Show achievement popup if a milestone was reached
+            // Show balloon popup — sticker or achievement (not both, achievement takes priority)
             string awardedAchievement = GameCompletionBridge.Instance.LastAwardedAchievementId;
-            if (!string.IsNullOrEmpty(awardedAchievement))
-                yield return StartCoroutine(StickerPopup.ShowAchievement(awardedAchievement));
+            string awardedSticker = GameCompletionBridge.Instance.LastAwardedStickerId;
+            string popupStickerId = awardedAchievement ?? awardedSticker;
+
+            if (!string.IsNullOrEmpty(popupStickerId))
+            {
+                // Wire callback — sticker is added to collection only when balloon is popped
+                StickerPopup.OnStickerCollected = (id) => GameCompletionBridge.CollectSticker(id);
+                yield return StartCoroutine(StickerPopup.Show(popupStickerId));
+                StickerPopup.OnStickerCollected = null;
+            }
 
             if (discoveryLoaded)
                 yield break; // DiscoveryReveal scene is loading — do NOT start a new round

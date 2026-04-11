@@ -4,35 +4,54 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// Shows a polished "new sticker!" popup when a sticker is awarded.
-/// Design: dim background → circular glow → sticker bounces in → "מדבקה חדשה!" label → fade out.
-/// Auto-timeout at 4 seconds to prevent stuck state.
+/// Sticker award popup — a colored balloon rises from the bottom with the sticker inside.
+/// The child taps the balloon to pop it → sticker pulse → shrink away.
+/// The sticker is ONLY added to the collection when the balloon is popped.
 /// </summary>
 public static class StickerPopup
 {
     private static bool _isShowing;
-    private static float _showStartTime;
-    private const float MaxDuration = 4f;
+
+    /// <summary>
+    /// Callback invoked when the balloon is popped. The caller should add the sticker to the collection here.
+    /// </summary>
+    public static System.Action<string> OnStickerCollected;
 
     public static IEnumerator Show(string stickerId)
     {
-        if (_isShowing)
-        {
-            // Safety: if stuck for too long, force reset
-            if (Time.realtimeSinceStartup - _showStartTime > MaxDuration)
-                _isShowing = false;
-            else
-                yield break;
-        }
+        if (_isShowing) yield break;
 
         Sprite sprite = StickerSpriteBank.GetSprite(stickerId);
+
+        // Achievement stickers use game thumbnail instead of sprite bank
+        if (sprite == null && stickerId.StartsWith("achievement_"))
+        {
+            var db = Resources.Load<GameDatabase>("GameDatabase");
+            if (db != null)
+            {
+                string withoutPrefix = stickerId.Substring("achievement_".Length);
+                int lastUnderscore = withoutPrefix.LastIndexOf('_');
+                if (lastUnderscore > 0)
+                {
+                    string gameId = withoutPrefix.Substring(0, lastUnderscore);
+                    foreach (var game in db.games)
+                        if (game != null && game.id == gameId && game.thumbnail != null)
+                        { sprite = game.thumbnail; break; }
+                }
+            }
+        }
+
         if (sprite == null) yield break;
 
         var canvas = Object.FindObjectOfType<Canvas>();
         if (canvas == null) yield break;
 
         _isShowing = true;
-        _showStartTime = Time.realtimeSinceStartup;
+
+        // Profile color for balloon
+        Color balloonColor = new Color(0.56f, 0.79f, 0.98f); // default blue
+        var profile = ProfileManager.ActiveProfile;
+        if (profile != null) balloonColor = profile.AvatarColor;
 
         // ── Root overlay ──
         var rootGO = new GameObject("StickerPopup");
@@ -42,120 +61,173 @@ public static class StickerPopup
         rootRT.anchorMin = Vector2.zero; rootRT.anchorMax = Vector2.one;
         rootRT.offsetMin = Vector2.zero; rootRT.offsetMax = Vector2.zero;
 
-        // Dim background (semi-transparent, makes popup pop out)
+        // Dim background
         var dimImg = rootGO.AddComponent<Image>();
         dimImg.color = new Color(0, 0, 0, 0);
-        dimImg.raycastTarget = true; // block touches during popup
+        dimImg.raycastTarget = false; // only balloon is tappable
 
-        // ── Center container ──
-        var containerGO = new GameObject("Container");
-        containerGO.transform.SetParent(rootGO.transform, false);
-        var containerRT = containerGO.AddComponent<RectTransform>();
-        containerRT.anchorMin = new Vector2(0.5f, 0.5f);
-        containerRT.anchorMax = new Vector2(0.5f, 0.5f);
-        containerRT.sizeDelta = new Vector2(280, 340);
-        containerRT.localScale = Vector3.zero;
+        // ── Balloon container (moves up) ──
+        var balloonContainer = new GameObject("BalloonContainer");
+        balloonContainer.transform.SetParent(rootGO.transform, false);
+        var balloonContainerRT = balloonContainer.AddComponent<RectTransform>();
+        balloonContainerRT.anchorMin = new Vector2(0.5f, 0.5f);
+        balloonContainerRT.anchorMax = new Vector2(0.5f, 0.5f);
+        balloonContainerRT.sizeDelta = new Vector2(320, 420);
 
-        // Card background (rounded, soft white)
-        var cardBg = containerGO.AddComponent<Image>();
-        var roundedRect = Resources.Load<Sprite>("UI/RoundedRect");
-        if (roundedRect == null)
-        {
-            // Fallback: try other paths
-            var all = Resources.LoadAll<Sprite>("");
-            foreach (var s in all)
-                if (s.name == "RoundedRect") { roundedRect = s; break; }
-        }
-        if (roundedRect != null) { cardBg.sprite = roundedRect; cardBg.type = Image.Type.Sliced; }
-        cardBg.color = new Color(1f, 1f, 1f, 0.95f);
-        cardBg.raycastTarget = false;
+        // Start below screen
+        var canvasRT = canvas.GetComponent<RectTransform>();
+        float canvasH = canvasRT != null ? canvasRT.rect.height : 1080f;
+        balloonContainerRT.anchoredPosition = new Vector2(0, -canvasH * 0.7f);
 
-        // Card shadow
-        var cardShadow = containerGO.AddComponent<Shadow>();
-        cardShadow.effectColor = new Color(0, 0, 0, 0.25f);
-        cardShadow.effectDistance = new Vector2(0, -4);
+        // ── Balloon string (thin line below balloon) ──
+        var stringGO = new GameObject("String");
+        stringGO.transform.SetParent(balloonContainer.transform, false);
+        var stringRT = stringGO.AddComponent<RectTransform>();
+        stringRT.anchorMin = new Vector2(0.5f, 0);
+        stringRT.anchorMax = new Vector2(0.5f, 0);
+        stringRT.pivot = new Vector2(0.5f, 1);
+        stringRT.anchoredPosition = new Vector2(0, 20);
+        stringRT.sizeDelta = new Vector2(3, 80);
+        var stringImg = stringGO.AddComponent<Image>();
+        stringImg.color = new Color(balloonColor.r * 0.7f, balloonColor.g * 0.7f, balloonColor.b * 0.7f);
+        stringImg.raycastTarget = false;
 
-        // ── Circular glow behind sticker ──
-        var glowGO = new GameObject("Glow");
-        glowGO.transform.SetParent(containerGO.transform, false);
-        var glowRT = glowGO.AddComponent<RectTransform>();
-        glowRT.anchorMin = new Vector2(0.5f, 0.55f);
-        glowRT.anchorMax = new Vector2(0.5f, 0.55f);
-        glowRT.sizeDelta = new Vector2(220, 220);
-        var glowImg = glowGO.AddComponent<Image>();
+        // ── Balloon body (circle sprite, semi-transparent) ──
         var circleSprite = Resources.Load<Sprite>("Circle");
-        if (circleSprite != null) glowImg.sprite = circleSprite;
-        glowImg.color = new Color(1f, 0.95f, 0.5f, 0.25f);
-        glowImg.raycastTarget = false;
 
-        // ── Sticker image ──
+        var balloonGO = new GameObject("Balloon");
+        balloonGO.transform.SetParent(balloonContainer.transform, false);
+        var balloonRT = balloonGO.AddComponent<RectTransform>();
+        balloonRT.anchorMin = new Vector2(0.5f, 0.5f);
+        balloonRT.anchorMax = new Vector2(0.5f, 0.5f);
+        balloonRT.anchoredPosition = new Vector2(0, 30);
+        balloonRT.sizeDelta = new Vector2(280, 280);
+        var balloonImg = balloonGO.AddComponent<Image>();
+        if (circleSprite != null) balloonImg.sprite = circleSprite;
+        balloonImg.color = new Color(balloonColor.r, balloonColor.g, balloonColor.b, 0.3f);
+        balloonImg.raycastTarget = true; // TAPPABLE
+
+        // Balloon highlight (shine effect — small white circle at top-left)
+        var shineGO = new GameObject("Shine");
+        shineGO.transform.SetParent(balloonGO.transform, false);
+        var shineRT = shineGO.AddComponent<RectTransform>();
+        shineRT.anchorMin = new Vector2(0.15f, 0.55f);
+        shineRT.anchorMax = new Vector2(0.4f, 0.8f);
+        shineRT.offsetMin = Vector2.zero;
+        shineRT.offsetMax = Vector2.zero;
+        var shineImg = shineGO.AddComponent<Image>();
+        if (circleSprite != null) shineImg.sprite = circleSprite;
+        shineImg.color = new Color(1f, 1f, 1f, 0.25f);
+        shineImg.raycastTarget = false;
+
+        // ── Sticker inside balloon (clipped to circle) ──
+        var stickerMaskGO = new GameObject("StickerMask");
+        stickerMaskGO.transform.SetParent(balloonGO.transform, false);
+        var stickerMaskRT = stickerMaskGO.AddComponent<RectTransform>();
+        stickerMaskRT.anchorMin = new Vector2(0.1f, 0.1f);
+        stickerMaskRT.anchorMax = new Vector2(0.9f, 0.9f);
+        stickerMaskRT.offsetMin = Vector2.zero;
+        stickerMaskRT.offsetMax = Vector2.zero;
+        var maskImg = stickerMaskGO.AddComponent<Image>();
+        if (circleSprite != null) maskImg.sprite = circleSprite;
+        maskImg.color = new Color(1, 1, 1, 0); // invisible mask shape
+        maskImg.raycastTarget = false;
+        stickerMaskGO.AddComponent<Mask>().showMaskGraphic = false;
+
         var stickerGO = new GameObject("Sticker");
-        stickerGO.transform.SetParent(containerGO.transform, false);
+        stickerGO.transform.SetParent(stickerMaskGO.transform, false);
         var stickerRT = stickerGO.AddComponent<RectTransform>();
-        stickerRT.anchorMin = new Vector2(0.5f, 0.55f);
-        stickerRT.anchorMax = new Vector2(0.5f, 0.55f);
-        stickerRT.sizeDelta = new Vector2(180, 180);
+        stickerRT.anchorMin = new Vector2(0.05f, 0.05f);
+        stickerRT.anchorMax = new Vector2(0.95f, 0.95f);
+        stickerRT.offsetMin = Vector2.zero;
+        stickerRT.offsetMax = Vector2.zero;
         var stickerImg = stickerGO.AddComponent<Image>();
         stickerImg.sprite = sprite;
         stickerImg.preserveAspect = true;
         stickerImg.raycastTarget = false;
 
-        // ── "מדבקה חדשה!" label at bottom of card ──
-        var labelGO = new GameObject("Label");
-        labelGO.transform.SetParent(containerGO.transform, false);
-        var labelRT = labelGO.AddComponent<RectTransform>();
-        labelRT.anchorMin = new Vector2(0, 0);
-        labelRT.anchorMax = new Vector2(1, 0);
-        labelRT.pivot = new Vector2(0.5f, 0);
-        labelRT.anchoredPosition = new Vector2(0, 16);
-        labelRT.sizeDelta = new Vector2(0, 50);
-        var labelTMP = labelGO.AddComponent<TextMeshProUGUI>();
-        HebrewText.SetText(labelTMP, "\u05DE\u05D3\u05D1\u05E7\u05D4 \u05D7\u05D3\u05E9\u05D4!"); // מדבקה חדשה!
-        labelTMP.fontSize = 32;
-        labelTMP.fontStyle = FontStyles.Bold;
-        labelTMP.color = new Color(0.3f, 0.3f, 0.35f);
-        labelTMP.alignment = TextAlignmentOptions.Center;
-        labelTMP.raycastTarget = false;
+        // ── Tap handler ──
+        bool popped = false;
+        var btn = balloonGO.AddComponent<Button>();
+        btn.targetGraphic = balloonImg;
+        btn.onClick.AddListener(() => popped = true);
 
         // ═══════════════════════════════
         //  ANIMATION
         // ═══════════════════════════════
 
-        // ── Phase 1: Dim in + card pop (0.4s) ──
+        // ── Phase 1: Dim in + balloon rises from bottom (0.8s) ──
+        Vector2 startPos = balloonContainerRT.anchoredPosition;
+        Vector2 endPos = new Vector2(0, 20); // slightly above center
         float t = 0f;
-        while (t < 0.4f)
+        float riseDur = 0.8f;
+        while (t < riseDur)
         {
             if (rootGO == null) { _isShowing = false; yield break; }
             t += Time.deltaTime;
-            float p = Mathf.Clamp01(t / 0.4f);
+            float p = Mathf.Clamp01(t / riseDur);
+            float ease = 1f - Mathf.Pow(1f - p, 3f); // ease out cubic
+            balloonContainerRT.anchoredPosition = Vector2.Lerp(startPos, endPos, ease);
             dimImg.color = new Color(0, 0, 0, p * 0.35f);
-            containerRT.localScale = Vector3.one * EaseOutBack(p);
             yield return null;
         }
         if (rootGO == null) { _isShowing = false; yield break; }
-        containerRT.localScale = Vector3.one;
+        balloonContainerRT.anchoredPosition = endPos;
 
-        SoundLibrary.PlayStickerCollected();
-
-        // Sparkles burst
-        SpawnSparkles(containerGO.transform, stickerRT);
-
-        // ── Phase 2: Hold with gentle pulse (1.0s) ──
-        t = 0f;
-        while (t < 1.0f)
+        // ── Phase 2: Gentle float + wait for tap ──
+        float floatTime = 0f;
+        while (!popped)
         {
             if (rootGO == null) { _isShowing = false; yield break; }
-            t += Time.deltaTime;
-            float p = t / 1.0f;
-            float pulse = 1f + Mathf.Sin(p * Mathf.PI * 2f) * 0.03f;
-            containerRT.localScale = Vector3.one * pulse;
-            // Glow breathe
-            float ga = 0.25f + Mathf.Sin(p * Mathf.PI * 3f) * 0.1f;
-            glowImg.color = new Color(1f, 0.95f, 0.5f, ga);
+            floatTime += Time.deltaTime;
+            // Gentle bob
+            float bobY = Mathf.Sin(floatTime * 1.5f) * 8f;
+            float bobX = Mathf.Sin(floatTime * 0.7f) * 4f;
+            balloonContainerRT.anchoredPosition = endPos + new Vector2(bobX, bobY);
+            // Subtle scale breathe
+            float breathe = 1f + Mathf.Sin(floatTime * 2f) * 0.015f;
+            balloonRT.localScale = Vector3.one * breathe;
             yield return null;
         }
 
-        // ── Phase 3: Shrink + fade out (0.4s) ──
+        // ── Phase 3: Pop! ──
+        if (rootGO == null) { _isShowing = false; yield break; }
+
+        SoundLibrary.PlayBubblePop();
+
+        // Collect the sticker NOW
+        OnStickerCollected?.Invoke(stickerId);
+
+        // Hide balloon, show sticker free
+        balloonImg.enabled = false;
+        shineGO.SetActive(false);
+        stringGO.SetActive(false);
+        stickerMaskGO.transform.SetParent(balloonContainer.transform, true); // unparent from balloon
+
+        // Remove mask so sticker shows fully
+        if (stickerMaskGO.GetComponent<Mask>() != null)
+            Object.Destroy(stickerMaskGO.GetComponent<Mask>());
+        if (maskImg != null) maskImg.enabled = false;
+
+        // Spawn pop particles
+        SpawnPopParticles(rootGO.transform, balloonContainerRT.anchoredPosition, balloonColor, circleSprite);
+
+        // ── Phase 4: Sticker pulse (0.3s) ──
+        t = 0f;
+        while (t < 0.3f)
+        {
+            if (rootGO == null) { _isShowing = false; yield break; }
+            t += Time.deltaTime;
+            float p = Mathf.Clamp01(t / 0.3f);
+            float scale = 1f + Mathf.Sin(p * Mathf.PI) * 0.25f;
+            stickerMaskGO.transform.localScale = Vector3.one * scale;
+            yield return null;
+        }
+
+        // ── Phase 5: Hold (1.0s) ──
+        yield return new WaitForSeconds(1.0f);
+
+        // ── Phase 6: Shrink + fade (0.4s) ──
         if (rootGO == null) { _isShowing = false; yield break; }
         t = 0f;
         while (t < 0.4f)
@@ -164,7 +236,7 @@ public static class StickerPopup
             t += Time.deltaTime;
             float p = Mathf.Clamp01(t / 0.4f);
             float ease = p * p;
-            containerRT.localScale = Vector3.one * Mathf.Lerp(1f, 0f, ease);
+            stickerMaskGO.transform.localScale = Vector3.one * (1f - ease);
             dimImg.color = new Color(0, 0, 0, 0.35f * (1f - ease));
             yield return null;
         }
@@ -173,197 +245,40 @@ public static class StickerPopup
         _isShowing = false;
     }
 
-    // ── Achievement variant ──
+    // ── Pop particles ──
 
-    private static readonly Color BronzeColor = new Color(0.8f, 0.5f, 0.2f);
-    private static readonly Color SilverColor = new Color(0.75f, 0.75f, 0.78f);
-    private static readonly Color GoldColor   = new Color(1f, 0.84f, 0f);
-
-    public static IEnumerator ShowAchievement(string achievementId)
+    private static void SpawnPopParticles(Transform parent, Vector2 center, Color balloonColor, Sprite circleSprite)
     {
-        if (_isShowing) yield break;
-        if (string.IsNullOrEmpty(achievementId)) yield break;
+        Color lighter = Color.Lerp(balloonColor, Color.white, 0.4f);
+        Color darker = Color.Lerp(balloonColor, Color.black, 0.15f);
 
-        string tier = "bronze";
-        if (achievementId.EndsWith("_gold")) tier = "gold";
-        else if (achievementId.EndsWith("_silver")) tier = "silver";
-
-        string withoutPrefix = achievementId.Substring("achievement_".Length);
-        string gameId = withoutPrefix.Substring(0, withoutPrefix.LastIndexOf('_'));
-
-        Sprite thumbnail = null;
-        var db = Resources.Load<GameDatabase>("GameDatabase");
-        if (db != null)
+        for (int i = 0; i < 14; i++)
         {
-            foreach (var game in db.games)
-                if (game != null && game.id == gameId && game.thumbnail != null)
-                { thumbnail = game.thumbnail; break; }
-        }
-        if (thumbnail == null) yield break;
-
-        var canvas = Object.FindObjectOfType<Canvas>();
-        if (canvas == null) yield break;
-
-        _isShowing = true;
-        _showStartTime = Time.realtimeSinceStartup;
-
-        Color frameColor = tier == "gold" ? GoldColor : tier == "silver" ? SilverColor : BronzeColor;
-        string tierName = tier == "gold" ? "\u05D6\u05D4\u05D1" : tier == "silver" ? "\u05DB\u05E1\u05E3" : "\u05D0\u05E8\u05D3"; // זהב/כסף/ארד
-
-        // Root
-        var rootGO = new GameObject("AchievementPopup");
-        rootGO.transform.SetParent(canvas.transform, false);
-        rootGO.transform.SetAsLastSibling();
-        var rootRT = rootGO.AddComponent<RectTransform>();
-        rootRT.anchorMin = Vector2.zero; rootRT.anchorMax = Vector2.one;
-        rootRT.offsetMin = Vector2.zero; rootRT.offsetMax = Vector2.zero;
-
-        var dimImg = rootGO.AddComponent<Image>();
-        dimImg.color = new Color(0, 0, 0, 0);
-        dimImg.raycastTarget = true;
-
-        // Card
-        var containerGO = new GameObject("Container");
-        containerGO.transform.SetParent(rootGO.transform, false);
-        var containerRT = containerGO.AddComponent<RectTransform>();
-        containerRT.anchorMin = new Vector2(0.5f, 0.5f);
-        containerRT.anchorMax = new Vector2(0.5f, 0.5f);
-        containerRT.sizeDelta = new Vector2(300, 360);
-        containerRT.localScale = Vector3.zero;
-
-        var cardBg = containerGO.AddComponent<Image>();
-        cardBg.color = new Color(frameColor.r, frameColor.g, frameColor.b, 0.15f);
-        cardBg.raycastTarget = false;
-        containerGO.AddComponent<Shadow>().effectColor = new Color(0, 0, 0, 0.3f);
-
-        // Frame border
-        var frameGO = new GameObject("Frame");
-        frameGO.transform.SetParent(containerGO.transform, false);
-        var frameRT = frameGO.AddComponent<RectTransform>();
-        frameRT.anchorMin = Vector2.zero; frameRT.anchorMax = Vector2.one;
-        frameRT.offsetMin = new Vector2(4, 4); frameRT.offsetMax = new Vector2(-4, -4);
-        var frameImg = frameGO.AddComponent<Image>();
-        frameImg.color = Color.white;
-        frameImg.raycastTarget = false;
-
-        // Thumbnail
-        var imgGO = new GameObject("Thumbnail");
-        imgGO.transform.SetParent(frameGO.transform, false);
-        var imgRT = imgGO.AddComponent<RectTransform>();
-        imgRT.anchorMin = new Vector2(0.05f, 0.22f); imgRT.anchorMax = new Vector2(0.95f, 0.95f);
-        imgRT.offsetMin = Vector2.zero; imgRT.offsetMax = Vector2.zero;
-        var img = imgGO.AddComponent<Image>();
-        img.sprite = thumbnail;
-        img.preserveAspect = true;
-        img.raycastTarget = false;
-
-        // Label
-        var labelGO = new GameObject("Label");
-        labelGO.transform.SetParent(frameGO.transform, false);
-        var labelRT = labelGO.AddComponent<RectTransform>();
-        labelRT.anchorMin = new Vector2(0, 0); labelRT.anchorMax = new Vector2(1, 0.22f);
-        labelRT.offsetMin = Vector2.zero; labelRT.offsetMax = Vector2.zero;
-        var labelTMP = labelGO.AddComponent<TextMeshProUGUI>();
-        string gameName = ParentDashboardViewModel.GetGameName(gameId);
-        HebrewText.SetText(labelTMP, $"\u05DE\u05D3\u05DC\u05D9\u05D9\u05EA {tierName}!"); // מדליית זהב/כסף/ארד!
-        labelTMP.fontSize = 28;
-        labelTMP.fontStyle = FontStyles.Bold;
-        labelTMP.color = frameColor;
-        labelTMP.alignment = TextAlignmentOptions.Center;
-        labelTMP.raycastTarget = false;
-
-        // Top color bar
-        var barGO = new GameObject("Bar");
-        barGO.transform.SetParent(containerGO.transform, false);
-        var barRT = barGO.AddComponent<RectTransform>();
-        barRT.anchorMin = new Vector2(0, 1); barRT.anchorMax = new Vector2(1, 1);
-        barRT.pivot = new Vector2(0.5f, 1); barRT.sizeDelta = new Vector2(0, 6);
-        barGO.AddComponent<Image>().color = frameColor;
-
-        // Animation
-        float t = 0f;
-        while (t < 0.4f)
-        {
-            if (rootGO == null) { _isShowing = false; yield break; }
-            t += Time.deltaTime;
-            float p = Mathf.Clamp01(t / 0.4f);
-            dimImg.color = new Color(0, 0, 0, p * 0.35f);
-            containerRT.localScale = Vector3.one * EaseOutBack(p);
-            yield return null;
-        }
-        if (rootGO == null) { _isShowing = false; yield break; }
-        containerRT.localScale = Vector3.one;
-
-        SoundLibrary.PlayStickerCollected();
-        SpawnSparkles(containerGO.transform, containerRT);
-
-        t = 0f;
-        while (t < 1.2f)
-        {
-            if (rootGO == null) { _isShowing = false; yield break; }
-            t += Time.deltaTime;
-            float p = t / 1.2f;
-            float shimmer = 0.9f + Mathf.Sin(p * Mathf.PI * 4f) * 0.1f;
-            frameImg.color = new Color(shimmer, shimmer, shimmer);
-            yield return null;
-        }
-
-        if (rootGO == null) { _isShowing = false; yield break; }
-        t = 0f;
-        while (t < 0.4f)
-        {
-            if (rootGO == null) { _isShowing = false; yield break; }
-            t += Time.deltaTime;
-            float p = Mathf.Clamp01(t / 0.4f);
-            containerRT.localScale = Vector3.one * (1f - p * p);
-            dimImg.color = new Color(0, 0, 0, 0.35f * (1f - p));
-            yield return null;
-        }
-
-        if (rootGO != null) Object.Destroy(rootGO);
-        _isShowing = false;
-    }
-
-    // ── Helpers ──
-
-    private static void SpawnSparkles(Transform parent, RectTransform center)
-    {
-        for (int i = 0; i < 10; i++)
-        {
-            var go = new GameObject("Sparkle");
+            var go = new GameObject("PopParticle");
             go.transform.SetParent(parent, false);
             var rt = go.AddComponent<RectTransform>();
             rt.anchorMin = new Vector2(0.5f, 0.5f);
             rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(10, 10);
-            rt.anchoredPosition = center.anchoredPosition;
+            float size = Random.Range(8f, 22f);
+            rt.sizeDelta = new Vector2(size, size);
+            rt.anchoredPosition = center + Random.insideUnitCircle * 30f;
 
             var img = go.AddComponent<Image>();
-            var circle = Resources.Load<Sprite>("Circle");
-            if (circle != null) img.sprite = circle;
-            img.color = i % 3 == 0
-                ? new Color(1f, 0.85f, 0.2f, 0.9f)  // gold
-                : i % 3 == 1
-                    ? new Color(1f, 1f, 1f, 0.8f)    // white
-                    : new Color(0.9f, 0.5f, 1f, 0.7f); // purple
+            if (circleSprite != null) img.sprite = circleSprite;
+            // Mix of balloon color shards
+            img.color = i % 3 == 0 ? lighter : i % 3 == 1 ? balloonColor : darker;
             img.raycastTarget = false;
 
-            float angle = i * 36f * Mathf.Deg2Rad;
+            float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
             Vector2 dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
 
             var mono = go.AddComponent<SparkleParticle>();
-            mono.velocity = dir * Random.Range(250f, 450f);
+            mono.velocity = dir * Random.Range(300f, 600f);
             mono.lifetime = Random.Range(0.4f, 0.7f);
         }
     }
 
-    private static float EaseOutElastic(float t)
-    {
-        if (t <= 0f) return 0f;
-        if (t >= 1f) return 1f;
-        float p = 0.35f;
-        return Mathf.Pow(2f, -10f * t) * Mathf.Sin((t - p / 4f) * (2f * Mathf.PI) / p) + 1f;
-    }
+    // ── Helpers ──
 
     private static float EaseOutBack(float t)
     {
@@ -372,7 +287,7 @@ public static class StickerPopup
     }
 }
 
-/// <summary>Simple self-destroying sparkle particle.</summary>
+/// <summary>Simple self-destroying particle.</summary>
 public class SparkleParticle : MonoBehaviour
 {
     public Vector2 velocity;
@@ -395,7 +310,8 @@ public class SparkleParticle : MonoBehaviour
         float p = _elapsed / lifetime;
         _rt.anchoredPosition += velocity * Time.deltaTime;
         velocity *= 0.92f;
-        _rt.localScale = Vector3.one * (1f - p * 0.8f);
+        velocity.y -= 400f * Time.deltaTime; // gravity
+        _rt.localScale = Vector3.one * (1f - p * 0.7f);
         var c = _img.color;
         _img.color = new Color(c.r, c.g, c.b, c.a * (1f - p));
     }

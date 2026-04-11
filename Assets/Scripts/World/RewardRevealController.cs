@@ -358,6 +358,8 @@ public class RewardRevealController : MonoBehaviour
         // Show sticker popup
         if (!string.IsNullOrEmpty(_pendingPopupStickerId))
         {
+            // Discovery stickers are already collected — popup is just visual, no callback needed
+            StickerPopup.OnStickerCollected = null;
             yield return StartCoroutine(StickerPopup.Show(_pendingPopupStickerId));
             _pendingPopupStickerId = null;
         }
@@ -482,6 +484,7 @@ public class RewardRevealController : MonoBehaviour
         // Show sticker popup
         if (!string.IsNullOrEmpty(_pendingPopupStickerId))
         {
+            StickerPopup.OnStickerCollected = null;
             yield return StartCoroutine(StickerPopup.Show(_pendingPopupStickerId));
             _pendingPopupStickerId = null;
         }

@@ -98,11 +98,14 @@ public class GameCompletionBridge : MonoBehaviour
             stat.timesPlayedInJourney++;
         }
 
-        // ── Award sticker (every 3-5 rounds, from game's category) ──
-        TryAwardSticker(gameId, jp);
-
-        // ── Check achievement milestone (10/30/50 rounds) ──
+        // ── Check achievement milestone FIRST (10/30/50 rounds) ──
         TryAwardAchievement(gameId, jp);
+
+        // ── Award sticker — skip if achievement was awarded this round ──
+        if (LastAwardedAchievementId == null)
+            TryPickSticker(gameId, jp);
+        else
+            LastAwardedStickerId = null;
 
         // ── Check for discovery ──
         if (DiscoveryCatalog.HasMore(jp))
@@ -168,14 +171,22 @@ public class GameCompletionBridge : MonoBehaviour
             stat.timesPlayedInJourney++;
         }
 
-        TryAwardSticker(gameId, jp);
         TryAwardAchievement(gameId, jp);
 
-        if (LastAwardedStickerId != null || LastAwardedAchievementId != null)
-            ProfileManager.Instance.Save();
+        if (LastAwardedAchievementId == null)
+            TryPickSticker(gameId, jp);
+        else
+            LastAwardedStickerId = null;
+
+        // Save stats (sticker/achievement collection is deferred to balloon pop)
+        ProfileManager.Instance.Save();
     }
 
-    private void TryAwardSticker(string gameId, JourneyProgress jp)
+    /// <summary>
+    /// Pick a sticker but do NOT add to collection yet.
+    /// The sticker is added only when the balloon is popped (via OnStickerCollected callback).
+    /// </summary>
+    private void TryPickSticker(string gameId, JourneyProgress jp)
     {
         LastAwardedStickerId = null;
         if (string.IsNullOrEmpty(gameId)) return;
@@ -189,18 +200,34 @@ public class GameCompletionBridge : MonoBehaviour
             string stickerId = StickerCatalog.PickRandomSticker(prefix, jp.collectedStickerIds);
             if (stickerId != null)
             {
-                jp.collectedStickerIds.Add(stickerId);
+                // DON'T add to collection — deferred until balloon pop
                 LastAwardedStickerId = stickerId;
                 jp.roundsUntilNextSticker = Random.Range(3, 6);
-                FirebaseAnalyticsManager.LogStickerCollected(stickerId, $"game_{gameId}");
-                Debug.Log($"[Sticker] Awarded {stickerId} from game {gameId}");
+                Debug.Log($"[Sticker] Picked {stickerId} from game {gameId} (pending balloon pop)");
             }
             else
             {
-                // No stickers available (bank empty or all collected) — retry next round
                 jp.roundsUntilNextSticker = 1;
             }
         }
+    }
+
+    /// <summary>
+    /// Called by BaseMiniGame when the balloon is popped. Actually adds the sticker to the collection.
+    /// </summary>
+    public static void CollectSticker(string stickerId)
+    {
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null || string.IsNullOrEmpty(stickerId)) return;
+        var jp = profile.journey;
+        if (jp.collectedStickerIds.Contains(stickerId)) return;
+
+        jp.collectedStickerIds.Add(stickerId);
+        ProfileManager.Instance.Save();
+
+        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "unknown";
+        FirebaseAnalyticsManager.LogStickerCollected(stickerId, $"game_{gameId}");
+        Debug.Log($"[Sticker] Collected {stickerId} (balloon popped)");
     }
 
     private void TryAwardAchievement(string gameId, JourneyProgress jp)
@@ -212,10 +239,9 @@ public class GameCompletionBridge : MonoBehaviour
         string achievementId = StickerCatalog.CheckAchievement(gameId, stat.timesPlayedInJourney, jp.collectedStickerIds);
         if (achievementId != null)
         {
-            jp.collectedStickerIds.Add(achievementId);
+            // DON'T add to collection — deferred until balloon pop
             LastAwardedAchievementId = achievementId;
-            FirebaseAnalyticsManager.LogStickerCollected(achievementId, $"achievement_{gameId}");
-            Debug.Log($"[Achievement] Awarded {achievementId} (played {stat.timesPlayedInJourney}x)");
+            Debug.Log($"[Achievement] Picked {achievementId} (played {stat.timesPlayedInJourney}x, pending balloon pop)");
         }
     }
 
