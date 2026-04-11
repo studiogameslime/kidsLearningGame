@@ -64,20 +64,18 @@ public class MainMenuController : MonoBehaviour
         int totalGames = database.games.Count;
         int activeGames = visibleGames.Count;
 
-        // Show counter + hint if some games are hidden
+        // Show hint — always visible with parent area info
         if (gamesCountHint != null)
         {
-            if (activeGames < totalGames)
-            {
-                string text = $"{activeGames} \u05DE\u05EA\u05D5\u05DA {totalGames} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05E4\u05E2\u05D9\u05DC\u05D9\u05DD  \u00B7  \u05D4\u05E4\u05E2\u05D9\u05DC\u05D5 \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05D5\u05E9\u05E0\u05D5 \u05E8\u05DE\u05EA \u05E7\u05D5\u05E9\u05D9 \u05D1\u05D0\u05D9\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD";
-                // X מתוך Y משחקים פעילים  ·  הפעילו משחקים ושנו רמת קושי באיזור הורים
-                HebrewText.SetText(gamesCountHint, text);
-                gamesCountHint.gameObject.SetActive(true);
-            }
-            else
-            {
-                gamesCountHint.gameObject.SetActive(false);
-            }
+            string countPart = activeGames < totalGames
+                ? $"{activeGames} \u05DE\u05EA\u05D5\u05DA {totalGames} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05E4\u05E2\u05D9\u05DC\u05D9\u05DD"
+                // X מתוך Y משחקים פעילים
+                : "\u05DB\u05DC \u05D4\u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05E4\u05E2\u05D9\u05DC\u05D9\u05DD";
+                // כל המשחקים פעילים
+            string actionPart = "\u05D4\u05E4\u05E2\u05D9\u05DC\u05D5 \u05D0\u05D5 \u05D4\u05E1\u05EA\u05D9\u05E8\u05D5 \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD \u05D5\u05E9\u05E0\u05D5 \u05E8\u05DE\u05D5\u05EA \u05E7\u05D5\u05E9\u05D9 \u05D1\u05D0\u05D9\u05D6\u05D5\u05E8 \u05D4\u05D5\u05E8\u05D9\u05DD";
+            // הפעילו או הסתירו משחקים ושנו רמות קושי באיזור הורים
+            HebrewText.SetText(gamesCountHint, countPart + "  \u00B7  " + actionPart);
+            gamesCountHint.gameObject.SetActive(true);
         }
 
         Color profileColor = profile != null ? profile.AvatarColor : new Color(0.56f, 0.79f, 0.98f);
