@@ -94,6 +94,18 @@ public static class StickerPopup
 
         // ── Balloon body (circle sprite, semi-transparent) ──
         var circleSprite = Resources.Load<Sprite>("Circle");
+        if (circleSprite == null)
+        {
+            // Fallback: try UI path
+            circleSprite = Resources.Load<Sprite>("UI/Circle");
+        }
+        if (circleSprite == null)
+        {
+            Debug.LogWarning("[StickerPopup] Circle sprite not found in Resources!");
+            Object.Destroy(rootGO);
+            _isShowing = false;
+            yield break;
+        }
 
         var balloonGO = new GameObject("Balloon");
         balloonGO.transform.SetParent(balloonContainer.transform, false);
