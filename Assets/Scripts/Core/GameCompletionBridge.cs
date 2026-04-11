@@ -183,8 +183,7 @@ public class GameCompletionBridge : MonoBehaviour
     }
 
     /// <summary>
-    /// Pick and immediately lock a sticker into the collection.
-    /// The balloon popup is visual-only — the sticker is safe even if user doesn't pop.
+    /// Pick a sticker — NOT added to collection until balloon is popped.
     /// </summary>
     private void TryPickSticker(string gameId, JourneyProgress jp)
     {
@@ -200,17 +199,28 @@ public class GameCompletionBridge : MonoBehaviour
             string stickerId = StickerCatalog.PickRandomSticker(prefix, jp.collectedStickerIds);
             if (stickerId != null)
             {
-                jp.collectedStickerIds.Add(stickerId);
                 LastAwardedStickerId = stickerId;
                 jp.roundsUntilNextSticker = Random.Range(3, 6);
-                FirebaseAnalyticsManager.LogStickerCollected(stickerId, $"game_{gameId}");
-                Debug.Log($"[Sticker] Awarded {stickerId} from game {gameId}");
+                Debug.Log($"[Sticker] Picked {stickerId} from {gameId} (pending pop)");
             }
             else
             {
                 jp.roundsUntilNextSticker = 1;
             }
         }
+    }
+
+    /// <summary>Add sticker to collection. Called when balloon is popped.</summary>
+    public static void CollectSticker(string stickerId)
+    {
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null || string.IsNullOrEmpty(stickerId)) return;
+        if (profile.journey.collectedStickerIds.Contains(stickerId)) return;
+        profile.journey.collectedStickerIds.Add(stickerId);
+        ProfileManager.Instance.Save();
+        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : "unknown";
+        FirebaseAnalyticsManager.LogStickerCollected(stickerId, $"game_{gameId}");
+        Debug.Log($"[Sticker] Collected {stickerId} (balloon popped)");
     }
 
     private void TryAwardAchievement(string gameId, JourneyProgress jp)
@@ -222,11 +232,8 @@ public class GameCompletionBridge : MonoBehaviour
         string achievementId = StickerCatalog.CheckAchievement(gameId, stat.timesPlayedInJourney, jp.collectedStickerIds);
         if (achievementId != null)
         {
-            // Add immediately to prevent data loss on crash
-            jp.collectedStickerIds.Add(achievementId);
             LastAwardedAchievementId = achievementId;
-            FirebaseAnalyticsManager.LogStickerCollected(achievementId, $"achievement_{gameId}");
-            Debug.Log($"[Achievement] Awarded {achievementId} (played {stat.timesPlayedInJourney}x)");
+            Debug.Log($"[Achievement] Picked {achievementId} (played {stat.timesPlayedInJourney}x, pending pop)");
         }
     }
 

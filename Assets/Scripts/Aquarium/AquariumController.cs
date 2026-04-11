@@ -884,11 +884,15 @@ public class AquariumController : MonoBehaviour
         string stickerId = StickerCatalog.PickRandomSticker("ocean_", jp.collectedStickerIds);
         if (stickerId != null)
         {
-            jp.collectedStickerIds.Add(stickerId);
-            ProfileManager.Instance.Save();
-            FirebaseAnalyticsManager.LogStickerCollected(stickerId, "aquarium");
-            Debug.Log($"[Sticker] Awarded {stickerId} from aquarium");
-            StickerPopup.OnStickerCollected = null;
+            Debug.Log($"[Sticker] Picked {stickerId} from aquarium (pending pop)");
+            StickerPopup.OnStickerCollected = (id) =>
+            {
+                if (jp.collectedStickerIds.Contains(id)) return;
+                jp.collectedStickerIds.Add(id);
+                ProfileManager.Instance.Save();
+                FirebaseAnalyticsManager.LogStickerCollected(id, "aquarium");
+                Debug.Log($"[Sticker] Collected {id} from aquarium (popped)");
+            };
             StartCoroutine(StickerPopup.Show(stickerId));
         }
     }

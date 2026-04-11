@@ -4,16 +4,16 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// Sticker award popup — a colored balloon rises from the bottom with the sticker inside.
-/// The child taps the balloon to pop it → sticker pulse → shrink away.
-/// The sticker is ONLY added to the collection when the balloon is popped.
+/// Balloon sticker popup. Balloon rises from bottom, child taps to pop.
+/// Sticker is added to collection ONLY when balloon is popped.
+/// If not popped (timeout/scene change), sticker is lost.
 /// </summary>
 public static class StickerPopup
 {
     private static bool _isShowing;
 
     /// <summary>
-    /// Optional callback invoked when the balloon is popped. Visual only — sticker already collected.
+    /// Optional callback when balloon is popped — used to add sticker to collection.
     /// </summary>
     public static System.Action<string> OnStickerCollected;
 
@@ -23,7 +23,7 @@ public static class StickerPopup
 
         Sprite sprite = StickerSpriteBank.GetSprite(stickerId);
 
-        // Achievement stickers use game thumbnail instead of sprite bank
+        // Achievement stickers use game thumbnail
         if (sprite == null && stickerId.StartsWith("achievement_"))
         {
             var db = Resources.Load<GameDatabase>("GameDatabase");
@@ -46,14 +46,20 @@ public static class StickerPopup
         var canvas = Object.FindObjectOfType<Canvas>();
         if (canvas == null) yield break;
 
+        var circleSprite = Resources.Load<Sprite>("Circle");
+        if (circleSprite == null)
+        {
+            Debug.LogWarning("[StickerPopup] Circle sprite not found!");
+            yield break;
+        }
+
         _isShowing = true;
 
-        // Profile color for balloon
-        Color balloonColor = new Color(0.56f, 0.79f, 0.98f); // default blue
+        Color balloonColor = new Color(0.56f, 0.79f, 0.98f);
         var profile = ProfileManager.ActiveProfile;
         if (profile != null) balloonColor = profile.AvatarColor;
 
-        // ── Root overlay ──
+        // ── Root overlay (blocks ALL touches) ──
         var rootGO = new GameObject("StickerPopup");
         rootGO.transform.SetParent(canvas.transform, false);
         rootGO.transform.SetAsLastSibling();
@@ -61,12 +67,17 @@ public static class StickerPopup
         rootRT.anchorMin = Vector2.zero; rootRT.anchorMax = Vector2.one;
         rootRT.offsetMin = Vector2.zero; rootRT.offsetMax = Vector2.zero;
 
-        // Dim background
-        var dimImg = rootGO.AddComponent<Image>();
+        // Dim background — blocks touches on everything behind
+        var dimGO = new GameObject("Dim");
+        dimGO.transform.SetParent(rootGO.transform, false);
+        var dimRT = dimGO.AddComponent<RectTransform>();
+        dimRT.anchorMin = Vector2.zero; dimRT.anchorMax = Vector2.one;
+        dimRT.offsetMin = Vector2.zero; dimRT.offsetMax = Vector2.zero;
+        var dimImg = dimGO.AddComponent<Image>();
         dimImg.color = new Color(0, 0, 0, 0);
-        dimImg.raycastTarget = false; // only balloon is tappable
+        dimImg.raycastTarget = true; // blocks ALL touches behind
 
-        // ── Balloon container (moves up) ──
+        // ── Balloon container ──
         var balloonContainer = new GameObject("BalloonContainer");
         balloonContainer.transform.SetParent(rootGO.transform, false);
         var balloonContainerRT = balloonContainer.AddComponent<RectTransform>();
@@ -74,12 +85,11 @@ public static class StickerPopup
         balloonContainerRT.anchorMax = new Vector2(0.5f, 0.5f);
         balloonContainerRT.sizeDelta = new Vector2(320, 420);
 
-        // Start below screen
         var canvasRT = canvas.GetComponent<RectTransform>();
         float canvasH = canvasRT != null ? canvasRT.rect.height : 1080f;
         balloonContainerRT.anchoredPosition = new Vector2(0, -canvasH * 0.7f);
 
-        // ── Balloon string (thin line below balloon) ──
+        // ── String ──
         var stringGO = new GameObject("String");
         stringGO.transform.SetParent(balloonContainer.transform, false);
         var stringRT = stringGO.AddComponent<RectTransform>();
@@ -92,21 +102,7 @@ public static class StickerPopup
         stringImg.color = new Color(balloonColor.r * 0.7f, balloonColor.g * 0.7f, balloonColor.b * 0.7f);
         stringImg.raycastTarget = false;
 
-        // ── Balloon body (circle sprite, semi-transparent) ──
-        var circleSprite = Resources.Load<Sprite>("Circle");
-        if (circleSprite == null)
-        {
-            // Fallback: try UI path
-            circleSprite = Resources.Load<Sprite>("UI/Circle");
-        }
-        if (circleSprite == null)
-        {
-            Debug.LogWarning("[StickerPopup] Circle sprite not found in Resources!");
-            Object.Destroy(rootGO);
-            _isShowing = false;
-            yield break;
-        }
-
+        // ── Balloon body ──
         var balloonGO = new GameObject("Balloon");
         balloonGO.transform.SetParent(balloonContainer.transform, false);
         var balloonRT = balloonGO.AddComponent<RectTransform>();
@@ -115,34 +111,32 @@ public static class StickerPopup
         balloonRT.anchoredPosition = new Vector2(0, 30);
         balloonRT.sizeDelta = new Vector2(280, 280);
         var balloonImg = balloonGO.AddComponent<Image>();
-        if (circleSprite != null) balloonImg.sprite = circleSprite;
-        balloonImg.color = new Color(balloonColor.r, balloonColor.g, balloonColor.b, 0.3f);
-        balloonImg.raycastTarget = true; // TAPPABLE
+        balloonImg.sprite = circleSprite;
+        balloonImg.color = new Color(balloonColor.r, balloonColor.g, balloonColor.b, 0.35f);
+        balloonImg.raycastTarget = true;
 
-        // Balloon highlight (shine effect — small white circle at top-left)
+        // Shine
         var shineGO = new GameObject("Shine");
         shineGO.transform.SetParent(balloonGO.transform, false);
         var shineRT = shineGO.AddComponent<RectTransform>();
         shineRT.anchorMin = new Vector2(0.15f, 0.55f);
         shineRT.anchorMax = new Vector2(0.4f, 0.8f);
-        shineRT.offsetMin = Vector2.zero;
-        shineRT.offsetMax = Vector2.zero;
+        shineRT.offsetMin = Vector2.zero; shineRT.offsetMax = Vector2.zero;
         var shineImg = shineGO.AddComponent<Image>();
-        if (circleSprite != null) shineImg.sprite = circleSprite;
-        shineImg.color = new Color(1f, 1f, 1f, 0.25f);
+        shineImg.sprite = circleSprite;
+        shineImg.color = new Color(1f, 1f, 1f, 0.3f);
         shineImg.raycastTarget = false;
 
-        // ── Sticker inside balloon (clipped to circle) ──
+        // ── Sticker inside balloon (circle mask) ──
         var stickerMaskGO = new GameObject("StickerMask");
         stickerMaskGO.transform.SetParent(balloonGO.transform, false);
         var stickerMaskRT = stickerMaskGO.AddComponent<RectTransform>();
         stickerMaskRT.anchorMin = new Vector2(0.1f, 0.1f);
         stickerMaskRT.anchorMax = new Vector2(0.9f, 0.9f);
-        stickerMaskRT.offsetMin = Vector2.zero;
-        stickerMaskRT.offsetMax = Vector2.zero;
+        stickerMaskRT.offsetMin = Vector2.zero; stickerMaskRT.offsetMax = Vector2.zero;
         var maskImg = stickerMaskGO.AddComponent<Image>();
-        if (circleSprite != null) maskImg.sprite = circleSprite;
-        maskImg.color = new Color(1, 1, 1, 0); // invisible mask shape
+        maskImg.sprite = circleSprite;
+        maskImg.color = new Color(1, 1, 1, 0);
         maskImg.raycastTarget = false;
         stickerMaskGO.AddComponent<Mask>().showMaskGraphic = false;
 
@@ -151,8 +145,7 @@ public static class StickerPopup
         var stickerRT = stickerGO.AddComponent<RectTransform>();
         stickerRT.anchorMin = new Vector2(0.05f, 0.05f);
         stickerRT.anchorMax = new Vector2(0.95f, 0.95f);
-        stickerRT.offsetMin = Vector2.zero;
-        stickerRT.offsetMax = Vector2.zero;
+        stickerRT.offsetMin = Vector2.zero; stickerRT.offsetMax = Vector2.zero;
         var stickerImg = stickerGO.AddComponent<Image>();
         stickerImg.sprite = sprite;
         stickerImg.preserveAspect = true;
@@ -161,47 +154,45 @@ public static class StickerPopup
         // ── Tap handler ──
         bool popped = false;
         var btn = balloonGO.AddComponent<Button>();
+        btn.transition = Selectable.Transition.None; // no visual change on press
         btn.targetGraphic = balloonImg;
+        btn.interactable = false; // disabled until rise completes
         btn.onClick.AddListener(() => popped = true);
 
-        // ═══════════════════════════════
+        // ══════════════════════════
         //  ANIMATION
-        // ═══════════════════════════════
+        // ══════════════════════════
 
-        // ── Phase 1: Dim in + balloon rises from bottom (0.8s) ──
+        // ── Phase 1: Dim + rise (0.8s) ──
         Vector2 startPos = balloonContainerRT.anchoredPosition;
-        Vector2 endPos = new Vector2(0, 20); // slightly above center
+        Vector2 endPos = new Vector2(0, 20);
         float t = 0f;
-        float riseDur = 0.8f;
-        while (t < riseDur)
+        while (t < 0.8f)
         {
             if (rootGO == null) { _isShowing = false; yield break; }
             t += Time.deltaTime;
-            float p = Mathf.Clamp01(t / riseDur);
-            float ease = 1f - Mathf.Pow(1f - p, 3f); // ease out cubic
+            float p = Mathf.Clamp01(t / 0.8f);
+            float ease = 1f - Mathf.Pow(1f - p, 3f);
             balloonContainerRT.anchoredPosition = Vector2.Lerp(startPos, endPos, ease);
-            dimImg.color = new Color(0, 0, 0, p * 0.35f);
+            dimImg.color = new Color(0, 0, 0, p * 0.45f);
             yield return null;
         }
         if (rootGO == null) { _isShowing = false; yield break; }
         balloonContainerRT.anchoredPosition = endPos;
 
-        // Disable tap during rise
+        // Enable tap
         btn.interactable = true;
 
-        // ── Phase 2: Gentle float + wait for tap (15s timeout) ──
+        // ── Phase 2: Float + wait for tap (20s timeout) ──
         float floatTime = 0f;
-        const float tapTimeout = 15f;
         while (!popped)
         {
             if (rootGO == null) { _isShowing = false; yield break; }
             floatTime += Time.deltaTime;
-            if (floatTime > tapTimeout) { popped = true; break; } // auto-pop after timeout
-            // Gentle bob
+            if (floatTime > 20f) { popped = true; break; }
             float bobY = Mathf.Sin(floatTime * 1.5f) * 8f;
             float bobX = Mathf.Sin(floatTime * 0.7f) * 4f;
             balloonContainerRT.anchoredPosition = endPos + new Vector2(bobX, bobY);
-            // Subtle scale breathe
             float breathe = 1f + Mathf.Sin(floatTime * 2f) * 0.015f;
             balloonRT.localScale = Vector3.one * breathe;
             yield return null;
@@ -215,18 +206,18 @@ public static class StickerPopup
         // Collect the sticker NOW
         OnStickerCollected?.Invoke(stickerId);
 
-        // Hide balloon, show sticker free
+        // Hide balloon parts
         balloonImg.enabled = false;
         shineGO.SetActive(false);
         stringGO.SetActive(false);
-        stickerMaskGO.transform.SetParent(balloonContainer.transform, true); // unparent from balloon
 
-        // Remove mask so sticker shows fully
-        if (stickerMaskGO.GetComponent<Mask>() != null)
-            Object.Destroy(stickerMaskGO.GetComponent<Mask>());
+        // Free sticker from mask
+        stickerMaskGO.transform.SetParent(balloonContainer.transform, true);
+        var mask = stickerMaskGO.GetComponent<Mask>();
+        if (mask != null) Object.Destroy(mask);
         if (maskImg != null) maskImg.enabled = false;
 
-        // Spawn pop particles
+        // Pop particles
         SpawnPopParticles(rootGO.transform, balloonContainerRT.anchoredPosition, balloonColor, circleSprite);
 
         // ── Phase 4: Sticker pulse (0.3s) ──
@@ -236,33 +227,35 @@ public static class StickerPopup
             if (rootGO == null) { _isShowing = false; yield break; }
             t += Time.deltaTime;
             float p = Mathf.Clamp01(t / 0.3f);
-            float scale = 1f + Mathf.Sin(p * Mathf.PI) * 0.25f;
+            float scale = 1f + Mathf.Sin(p * Mathf.PI) * 0.3f;
             stickerMaskGO.transform.localScale = Vector3.one * scale;
             yield return null;
         }
 
         // ── Phase 5: Hold (1.0s) ──
-        yield return new WaitForSeconds(1.0f);
+        t = 0f;
+        while (t < 1.0f)
+        {
+            if (rootGO == null) { _isShowing = false; yield break; }
+            t += Time.deltaTime;
+            yield return null;
+        }
 
         // ── Phase 6: Shrink + fade (0.4s) ──
-        if (rootGO == null) { _isShowing = false; yield break; }
         t = 0f;
         while (t < 0.4f)
         {
             if (rootGO == null) { _isShowing = false; yield break; }
             t += Time.deltaTime;
             float p = Mathf.Clamp01(t / 0.4f);
-            float ease = p * p;
-            stickerMaskGO.transform.localScale = Vector3.one * (1f - ease);
-            dimImg.color = new Color(0, 0, 0, 0.35f * (1f - ease));
+            stickerMaskGO.transform.localScale = Vector3.one * (1f - p * p);
+            dimImg.color = new Color(0, 0, 0, 0.45f * (1f - p));
             yield return null;
         }
 
         if (rootGO != null) Object.Destroy(rootGO);
         _isShowing = false;
     }
-
-    // ── Pop particles ──
 
     private static void SpawnPopParticles(Transform parent, Vector2 center, Color balloonColor, Sprite circleSprite)
     {
@@ -282,7 +275,6 @@ public static class StickerPopup
 
             var img = go.AddComponent<Image>();
             if (circleSprite != null) img.sprite = circleSprite;
-            // Mix of balloon color shards
             img.color = i % 3 == 0 ? lighter : i % 3 == 1 ? balloonColor : darker;
             img.raycastTarget = false;
 
@@ -294,17 +286,8 @@ public static class StickerPopup
             mono.lifetime = Random.Range(0.4f, 0.7f);
         }
     }
-
-    // ── Helpers ──
-
-    private static float EaseOutBack(float t)
-    {
-        const float c1 = 1.70158f, c3 = c1 + 1f;
-        return 1f + c3 * Mathf.Pow(t - 1f, 3f) + c1 * Mathf.Pow(t - 1f, 2f);
-    }
 }
 
-/// <summary>Simple self-destroying particle.</summary>
 public class SparkleParticle : MonoBehaviour
 {
     public Vector2 velocity;
@@ -327,7 +310,7 @@ public class SparkleParticle : MonoBehaviour
         float p = _elapsed / lifetime;
         _rt.anchoredPosition += velocity * Time.deltaTime;
         velocity *= 0.92f;
-        velocity.y -= 400f * Time.deltaTime; // gravity
+        velocity.y -= 400f * Time.deltaTime;
         _rt.localScale = Vector3.one * (1f - p * 0.7f);
         var c = _img.color;
         _img.color = new Color(c.r, c.g, c.b, c.a * (1f - p));
