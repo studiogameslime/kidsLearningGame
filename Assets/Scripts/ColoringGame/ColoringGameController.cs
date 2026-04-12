@@ -530,6 +530,55 @@ public class ColoringGameController : BaseMiniGame
     {
         if (stickerContainer == null) return;
 
+        // Ensure container supports scrolling if many stickers
+        if (stickerContainer.GetComponent<GridLayoutGroup>() != null
+            && stickerContainer.parent != null
+            && stickerContainer.parent.GetComponent<ScrollRect>() == null)
+        {
+            // Wrap existing grid in a ScrollRect at runtime
+            var parent = stickerContainer.parent;
+            var scrollGO = new GameObject("StickerScroll");
+            scrollGO.transform.SetParent(parent, false);
+            scrollGO.transform.SetSiblingIndex(stickerContainer.GetSiblingIndex());
+            var scrollRT = scrollGO.AddComponent<RectTransform>();
+            scrollRT.anchorMin = Vector2.zero; scrollRT.anchorMax = Vector2.one;
+            scrollRT.offsetMin = Vector2.zero; scrollRT.offsetMax = Vector2.zero;
+            // Copy layout element from grid
+            var oldLE = stickerContainer.GetComponent<LayoutElement>();
+            if (oldLE != null)
+            {
+                var newLE = scrollGO.AddComponent<LayoutElement>();
+                newLE.flexibleHeight = oldLE.flexibleHeight;
+                newLE.flexibleWidth = oldLE.flexibleWidth;
+                Object.Destroy(oldLE);
+            }
+            scrollGO.AddComponent<RectMask2D>();
+            var scroll = scrollGO.AddComponent<ScrollRect>();
+            scroll.horizontal = false;
+            scroll.vertical = true;
+            scroll.movementType = ScrollRect.MovementType.Elastic;
+
+            // Reparent grid into scroll
+            stickerContainer.SetParent(scrollGO.transform, false);
+            var gridRT = stickerContainer.GetComponent<RectTransform>();
+            gridRT.anchorMin = new Vector2(0, 1);
+            gridRT.anchorMax = new Vector2(1, 1);
+            gridRT.pivot = new Vector2(0.5f, 1);
+            gridRT.sizeDelta = Vector2.zero;
+            if (stickerContainer.GetComponent<ContentSizeFitter>() == null)
+                stickerContainer.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            scroll.content = gridRT;
+
+            // Adjust grid columns to fit panel width
+            var grid = stickerContainer.GetComponent<GridLayoutGroup>();
+            if (grid != null)
+            {
+                grid.constraintCount = 5; // fewer columns for side panel
+                grid.cellSize = new Vector2(58, 58);
+                grid.spacing = new Vector2(6, 6);
+            }
+        }
+
         _collectedSprites.Clear();
         var profile = ProfileManager.ActiveProfile;
         if (profile != null && profile.journey != null && profile.journey.collectedStickerIds != null)
