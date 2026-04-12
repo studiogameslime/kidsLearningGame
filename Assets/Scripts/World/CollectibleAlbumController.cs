@@ -767,6 +767,24 @@ public class CollectibleAlbumController : MonoBehaviour
             {
                 img.sprite = cat.sprites[i];
                 img.color = isCollected ? Color.white : SilhouetteColor;
+
+                // Collected stickers are tappable — play category animation + sound
+                if (isCollected)
+                {
+                    img.raycastTarget = true;
+                    var anim = imgGO.AddComponent<StickerTapAnim>();
+                    anim.animType = GetAnimTypeForCategory(cat.prefix);
+                    var btn = imgGO.AddComponent<Button>();
+                    btn.transition = Selectable.Transition.None;
+                    btn.targetGraphic = img;
+                    string capturedPrefix = cat.prefix;
+                    string capturedName = cat.sprites[i].name;
+                    btn.onClick.AddListener(() =>
+                    {
+                        anim.Play();
+                        PlayStickerSound(capturedPrefix, capturedName);
+                    });
+                }
             }
             else
             {
@@ -1044,6 +1062,53 @@ public class CollectibleAlbumController : MonoBehaviour
     {
         rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
         rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
+    }
+
+    private static StickerTapAnim.AnimType GetAnimTypeForCategory(string prefix)
+    {
+        switch (prefix)
+        {
+            case "animal_":  return StickerTapAnim.AnimType.Walk;
+            case "ocean_":   return StickerTapAnim.AnimType.Swim;
+            case "vehicle_": return StickerTapAnim.AnimType.Drive;
+            case "letter_":  return StickerTapAnim.AnimType.Bounce;
+            case "number_":  return StickerTapAnim.AnimType.Roll;
+            case "food_":    return StickerTapAnim.AnimType.Wobble;
+            case "nature_":  return StickerTapAnim.AnimType.Grow;
+            case "balloon_": return StickerTapAnim.AnimType.Float;
+            case "art_":     return StickerTapAnim.AnimType.Spin;
+            default:         return StickerTapAnim.AnimType.Bounce;
+        }
+    }
+
+    private static void PlayStickerSound(string prefix, string spriteName)
+    {
+        switch (prefix)
+        {
+            case "animal_":
+                // Play animal name (capitalize first letter)
+                string animalId = char.ToUpper(spriteName[0]) + spriteName.Substring(1);
+                SoundLibrary.PlayAnimalName(animalId);
+                break;
+            case "balloon_":
+                // Play color name
+                string colorId = char.ToUpper(spriteName[0]) + spriteName.Substring(1);
+                SoundLibrary.PlayColorName(colorId);
+                break;
+            case "letter_":
+                // Play letter sound
+                SoundLibrary.PlayLetterName(spriteName);
+                break;
+            case "number_":
+                int num;
+                if (int.TryParse(spriteName, out num))
+                    SoundLibrary.PlayNumberName(num);
+                break;
+            default:
+                // Generic pop sound for categories without specific sounds
+                SoundLibrary.PlayStickerCollected();
+                break;
+        }
     }
 
     private static float EaseOutBack(float t)
