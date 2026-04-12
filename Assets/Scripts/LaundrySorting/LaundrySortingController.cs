@@ -405,19 +405,29 @@ public class LaundrySortingController : BaseMiniGame
 
     private IEnumerator RejectItem(LaundryItemDragger item)
     {
+        if (item == null) yield break;
         var rt = item.GetComponent<RectTransform>();
-        Vector2 orig = rt.anchoredPosition;
+        if (rt == null) yield break;
+
+        Vector2 current = rt.anchoredPosition;
+        Vector2 returnTo = item.startPosition;
+
+        // Shake
         float dur = 0.35f;
         float t = 0f;
         while (t < dur)
         {
+            if (rt == null) yield break;
             t += Time.deltaTime;
             float p = t / dur;
             float shake = Mathf.Sin(p * Mathf.PI * 6f) * 15f * (1f - p);
-            rt.anchoredPosition = orig + new Vector2(shake, 0);
+            rt.anchoredPosition = current + new Vector2(shake, 0);
             yield return null;
         }
-        rt.anchoredPosition = item.startPosition;
+
+        // Return to original position
+        if (rt != null)
+            rt.anchoredPosition = returnTo;
     }
 
     // ── Win Check ──
