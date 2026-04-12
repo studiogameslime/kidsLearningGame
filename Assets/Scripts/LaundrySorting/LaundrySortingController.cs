@@ -295,6 +295,17 @@ public class LaundrySortingController : BaseMiniGame
         bool overMachine = IsOverTarget(itemRT, washingMachineRT);
         bool overBasket = IsOverTarget(itemRT, basketRT);
 
+        // If over both targets, pick the CLOSER one
+        if (overMachine && overBasket)
+        {
+            float distMachine = Vector2.Distance(itemRT.position, washingMachineRT.position);
+            float distBasket = Vector2.Distance(itemRT.position, basketRT.position);
+            if (distMachine < distBasket)
+                overBasket = false;
+            else
+                overMachine = false;
+        }
+
         if (overMachine)
         {
             if (item.isClothes)
@@ -327,7 +338,6 @@ public class LaundrySortingController : BaseMiniGame
         }
         else
         {
-            // Dropped on neither target — shake and return to original position
             StartCoroutine(RejectItem(item));
         }
     }
