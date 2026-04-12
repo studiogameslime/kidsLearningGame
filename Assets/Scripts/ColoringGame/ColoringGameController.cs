@@ -550,7 +550,7 @@ public class ColoringGameController : BaseMiniGame
                 var newLE = scrollGO.AddComponent<LayoutElement>();
                 newLE.flexibleHeight = oldLE.flexibleHeight;
                 newLE.flexibleWidth = oldLE.flexibleWidth;
-                Object.Destroy(oldLE);
+                UnityEngine.Object.Destroy(oldLE);
             }
             scrollGO.AddComponent<RectMask2D>();
             var scroll = scrollGO.AddComponent<ScrollRect>();
