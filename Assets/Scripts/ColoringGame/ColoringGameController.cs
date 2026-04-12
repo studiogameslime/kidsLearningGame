@@ -530,38 +530,16 @@ public class ColoringGameController : BaseMiniGame
     {
         if (stickerContainer == null) return;
 
-        // Build a map of prefix → sprite array
-        var categories = new (string prefix, Sprite[] sprites)[]
-        {
-            ("animal_",  animalsStickers),
-            ("letter_",  lettersStickers),
-            ("number_",  numbersStickers),
-            ("balloon_", balloonsStickers),
-            ("ocean_",   aquariumStickers),
-            ("vehicle_", carsStickers),
-            ("food_",    foodStickers),
-            ("art_",     artStickers),
-            ("nature_",  natureStickers),
-        };
-
         _collectedSprites.Clear();
         var profile = ProfileManager.ActiveProfile;
         if (profile != null && profile.journey != null && profile.journey.collectedStickerIds != null)
         {
-            // Build name→sprite lookup for each category
-            var spriteLookup = new Dictionary<string, Sprite>();
-            foreach (var (prefix, sprites) in categories)
-            {
-                if (sprites == null) continue;
-                foreach (var spr in sprites)
-                    if (spr != null) spriteLookup[$"{prefix}{spr.name.ToLower()}"] = spr;
-            }
-
             foreach (var id in profile.journey.collectedStickerIds)
             {
                 if (string.IsNullOrEmpty(id)) continue;
-                Sprite spr;
-                if (spriteLookup.TryGetValue(id, out spr))
+                // Use StickerSpriteBank (always populated via DontDestroyOnLoad)
+                Sprite spr = StickerSpriteBank.GetSprite(id);
+                if (spr != null)
                     _collectedSprites.Add(spr);
             }
         }
