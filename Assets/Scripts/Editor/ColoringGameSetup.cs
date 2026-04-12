@@ -452,32 +452,15 @@ public class ColoringGameSetup : EditorWindow
         brushLayout.childForceExpandHeight = false;
         brushLayout.padding = new RectOffset(10, 10, 0, 0);
 
-        // ── 5. מדבקות (Stickers) — scroll only when content overflows ──
+        // ── 5. מדבקות (Stickers) — NO scroll, grid fills remaining space ──
         SectionTitle(panelGO.transform, "\u05DE\u05D3\u05D1\u05E7\u05D5\u05EA");
 
-        var stickerScrollGO = new GameObject("StickerScroll");
-        stickerScrollGO.transform.SetParent(panelGO.transform, false);
-        stickerScrollGO.AddComponent<RectTransform>();
-        var stickerScrollLE = stickerScrollGO.AddComponent<LayoutElement>();
-        stickerScrollLE.flexibleHeight = 1;
-        stickerScrollLE.flexibleWidth = 1;
-        stickerScrollGO.AddComponent<RectMask2D>(); // clip overflow
-        var stickerScroll = stickerScrollGO.AddComponent<ScrollRect>();
-        stickerScroll.horizontal = false;
-        stickerScroll.vertical = true;
-        stickerScroll.movementType = ScrollRect.MovementType.Elastic;
-        stickerScroll.scrollSensitivity = 30f;
-        // No scrollbar — just swipe
-
         var stickerContentGO = new GameObject("StickerGrid");
-        stickerContentGO.transform.SetParent(stickerScrollGO.transform, false);
-        var stickerContentRT = stickerContentGO.AddComponent<RectTransform>();
-        stickerContentRT.anchorMin = new Vector2(0, 1);
-        stickerContentRT.anchorMax = new Vector2(1, 1);
-        stickerContentRT.pivot = new Vector2(0.5f, 1);
-        stickerContentRT.sizeDelta = Vector2.zero;
-        stickerContentGO.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        stickerScroll.content = stickerContentRT;
+        stickerContentGO.transform.SetParent(panelGO.transform, false);
+        stickerContentGO.AddComponent<RectTransform>();
+        var stickerContentLE = stickerContentGO.AddComponent<LayoutElement>();
+        stickerContentLE.flexibleHeight = 1; // fill remaining space
+        stickerContentLE.flexibleWidth = 1;
 
         var stickerGrid = stickerContentGO.AddComponent<GridLayoutGroup>();
         stickerGrid.cellSize = new Vector2(StickerSize, StickerSize);

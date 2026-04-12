@@ -92,6 +92,5 @@ public static class GlyphAdjustmentRuntimeCleaner
         }
 
         var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
-        Debug.Log($"[GlyphCleaner] Disabled kerning on {count} TMP component(s) in scene '{activeScene.name}'");
     }
 }
