@@ -537,11 +537,13 @@ public class ColoringGameController : BaseMiniGame
             foreach (var id in profile.journey.collectedStickerIds)
             {
                 if (string.IsNullOrEmpty(id)) continue;
-                // Use StickerSpriteBank (always populated via DontDestroyOnLoad)
                 Sprite spr = StickerSpriteBank.GetSprite(id);
                 if (spr != null)
                     _collectedSprites.Add(spr);
+                else
+                    Debug.Log($"[ColoringStickers] No sprite for '{id}'");
             }
+            Debug.Log($"[ColoringStickers] {_collectedSprites.Count} sprites found from {profile.journey.collectedStickerIds.Count} IDs");
         }
 
         if (_collectedSprites.Count == 0) return;
