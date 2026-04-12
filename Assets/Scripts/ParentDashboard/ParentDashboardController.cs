@@ -3010,8 +3010,7 @@ public class ParentDashboardController : MonoBehaviour
         string appLink = "https://play.google.com/store/apps/details?id=com.elroey.kidslearning";
         string childName = profile.displayName ?? "";
 
-        int count = Mathf.Min(profile.savedDrawings.Count, 9);
-        for (int i = profile.savedDrawings.Count - 1; i >= profile.savedDrawings.Count - count; i--)
+        for (int i = profile.savedDrawings.Count - 1; i >= 0; i--)
         {
             var drawing = profile.savedDrawings[i];
             string fullPath = System.IO.Path.Combine(Application.persistentDataPath, drawing.imagePath);
