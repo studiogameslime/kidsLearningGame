@@ -108,12 +108,12 @@ public class SharedStickerGameController : BaseMiniGame
         n2TMP.alignment = TMPro.TextAlignmentOptions.Center;
 
         // Split screen background: blue left, red right (behind cards)
-        var canvas = GetComponentInParent<Canvas>();
-        if (canvas != null)
+        var splitCanvas = GetComponentInParent<Canvas>();
+        if (splitCanvas != null)
         {
             // Left half — blue
             var leftBg = new GameObject("LeftBg");
-            leftBg.transform.SetParent(canvas.transform, false);
+            leftBg.transform.SetParent(splitCanvas.transform, false);
             leftBg.transform.SetAsFirstSibling(); // behind everything
             var lbRT = leftBg.AddComponent<RectTransform>();
             lbRT.anchorMin = Vector2.zero; lbRT.anchorMax = new Vector2(0.5f, 1);
@@ -126,7 +126,7 @@ public class SharedStickerGameController : BaseMiniGame
 
             // Right half — red
             var rightBg = new GameObject("RightBg");
-            rightBg.transform.SetParent(canvas.transform, false);
+            rightBg.transform.SetParent(splitCanvas.transform, false);
             rightBg.transform.SetSiblingIndex(1); // just after left
             var rbRT = rightBg.AddComponent<RectTransform>();
             rbRT.anchorMin = new Vector2(0.5f, 0); rbRT.anchorMax = Vector2.one;
@@ -139,7 +139,7 @@ public class SharedStickerGameController : BaseMiniGame
 
             // Center divider
             var divider = new GameObject("Divider");
-            divider.transform.SetParent(canvas.transform, false);
+            divider.transform.SetParent(splitCanvas.transform, false);
             divider.transform.SetSiblingIndex(2);
             var dRT = divider.AddComponent<RectTransform>();
             dRT.anchorMin = new Vector2(0.5f, 0); dRT.anchorMax = new Vector2(0.5f, 1);
