@@ -47,6 +47,12 @@ public class MemoryGameController : BaseMiniGame
         return activeCategory != null ? activeCategory.categoryKey : "animals";
     }
 
+    // 2-Player UI
+    private TMPro.TextMeshProUGUI _p1ScoreTMP;
+    private TMPro.TextMeshProUGUI _p2ScoreTMP;
+    private Image _turnIndicatorLeft;
+    private Image _turnIndicatorRight;
+
     protected override void OnGameInit()
     {
         totalRounds = 1;
@@ -56,6 +62,9 @@ public class MemoryGameController : BaseMiniGame
         activeCategory = FindCategory();
         if (activeCategory == null)
             Debug.LogError("MemoryGameController: No matching category found!");
+
+        if (TwoPlayerManager.IsActive)
+            Setup2PlayerUI();
     }
 
     protected override void OnRoundSetup()
@@ -266,13 +275,21 @@ public class MemoryGameController : BaseMiniGame
             secondFlipped.IsMatched = true;
             firstFlipped.PlayMatchAndHide();
             secondFlipped.PlayMatchAndHide();
-            // Sparkles after bounce starts (don't interfere with card layout)
             yield return new WaitForSeconds(0.3f);
             PlayCorrectEffect(firstFlipped.GetComponent<RectTransform>());
             PlayCorrectEffect(secondFlipped.GetComponent<RectTransform>());
             matchedPairs++;
             Stats?.SetCustom("pairsMatched", matchedPairs);
             Stats?.SetCustom("pairsTotal", totalPairs);
+
+            // 2-Player: current player scores + keeps their turn
+            if (TwoPlayerManager.IsActive)
+            {
+                if (TwoPlayerManager.CurrentTurn == 1) TwoPlayerManager.Score1++;
+                else TwoPlayerManager.Score2++;
+                Update2PlayerUI();
+                // Player keeps turn on match (no SwitchTurn)
+            }
 
             if (matchedPairs >= totalPairs)
             {
@@ -290,6 +307,13 @@ public class MemoryGameController : BaseMiniGame
             firstFlipped.FlipToBack();
             secondFlipped.FlipToBack();
             yield return new WaitForSeconds(0.3f);
+
+            // 2-Player: switch turn on mismatch
+            if (TwoPlayerManager.IsActive)
+            {
+                TwoPlayerManager.SwitchTurn();
+                Update2PlayerUI();
+            }
         }
 
         firstFlipped = null;
@@ -326,5 +350,93 @@ public class MemoryGameController : BaseMiniGame
             int j = Random.Range(0, i + 1);
             T temp = list[i]; list[i] = list[j]; list[j] = temp;
         }
+    }
+
+    // ── 2-Player UI ──
+
+    private void Setup2PlayerUI()
+    {
+        var canvas = GetComponentInParent<Canvas>();
+        if (canvas == null) return;
+
+        // Player 1 score (LEFT, BLUE)
+        var s1GO = new GameObject("P1Score");
+        s1GO.transform.SetParent(canvas.transform, false);
+        var s1RT = s1GO.AddComponent<RectTransform>();
+        s1RT.anchorMin = new Vector2(0, 0.88f); s1RT.anchorMax = new Vector2(0.12f, 1);
+        s1RT.offsetMin = new Vector2(10, 0); s1RT.offsetMax = Vector2.zero;
+        _p1ScoreTMP = s1GO.AddComponent<TMPro.TextMeshProUGUI>();
+        _p1ScoreTMP.text = "0"; _p1ScoreTMP.fontSize = 44; _p1ScoreTMP.fontStyle = TMPro.FontStyles.Bold;
+        _p1ScoreTMP.color = TwoPlayerManager.Player1Color;
+        _p1ScoreTMP.alignment = TMPro.TextAlignmentOptions.Center;
+
+        // Player 1 name
+        var n1GO = new GameObject("P1Name");
+        n1GO.transform.SetParent(canvas.transform, false);
+        var n1RT = n1GO.AddComponent<RectTransform>();
+        n1RT.anchorMin = new Vector2(0, 0.82f); n1RT.anchorMax = new Vector2(0.12f, 0.88f);
+        n1RT.offsetMin = new Vector2(10, 0); n1RT.offsetMax = Vector2.zero;
+        var n1TMP = n1GO.AddComponent<TMPro.TextMeshProUGUI>();
+        HebrewText.SetText(n1TMP, TwoPlayerManager.GetName(1));
+        n1TMP.fontSize = 18; n1TMP.color = TwoPlayerManager.Player1Color;
+        n1TMP.alignment = TMPro.TextAlignmentOptions.Center;
+
+        // Player 2 score (RIGHT, RED)
+        var s2GO = new GameObject("P2Score");
+        s2GO.transform.SetParent(canvas.transform, false);
+        var s2RT = s2GO.AddComponent<RectTransform>();
+        s2RT.anchorMin = new Vector2(0.88f, 0.88f); s2RT.anchorMax = new Vector2(1, 1);
+        s2RT.offsetMin = Vector2.zero; s2RT.offsetMax = new Vector2(-10, 0);
+        _p2ScoreTMP = s2GO.AddComponent<TMPro.TextMeshProUGUI>();
+        _p2ScoreTMP.text = "0"; _p2ScoreTMP.fontSize = 44; _p2ScoreTMP.fontStyle = TMPro.FontStyles.Bold;
+        _p2ScoreTMP.color = TwoPlayerManager.Player2Color;
+        _p2ScoreTMP.alignment = TMPro.TextAlignmentOptions.Center;
+
+        // Player 2 name
+        var n2GO = new GameObject("P2Name");
+        n2GO.transform.SetParent(canvas.transform, false);
+        var n2RT = n2GO.AddComponent<RectTransform>();
+        n2RT.anchorMin = new Vector2(0.88f, 0.82f); n2RT.anchorMax = new Vector2(1, 0.88f);
+        n2RT.offsetMin = Vector2.zero; n2RT.offsetMax = new Vector2(-10, 0);
+        var n2TMP = n2GO.AddComponent<TMPro.TextMeshProUGUI>();
+        HebrewText.SetText(n2TMP, TwoPlayerManager.GetName(2));
+        n2TMP.fontSize = 18; n2TMP.color = TwoPlayerManager.Player2Color;
+        n2TMP.alignment = TMPro.TextAlignmentOptions.Center;
+
+        // Turn indicators (colored bars at sides)
+        var liGO = new GameObject("TurnLeft");
+        liGO.transform.SetParent(canvas.transform, false);
+        var liRT = liGO.AddComponent<RectTransform>();
+        liRT.anchorMin = new Vector2(0, 0); liRT.anchorMax = new Vector2(0.005f, 1);
+        liRT.offsetMin = Vector2.zero; liRT.offsetMax = Vector2.zero;
+        _turnIndicatorLeft = liGO.AddComponent<Image>();
+        _turnIndicatorLeft.color = TwoPlayerManager.Player1Color;
+
+        var riGO = new GameObject("TurnRight");
+        riGO.transform.SetParent(canvas.transform, false);
+        var riRT = riGO.AddComponent<RectTransform>();
+        riRT.anchorMin = new Vector2(0.995f, 0); riRT.anchorMax = Vector2.one;
+        riRT.offsetMin = Vector2.zero; riRT.offsetMax = Vector2.zero;
+        _turnIndicatorRight = riGO.AddComponent<Image>();
+        _turnIndicatorRight.color = TwoPlayerManager.Player2Color;
+
+        Update2PlayerUI();
+    }
+
+    private void Update2PlayerUI()
+    {
+        if (_p1ScoreTMP != null) _p1ScoreTMP.text = TwoPlayerManager.Score1.ToString();
+        if (_p2ScoreTMP != null) _p2ScoreTMP.text = TwoPlayerManager.Score2.ToString();
+
+        // Turn indicator: active side bright, inactive dimmed
+        bool isP1Turn = TwoPlayerManager.CurrentTurn == 1;
+        if (_turnIndicatorLeft != null)
+            _turnIndicatorLeft.color = isP1Turn
+                ? TwoPlayerManager.Player1Color
+                : new Color(TwoPlayerManager.Player1Color.r, TwoPlayerManager.Player1Color.g, TwoPlayerManager.Player1Color.b, 0.15f);
+        if (_turnIndicatorRight != null)
+            _turnIndicatorRight.color = !isP1Turn
+                ? TwoPlayerManager.Player2Color
+                : new Color(TwoPlayerManager.Player2Color.r, TwoPlayerManager.Player2Color.g, TwoPlayerManager.Player2Color.b, 0.15f);
     }
 }

@@ -36,17 +36,88 @@ public class SharedStickerGameController : BaseMiniGame
 
     protected override string GetFallbackGameId() => "sharedsticker";
 
+    // 2-Player score UI
+    private TMPro.TextMeshProUGUI _score1TMP;
+    private TMPro.TextMeshProUGUI _score2TMP;
+
     protected override void OnGameInit()
     {
         isEndless = true;
         playConfettiOnRoundWin = true;
-        playConfettiOnSessionWin = false;  // endless game, no session win
+        playConfettiOnSessionWin = false;
         internalRound = 0;
+
+        if (TwoPlayerManager.IsActive)
+            Setup2PlayerUI();
     }
 
     protected override void OnRoundSetup()
     {
         GenerateRound();
+    }
+
+    private void Setup2PlayerUI()
+    {
+        var canvas = GetComponentInParent<Canvas>();
+        if (canvas == null) return;
+
+        // Left score (Player 1 — BLUE)
+        var s1GO = new GameObject("Score1");
+        s1GO.transform.SetParent(canvas.transform, false);
+        var s1RT = s1GO.AddComponent<RectTransform>();
+        s1RT.anchorMin = new Vector2(0, 0.9f); s1RT.anchorMax = new Vector2(0.15f, 1);
+        s1RT.offsetMin = new Vector2(10, 0); s1RT.offsetMax = Vector2.zero;
+        _score1TMP = s1GO.AddComponent<TMPro.TextMeshProUGUI>();
+        _score1TMP.text = "0";
+        _score1TMP.fontSize = 48; _score1TMP.fontStyle = TMPro.FontStyles.Bold;
+        _score1TMP.color = TwoPlayerManager.Player1Color;
+        _score1TMP.alignment = TMPro.TextAlignmentOptions.Center;
+
+        // Player 1 name
+        var n1GO = new GameObject("Name1");
+        n1GO.transform.SetParent(canvas.transform, false);
+        var n1RT = n1GO.AddComponent<RectTransform>();
+        n1RT.anchorMin = new Vector2(0, 0.83f); n1RT.anchorMax = new Vector2(0.15f, 0.9f);
+        n1RT.offsetMin = new Vector2(10, 0); n1RT.offsetMax = Vector2.zero;
+        var n1TMP = n1GO.AddComponent<TMPro.TextMeshProUGUI>();
+        HebrewText.SetText(n1TMP, TwoPlayerManager.GetName(1));
+        n1TMP.fontSize = 20; n1TMP.color = TwoPlayerManager.Player1Color;
+        n1TMP.alignment = TMPro.TextAlignmentOptions.Center;
+
+        // Right score (Player 2 — RED)
+        var s2GO = new GameObject("Score2");
+        s2GO.transform.SetParent(canvas.transform, false);
+        var s2RT = s2GO.AddComponent<RectTransform>();
+        s2RT.anchorMin = new Vector2(0.85f, 0.9f); s2RT.anchorMax = new Vector2(1, 1);
+        s2RT.offsetMin = Vector2.zero; s2RT.offsetMax = new Vector2(-10, 0);
+        _score2TMP = s2GO.AddComponent<TMPro.TextMeshProUGUI>();
+        _score2TMP.text = "0";
+        _score2TMP.fontSize = 48; _score2TMP.fontStyle = TMPro.FontStyles.Bold;
+        _score2TMP.color = TwoPlayerManager.Player2Color;
+        _score2TMP.alignment = TMPro.TextAlignmentOptions.Center;
+
+        // Player 2 name
+        var n2GO = new GameObject("Name2");
+        n2GO.transform.SetParent(canvas.transform, false);
+        var n2RT = n2GO.AddComponent<RectTransform>();
+        n2RT.anchorMin = new Vector2(0.85f, 0.83f); n2RT.anchorMax = new Vector2(1, 0.9f);
+        n2RT.offsetMin = Vector2.zero; n2RT.offsetMax = new Vector2(-10, 0);
+        var n2TMP = n2GO.AddComponent<TMPro.TextMeshProUGUI>();
+        HebrewText.SetText(n2TMP, TwoPlayerManager.GetName(2));
+        n2TMP.fontSize = 20; n2TMP.color = TwoPlayerManager.Player2Color;
+        n2TMP.alignment = TMPro.TextAlignmentOptions.Center;
+
+        // Color the card backgrounds with player colors
+        if (leftCardBg != null)
+            leftCardBg.color = new Color(TwoPlayerManager.Player1Color.r, TwoPlayerManager.Player1Color.g, TwoPlayerManager.Player1Color.b, 0.15f);
+        if (rightCardBg != null)
+            rightCardBg.color = new Color(TwoPlayerManager.Player2Color.r, TwoPlayerManager.Player2Color.g, TwoPlayerManager.Player2Color.b, 0.15f);
+    }
+
+    private void UpdateScoreDisplay()
+    {
+        if (_score1TMP != null) _score1TMP.text = TwoPlayerManager.Score1.ToString();
+        if (_score2TMP != null) _score2TMP.text = TwoPlayerManager.Score2.ToString();
     }
 
     protected override void OnRoundCleanup()
@@ -252,9 +323,20 @@ public class SharedStickerGameController : BaseMiniGame
 
         if (stickerIndex == sharedStickerIndex)
         {
+            // ── 2-Player: determine which player tapped ──
+            int scoringPlayer = 0;
+            if (TwoPlayerManager.IsActive)
+            {
+                var rt = tappedGO.GetComponent<RectTransform>();
+                float screenX = rt != null ? Camera.main.WorldToViewportPoint(rt.position).x : 0.5f;
+                scoringPlayer = TwoPlayerManager.GetPlayerForScreenPosition(screenX);
+                if (scoringPlayer == 1) TwoPlayerManager.Score1++;
+                else TwoPlayerManager.Score2++;
+            }
+
             Stats?.RecordCorrect();
             PlayCorrectEffect(tappedGO.GetComponent<RectTransform>());
-            StartCoroutine(CorrectSequence(tappedGO));
+            StartCoroutine(CorrectSequence(tappedGO, scoringPlayer));
         }
         else
         {
@@ -264,7 +346,7 @@ public class SharedStickerGameController : BaseMiniGame
         }
     }
 
-    private IEnumerator CorrectSequence(GameObject tappedGO)
+    private IEnumerator CorrectSequence(GameObject tappedGO, int scoringPlayer = 0)
     {
         acceptingInput = false;
 
@@ -275,12 +357,24 @@ public class SharedStickerGameController : BaseMiniGame
             StartCoroutine(BounceAndGlow(img));
         }
 
-        yield return new WaitForSeconds(0.8f);
+        // 2-Player: flash winning side
+        if (TwoPlayerManager.IsActive && scoringPlayer > 0)
+        {
+            var flashSide = scoringPlayer == 1 ? leftCardBg : rightCardBg;
+            if (flashSide != null)
+            {
+                Color origColor = flashSide.color;
+                Color flashColor = TwoPlayerManager.GetColor(scoringPlayer);
+                flashSide.color = new Color(flashColor.r, flashColor.g, flashColor.b, 0.4f);
+                yield return new WaitForSeconds(0.3f);
+                flashSide.color = origColor;
+            }
+            UpdateScoreDisplay();
+        }
+
+        yield return new WaitForSeconds(0.5f);
 
         internalRound++;
-
-        // Complete the round — triggers feedback via BaseMiniGame
-        // Confetti is handled in OnAfterComplete every 3 rounds
         CompleteRound();
     }
 
