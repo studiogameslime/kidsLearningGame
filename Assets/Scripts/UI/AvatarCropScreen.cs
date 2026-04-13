@@ -4,8 +4,8 @@ using TMPro;
 
 /// <summary>
 /// Full-screen avatar crop screen. Image keeps original aspect ratio.
-/// Circle mask shows the final crop area. Drag + pinch to position.
-/// Live preview mirrors exact crop result.
+/// Drag + pinch to position face in circle. Live preview on right.
+/// Save/Cancel/Change buttons below preview.
 /// </summary>
 public static class AvatarCropScreen
 {
@@ -24,11 +24,10 @@ public static class AvatarCropScreen
         float cropDiameter = workspaceH * CircleFraction;
         float cropRadius = cropDiameter / 2f;
 
-        // Base scale: shortest dimension fills the crop circle exactly
         float minDim = Mathf.Min(sourceTex.width, sourceTex.height);
         float baseScale = cropDiameter / minDim;
 
-        // ── Modal (full screen dark) ──
+        // ── Modal ──
         var modal = new GameObject("CropModal");
         modal.transform.SetParent(canvas.transform, false);
         modal.transform.SetAsLastSibling();
@@ -38,48 +37,31 @@ public static class AvatarCropScreen
         modal.AddComponent<Image>().color = new Color(0.1f, 0.1f, 0.12f, 1f);
         modal.GetComponent<Image>().raycastTarget = true;
 
-        // Store modal reference for cleanup
-        var dashCtrl = host as ParentDashboardController;
-
-        // ═══ TOP BAR ═══
+        // ═══ TOP BAR (title only, no save) ═══
         var topBar = new GameObject("TopBar");
         topBar.transform.SetParent(modal.transform, false);
         var tbRT = topBar.AddComponent<RectTransform>();
         tbRT.anchorMin = new Vector2(0, 1); tbRT.anchorMax = Vector2.one;
         tbRT.pivot = new Vector2(0.5f, 1); tbRT.sizeDelta = new Vector2(0, 56);
-        var tbL = topBar.AddComponent<HorizontalLayoutGroup>();
-        tbL.padding = new RectOffset(24, 24, 6, 6); tbL.spacing = 12;
-        tbL.childAlignment = TextAnchor.MiddleCenter;
-        tbL.childForceExpandWidth = false; tbL.childControlWidth = true; tbL.childControlHeight = true;
 
-        // Back
-        var backGO = MakeTMP(topBar.transform, "\u25C0", 26, Color.white);
-        backGO.AddComponent<LayoutElement>().preferredWidth = 44;
-        var backBtn = backGO.AddComponent<Button>();
-        backBtn.transition = Selectable.Transition.None;
-        backBtn.onClick.AddListener(() => { Object.Destroy(sourceTex); Object.Destroy(modal); });
-
-        // Title
-        var titleGO = MakeTMP(topBar.transform, "", 24, Color.white);
-        HebrewText.SetText(titleGO.GetComponent<TextMeshProUGUI>(), "\u05EA\u05DE\u05D5\u05E0\u05EA \u05E4\u05E8\u05D5\u05E4\u05D9\u05DC"); // תמונת פרופיל
+        var titleGO = MakeTMP(topBar.transform, "", 26, Color.white);
+        HebrewText.SetText(titleGO.GetComponent<TextMeshProUGUI>(),
+            "\u05EA\u05DE\u05D5\u05E0\u05EA \u05E4\u05E8\u05D5\u05E4\u05D9\u05DC"); // תמונת פרופיל
         titleGO.GetComponent<TextMeshProUGUI>().fontStyle = FontStyles.Bold;
-        titleGO.AddComponent<LayoutElement>().flexibleWidth = 1;
-
-        // Save
-        var saveGO = MakeTMP(topBar.transform, "", 22, new Color(0.3f, 0.85f, 0.45f));
-        HebrewText.SetText(saveGO.GetComponent<TextMeshProUGUI>(), "\u05E9\u05DE\u05D5\u05E8"); // שמור
-        saveGO.GetComponent<TextMeshProUGUI>().fontStyle = FontStyles.Bold;
-        saveGO.AddComponent<LayoutElement>().preferredWidth = 70;
+        titleGO.GetComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Center;
+        var titleRT = titleGO.GetComponent<RectTransform>();
+        titleRT.anchorMin = Vector2.zero; titleRT.anchorMax = Vector2.one;
+        titleRT.offsetMin = Vector2.zero; titleRT.offsetMax = Vector2.zero;
 
         // ═══ WORKSPACE ═══
         var ws = new GameObject("Workspace");
         ws.transform.SetParent(modal.transform, false);
         var wsRT = ws.AddComponent<RectTransform>();
-        wsRT.anchorMin = new Vector2(0.05f, 0.1f); wsRT.anchorMax = new Vector2(0.72f, 0.92f);
+        wsRT.anchorMin = new Vector2(0.03f, 0.08f); wsRT.anchorMax = new Vector2(0.65f, 0.94f);
         wsRT.offsetMin = Vector2.zero; wsRT.offsetMax = Vector2.zero;
         ws.AddComponent<RectMask2D>();
 
-        // Photo image — natural aspect ratio
+        // Photo
         var imgGO = new GameObject("Photo");
         imgGO.transform.SetParent(ws.transform, false);
         var imgRT = imgGO.AddComponent<RectTransform>();
@@ -91,7 +73,7 @@ public static class AvatarCropScreen
         imgComp.preserveAspect = false;
         imgComp.raycastTarget = true;
 
-        // ── Dim overlay (4 panels around circle) ──
+        // Dim overlay (4 panels)
         Color dimC = new Color(0.06f, 0.06f, 0.08f, 0.55f);
         MakeDim(ws.transform, new Vector2(0, 0.5f), new Vector2(1, 1), new Vector2(0, cropRadius), Vector2.zero, dimC);
         MakeDim(ws.transform, Vector2.zero, new Vector2(1, 0.5f), Vector2.zero, new Vector2(0, -cropRadius), dimC);
@@ -111,33 +93,35 @@ public static class AvatarCropScreen
             rImg.color = new Color(1, 1, 1, 0.6f); rImg.raycastTarget = false;
         }
 
-        // ═══ HELPER TEXT ═══
+        // Helper text
         var helperGO = MakeTMP(modal.transform, "", 18, new Color(1, 1, 1, 0.4f));
         HebrewText.SetText(helperGO.GetComponent<TextMeshProUGUI>(),
             "\u05D4\u05D6\u05D9\u05D6\u05D5 \u05D0\u05EA \u05D4\u05EA\u05DE\u05D5\u05E0\u05D4 \u05DB\u05DA \u05E9\u05D4\u05E4\u05E0\u05D9\u05DD \u05D9\u05D4\u05D9\u05D5 \u05D1\u05EA\u05D5\u05DA \u05D4\u05E2\u05D9\u05D2\u05D5\u05DC");
         helperGO.GetComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Center;
         var helpRT = helperGO.GetComponent<RectTransform>();
-        helpRT.anchorMin = new Vector2(0.05f, 0.03f); helpRT.anchorMax = new Vector2(0.72f, 0.09f);
+        helpRT.anchorMin = new Vector2(0.03f, 0.02f); helpRT.anchorMax = new Vector2(0.65f, 0.07f);
         helpRT.offsetMin = Vector2.zero; helpRT.offsetMax = Vector2.zero;
 
-        // ═══ RIGHT PANEL ═══
+        // ═══ RIGHT PANEL (preview + all buttons) ═══
         var rp = new GameObject("RightPanel");
         rp.transform.SetParent(modal.transform, false);
         var rpRT = rp.AddComponent<RectTransform>();
-        rpRT.anchorMin = new Vector2(0.76f, 0.15f); rpRT.anchorMax = new Vector2(0.96f, 0.85f);
+        rpRT.anchorMin = new Vector2(0.67f, 0.08f); rpRT.anchorMax = new Vector2(0.97f, 0.94f);
         rpRT.offsetMin = Vector2.zero; rpRT.offsetMax = Vector2.zero;
         var rpVL = rp.AddComponent<VerticalLayoutGroup>();
-        rpVL.spacing = 14; rpVL.childAlignment = TextAnchor.UpperCenter;
+        rpVL.spacing = 12; rpVL.childAlignment = TextAnchor.UpperCenter;
         rpVL.childForceExpandWidth = true; rpVL.childForceExpandHeight = false;
         rpVL.childControlWidth = true; rpVL.childControlHeight = true;
+        rpVL.padding = new RectOffset(8, 8, 0, 0);
 
         // Preview label
-        var plGO = MakeTMP(rp.transform, "", 15, new Color(1, 1, 1, 0.45f));
-        HebrewText.SetText(plGO.GetComponent<TextMeshProUGUI>(), "\u05EA\u05E6\u05D5\u05D2\u05D4 \u05DE\u05E7\u05D3\u05D9\u05DE\u05D4");
-        plGO.AddComponent<LayoutElement>().preferredHeight = 20;
+        var plGO = MakeTMP(rp.transform, "", 18, new Color(1, 1, 1, 0.5f));
+        HebrewText.SetText(plGO.GetComponent<TextMeshProUGUI>(),
+            "\u05EA\u05E6\u05D5\u05D2\u05D4 \u05DE\u05E7\u05D3\u05D9\u05DE\u05D4"); // תצוגה מקדימה
+        plGO.AddComponent<LayoutElement>().preferredHeight = 26;
 
-        // Live circular preview
-        float prevSize = 100f;
+        // Large circular preview
+        float prevSize = 180f;
         var lpGO = new GameObject("LP");
         lpGO.transform.SetParent(rp.transform, false);
         lpGO.AddComponent<RectTransform>();
@@ -148,7 +132,11 @@ public static class AvatarCropScreen
         var pcRT = pCircle.AddComponent<RectTransform>();
         pcRT.anchorMin = pcRT.anchorMax = new Vector2(0.5f, 0.5f);
         pcRT.sizeDelta = new Vector2(prevSize, prevSize);
-        if (circleSprite != null) { var pci = pCircle.AddComponent<Image>(); pci.sprite = circleSprite; pci.raycastTarget = false; }
+        if (circleSprite != null)
+        {
+            var pci = pCircle.AddComponent<Image>();
+            pci.sprite = circleSprite; pci.raycastTarget = false;
+        }
         pCircle.AddComponent<Mask>().showMaskGraphic = true;
 
         var piGO = new GameObject("PI");
@@ -164,26 +152,50 @@ public static class AvatarCropScreen
         spGO.transform.SetParent(rp.transform, false);
         spGO.AddComponent<RectTransform>(); spGO.AddComponent<LayoutElement>().flexibleHeight = 1;
 
+        // ── Save button (green, prominent) ──
+        var saveBtnGO = MakeButton(rp.transform, "\u05E9\u05DE\u05D5\u05E8", // שמור
+            new Color(0.18f, 0.7f, 0.3f), Color.white, 28, 55);
+        saveBtnGO.GetComponent<Button>().onClick.AddListener(() =>
+        {
+            var dragger = imgGO.GetComponent<AvatarImageDragger>();
+            float scale = dragger != null ? dragger.CurrentScale : baseScale;
+            SaveAvatar(sourceTex, imgRT, cropDiameter, scale);
+            Object.Destroy(modal);
+        });
+
+        // ── Choose another photo ──
+        var changeBtnGO = MakeButton(rp.transform, "\u05EA\u05DE\u05D5\u05E0\u05D4 \u05D0\u05D7\u05E8\u05EA", // תמונה אחרת
+            new Color(0.3f, 0.3f, 0.35f), Color.white, 22, 45);
+        changeBtnGO.GetComponent<Button>().onClick.AddListener(() =>
+        {
+            Object.Destroy(sourceTex);
+            Object.Destroy(modal);
+            var ctrl = host as ParentDashboardController;
+            if (ctrl != null) ctrl.PickAvatarImage();
+        });
+
+        // ── Cancel button ──
+        var cancelBtnGO = MakeButton(rp.transform, "\u05D1\u05D9\u05D8\u05D5\u05DC", // ביטול
+            new Color(0.25f, 0.25f, 0.28f), new Color(1, 1, 1, 0.7f), 22, 45);
+        cancelBtnGO.GetComponent<Button>().onClick.AddListener(() =>
+        {
+            Object.Destroy(sourceTex);
+            Object.Destroy(modal);
+        });
+
         // ═══ INTERACTIONS ═══
-        var dragger = imgGO.AddComponent<AvatarImageDragger>();
-        dragger.canvas = canvas;
-        dragger.Init(sourceTex.width, sourceTex.height, baseScale, cropRadius);
+        var draggerComp = imgGO.AddComponent<AvatarImageDragger>();
+        draggerComp.canvas = canvas;
+        draggerComp.Init(sourceTex.width, sourceTex.height, baseScale, cropRadius);
 
         var updater = imgGO.AddComponent<AvatarPreviewUpdater>();
         updater.sourceRT = imgRT;
         updater.previewImageRT = piRT;
         updater.cropDiameter = cropDiameter;
         updater.previewDiameter = prevSize;
-
-        // Save handler
-        var saveBtn = saveGO.AddComponent<Button>();
-        saveBtn.transition = Selectable.Transition.None;
-        saveBtn.onClick.AddListener(() =>
-        {
-            SaveAvatar(sourceTex, imgRT, cropDiameter, dragger.CurrentScale);
-            Object.Destroy(modal);
-        });
     }
+
+    // ── Save ──
 
     private static void SaveAvatar(Texture2D source, RectTransform imageRT, float cropDiameter, float scale)
     {
@@ -229,6 +241,8 @@ public static class AvatarCropScreen
         Debug.Log($"[Avatar] Saved: {profile.avatarImagePath}");
     }
 
+    // ── Helpers ──
+
     private static void MakeDim(Transform parent, Vector2 aMin, Vector2 aMax, Vector2 oMin, Vector2 oMax, Color c)
     {
         var go = new GameObject("Dim");
@@ -248,6 +262,39 @@ public static class AvatarCropScreen
         tmp.text = text; tmp.fontSize = size; tmp.color = color;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.raycastTarget = false;
+        return go;
+    }
+
+    private static GameObject MakeButton(Transform parent, string hebrewText, Color bgColor, Color textColor, int fontSize, float height)
+    {
+        var go = new GameObject("Btn");
+        go.transform.SetParent(parent, false);
+        go.AddComponent<RectTransform>();
+        go.AddComponent<LayoutElement>().preferredHeight = height;
+
+        var bg = go.AddComponent<Image>();
+        var roundedRect = Resources.Load<Sprite>("UI/RoundedRect");
+        if (roundedRect != null) { bg.sprite = roundedRect; bg.type = Image.Type.Sliced; }
+        bg.color = bgColor;
+        bg.raycastTarget = true;
+
+        var btn = go.AddComponent<Button>();
+        btn.transition = Selectable.Transition.ColorTint;
+        btn.targetGraphic = bg;
+
+        var textGO = new GameObject("Text");
+        textGO.transform.SetParent(go.transform, false);
+        var textRT = textGO.AddComponent<RectTransform>();
+        textRT.anchorMin = Vector2.zero; textRT.anchorMax = Vector2.one;
+        textRT.offsetMin = Vector2.zero; textRT.offsetMax = Vector2.zero;
+        var tmp = textGO.AddComponent<TextMeshProUGUI>();
+        HebrewText.SetText(tmp, hebrewText);
+        tmp.fontSize = fontSize;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.color = textColor;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.raycastTarget = false;
+
         return go;
     }
 }

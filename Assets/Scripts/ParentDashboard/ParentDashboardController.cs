@@ -4838,7 +4838,7 @@ public class ParentDashboardController : MonoBehaviour
 
     // ── Avatar Image Upload ──
 
-    private void PickAvatarImage()
+    public void PickAvatarImage()
     {
         CloseSettings();
 
