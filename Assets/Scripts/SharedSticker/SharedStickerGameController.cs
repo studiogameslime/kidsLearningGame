@@ -112,13 +112,13 @@ public class SharedStickerGameController : BaseMiniGame
         var splitCanvas = GetComponentInParent<Canvas>();
         if (splitCanvas != null)
         {
-            // Find the play area parent (where the card circles live)
-            Transform playParent = leftCardArea != null ? leftCardArea.parent : splitCanvas.transform;
+            // Place in canvas, right after the background (index 1)
+            // Background is always child 0 of canvas
 
             // Left half — blue
             var leftBg = new GameObject("LeftBg");
-            leftBg.transform.SetParent(playParent, false);
-            leftBg.transform.SetAsFirstSibling(); // behind cards but in play area
+            leftBg.transform.SetParent(splitCanvas.transform, false);
+            leftBg.transform.SetSiblingIndex(1); // after background
             var lbRT = leftBg.AddComponent<RectTransform>();
             lbRT.anchorMin = Vector2.zero; lbRT.anchorMax = new Vector2(0.5f, 1);
             lbRT.offsetMin = Vector2.zero; lbRT.offsetMax = Vector2.zero;
@@ -127,8 +127,8 @@ public class SharedStickerGameController : BaseMiniGame
 
             // Right half — red
             var rightBg = new GameObject("RightBg");
-            rightBg.transform.SetParent(playParent, false);
-            rightBg.transform.SetSiblingIndex(1);
+            rightBg.transform.SetParent(splitCanvas.transform, false);
+            rightBg.transform.SetSiblingIndex(2);
             var rbRT = rightBg.AddComponent<RectTransform>();
             rbRT.anchorMin = new Vector2(0.5f, 0); rbRT.anchorMax = Vector2.one;
             rbRT.offsetMin = Vector2.zero; rbRT.offsetMax = Vector2.zero;
@@ -137,8 +137,8 @@ public class SharedStickerGameController : BaseMiniGame
 
             // Center divider
             var divider = new GameObject("Divider");
-            divider.transform.SetParent(playParent, false);
-            divider.transform.SetSiblingIndex(2);
+            divider.transform.SetParent(splitCanvas.transform, false);
+            divider.transform.SetSiblingIndex(3);
             var dRT = divider.AddComponent<RectTransform>();
             dRT.anchorMin = new Vector2(0.5f, 0); dRT.anchorMax = new Vector2(0.5f, 1);
             dRT.sizeDelta = new Vector2(6, 0);
