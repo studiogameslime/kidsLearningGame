@@ -422,13 +422,7 @@ public class MemoryGameController : BaseMiniGame
 
         Update2PlayerUI(); // set initial turn indicator state
     }
-
-    private void OnDestroy()
-    {
-        // Cleanup 2-player state when leaving the game scene
-        if (TwoPlayerManager.IsActive)
-            TwoPlayerManager.End();
-    }
+    // Note: TwoPlayerManager.End() is called by BaseMiniGame.ExitGame() — no OnDestroy needed
 
     private void Update2PlayerUI()
     {
