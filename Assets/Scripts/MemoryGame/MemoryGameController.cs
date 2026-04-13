@@ -401,19 +401,8 @@ public class MemoryGameController : BaseMiniGame
         _woodPlankImages = new List<Image>();
         if (boardArea != null)
         {
-            // Find WoodSurface → its children are the planks
-            var woodSurface = boardArea.parent != null
-                ? boardArea.parent.Find("WoodSurface")
-                : null;
-            // boardArea might be GridContent, parent is BoardPanel
-            if (woodSurface == null && boardArea.parent != null)
-            {
-                foreach (Transform child in boardArea.parent)
-                {
-                    if (child.name == "WoodSurface")
-                    { woodSurface = child; break; }
-                }
-            }
+            // boardArea IS BoardPanel, WoodSurface is its direct child
+            var woodSurface = boardArea.Find("WoodSurface");
             if (woodSurface != null)
             {
                 foreach (Transform plank in woodSurface)
