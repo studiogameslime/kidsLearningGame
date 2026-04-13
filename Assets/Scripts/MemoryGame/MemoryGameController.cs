@@ -382,27 +382,27 @@ public class MemoryGameController : BaseMiniGame
         _p2ScoreTMP.color = TwoPlayerManager.Player2Color;
         _p2ScoreTMP.alignment = TMPro.TextAlignmentOptions.Center;
 
-        // ── "התור של X" label above the board ──
-        var turnGO = new GameObject("TurnLabel");
-        turnGO.transform.SetParent(canvas.transform, false);
-        var turnRT = turnGO.AddComponent<RectTransform>();
-        turnRT.anchorMin = new Vector2(0.2f, 0.82f); turnRT.anchorMax = new Vector2(0.8f, 0.92f);
-        turnRT.offsetMin = Vector2.zero; turnRT.offsetMax = Vector2.zero;
-        _turnLabelTMP = turnGO.AddComponent<TMPro.TextMeshProUGUI>();
-        _turnLabelTMP.fontSize = 34; _turnLabelTMP.fontStyle = TMPro.FontStyles.Bold;
-        _turnLabelTMP.alignment = TMPro.TextAlignmentOptions.Center;
-
-        // ── Board background tint ──
-        if (boardArea != null)
+        // ── "התור של X" — replace the header title text ──
+        // Find existing header title and append turn info
+        var headerTitle = canvas.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+        // Store reference — we'll update the title text directly
+        // Find the title that says "משחק זיכרון"
+        foreach (var tmp in canvas.GetComponentsInChildren<TMPro.TextMeshProUGUI>())
         {
-            var bgGO = new GameObject("BoardTint");
-            bgGO.transform.SetParent(boardArea, false);
-            bgGO.transform.SetAsFirstSibling();
-            var bgRT = bgGO.AddComponent<RectTransform>();
-            bgRT.anchorMin = Vector2.zero; bgRT.anchorMax = Vector2.one;
-            bgRT.offsetMin = Vector2.zero; bgRT.offsetMax = Vector2.zero;
-            _boardBgTint = bgGO.AddComponent<Image>();
-            _boardBgTint.raycastTarget = false;
+            if (tmp.text.Contains("\u05D6\u05D9\u05DB\u05E8\u05D5\u05DF") || tmp.text.Contains("זיכרון"))
+            {
+                _turnLabelTMP = tmp;
+                break;
+            }
+        }
+
+        // ── Header background tint with current player color ──
+        // Find the header background (top bar)
+        var headerBg = canvas.transform.Find("SafeArea/Header");
+        if (headerBg == null) headerBg = canvas.transform.Find("Header");
+        if (headerBg != null)
+        {
+            _boardBgTint = headerBg.GetComponent<Image>();
         }
 
         Update2PlayerUI();
@@ -420,15 +420,14 @@ public class MemoryGameController : BaseMiniGame
         if (_p2ScoreTMP != null)
             HebrewText.SetText(_p2ScoreTMP, $"{TwoPlayerManager.GetName(2)}: {TwoPlayerManager.Score2}");
 
-        // Turn label: "התור של X"
+        // Header title: "משחק זיכרון — התור של X"
         if (_turnLabelTMP != null)
-        {
-            HebrewText.SetText(_turnLabelTMP, $"\u05D4\u05EA\u05D5\u05E8 \u05E9\u05DC {currentName}"); // התור של X
-            _turnLabelTMP.color = currentColor;
-        }
+            HebrewText.SetText(_turnLabelTMP,
+                $"\u05DE\u05E9\u05D7\u05E7 \u05D6\u05D9\u05DB\u05E8\u05D5\u05DF - \u05D4\u05EA\u05D5\u05E8 \u05E9\u05DC {currentName}");
+            // משחק זיכרון - התור של X
 
-        // Board background tint
+        // Header background tint
         if (_boardBgTint != null)
-            _boardBgTint.color = new Color(currentColor.r, currentColor.g, currentColor.b, 0.08f);
+            _boardBgTint.color = new Color(currentColor.r, currentColor.g, currentColor.b, 0.6f);
     }
 }
