@@ -4958,33 +4958,61 @@ public class ParentDashboardController : MonoBehaviour
         sourceImg.preserveAspect = false;
         sourceImg.raycastTarget = true;
 
-        // Circular mask overlay
+        // ── Dark overlay with circle cutout ──
+        // Top overlay (above circle)
         var circleSprite = Resources.Load<Sprite>("Circle");
-        var maskGO = new GameObject("CircleMask");
-        maskGO.transform.SetParent(previewGO.transform, false);
-        var maskRT = maskGO.AddComponent<RectTransform>();
-        maskRT.anchorMin = new Vector2(0.5f, 0.5f);
-        maskRT.anchorMax = new Vector2(0.5f, 0.5f);
-        maskRT.sizeDelta = new Vector2(300, 300);
-        var maskImg = maskGO.AddComponent<Image>();
-        if (circleSprite != null) maskImg.sprite = circleSprite;
-        maskImg.color = new Color(1, 1, 1, 0);
-        maskImg.raycastTarget = false;
+        float circleR = 150f; // circle radius
+        Color overlayColor = new Color(0, 0, 0, 0.55f);
 
-        // Dark overlay with circle hole (simulated with 4 rects around circle)
-        // Simpler: circle outline ring
+        var topOv = new GameObject("OverlayTop");
+        topOv.transform.SetParent(previewGO.transform, false);
+        var topOvRT = topOv.AddComponent<RectTransform>();
+        topOvRT.anchorMin = new Vector2(0, 0.5f); topOvRT.anchorMax = new Vector2(1, 1);
+        topOvRT.offsetMin = new Vector2(0, circleR); topOvRT.offsetMax = Vector2.zero;
+        topOv.AddComponent<Image>().color = overlayColor;
+        topOv.GetComponent<Image>().raycastTarget = false;
+
+        var botOv = new GameObject("OverlayBot");
+        botOv.transform.SetParent(previewGO.transform, false);
+        var botOvRT = botOv.AddComponent<RectTransform>();
+        botOvRT.anchorMin = new Vector2(0, 0); botOvRT.anchorMax = new Vector2(1, 0.5f);
+        botOvRT.offsetMin = Vector2.zero; botOvRT.offsetMax = new Vector2(0, -circleR);
+        botOv.AddComponent<Image>().color = overlayColor;
+        botOv.GetComponent<Image>().raycastTarget = false;
+
+        var leftOv = new GameObject("OverlayLeft");
+        leftOv.transform.SetParent(previewGO.transform, false);
+        var leftOvRT = leftOv.AddComponent<RectTransform>();
+        leftOvRT.anchorMin = new Vector2(0, 0.5f); leftOvRT.anchorMax = new Vector2(0.5f, 0.5f);
+        leftOvRT.sizeDelta = new Vector2(0, circleR * 2);
+        leftOvRT.anchoredPosition = Vector2.zero;
+        leftOvRT.offsetMin = new Vector2(0, -circleR); leftOvRT.offsetMax = new Vector2(-circleR, circleR);
+        leftOv.AddComponent<Image>().color = overlayColor;
+        leftOv.GetComponent<Image>().raycastTarget = false;
+
+        var rightOv = new GameObject("OverlayRight");
+        rightOv.transform.SetParent(previewGO.transform, false);
+        var rightOvRT = rightOv.AddComponent<RectTransform>();
+        rightOvRT.anchorMin = new Vector2(0.5f, 0.5f); rightOvRT.anchorMax = new Vector2(1, 0.5f);
+        rightOvRT.sizeDelta = new Vector2(0, circleR * 2);
+        rightOvRT.anchoredPosition = Vector2.zero;
+        rightOvRT.offsetMin = new Vector2(circleR, -circleR); rightOvRT.offsetMax = new Vector2(0, circleR);
+        rightOv.AddComponent<Image>().color = overlayColor;
+        rightOv.GetComponent<Image>().raycastTarget = false;
+
+        // White circle border (thin ring)
         var ringGO = new GameObject("Ring");
         ringGO.transform.SetParent(previewGO.transform, false);
         var ringRT = ringGO.AddComponent<RectTransform>();
         ringRT.anchorMin = new Vector2(0.5f, 0.5f);
         ringRT.anchorMax = new Vector2(0.5f, 0.5f);
-        ringRT.sizeDelta = new Vector2(310, 310);
+        ringRT.sizeDelta = new Vector2(circleR * 2 + 6, circleR * 2 + 6);
         var ringImg = ringGO.AddComponent<Image>();
-        if (circleSprite != null) { ringImg.sprite = circleSprite; }
-        ringImg.color = Color.white;
+        if (circleSprite != null) ringImg.sprite = circleSprite;
+        ringImg.color = new Color(1, 1, 1, 0.8f);
         ringImg.raycastTarget = false;
+        ringImg.type = Image.Type.Sliced;
         ringImg.fillCenter = false;
-        ringImg.pixelsPerUnitMultiplier = 0.3f; // thick ring
 
         // ── Buttons row ──
         var btnRow = new GameObject("Buttons");
