@@ -4896,160 +4896,303 @@ public class ParentDashboardController : MonoBehaviour
         var canvas = GetComponentInParent<Canvas>();
         if (canvas == null) { Destroy(sourceTex); return; }
 
-        // ── Modal ──
+        var circleSprite = Resources.Load<Sprite>("Circle");
+
+        // ── Full-screen modal ──
         _settingsModal = new GameObject("CropModal");
         _settingsModal.transform.SetParent(canvas.transform, false);
         var modalRT = _settingsModal.AddComponent<RectTransform>();
         modalRT.anchorMin = Vector2.zero; modalRT.anchorMax = Vector2.one;
         modalRT.offsetMin = Vector2.zero; modalRT.offsetMax = Vector2.zero;
 
-        var dimImg = _settingsModal.AddComponent<Image>();
-        dimImg.color = new Color(0, 0, 0, 0.6f);
-        dimImg.raycastTarget = true;
+        // Dark background
+        var bgImg = _settingsModal.AddComponent<Image>();
+        bgImg.color = new Color(0.12f, 0.12f, 0.14f, 1f);
+        bgImg.raycastTarget = true;
 
-        // ── Card ──
-        var cardGO = new GameObject("Card");
-        cardGO.transform.SetParent(_settingsModal.transform, false);
-        var cardRT = cardGO.AddComponent<RectTransform>();
-        cardRT.anchorMin = cardRT.anchorMax = new Vector2(0.5f, 0.5f);
-        cardRT.sizeDelta = new Vector2(500, 550);
+        // ══════════════════════════
+        //  TOP BAR
+        // ══════════════════════════
+        var topBar = new GameObject("TopBar");
+        topBar.transform.SetParent(_settingsModal.transform, false);
+        var topBarRT = topBar.AddComponent<RectTransform>();
+        topBarRT.anchorMin = new Vector2(0, 1); topBarRT.anchorMax = new Vector2(1, 1);
+        topBarRT.pivot = new Vector2(0.5f, 1);
+        topBarRT.sizeDelta = new Vector2(0, 60);
 
-        var cardImg = cardGO.AddComponent<Image>();
-        if (roundedRect != null) { cardImg.sprite = roundedRect; cardImg.type = Image.Type.Sliced; }
-        cardImg.color = CardColor;
-        cardImg.raycastTarget = true;
+        var topBarLayout = topBar.AddComponent<HorizontalLayoutGroup>();
+        topBarLayout.padding = new RectOffset(20, 20, 8, 8);
+        topBarLayout.spacing = 12;
+        topBarLayout.childAlignment = TextAnchor.MiddleCenter;
+        topBarLayout.childForceExpandWidth = false;
+        topBarLayout.childControlWidth = true;
+        topBarLayout.childControlHeight = true;
 
-        var cardVL = cardGO.AddComponent<VerticalLayoutGroup>();
-        cardVL.spacing = 16;
-        cardVL.padding = new RectOffset(24, 24, 20, 20);
-        cardVL.childAlignment = TextAnchor.UpperCenter;
-        cardVL.childForceExpandWidth = true;
-        cardVL.childForceExpandHeight = false;
-        cardVL.childControlWidth = true;
-        cardVL.childControlHeight = true;
+        // Back button
+        var backGO = new GameObject("Back");
+        backGO.transform.SetParent(topBar.transform, false);
+        var backTMP = backGO.AddComponent<TextMeshProUGUI>();
+        backTMP.text = "\u25C0"; // ◀
+        backTMP.fontSize = 28;
+        backTMP.color = Color.white;
+        backTMP.alignment = TextAlignmentOptions.Center;
+        backGO.AddComponent<LayoutElement>().preferredWidth = 50;
+        var backBtn = backGO.AddComponent<Button>();
+        backBtn.transition = Selectable.Transition.None;
+        backBtn.targetGraphic = backTMP;
+        backBtn.onClick.AddListener(() => { Destroy(sourceTex); CloseSettings(); });
 
         // Title
-        var titleTMP = AddChildTMP(cardGO.transform,
-            H("\u05D1\u05D7\u05E8\u05D5 \u05D0\u05D6\u05D5\u05E8"), // בחרו אזור
-            22, Color.white, TextAlignmentOptions.Center);
+        var titleGO = new GameObject("Title");
+        titleGO.transform.SetParent(topBar.transform, false);
+        var titleTMP = titleGO.AddComponent<TextMeshProUGUI>();
+        HebrewText.SetText(titleTMP, "\u05EA\u05DE\u05D5\u05E0\u05EA \u05E4\u05E8\u05D5\u05E4\u05D9\u05DC"); // תמונת פרופיל
+        titleTMP.fontSize = 26;
         titleTMP.fontStyle = FontStyles.Bold;
-        titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+        titleTMP.color = Color.white;
+        titleTMP.alignment = TextAlignmentOptions.Center;
+        titleGO.AddComponent<LayoutElement>().flexibleWidth = 1;
 
-        // ── Preview area (circular mask showing the image) ──
-        var previewGO = new GameObject("Preview");
-        previewGO.transform.SetParent(cardGO.transform, false);
-        previewGO.AddComponent<RectTransform>();
-        previewGO.AddComponent<LayoutElement>().preferredHeight = 350;
+        // Save button
+        var saveGO = new GameObject("Save");
+        saveGO.transform.SetParent(topBar.transform, false);
+        var saveTMP = saveGO.AddComponent<TextMeshProUGUI>();
+        HebrewText.SetText(saveTMP, "\u05E9\u05DE\u05D5\u05E8"); // שמור
+        saveTMP.fontSize = 24;
+        saveTMP.fontStyle = FontStyles.Bold;
+        saveTMP.color = new Color(0.3f, 0.85f, 0.4f);
+        saveTMP.alignment = TextAlignmentOptions.Center;
+        saveGO.AddComponent<LayoutElement>().preferredWidth = 80;
 
-        // Image container (draggable inside the circle)
-        var imageContainerGO = new GameObject("ImageContainer");
-        imageContainerGO.transform.SetParent(previewGO.transform, false);
-        var containerRT = imageContainerGO.AddComponent<RectTransform>();
-        containerRT.anchorMin = new Vector2(0.5f, 0.5f);
-        containerRT.anchorMax = new Vector2(0.5f, 0.5f);
-        float imgSize = Mathf.Max(sourceTex.width, sourceTex.height);
-        float displayScale = 350f / Mathf.Min(sourceTex.width, sourceTex.height);
-        containerRT.sizeDelta = new Vector2(sourceTex.width * displayScale, sourceTex.height * displayScale);
+        // ══════════════════════════
+        //  CROP WORKSPACE
+        // ══════════════════════════
+        var workspaceGO = new GameObject("Workspace");
+        workspaceGO.transform.SetParent(_settingsModal.transform, false);
+        var workspaceRT = workspaceGO.AddComponent<RectTransform>();
+        workspaceRT.anchorMin = new Vector2(0.1f, 0.12f);
+        workspaceRT.anchorMax = new Vector2(0.75f, 0.92f);
+        workspaceRT.offsetMin = Vector2.zero; workspaceRT.offsetMax = Vector2.zero;
 
-        var sourceImg = imageContainerGO.AddComponent<Image>();
+        // Clip content to workspace
+        workspaceGO.AddComponent<RectMask2D>();
+
+        // Image (draggable + pinchable)
+        var imageGO = new GameObject("Image");
+        imageGO.transform.SetParent(workspaceGO.transform, false);
+        var imageRT = imageGO.AddComponent<RectTransform>();
+        imageRT.anchorMin = new Vector2(0.5f, 0.5f);
+        imageRT.anchorMax = new Vector2(0.5f, 0.5f);
+
+        // Calculate initial scale to cover the crop circle
+        float workspaceH = 800f; // approximate workspace height in pixels
+        float cropDiameter = workspaceH * 0.7f; // circle = 70% of workspace
+        float minDimension = Mathf.Min(sourceTex.width, sourceTex.height);
+        float initialScale = cropDiameter / minDimension;
+        // Ensure image covers circle
+        initialScale *= 1.1f;
+
+        imageRT.sizeDelta = new Vector2(sourceTex.width * initialScale, sourceTex.height * initialScale);
+
+        var sourceImg = imageGO.AddComponent<Image>();
         sourceImg.sprite = Sprite.Create(sourceTex,
             new Rect(0, 0, sourceTex.width, sourceTex.height),
             new Vector2(0.5f, 0.5f));
         sourceImg.preserveAspect = false;
         sourceImg.raycastTarget = true;
 
-        // ── Dark overlay with circle cutout ──
-        // Top overlay (above circle)
-        var circleSprite = Resources.Load<Sprite>("Circle");
-        float circleR = 150f; // circle radius
-        Color overlayColor = new Color(0, 0, 0, 0.55f);
+        // ── Dimmed overlay with circle hole (Mask approach) ──
+        // Full dim over workspace
+        var dimOverlay = new GameObject("DimOverlay");
+        dimOverlay.transform.SetParent(workspaceGO.transform, false);
+        var dimOvRT = dimOverlay.AddComponent<RectTransform>();
+        dimOvRT.anchorMin = Vector2.zero; dimOvRT.anchorMax = Vector2.one;
+        dimOvRT.offsetMin = Vector2.zero; dimOvRT.offsetMax = Vector2.zero;
+        var dimOvImg = dimOverlay.AddComponent<Image>();
+        dimOvImg.color = new Color(0, 0, 0, 0.5f);
+        dimOvImg.raycastTarget = false;
 
-        var topOv = new GameObject("OverlayTop");
-        topOv.transform.SetParent(previewGO.transform, false);
-        var topOvRT = topOv.AddComponent<RectTransform>();
-        topOvRT.anchorMin = new Vector2(0, 0.5f); topOvRT.anchorMax = new Vector2(1, 1);
-        topOvRT.offsetMin = new Vector2(0, circleR); topOvRT.offsetMax = Vector2.zero;
-        topOv.AddComponent<Image>().color = overlayColor;
-        topOv.GetComponent<Image>().raycastTarget = false;
+        // Circle cutout — clear area inside circle using a Mask with inverted approach
+        // Since Unity doesn't support inverse mask, we use the circle as a "bright" overlay
+        // that cancels the dim by being fully transparent
+        var circleCutout = new GameObject("CircleCutout");
+        circleCutout.transform.SetParent(workspaceGO.transform, false);
+        var cutoutRT = circleCutout.AddComponent<RectTransform>();
+        cutoutRT.anchorMin = new Vector2(0.5f, 0.5f);
+        cutoutRT.anchorMax = new Vector2(0.5f, 0.5f);
+        cutoutRT.sizeDelta = new Vector2(cropDiameter, cropDiameter);
 
-        var botOv = new GameObject("OverlayBot");
-        botOv.transform.SetParent(previewGO.transform, false);
-        var botOvRT = botOv.AddComponent<RectTransform>();
-        botOvRT.anchorMin = new Vector2(0, 0); botOvRT.anchorMax = new Vector2(1, 0.5f);
-        botOvRT.offsetMin = Vector2.zero; botOvRT.offsetMax = new Vector2(0, -circleR);
-        botOv.AddComponent<Image>().color = overlayColor;
-        botOv.GetComponent<Image>().raycastTarget = false;
+        // Use SpriteMask approach: circle sprite masks out the dim
+        // Actually simplest: don't use dim overlay. Instead use 4 panels.
 
-        var leftOv = new GameObject("OverlayLeft");
-        leftOv.transform.SetParent(previewGO.transform, false);
-        var leftOvRT = leftOv.AddComponent<RectTransform>();
-        leftOvRT.anchorMin = new Vector2(0, 0.5f); leftOvRT.anchorMax = new Vector2(0.5f, 0.5f);
-        leftOvRT.sizeDelta = new Vector2(0, circleR * 2);
-        leftOvRT.anchoredPosition = Vector2.zero;
-        leftOvRT.offsetMin = new Vector2(0, -circleR); leftOvRT.offsetMax = new Vector2(-circleR, circleR);
-        leftOv.AddComponent<Image>().color = overlayColor;
-        leftOv.GetComponent<Image>().raycastTarget = false;
+        // Remove dim overlay and use 4 panels instead
+        Destroy(dimOverlay);
 
-        var rightOv = new GameObject("OverlayRight");
-        rightOv.transform.SetParent(previewGO.transform, false);
-        var rightOvRT = rightOv.AddComponent<RectTransform>();
-        rightOvRT.anchorMin = new Vector2(0.5f, 0.5f); rightOvRT.anchorMax = new Vector2(1, 0.5f);
-        rightOvRT.sizeDelta = new Vector2(0, circleR * 2);
-        rightOvRT.anchoredPosition = Vector2.zero;
-        rightOvRT.offsetMin = new Vector2(circleR, -circleR); rightOvRT.offsetMax = new Vector2(0, circleR);
-        rightOv.AddComponent<Image>().color = overlayColor;
-        rightOv.GetComponent<Image>().raycastTarget = false;
+        float cR = cropDiameter / 2f;
+        Color dimColor = new Color(0.08f, 0.08f, 0.1f, 0.6f);
 
-        // White circle border (thin ring)
+        // Top
+        var dTop = MakeDimPanel(workspaceGO.transform, "DimTop",
+            new Vector2(0, 0.5f), new Vector2(1, 1),
+            new Vector2(0, cR), Vector2.zero);
+        dTop.color = dimColor;
+        // Bottom
+        var dBot = MakeDimPanel(workspaceGO.transform, "DimBot",
+            new Vector2(0, 0), new Vector2(1, 0.5f),
+            Vector2.zero, new Vector2(0, -cR));
+        dBot.color = dimColor;
+        // Left
+        var dLeft = MakeDimPanel(workspaceGO.transform, "DimLeft",
+            new Vector2(0, 0.5f), new Vector2(0.5f, 0.5f),
+            new Vector2(0, -cR), new Vector2(-cR, cR));
+        dLeft.color = dimColor;
+        // Right
+        var dRight = MakeDimPanel(workspaceGO.transform, "DimRight",
+            new Vector2(0.5f, 0.5f), new Vector2(1, 0.5f),
+            new Vector2(cR, -cR), new Vector2(0, cR));
+        dRight.color = dimColor;
+
+        // Circle ring (white, thin)
         var ringGO = new GameObject("Ring");
-        ringGO.transform.SetParent(previewGO.transform, false);
+        ringGO.transform.SetParent(workspaceGO.transform, false);
         var ringRT = ringGO.AddComponent<RectTransform>();
         ringRT.anchorMin = new Vector2(0.5f, 0.5f);
         ringRT.anchorMax = new Vector2(0.5f, 0.5f);
-        ringRT.sizeDelta = new Vector2(circleR * 2 + 6, circleR * 2 + 6);
+        ringRT.sizeDelta = new Vector2(cropDiameter + 4, cropDiameter + 4);
         var ringImg = ringGO.AddComponent<Image>();
         if (circleSprite != null) ringImg.sprite = circleSprite;
-        ringImg.color = new Color(1, 1, 1, 0.8f);
+        ringImg.color = new Color(1f, 1f, 1f, 0.7f);
         ringImg.raycastTarget = false;
-        ringImg.type = Image.Type.Sliced;
         ringImg.fillCenter = false;
 
-        // ── Buttons row ──
-        var btnRow = new GameObject("Buttons");
-        btnRow.transform.SetParent(cardGO.transform, false);
-        btnRow.AddComponent<RectTransform>();
-        var btnLayout = btnRow.AddComponent<HorizontalLayoutGroup>();
-        btnLayout.spacing = 16;
-        btnLayout.childForceExpandWidth = true;
-        btnLayout.childControlWidth = true;
-        btnLayout.childControlHeight = true;
-        btnRow.AddComponent<LayoutElement>().preferredHeight = 55;
+        // Helper text below workspace
+        var helperGO = new GameObject("Helper");
+        helperGO.transform.SetParent(_settingsModal.transform, false);
+        var helperRT = helperGO.AddComponent<RectTransform>();
+        helperRT.anchorMin = new Vector2(0.1f, 0.04f);
+        helperRT.anchorMax = new Vector2(0.75f, 0.11f);
+        helperRT.offsetMin = Vector2.zero; helperRT.offsetMax = Vector2.zero;
+        var helperTMP = helperGO.AddComponent<TextMeshProUGUI>();
+        HebrewText.SetText(helperTMP, "\u05D4\u05D6\u05D9\u05D6\u05D5 \u05D0\u05EA \u05D4\u05EA\u05DE\u05D5\u05E0\u05D4 \u05DB\u05DA \u05E9\u05D4\u05E4\u05E0\u05D9\u05DD \u05D9\u05D4\u05D9\u05D5 \u05D1\u05EA\u05D5\u05DA \u05D4\u05E2\u05D9\u05D2\u05D5\u05DC");
+        // הזיזו את התמונה כך שהפנים יהיו בתוך העיגול
+        helperTMP.fontSize = 20;
+        helperTMP.color = new Color(1, 1, 1, 0.5f);
+        helperTMP.alignment = TextAlignmentOptions.Center;
+        helperTMP.raycastTarget = false;
 
-        // Cancel button
-        MakeSettingsActionButton(btnRow.transform,
-            H("\u05D1\u05D9\u05D8\u05D5\u05DC"), // ביטול
+        // ══════════════════════════
+        //  RIGHT PANEL — Live preview + controls
+        // ══════════════════════════
+        var rightPanel = new GameObject("RightPanel");
+        rightPanel.transform.SetParent(_settingsModal.transform, false);
+        var rightPanelRT = rightPanel.AddComponent<RectTransform>();
+        rightPanelRT.anchorMin = new Vector2(0.78f, 0.15f);
+        rightPanelRT.anchorMax = new Vector2(0.95f, 0.85f);
+        rightPanelRT.offsetMin = Vector2.zero; rightPanelRT.offsetMax = Vector2.zero;
+
+        var rightVL = rightPanel.AddComponent<VerticalLayoutGroup>();
+        rightVL.spacing = 16;
+        rightVL.childAlignment = TextAnchor.UpperCenter;
+        rightVL.childForceExpandWidth = true;
+        rightVL.childForceExpandHeight = false;
+        rightVL.childControlWidth = true;
+        rightVL.childControlHeight = true;
+
+        // "Preview" label
+        var previewLabel = new GameObject("PreviewLabel");
+        previewLabel.transform.SetParent(rightPanel.transform, false);
+        previewLabel.AddComponent<RectTransform>();
+        var plTMP = previewLabel.AddComponent<TextMeshProUGUI>();
+        HebrewText.SetText(plTMP, "\u05EA\u05E6\u05D5\u05D2\u05D4 \u05DE\u05E7\u05D3\u05D9\u05DE\u05D4"); // תצוגה מקדימה
+        plTMP.fontSize = 16;
+        plTMP.color = new Color(1, 1, 1, 0.5f);
+        plTMP.alignment = TextAlignmentOptions.Center;
+        previewLabel.AddComponent<LayoutElement>().preferredHeight = 22;
+
+        // Live circular preview
+        var livePreviewGO = new GameObject("LivePreview");
+        livePreviewGO.transform.SetParent(rightPanel.transform, false);
+        livePreviewGO.AddComponent<RectTransform>();
+        livePreviewGO.AddComponent<LayoutElement>().preferredHeight = 120;
+
+        var previewCircleGO = new GameObject("PreviewCircle");
+        previewCircleGO.transform.SetParent(livePreviewGO.transform, false);
+        var pcRT = previewCircleGO.AddComponent<RectTransform>();
+        pcRT.anchorMin = new Vector2(0.5f, 0.5f);
+        pcRT.anchorMax = new Vector2(0.5f, 0.5f);
+        pcRT.sizeDelta = new Vector2(100, 100);
+        var pcImg = previewCircleGO.AddComponent<Image>();
+        if (circleSprite != null) pcImg.sprite = circleSprite;
+        pcImg.color = Color.white;
+        pcImg.raycastTarget = false;
+        previewCircleGO.AddComponent<Mask>().showMaskGraphic = true;
+
+        var previewImgGO = new GameObject("PreviewImg");
+        previewImgGO.transform.SetParent(previewCircleGO.transform, false);
+        var piRT = previewImgGO.AddComponent<RectTransform>();
+        piRT.anchorMin = Vector2.zero; piRT.anchorMax = Vector2.one;
+        piRT.offsetMin = Vector2.zero; piRT.offsetMax = Vector2.zero;
+        var previewImg = previewImgGO.AddComponent<Image>();
+        previewImg.sprite = sourceImg.sprite;
+        previewImg.preserveAspect = false;
+        previewImg.raycastTarget = false;
+
+        // Spacer
+        var spacer = new GameObject("Spacer");
+        spacer.transform.SetParent(rightPanel.transform, false);
+        spacer.AddComponent<RectTransform>();
+        spacer.AddComponent<LayoutElement>().flexibleHeight = 1;
+
+        // "Choose Another" button
+        MakeSettingsActionButton(rightPanel.transform,
+            H("\u05EA\u05DE\u05D5\u05E0\u05D4 \u05D0\u05D7\u05E8\u05EA"), // תמונה אחרת
             "", () =>
             {
                 Destroy(sourceTex);
                 CloseSettings();
+                PickAvatarImage();
             });
 
-        // Confirm button
-        var capturedTex = sourceTex;
-        var capturedContainerRT = containerRT;
-        var cropCenterOffset = Vector2.zero;
+        // Wire Save button
+        var capturedImageRT = imageRT;
+        float capturedScale = initialScale;
+        float capturedCropDiameter = cropDiameter;
+        var saveBtn = saveGO.AddComponent<Button>();
+        saveBtn.transition = Selectable.Transition.None;
+        saveBtn.targetGraphic = saveTMP;
+        saveBtn.onClick.AddListener(() =>
+        {
+            SaveCroppedAvatar(sourceTex, capturedImageRT, Mathf.RoundToInt(capturedCropDiameter), capturedScale);
+            CloseSettings();
+        });
 
-        MakeSettingsActionButton(btnRow.transform,
-            H("\u05D0\u05D9\u05E9\u05D5\u05E8"), // אישור
-            "", () =>
-            {
-                SaveCroppedAvatar(capturedTex, capturedContainerRT, 300, displayScale);
-                CloseSettings();
-            });
-
-        // ── Make image draggable for positioning ──
-        var dragger = imageContainerGO.AddComponent<AvatarImageDragger>();
+        // ── Dragger with pinch zoom ──
+        var dragger = imageGO.AddComponent<AvatarImageDragger>();
         dragger.canvas = canvas;
+        dragger.minScale = capturedCropDiameter / Mathf.Min(sourceTex.width, sourceTex.height);
+        dragger.maxScale = dragger.minScale * 4f;
+        dragger.currentScale = initialScale;
+
+        // ── Live preview updater ──
+        var updater = imageGO.AddComponent<AvatarPreviewUpdater>();
+        updater.sourceRT = imageRT;
+        updater.previewImg = previewImg;
+        updater.previewRT = piRT;
+        updater.cropDiameter = cropDiameter;
+        updater.texWidth = sourceTex.width;
+        updater.texHeight = sourceTex.height;
+    }
+
+    private Image MakeDimPanel(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = anchorMin; rt.anchorMax = anchorMax;
+        rt.offsetMin = offsetMin; rt.offsetMax = offsetMax;
+        var img = go.AddComponent<Image>();
+        img.raycastTarget = false;
+        return img;
     }
 
     private void SaveCroppedAvatar(Texture2D source, RectTransform imageRT, int cropSize, float displayScale)
