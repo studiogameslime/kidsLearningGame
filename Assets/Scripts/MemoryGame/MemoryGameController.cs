@@ -50,8 +50,8 @@ public class MemoryGameController : BaseMiniGame
     // 2-Player UI
     private TMPro.TextMeshProUGUI _p1ScoreTMP;
     private TMPro.TextMeshProUGUI _p2ScoreTMP;
-    private Image _turnIndicatorLeft;
-    private Image _turnIndicatorRight;
+    private TMPro.TextMeshProUGUI _turnLabelTMP;
+    private Image _boardBgTint;
 
     protected override void OnGameInit()
     {
@@ -359,85 +359,76 @@ public class MemoryGameController : BaseMiniGame
         var canvas = GetComponentInParent<Canvas>();
         if (canvas == null) return;
 
-        // Player 1 score (LEFT, BLUE)
+        // ── Scores in header: P1 (blue, left) — score — P2 (red, right) ──
+        // P1 score + name (left of header)
         var s1GO = new GameObject("P1Score");
         s1GO.transform.SetParent(canvas.transform, false);
         var s1RT = s1GO.AddComponent<RectTransform>();
-        s1RT.anchorMin = new Vector2(0, 0.88f); s1RT.anchorMax = new Vector2(0.12f, 1);
-        s1RT.offsetMin = new Vector2(10, 0); s1RT.offsetMax = Vector2.zero;
+        s1RT.anchorMin = new Vector2(0.12f, 0.9f); s1RT.anchorMax = new Vector2(0.3f, 1);
+        s1RT.offsetMin = Vector2.zero; s1RT.offsetMax = Vector2.zero;
         _p1ScoreTMP = s1GO.AddComponent<TMPro.TextMeshProUGUI>();
-        _p1ScoreTMP.text = "0"; _p1ScoreTMP.fontSize = 44; _p1ScoreTMP.fontStyle = TMPro.FontStyles.Bold;
+        _p1ScoreTMP.fontSize = 36; _p1ScoreTMP.fontStyle = TMPro.FontStyles.Bold;
         _p1ScoreTMP.color = TwoPlayerManager.Player1Color;
         _p1ScoreTMP.alignment = TMPro.TextAlignmentOptions.Center;
 
-        // Player 1 name
-        var n1GO = new GameObject("P1Name");
-        n1GO.transform.SetParent(canvas.transform, false);
-        var n1RT = n1GO.AddComponent<RectTransform>();
-        n1RT.anchorMin = new Vector2(0, 0.82f); n1RT.anchorMax = new Vector2(0.12f, 0.88f);
-        n1RT.offsetMin = new Vector2(10, 0); n1RT.offsetMax = Vector2.zero;
-        var n1TMP = n1GO.AddComponent<TMPro.TextMeshProUGUI>();
-        HebrewText.SetText(n1TMP, TwoPlayerManager.GetName(1));
-        n1TMP.fontSize = 18; n1TMP.color = TwoPlayerManager.Player1Color;
-        n1TMP.alignment = TMPro.TextAlignmentOptions.Center;
-
-        // Player 2 score (RIGHT, RED)
+        // P2 score + name (right of header)
         var s2GO = new GameObject("P2Score");
         s2GO.transform.SetParent(canvas.transform, false);
         var s2RT = s2GO.AddComponent<RectTransform>();
-        s2RT.anchorMin = new Vector2(0.88f, 0.88f); s2RT.anchorMax = new Vector2(1, 1);
-        s2RT.offsetMin = Vector2.zero; s2RT.offsetMax = new Vector2(-10, 0);
+        s2RT.anchorMin = new Vector2(0.7f, 0.9f); s2RT.anchorMax = new Vector2(0.88f, 1);
+        s2RT.offsetMin = Vector2.zero; s2RT.offsetMax = Vector2.zero;
         _p2ScoreTMP = s2GO.AddComponent<TMPro.TextMeshProUGUI>();
-        _p2ScoreTMP.text = "0"; _p2ScoreTMP.fontSize = 44; _p2ScoreTMP.fontStyle = TMPro.FontStyles.Bold;
+        _p2ScoreTMP.fontSize = 36; _p2ScoreTMP.fontStyle = TMPro.FontStyles.Bold;
         _p2ScoreTMP.color = TwoPlayerManager.Player2Color;
         _p2ScoreTMP.alignment = TMPro.TextAlignmentOptions.Center;
 
-        // Player 2 name
-        var n2GO = new GameObject("P2Name");
-        n2GO.transform.SetParent(canvas.transform, false);
-        var n2RT = n2GO.AddComponent<RectTransform>();
-        n2RT.anchorMin = new Vector2(0.88f, 0.82f); n2RT.anchorMax = new Vector2(1, 0.88f);
-        n2RT.offsetMin = Vector2.zero; n2RT.offsetMax = new Vector2(-10, 0);
-        var n2TMP = n2GO.AddComponent<TMPro.TextMeshProUGUI>();
-        HebrewText.SetText(n2TMP, TwoPlayerManager.GetName(2));
-        n2TMP.fontSize = 18; n2TMP.color = TwoPlayerManager.Player2Color;
-        n2TMP.alignment = TMPro.TextAlignmentOptions.Center;
+        // ── "התור של X" label above the board ──
+        var turnGO = new GameObject("TurnLabel");
+        turnGO.transform.SetParent(canvas.transform, false);
+        var turnRT = turnGO.AddComponent<RectTransform>();
+        turnRT.anchorMin = new Vector2(0.2f, 0.82f); turnRT.anchorMax = new Vector2(0.8f, 0.92f);
+        turnRT.offsetMin = Vector2.zero; turnRT.offsetMax = Vector2.zero;
+        _turnLabelTMP = turnGO.AddComponent<TMPro.TextMeshProUGUI>();
+        _turnLabelTMP.fontSize = 34; _turnLabelTMP.fontStyle = TMPro.FontStyles.Bold;
+        _turnLabelTMP.alignment = TMPro.TextAlignmentOptions.Center;
 
-        // Turn indicators (colored bars at sides)
-        var liGO = new GameObject("TurnLeft");
-        liGO.transform.SetParent(canvas.transform, false);
-        var liRT = liGO.AddComponent<RectTransform>();
-        liRT.anchorMin = new Vector2(0, 0); liRT.anchorMax = new Vector2(0.025f, 1);
-        liRT.offsetMin = Vector2.zero; liRT.offsetMax = Vector2.zero;
-        _turnIndicatorLeft = liGO.AddComponent<Image>();
-        _turnIndicatorLeft.color = TwoPlayerManager.Player1Color;
+        // ── Board background tint ──
+        if (boardArea != null)
+        {
+            var bgGO = new GameObject("BoardTint");
+            bgGO.transform.SetParent(boardArea, false);
+            bgGO.transform.SetAsFirstSibling();
+            var bgRT = bgGO.AddComponent<RectTransform>();
+            bgRT.anchorMin = Vector2.zero; bgRT.anchorMax = Vector2.one;
+            bgRT.offsetMin = Vector2.zero; bgRT.offsetMax = Vector2.zero;
+            _boardBgTint = bgGO.AddComponent<Image>();
+            _boardBgTint.raycastTarget = false;
+        }
 
-        var riGO = new GameObject("TurnRight");
-        riGO.transform.SetParent(canvas.transform, false);
-        var riRT = riGO.AddComponent<RectTransform>();
-        riRT.anchorMin = new Vector2(0.975f, 0); riRT.anchorMax = Vector2.one;
-        riRT.offsetMin = Vector2.zero; riRT.offsetMax = Vector2.zero;
-        _turnIndicatorRight = riGO.AddComponent<Image>();
-        _turnIndicatorRight.color = TwoPlayerManager.Player2Color;
-
-        Update2PlayerUI(); // set initial turn indicator state
+        Update2PlayerUI();
     }
-    // Note: TwoPlayerManager.End() is called by BaseMiniGame.ExitGame() — no OnDestroy needed
 
     private void Update2PlayerUI()
     {
-        if (_p1ScoreTMP != null) _p1ScoreTMP.text = TwoPlayerManager.Score1.ToString();
-        if (_p2ScoreTMP != null) _p2ScoreTMP.text = TwoPlayerManager.Score2.ToString();
-
-        // Turn indicator: active side bright, inactive dimmed
         bool isP1Turn = TwoPlayerManager.CurrentTurn == 1;
-        if (_turnIndicatorLeft != null)
-            _turnIndicatorLeft.color = isP1Turn
-                ? TwoPlayerManager.Player1Color
-                : new Color(TwoPlayerManager.Player1Color.r, TwoPlayerManager.Player1Color.g, TwoPlayerManager.Player1Color.b, 0.15f);
-        if (_turnIndicatorRight != null)
-            _turnIndicatorRight.color = !isP1Turn
-                ? TwoPlayerManager.Player2Color
-                : new Color(TwoPlayerManager.Player2Color.r, TwoPlayerManager.Player2Color.g, TwoPlayerManager.Player2Color.b, 0.15f);
+        string currentName = TwoPlayerManager.GetName(isP1Turn ? 1 : 2);
+        Color currentColor = TwoPlayerManager.GetColor(isP1Turn ? 1 : 2);
+
+        // Scores: "Name: X"
+        if (_p1ScoreTMP != null)
+            HebrewText.SetText(_p1ScoreTMP, $"{TwoPlayerManager.GetName(1)}: {TwoPlayerManager.Score1}");
+        if (_p2ScoreTMP != null)
+            HebrewText.SetText(_p2ScoreTMP, $"{TwoPlayerManager.GetName(2)}: {TwoPlayerManager.Score2}");
+
+        // Turn label: "התור של X"
+        if (_turnLabelTMP != null)
+        {
+            HebrewText.SetText(_turnLabelTMP, $"\u05D4\u05EA\u05D5\u05E8 \u05E9\u05DC {currentName}"); // התור של X
+            _turnLabelTMP.color = currentColor;
+        }
+
+        // Board background tint
+        if (_boardBgTint != null)
+            _boardBgTint.color = new Color(currentColor.r, currentColor.g, currentColor.b, 0.08f);
     }
 }
