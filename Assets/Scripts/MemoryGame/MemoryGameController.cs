@@ -51,7 +51,8 @@ public class MemoryGameController : BaseMiniGame
     private TMPro.TextMeshProUGUI _p1ScoreTMP;
     private TMPro.TextMeshProUGUI _p2ScoreTMP;
     private TMPro.TextMeshProUGUI _turnLabelTMP;
-    private Image _boardBgTint;
+    private List<Image> _woodPlankImages;
+    private List<Color> _originalPlankColors;
 
     protected override void OnGameInit()
     {
@@ -396,17 +397,39 @@ public class MemoryGameController : BaseMiniGame
             }
         }
 
-        // ── Board overlay tint with current player color ──
+        // ── Collect wood plank images to tint with player color ──
+        _woodPlankImages = new List<Image>();
         if (boardArea != null)
         {
-            var tintGO = new GameObject("PlayerTint");
-            tintGO.transform.SetParent(boardArea, false);
-            tintGO.transform.SetAsFirstSibling(); // behind cards
-            var tintRT = tintGO.AddComponent<RectTransform>();
-            tintRT.anchorMin = Vector2.zero; tintRT.anchorMax = Vector2.one;
-            tintRT.offsetMin = Vector2.zero; tintRT.offsetMax = Vector2.zero;
-            _boardBgTint = tintGO.AddComponent<Image>();
-            _boardBgTint.raycastTarget = false;
+            // Find WoodSurface → its children are the planks
+            var woodSurface = boardArea.parent != null
+                ? boardArea.parent.Find("WoodSurface")
+                : null;
+            // boardArea might be GridContent, parent is BoardPanel
+            if (woodSurface == null && boardArea.parent != null)
+            {
+                foreach (Transform child in boardArea.parent)
+                {
+                    if (child.name == "WoodSurface")
+                    { woodSurface = child; break; }
+                }
+            }
+            if (woodSurface != null)
+            {
+                foreach (Transform plank in woodSurface)
+                {
+                    var img = plank.GetComponent<Image>();
+                    if (img != null) _woodPlankImages.Add(img);
+                }
+                // Also get the surface itself if it has an image
+                var surfaceImg = woodSurface.GetComponent<Image>();
+                if (surfaceImg != null) _woodPlankImages.Add(surfaceImg);
+            }
+
+            // Save original colors for blending
+            _originalPlankColors = new List<Color>();
+            foreach (var img in _woodPlankImages)
+                _originalPlankColors.Add(img.color);
         }
 
         Update2PlayerUI();
@@ -430,8 +453,14 @@ public class MemoryGameController : BaseMiniGame
                 $"\u05DE\u05E9\u05D7\u05E7 \u05D6\u05D9\u05DB\u05E8\u05D5\u05DF - \u05D4\u05EA\u05D5\u05E8 \u05E9\u05DC {currentName}");
             // משחק זיכרון - התור של X
 
-        // Board tint — visible over wood texture
-        if (_boardBgTint != null)
-            _boardBgTint.color = new Color(currentColor.r, currentColor.g, currentColor.b, 0.2f);
+        // Tint wood planks with player color
+        if (_woodPlankImages != null && _originalPlankColors != null)
+        {
+            for (int i = 0; i < _woodPlankImages.Count && i < _originalPlankColors.Count; i++)
+            {
+                if (_woodPlankImages[i] != null)
+                    _woodPlankImages[i].color = Color.Lerp(_originalPlankColors[i], currentColor, 0.35f);
+            }
+        }
     }
 }
