@@ -2,34 +2,28 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Updates the small circular live preview to match the current crop position.
-/// Runs every frame to sync with drag/zoom changes.
+/// Mirrors the crop image position/scale into the small circular preview.
+/// The preview shows exactly what the final avatar will look like.
 /// </summary>
 public class AvatarPreviewUpdater : MonoBehaviour
 {
-    public RectTransform sourceRT;   // the draggable image
-    public Image previewImg;         // the preview Image component
-    public RectTransform previewRT;  // the preview RectTransform
-    public float cropDiameter;
-    public int texWidth;
-    public int texHeight;
+    public RectTransform sourceRT;       // the draggable image RT
+    public RectTransform previewImageRT; // the image inside the preview circle
+    public float cropDiameter;           // crop circle diameter in workspace
+    public float previewDiameter;        // preview circle diameter
 
     private void LateUpdate()
     {
-        if (sourceRT == null || previewImg == null || previewRT == null) return;
+        if (sourceRT == null || previewImageRT == null || cropDiameter <= 0) return;
 
-        // Mirror the source image's UV offset into the preview
-        // The preview shows what's inside the crop circle
-        Vector2 imgSize = sourceRT.sizeDelta;
-        Vector2 imgPos = sourceRT.anchoredPosition;
+        // Scale ratio: preview / crop
+        float ratio = previewDiameter / cropDiameter;
 
-        // The crop circle is at (0,0) relative to workspace center
-        // Image offset from circle center:
-        float scaleX = imgSize.x > 0 ? cropDiameter / imgSize.x : 1f;
-        float scaleY = imgSize.y > 0 ? cropDiameter / imgSize.y : 1f;
-        float scale = Mathf.Max(scaleX, scaleY);
+        // Mirror the source image size and position into preview space
+        Vector2 srcSize = sourceRT.sizeDelta;
+        Vector2 srcPos = sourceRT.anchoredPosition;
 
-        previewRT.localScale = Vector3.one * scale;
-        previewRT.anchoredPosition = imgPos * (scale * 100f / cropDiameter);
+        previewImageRT.sizeDelta = srcSize * ratio;
+        previewImageRT.anchoredPosition = srcPos * ratio;
     }
 }
