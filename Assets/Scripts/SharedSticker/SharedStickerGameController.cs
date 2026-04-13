@@ -107,11 +107,48 @@ public class SharedStickerGameController : BaseMiniGame
         n2TMP.fontSize = 20; n2TMP.color = TwoPlayerManager.Player2Color;
         n2TMP.alignment = TMPro.TextAlignmentOptions.Center;
 
-        // Color the card backgrounds with player colors
-        if (leftCardBg != null)
-            leftCardBg.color = new Color(TwoPlayerManager.Player1Color.r, TwoPlayerManager.Player1Color.g, TwoPlayerManager.Player1Color.b, 0.15f);
-        if (rightCardBg != null)
-            rightCardBg.color = new Color(TwoPlayerManager.Player2Color.r, TwoPlayerManager.Player2Color.g, TwoPlayerManager.Player2Color.b, 0.15f);
+        // Split screen background: blue left, red right (behind cards)
+        var canvas = GetComponentInParent<Canvas>();
+        if (canvas != null)
+        {
+            // Left half — blue
+            var leftBg = new GameObject("LeftBg");
+            leftBg.transform.SetParent(canvas.transform, false);
+            leftBg.transform.SetAsFirstSibling(); // behind everything
+            var lbRT = leftBg.AddComponent<RectTransform>();
+            lbRT.anchorMin = Vector2.zero; lbRT.anchorMax = new Vector2(0.5f, 1);
+            lbRT.offsetMin = Vector2.zero; lbRT.offsetMax = Vector2.zero;
+            leftBg.AddComponent<Image>().color = new Color(
+                TwoPlayerManager.Player1Color.r,
+                TwoPlayerManager.Player1Color.g,
+                TwoPlayerManager.Player1Color.b, 0.85f);
+            leftBg.GetComponent<Image>().raycastTarget = false;
+
+            // Right half — red
+            var rightBg = new GameObject("RightBg");
+            rightBg.transform.SetParent(canvas.transform, false);
+            rightBg.transform.SetSiblingIndex(1); // just after left
+            var rbRT = rightBg.AddComponent<RectTransform>();
+            rbRT.anchorMin = new Vector2(0.5f, 0); rbRT.anchorMax = Vector2.one;
+            rbRT.offsetMin = Vector2.zero; rbRT.offsetMax = Vector2.zero;
+            rightBg.AddComponent<Image>().color = new Color(
+                TwoPlayerManager.Player2Color.r,
+                TwoPlayerManager.Player2Color.g,
+                TwoPlayerManager.Player2Color.b, 0.85f);
+            rightBg.GetComponent<Image>().raycastTarget = false;
+
+            // Center divider
+            var divider = new GameObject("Divider");
+            divider.transform.SetParent(canvas.transform, false);
+            divider.transform.SetSiblingIndex(2);
+            var dRT = divider.AddComponent<RectTransform>();
+            dRT.anchorMin = new Vector2(0.5f, 0); dRT.anchorMax = new Vector2(0.5f, 1);
+            dRT.sizeDelta = new Vector2(4, 0);
+            divider.AddComponent<Image>().color = new Color(1, 1, 1, 0.3f);
+            divider.GetComponent<Image>().raycastTarget = false;
+        }
+
+        // Keep card backgrounds in their original color (don't tint)
     }
 
     private void UpdateScoreDisplay()
