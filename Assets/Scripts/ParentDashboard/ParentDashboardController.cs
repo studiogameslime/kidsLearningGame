@@ -4586,6 +4586,22 @@ public class ParentDashboardController : MonoBehaviour
             H("\u05E2\u05E8\u05D9\u05DB\u05EA \u05E9\u05DD \u05D4\u05EA\u05E6\u05D5\u05D2\u05D4 \u05E9\u05DC \u05D4\u05E4\u05E8\u05D5\u05E4\u05D9\u05DC"), // עריכת שם התצוגה של הפרופיל
             () => ShowRenameChildDialog());
 
+        // Avatar photo row
+        var avatarRow = new GameObject("AvatarRow");
+        avatarRow.transform.SetParent(contentGO.transform, false);
+        avatarRow.AddComponent<RectTransform>();
+        var avatarLayout = avatarRow.AddComponent<HorizontalLayoutGroup>();
+        avatarLayout.spacing = 12;
+        avatarLayout.childForceExpandWidth = true;
+        avatarLayout.childControlWidth = true;
+        avatarLayout.childControlHeight = true;
+        avatarRow.AddComponent<LayoutElement>().preferredHeight = 70;
+
+        MakeSettingsActionButton(avatarRow.transform,
+            H("\u05EA\u05DE\u05D5\u05E0\u05EA \u05E4\u05E8\u05D5\u05E4\u05D9\u05DC"), // תמונת פרופיל
+            H("\u05D4\u05E2\u05DC\u05D0\u05EA \u05EA\u05DE\u05D5\u05E0\u05D4 \u05DC\u05D0\u05D5\u05D5\u05D0\u05D8\u05E8"), // העלאת תמונה לאווטר
+            () => PickAvatarImage());
+
         MakeSettingsDivider(contentGO.transform);
 
         // ── Toggles (2-column grid) ──
@@ -4818,6 +4834,243 @@ public class ParentDashboardController : MonoBehaviour
         var rowBtn = rowGO.AddComponent<Button>();
         rowBtn.targetGraphic = rowImg;
         rowBtn.onClick.AddListener(() => onClick?.Invoke());
+    }
+
+    // ── Avatar Image Upload ──
+
+    private void PickAvatarImage()
+    {
+        CloseSettings();
+
+#if UNITY_EDITOR
+        string path = UnityEditor.EditorUtility.OpenFilePanel("Choose Avatar", "", "png,jpg,jpeg");
+        if (!string.IsNullOrEmpty(path))
+        {
+            byte[] bytes = System.IO.File.ReadAllBytes(path);
+            OnAvatarImagePicked(bytes);
+        }
+#elif UNITY_ANDROID
+        NativeGallery.GetImageFromGallery((imagePath) =>
+        {
+            if (!string.IsNullOrEmpty(imagePath))
+            {
+                byte[] bytes = System.IO.File.ReadAllBytes(imagePath);
+                OnAvatarImagePicked(bytes);
+            }
+        }, "Choose Avatar");
+#endif
+    }
+
+    private void OnAvatarImagePicked(byte[] imageBytes)
+    {
+        if (imageBytes == null || imageBytes.Length == 0) return;
+
+        var tex = new Texture2D(2, 2);
+        if (!tex.LoadImage(imageBytes)) { Destroy(tex); return; }
+
+        // Resize to max 512px
+        int maxSize = 512;
+        if (tex.width > maxSize || tex.height > maxSize)
+        {
+            float scale = Mathf.Min((float)maxSize / tex.width, (float)maxSize / tex.height);
+            int newW = Mathf.RoundToInt(tex.width * scale);
+            int newH = Mathf.RoundToInt(tex.height * scale);
+            var rt = RenderTexture.GetTemporary(newW, newH);
+            Graphics.Blit(tex, rt);
+            var prev = RenderTexture.active;
+            RenderTexture.active = rt;
+            var resized = new Texture2D(newW, newH, TextureFormat.RGBA32, false);
+            resized.ReadPixels(new Rect(0, 0, newW, newH), 0, 0);
+            resized.Apply();
+            RenderTexture.active = prev;
+            RenderTexture.ReleaseTemporary(rt);
+            Destroy(tex);
+            tex = resized;
+        }
+
+        ShowAvatarCropDialog(tex);
+    }
+
+    private void ShowAvatarCropDialog(Texture2D sourceTex)
+    {
+        var canvas = GetComponentInParent<Canvas>();
+        if (canvas == null) { Destroy(sourceTex); return; }
+
+        // ── Modal ──
+        _settingsModal = new GameObject("CropModal");
+        _settingsModal.transform.SetParent(canvas.transform, false);
+        var modalRT = _settingsModal.AddComponent<RectTransform>();
+        modalRT.anchorMin = Vector2.zero; modalRT.anchorMax = Vector2.one;
+        modalRT.offsetMin = Vector2.zero; modalRT.offsetMax = Vector2.zero;
+
+        var dimImg = _settingsModal.AddComponent<Image>();
+        dimImg.color = new Color(0, 0, 0, 0.6f);
+        dimImg.raycastTarget = true;
+
+        // ── Card ──
+        var cardGO = new GameObject("Card");
+        cardGO.transform.SetParent(_settingsModal.transform, false);
+        var cardRT = cardGO.AddComponent<RectTransform>();
+        cardRT.anchorMin = cardRT.anchorMax = new Vector2(0.5f, 0.5f);
+        cardRT.sizeDelta = new Vector2(500, 550);
+
+        var cardImg = cardGO.AddComponent<Image>();
+        if (roundedRect != null) { cardImg.sprite = roundedRect; cardImg.type = Image.Type.Sliced; }
+        cardImg.color = CardColor;
+        cardImg.raycastTarget = true;
+
+        var cardVL = cardGO.AddComponent<VerticalLayoutGroup>();
+        cardVL.spacing = 16;
+        cardVL.padding = new RectOffset(24, 24, 20, 20);
+        cardVL.childAlignment = TextAnchor.UpperCenter;
+        cardVL.childForceExpandWidth = true;
+        cardVL.childForceExpandHeight = false;
+        cardVL.childControlWidth = true;
+        cardVL.childControlHeight = true;
+
+        // Title
+        var titleTMP = AddChildTMP(cardGO.transform,
+            H("\u05D1\u05D7\u05E8\u05D5 \u05D0\u05D6\u05D5\u05E8"), // בחרו אזור
+            22, Color.white, TextAlignmentOptions.Center);
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.gameObject.AddComponent<LayoutElement>().preferredHeight = 30;
+
+        // ── Preview area (circular mask showing the image) ──
+        var previewGO = new GameObject("Preview");
+        previewGO.transform.SetParent(cardGO.transform, false);
+        previewGO.AddComponent<RectTransform>();
+        previewGO.AddComponent<LayoutElement>().preferredHeight = 350;
+
+        // Image container (draggable inside the circle)
+        var imageContainerGO = new GameObject("ImageContainer");
+        imageContainerGO.transform.SetParent(previewGO.transform, false);
+        var containerRT = imageContainerGO.AddComponent<RectTransform>();
+        containerRT.anchorMin = new Vector2(0.5f, 0.5f);
+        containerRT.anchorMax = new Vector2(0.5f, 0.5f);
+        float imgSize = Mathf.Max(sourceTex.width, sourceTex.height);
+        float displayScale = 350f / Mathf.Min(sourceTex.width, sourceTex.height);
+        containerRT.sizeDelta = new Vector2(sourceTex.width * displayScale, sourceTex.height * displayScale);
+
+        var sourceImg = imageContainerGO.AddComponent<Image>();
+        sourceImg.sprite = Sprite.Create(sourceTex,
+            new Rect(0, 0, sourceTex.width, sourceTex.height),
+            new Vector2(0.5f, 0.5f));
+        sourceImg.preserveAspect = false;
+        sourceImg.raycastTarget = true;
+
+        // Circular mask overlay
+        var circleSprite = Resources.Load<Sprite>("Circle");
+        var maskGO = new GameObject("CircleMask");
+        maskGO.transform.SetParent(previewGO.transform, false);
+        var maskRT = maskGO.AddComponent<RectTransform>();
+        maskRT.anchorMin = new Vector2(0.5f, 0.5f);
+        maskRT.anchorMax = new Vector2(0.5f, 0.5f);
+        maskRT.sizeDelta = new Vector2(300, 300);
+        var maskImg = maskGO.AddComponent<Image>();
+        if (circleSprite != null) maskImg.sprite = circleSprite;
+        maskImg.color = new Color(1, 1, 1, 0);
+        maskImg.raycastTarget = false;
+
+        // Dark overlay with circle hole (simulated with 4 rects around circle)
+        // Simpler: circle outline ring
+        var ringGO = new GameObject("Ring");
+        ringGO.transform.SetParent(previewGO.transform, false);
+        var ringRT = ringGO.AddComponent<RectTransform>();
+        ringRT.anchorMin = new Vector2(0.5f, 0.5f);
+        ringRT.anchorMax = new Vector2(0.5f, 0.5f);
+        ringRT.sizeDelta = new Vector2(310, 310);
+        var ringImg = ringGO.AddComponent<Image>();
+        if (circleSprite != null) { ringImg.sprite = circleSprite; }
+        ringImg.color = Color.white;
+        ringImg.raycastTarget = false;
+        ringImg.fillCenter = false;
+        ringImg.pixelsPerUnitMultiplier = 0.3f; // thick ring
+
+        // ── Buttons row ──
+        var btnRow = new GameObject("Buttons");
+        btnRow.transform.SetParent(cardGO.transform, false);
+        btnRow.AddComponent<RectTransform>();
+        var btnLayout = btnRow.AddComponent<HorizontalLayoutGroup>();
+        btnLayout.spacing = 16;
+        btnLayout.childForceExpandWidth = true;
+        btnLayout.childControlWidth = true;
+        btnLayout.childControlHeight = true;
+        btnRow.AddComponent<LayoutElement>().preferredHeight = 55;
+
+        // Cancel button
+        MakeSettingsActionButton(btnRow.transform,
+            H("\u05D1\u05D9\u05D8\u05D5\u05DC"), // ביטול
+            "", () =>
+            {
+                Destroy(sourceTex);
+                CloseSettings();
+            });
+
+        // Confirm button
+        var capturedTex = sourceTex;
+        var capturedContainerRT = containerRT;
+        var cropCenterOffset = Vector2.zero;
+
+        MakeSettingsActionButton(btnRow.transform,
+            H("\u05D0\u05D9\u05E9\u05D5\u05E8"), // אישור
+            "", () =>
+            {
+                SaveCroppedAvatar(capturedTex, capturedContainerRT, 300, displayScale);
+                CloseSettings();
+            });
+
+        // ── Make image draggable for positioning ──
+        var dragger = imageContainerGO.AddComponent<AvatarImageDragger>();
+        dragger.canvas = canvas;
+    }
+
+    private void SaveCroppedAvatar(Texture2D source, RectTransform imageRT, int cropSize, float displayScale)
+    {
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null) { Destroy(source); return; }
+
+        // Calculate crop region based on image offset
+        Vector2 offset = imageRT.anchoredPosition;
+        float texCropSize = cropSize / displayScale;
+        float centerX = source.width / 2f - offset.x / displayScale;
+        float centerY = source.height / 2f - offset.y / displayScale;
+
+        int x = Mathf.Clamp(Mathf.RoundToInt(centerX - texCropSize / 2f), 0, source.width - 1);
+        int y = Mathf.Clamp(Mathf.RoundToInt(centerY - texCropSize / 2f), 0, source.height - 1);
+        int size = Mathf.RoundToInt(texCropSize);
+        size = Mathf.Min(size, source.width - x, source.height - y);
+
+        // Create square cropped texture
+        var cropped = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        cropped.SetPixels(source.GetPixels(x, y, size, size));
+        cropped.Apply();
+
+        // Resize to 256x256
+        var rt = RenderTexture.GetTemporary(256, 256);
+        Graphics.Blit(cropped, rt);
+        var prev = RenderTexture.active;
+        RenderTexture.active = rt;
+        var final = new Texture2D(256, 256, TextureFormat.RGBA32, false);
+        final.ReadPixels(new Rect(0, 0, 256, 256), 0, 0);
+        final.Apply();
+        RenderTexture.active = prev;
+        RenderTexture.ReleaseTemporary(rt);
+        Destroy(cropped);
+
+        // Save to disk
+        byte[] pngData = final.EncodeToPNG();
+        Destroy(final);
+        Destroy(source);
+
+        string dir = System.IO.Path.Combine(Application.persistentDataPath, "profiles", profile.id);
+        if (!System.IO.Directory.Exists(dir)) System.IO.Directory.CreateDirectory(dir);
+        string filePath = System.IO.Path.Combine(dir, "avatar.png");
+        System.IO.File.WriteAllBytes(filePath, pngData);
+
+        profile.avatarImagePath = $"profiles/{profile.id}/avatar.png";
+        ProfileManager.Instance.Save();
+
+        Debug.Log($"[Avatar] Saved avatar for {profile.displayName}: {profile.avatarImagePath}");
     }
 
     private void ShowRenameChildDialog()
