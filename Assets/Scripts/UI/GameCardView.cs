@@ -72,6 +72,39 @@ public class GameCardView : MonoBehaviour
             backgroundImage.color = tint;
         }
 
+        // 2-player badge
+        if (TwoPlayerManager.SupportsMultiplayer(gameId))
+        {
+            var badgeGO = new GameObject("2PBadge");
+            badgeGO.transform.SetParent(transform, false);
+            badgeGO.transform.SetAsLastSibling();
+            var badgeRT = badgeGO.AddComponent<RectTransform>();
+            badgeRT.anchorMin = new Vector2(1, 1);
+            badgeRT.anchorMax = new Vector2(1, 1);
+            badgeRT.pivot = new Vector2(1, 1);
+            badgeRT.anchoredPosition = new Vector2(-8, -8);
+            badgeRT.sizeDelta = new Vector2(44, 44);
+
+            var badgeBg = badgeGO.AddComponent<Image>();
+            var circleSprite = Resources.Load<Sprite>("Circle");
+            if (circleSprite != null) badgeBg.sprite = circleSprite;
+            badgeBg.color = new Color(0.23f, 0.51f, 0.96f, 0.85f);
+            badgeBg.raycastTarget = false;
+
+            var badgeText = new GameObject("BadgeText");
+            badgeText.transform.SetParent(badgeGO.transform, false);
+            var btRT = badgeText.AddComponent<RectTransform>();
+            btRT.anchorMin = Vector2.zero; btRT.anchorMax = Vector2.one;
+            btRT.offsetMin = Vector2.zero; btRT.offsetMax = Vector2.zero;
+            var btTMP = badgeText.AddComponent<TextMeshProUGUI>();
+            btTMP.text = "2";
+            btTMP.fontSize = 24;
+            btTMP.fontStyle = FontStyles.Bold;
+            btTMP.color = Color.white;
+            btTMP.alignment = TextAlignmentOptions.Center;
+            btTMP.raycastTarget = false;
+        }
+
         // ── Game name ABOVE the thumbnail ──
         if (_gameNameLabel == null)
         {

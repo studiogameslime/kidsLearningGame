@@ -104,7 +104,6 @@ public class MainMenuController : MonoBehaviour
     private void OnGameCardTapped(GameItemData game)
     {
         if (_navigating) return;
-        _navigating = true;
 
         BackgroundMusicManager.PlayOneShot(game.nameClip);
 
@@ -112,6 +111,21 @@ public class MainMenuController : MonoBehaviour
         if (ProfileManager.Instance != null)
             ProfileManager.Instance.RecordGamePlayed(game.id);
 
+        // 2-player games show partner selection first
+        if (TwoPlayerManager.SupportsMultiplayer(game.id))
+        {
+            TwoPlayerSetupFlow.Start(this, game, (g) =>
+            {
+                _navigating = true;
+                if (g.hasSubItems && g.subItems != null && g.subItems.Count > 0)
+                    NavigationManager.GoToSelectionMenu(g);
+                else
+                    NavigationManager.GoToGame(g);
+            });
+            return;
+        }
+
+        _navigating = true;
         if (game.hasSubItems && game.subItems != null && game.subItems.Count > 0)
             NavigationManager.GoToSelectionMenu(game);
         else

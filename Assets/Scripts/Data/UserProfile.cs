@@ -37,6 +37,9 @@ public class UserProfile
     // Store review
     public bool hasShownStoreReview;
 
+    // 2-Player match history
+    public List<TwoPlayerMatchRecord> twoPlayerHistory = new List<TwoPlayerMatchRecord>();
+
     public UserProfile()
     {
         id = Guid.NewGuid().ToString("N").Substring(0, 8);
@@ -203,6 +206,17 @@ public class AquariumCollection
     public int level;                       // current aquarium level (0-based)
     public long lastCleanedAt;              // Unix timestamp of last glass cleaning (0 = never)
     public int dirtSeed;                    // Perlin noise seed for consistent dirt pattern
+}
+
+/// <summary>Tracks 2-player match results between a pair of profiles.</summary>
+[Serializable]
+public class TwoPlayerMatchRecord
+{
+    public string partnerProfileId;  // the other player's profile ID
+    public string gameId;            // which game was played
+    public int myWins;
+    public int partnerWins;
+    public int totalMatches;
 }
 
 [Serializable]
