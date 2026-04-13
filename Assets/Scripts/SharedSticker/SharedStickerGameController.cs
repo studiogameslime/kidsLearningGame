@@ -72,6 +72,7 @@ public class SharedStickerGameController : BaseMiniGame
         _score1TMP.fontSize = 48; _score1TMP.fontStyle = TMPro.FontStyles.Bold;
         _score1TMP.color = TwoPlayerManager.Player1Color;
         _score1TMP.alignment = TMPro.TextAlignmentOptions.Center;
+        _score1TMP.raycastTarget = false;
 
         // Player 1 name
         var n1GO = new GameObject("Name1");
@@ -83,6 +84,7 @@ public class SharedStickerGameController : BaseMiniGame
         HebrewText.SetText(n1TMP, TwoPlayerManager.GetName(1));
         n1TMP.fontSize = 20; n1TMP.color = TwoPlayerManager.Player1Color;
         n1TMP.alignment = TMPro.TextAlignmentOptions.Center;
+        n1TMP.raycastTarget = false;
 
         // Right score (Player 2 — RED)
         var s2GO = new GameObject("Score2");
@@ -95,6 +97,7 @@ public class SharedStickerGameController : BaseMiniGame
         _score2TMP.fontSize = 48; _score2TMP.fontStyle = TMPro.FontStyles.Bold;
         _score2TMP.color = TwoPlayerManager.Player2Color;
         _score2TMP.alignment = TMPro.TextAlignmentOptions.Center;
+        _score2TMP.raycastTarget = false;
 
         // Player 2 name
         var n2GO = new GameObject("Name2");
@@ -106,19 +109,25 @@ public class SharedStickerGameController : BaseMiniGame
         HebrewText.SetText(n2TMP, TwoPlayerManager.GetName(2));
         n2TMP.fontSize = 20; n2TMP.color = TwoPlayerManager.Player2Color;
         n2TMP.alignment = TMPro.TextAlignmentOptions.Center;
+        n2TMP.raycastTarget = false;
 
         // Split screen background: blue left, red right
-        // Place ABOVE the wood background but BELOW the cards
+        // Place AFTER all wood layers but BEFORE SafeArea (so they cover the wood)
         var splitCanvas = GetComponentInParent<Canvas>();
         if (splitCanvas != null)
         {
-            // Place in canvas, right after the background (index 1)
-            // Background is always child 0 of canvas
+            // Find SafeArea's sibling index — insert right before it
+            int insertIndex = splitCanvas.transform.childCount;
+            for (int i = 0; i < splitCanvas.transform.childCount; i++)
+            {
+                if (splitCanvas.transform.GetChild(i).GetComponent<SafeAreaHandler>() != null)
+                { insertIndex = i; break; }
+            }
 
             // Left half — blue
             var leftBg = new GameObject("LeftBg");
             leftBg.transform.SetParent(splitCanvas.transform, false);
-            leftBg.transform.SetSiblingIndex(1); // after background
+            leftBg.transform.SetSiblingIndex(insertIndex);
             var lbRT = leftBg.AddComponent<RectTransform>();
             lbRT.anchorMin = Vector2.zero; lbRT.anchorMax = new Vector2(0.5f, 1);
             lbRT.offsetMin = Vector2.zero; lbRT.offsetMax = Vector2.zero;
@@ -128,7 +137,7 @@ public class SharedStickerGameController : BaseMiniGame
             // Right half — red
             var rightBg = new GameObject("RightBg");
             rightBg.transform.SetParent(splitCanvas.transform, false);
-            rightBg.transform.SetSiblingIndex(2);
+            rightBg.transform.SetSiblingIndex(insertIndex + 1);
             var rbRT = rightBg.AddComponent<RectTransform>();
             rbRT.anchorMin = new Vector2(0.5f, 0); rbRT.anchorMax = Vector2.one;
             rbRT.offsetMin = Vector2.zero; rbRT.offsetMax = Vector2.zero;
@@ -138,7 +147,7 @@ public class SharedStickerGameController : BaseMiniGame
             // Center divider
             var divider = new GameObject("Divider");
             divider.transform.SetParent(splitCanvas.transform, false);
-            divider.transform.SetSiblingIndex(3);
+            divider.transform.SetSiblingIndex(insertIndex + 2);
             var dRT = divider.AddComponent<RectTransform>();
             dRT.anchorMin = new Vector2(0.5f, 0); dRT.anchorMax = new Vector2(0.5f, 1);
             dRT.sizeDelta = new Vector2(6, 0);

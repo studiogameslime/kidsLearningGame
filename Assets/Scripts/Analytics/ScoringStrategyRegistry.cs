@@ -37,6 +37,9 @@ public static class ScoringStrategyRegistry
         if (id.Contains("simon") || id.Contains("simonsays"))
             return new SimonSaysScoringStrategy();
 
+        if (id.Contains("spinpuzzle"))
+            return new SpinPuzzleScoringStrategy();
+
         if (id.Contains("puzzle") || id.Contains("jigsaw"))
             return new PuzzleGameScoringStrategy();
 

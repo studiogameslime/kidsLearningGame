@@ -316,7 +316,13 @@ public abstract class BaseMiniGame : MonoBehaviour
             yield return null;
 
         // ── Award star + sticker + check discovery BEFORE advancing ──
-        if (GameCompletionBridge.Instance != null)
+        // In 2-player mode: skip rewards (stars, stickers, discoveries) but count games for both players
+        if (TwoPlayerManager.IsActive)
+        {
+            GameCompletionBridge.IncrementGameCount(TwoPlayerManager.Player1);
+            GameCompletionBridge.IncrementGameCount(TwoPlayerManager.Player2);
+        }
+        else if (GameCompletionBridge.Instance != null)
         {
             bool discoveryLoaded = shouldPlayConfetti
                 ? GameCompletionBridge.Instance.AwardAndCheckDiscovery()

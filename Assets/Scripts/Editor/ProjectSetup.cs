@@ -265,6 +265,9 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Letter Bubbles…", 0.998f);
             LetterBubblesSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Spin Puzzle…", 0.9988f);
+            SpinPuzzleSetup.RunSetupSilent();
+
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Xylophone…", 0.999f);
             XylophoneSetup.RunSetupSilent();
 
@@ -964,13 +967,27 @@ public class ProjectSetup : EditorWindow
         tower.nameClip = LoadAudioClip("Assets/Sounds/Games Names/לגו.mp3");
         EditorUtility.SetDirty(tower);
 
+        // ── Spin Puzzle ──
+        var spinPuzzle = CreateSO<GameItemData>($"{DataPath}/SpinPuzzle.asset");
+        spinPuzzle.id = "spinpuzzle";
+        spinPuzzle.title = "\u05E1\u05D5\u05D1\u05D1 \u05D5\u05D4\u05EA\u05D0\u05DD";
+        spinPuzzle.cardColor = HexColor("#AB47BC");
+        spinPuzzle.targetSceneName = "SpinPuzzle";
+        spinPuzzle.thumbnail = LoadSprite($"{previewPath}/FlipPuzzle.png");
+        spinPuzzle.hasSubItems = false;
+        EditorUtility.SetDirty(spinPuzzle);
+
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, sizeSort, colorSort, colorCatch, fruitPuzzle, letterBubbles, tower };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, sizeSort, colorSort, colorCatch, fruitPuzzle, letterBubbles, tower, spinPuzzle };
         EditorUtility.SetDirty(db);
 
         // Copy GameDatabase to Resources so Resources.Load works at runtime
         EnsureFolder("Assets/Resources");
         AssetDatabase.CopyAsset($"{DataPath}/GameDatabase.asset", "Assets/Resources/GameDatabase.asset");
+
+        // Copy 2-player badge to Resources for runtime loading
+        if (!AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Resources/2 Player.png"))
+            AssetDatabase.CopyAsset("Assets/Art/2 Player.png", "Assets/Resources/2 Player.png");
 
         // Validate age baseline configuration
         ValidateAgeBaseline(db);
@@ -1608,6 +1625,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/ColorSort.unity",
             $"{ScenesPath}/ColorCatch.unity",
             $"{ScenesPath}/TowerBuilder.unity",
+            $"{ScenesPath}/SpinPuzzle.unity",
             $"{ScenesPath}/FruitPuzzle.unity",
             $"{ScenesPath}/LetterBubbles.unity",
             $"{ScenesPath}/SandDrawingScene.unity",

@@ -43,13 +43,13 @@ public class BallMazeController : BaseMiniGame
     private bool isComplete;
 
     // Physics constants — tilt (accelerometer) based
-    private const float TILT_ACCEL = 2400f;      // acceleration force from full tilt
+    private const float TILT_ACCEL = 3200f;      // acceleration force from full tilt
     private const float TILT_FRICTION = 3.5f;    // rolling friction (deceleration)
     private const float TILT_DEAD_ZONE = 0.06f;  // ignore tilt below this threshold
     private const float TILT_SMOOTHING = 8f;     // input smoothing factor
     private const float BOUNCE_REFLECT = 1.4f;   // velocity reflection multiplier on collision
     private const float BOUNCE_DAMPEN = 0.25f;   // velocity retention after bounce
-    private const float MAX_SPEED = 900f;        // lower max for controllability with tilt
+    private const float MAX_SPEED = 1200f;       // max speed
     private Vector2 smoothedTilt;                 // smoothed accelerometer reading
 
     // Visual constants

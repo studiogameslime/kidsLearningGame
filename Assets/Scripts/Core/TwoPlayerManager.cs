@@ -77,7 +77,9 @@ public static class TwoPlayerManager
     private static readonly HashSet<string> TwoPlayerGames = new HashSet<string>
     {
         "memory",
-        "sharedsticker"
+        "sharedsticker",
+        "towerbuilder",
+        "spinpuzzle"
     };
 
     /// <summary>Check if a game supports 2-player mode.</summary>

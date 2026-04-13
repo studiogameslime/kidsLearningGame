@@ -72,6 +72,26 @@ public class GameCompletionBridge : MonoBehaviour
     public void UnlockNavigation() => _navigationLocked = false;
 
     /// <summary>
+    /// Increment game count for a specific profile (used in 2-player mode
+    /// to count games without awarding stars/stickers/discoveries).
+    /// </summary>
+    public static void IncrementGameCount(UserProfile profile)
+    {
+        if (profile == null) return;
+        var jp = profile.journey;
+        jp.totalGamesCompleted++;
+
+        string gameId = GameContext.CurrentGame != null ? GameContext.CurrentGame.id : null;
+        if (!string.IsNullOrEmpty(gameId))
+        {
+            var stat = jp.GetOrCreateStat(gameId);
+            stat.timesPlayedInJourney++;
+        }
+
+        ProfileManager.Instance.Save();
+    }
+
+    /// <summary>
     /// Award star and check for discovery. Called by BaseMiniGame AFTER confetti
     /// and sounds have finished, BEFORE advancing to the next round.
     /// Returns true if DiscoveryReveal was loaded (caller should yield break).

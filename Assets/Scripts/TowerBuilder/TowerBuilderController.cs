@@ -87,6 +87,10 @@ public class TowerBuilderController : BaseMiniGame
         // Map 1-10 difficulty scale to 0-3 tower difficulty tiers (centralized)
         difficulty = GameDifficultyConfig.TowerBuilderTier(Difficulty);
 
+        // In 2-player mode, cap difficulty so towers split nicely
+        if (TwoPlayerManager.IsActive && difficulty > 2)
+            difficulty = 2;
+
         // Allow manual override if selection was passed (e.g. from journey)
         if (GameContext.CurrentSelection != null)
         {
@@ -178,51 +182,267 @@ public class TowerBuilderController : BaseMiniGame
         float areaW = playArea.rect.width;
         float areaH = playArea.rect.height;
 
+        if (TwoPlayerManager.IsActive)
+            LoadLevel2Player(maxStudX, maxRowY, areaW, areaH);
+        else
+            LoadLevel1Player(maxStudX, maxRowY, areaW, areaH);
+    }
+
+    private void LoadLevel1Player(float maxStudX, float maxRowY, float areaW, float areaH)
+    {
         // Tower display areas — generous sizing so towers are the focal point
         float towerAreaW = areaW * 0.40f;
         float towerAreaH = areaH * 0.62f;
 
-        // studW = horizontal pixel size per stud unit
         studW = Mathf.Min(towerAreaW / maxStudX, towerAreaH / maxRowY);
         studW = Mathf.Min(studW, 120f);
-        // rowH = vertical step between rows (shorter than brick height for overlap)
         rowH = studW * (1f - ROW_OVERLAP);
 
-        // Pixel dimensions of the tower footprint
         float towerPixelW = maxStudX * studW;
         float towerPixelH = maxRowY * rowH;
-
-        // Ground line in playArea pixel coords
         float groundY = areaH * GROUND_Y_FRAC;
 
-        // Reference tower origin — bottom-left of tower sits on ground
+        // Reference tower (left), build tower (right)
         float refCenterX = areaW * 0.25f;
         float refOriginX = refCenterX - towerPixelW / 2f;
         float refOriginY = groundY;
 
-        // Build tower origin — same ground level, right side
         float buildCenterX = areaW * 0.75f;
         float buildOriginX = buildCenterX - towerPixelW / 2f;
         float buildOriginY = groundY;
 
-        // Ground platform under each tower
         CreateGroundPlatform(refOriginX, refOriginY, towerPixelW);
         CreateGroundPlatform(buildOriginX, buildOriginY, towerPixelW);
 
-        // Labels above towers
         CreateLabel("\u05D3\u05D5\u05D2\u05DE\u05D4",
             refCenterX, refOriginY + towerPixelH + 20f);
         CreateLabel("\u05D1\u05E0\u05D4 \u05DB\u05D0\u05DF",
             buildCenterX, buildOriginY + towerPixelH + 20f);
 
-        // Render reference tower (fully colored, sorted bottom-to-top)
         BuildTowerDisplay(currentLevel, refOriginX, refOriginY);
+        BuildSilhouettes(currentLevel, buildOriginX, buildOriginY);
+        BuildPalette(currentLevel);
+    }
 
-        // Render build area (silhouettes, sorted bottom-to-top)
+    private void LoadLevel2Player(float maxStudX, float maxRowY, float areaW, float areaH)
+    {
+        // 2-player: build tower in center, small reference top-right, split palettes
+        float towerAreaW = areaW * 0.40f;
+        float towerAreaH = areaH * 0.55f;
+
+        studW = Mathf.Min(towerAreaW / maxStudX, towerAreaH / maxRowY);
+        studW = Mathf.Min(studW, 100f);
+        rowH = studW * (1f - ROW_OVERLAP);
+
+        float towerPixelW = maxStudX * studW;
+        float towerPixelH = maxRowY * rowH;
+        float groundY = areaH * GROUND_Y_FRAC;
+
+        // Small reference tower at top-right
+        float refScale = 0.30f;
+        float refStudW = studW * refScale;
+        float refRowH = rowH * refScale;
+        float refTowerW = maxStudX * refStudW;
+        float refTowerH = maxRowY * refRowH;
+        float refOriginX = areaW - refTowerW - 40f;
+        float refOriginY = areaH - refTowerH - 20f;
+        BuildTowerDisplay(currentLevel, refOriginX, refOriginY, refStudW, refRowH);
+        CreateLabel("\u05D3\u05D5\u05D2\u05DE\u05D4",
+            refOriginX + refTowerW / 2f, refOriginY - 25f);
+
+        // Build tower in center
+        float buildCenterX = areaW * 0.5f;
+        float buildOriginX = buildCenterX - towerPixelW / 2f;
+        float buildOriginY = groundY;
+
+        CreateGroundPlatform(buildOriginX, buildOriginY, towerPixelW);
         BuildSilhouettes(currentLevel, buildOriginX, buildOriginY);
 
-        // Create palette
-        BuildPalette(currentLevel);
+        // Split palette between players
+        Build2PlayerPalettes(currentLevel, areaW, areaH);
+    }
+
+    // ── 2-Player palette ─────────────────────────────────────────
+
+    private void Build2PlayerPalettes(TowerLevel level, float areaW, float areaH)
+    {
+        float spacing = 10f;
+        float baseRowY = areaH * 0.04f;
+        float paletteZoneH = areaH * GROUND_Y_FRAC - 10f;
+
+        // Subtle colored background behind each player's palette
+        CreatePaletteBackground(0f, areaW * 0.45f, 0f, paletteZoneH,
+            TwoPlayerManager.Player1Color);
+        CreatePaletteBackground(areaW * 0.55f, areaW, 0f, paletteZoneH,
+            TwoPlayerManager.Player2Color);
+
+        // Player name labels
+        float labelY = paletteZoneH - 35f;
+        CreatePlayerLabel(TwoPlayerManager.GetName(1), areaW * 0.225f,
+            labelY, TwoPlayerManager.Player1Color);
+        CreatePlayerLabel(TwoPlayerManager.GetName(2), areaW * 0.775f,
+            labelY, TwoPlayerManager.Player2Color);
+
+        // Shuffle and split bricks
+        var indices = new List<int>();
+        for (int i = 0; i < level.bricks.Length; i++) indices.Add(i);
+        ShuffleList(indices);
+
+        int half = Mathf.CeilToInt(indices.Count / 2f);
+        var p1Bricks = indices.GetRange(0, half);
+        var p2Bricks = indices.GetRange(half, indices.Count - half);
+
+        BuildPlayerPalette(level, p1Bricks, 0f, areaW * 0.45f,
+            baseRowY, spacing, TwoPlayerManager.Player1Color);
+        BuildPlayerPalette(level, p2Bricks, areaW * 0.55f, areaW,
+            baseRowY, spacing, TwoPlayerManager.Player2Color);
+    }
+
+    private void BuildPlayerPalette(TowerLevel level, List<int> brickIndices,
+        float leftEdge, float rightEdge, float baseRowY, float spacing, Color playerColor)
+    {
+        float paletteW = rightEdge - leftEdge;
+        float maxW = paletteW * 0.92f;
+
+        var rows = new List<List<int>>();
+        if (brickIndices.Count > 3)
+        {
+            int rowHalf = Mathf.CeilToInt(brickIndices.Count / 2f);
+            rows.Add(brickIndices.GetRange(0, rowHalf));
+            rows.Add(brickIndices.GetRange(rowHalf, brickIndices.Count - rowHalf));
+        }
+        else
+        {
+            rows.Add(brickIndices);
+        }
+
+        float palScale = 1.0f;
+        foreach (var row in rows)
+        {
+            float rowW = 0f;
+            foreach (int idx in row)
+                rowW += level.bricks[idx].StudWidth * studW + spacing;
+            rowW -= spacing;
+            if (rowW > maxW)
+                palScale = Mathf.Min(palScale, maxW / rowW);
+        }
+
+        float maxBrickH = 0f;
+        foreach (int idx in brickIndices)
+        {
+            float h = level.bricks[idx].HeightUnits * studW * palScale;
+            if (h > maxBrickH) maxBrickH = h;
+        }
+
+        float rowSpacing = 8f;
+        float paletteCenterX = (leftEdge + rightEdge) / 2f;
+
+        for (int r = 0; r < rows.Count; r++)
+        {
+            var row = rows[r];
+            float rowY = baseRowY + r * (maxBrickH + rowSpacing);
+
+            float rowW = 0f;
+            foreach (int idx in row)
+                rowW += level.bricks[idx].StudWidth * studW * palScale + spacing;
+            rowW -= spacing;
+
+            float curX = paletteCenterX - rowW / 2f;
+
+            foreach (int idx in row)
+            {
+                var b = level.bricks[idx];
+                float w = b.StudWidth * studW * palScale;
+                float h = b.HeightUnits * studW * palScale;
+
+                Sprite sprite = GetSprite(b.SpriteKey);
+
+                var go = new GameObject("Pal_" + b.SpriteKey);
+                go.transform.SetParent(playArea, false);
+                var rt = go.AddComponent<RectTransform>();
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.zero;
+                rt.pivot = new Vector2(0f, 0f);
+                rt.anchoredPosition = new Vector2(curX, rowY);
+                rt.sizeDelta = new Vector2(w, h);
+                rt.localScale = Vector3.one;
+
+                var img = go.AddComponent<Image>();
+                if (sprite != null) img.sprite = sprite;
+                img.color = Color.white;
+                img.raycastTarget = true;
+
+                var brick = go.AddComponent<DraggableBrick>();
+                brick.Init(b.brickType, b.color, canvas,
+                    Vector3.one, Vector3.one, OnBrickDropped);
+                brick.SaveHomePosition();
+
+                spawnedObjects.Add(go);
+                paletteBricks.Add(brick);
+                curX += w + spacing;
+            }
+        }
+    }
+
+    private void CreatePaletteBackground(float left, float right, float bottom, float top, Color playerColor)
+    {
+        float pad = 10f;
+        float borderW = 5f;
+        float x = left + pad;
+        float y = bottom + pad;
+        float w = right - left - pad * 2;
+        float h = top - bottom - pad;
+
+        // 4 border strips (top, bottom, left, right) — no fill, only frame
+        Color borderColor = new Color(playerColor.r, playerColor.g, playerColor.b, 0.8f);
+
+        // Top strip
+        CreateBorderStrip("BorderTop", x, y + h - borderW, w, borderW, borderColor);
+        // Bottom strip
+        CreateBorderStrip("BorderBottom", x, y, w, borderW, borderColor);
+        // Left strip
+        CreateBorderStrip("BorderLeft", x, y, borderW, h, borderColor);
+        // Right strip
+        CreateBorderStrip("BorderRight", x + w - borderW, y, borderW, h, borderColor);
+    }
+
+    private void CreateBorderStrip(string name, float x, float y, float w, float h, Color color)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(playArea, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.zero;
+        rt.pivot = Vector2.zero;
+        rt.anchoredPosition = new Vector2(x, y);
+        rt.sizeDelta = new Vector2(w, h);
+        var img = go.AddComponent<Image>();
+        img.color = color;
+        img.raycastTarget = false;
+        go.transform.SetAsFirstSibling();
+        spawnedObjects.Add(go);
+    }
+
+    private void CreatePlayerLabel(string text, float centerX, float y, Color color)
+    {
+        var go = new GameObject("PlayerLabel");
+        go.transform.SetParent(playArea, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.zero;
+        rt.pivot = new Vector2(0.5f, 0f);
+        rt.anchoredPosition = new Vector2(centerX, y);
+        rt.sizeDelta = new Vector2(300, 40);
+
+        var tmp = go.AddComponent<TMPro.TextMeshProUGUI>();
+        HebrewText.SetText(tmp, text);
+        tmp.fontSize = 24;
+        tmp.fontStyle = TMPro.FontStyles.Bold;
+        tmp.color = color;
+        tmp.alignment = TMPro.TextAlignmentOptions.Center;
+        tmp.raycastTarget = false;
+
+        spawnedObjects.Add(go);
     }
 
     private void ClearAll()
@@ -254,16 +474,21 @@ public class TowerBuilderController : BaseMiniGame
     // ── tower rendering ──────────────────────────────────────────
     private void BuildTowerDisplay(TowerLevel level, float originX, float originY)
     {
+        BuildTowerDisplay(level, originX, originY, studW, rowH);
+    }
+
+    private void BuildTowerDisplay(TowerLevel level, float originX, float originY,
+        float sW, float rH)
+    {
         refBrickObjects = new GameObject[level.bricks.Length];
         var sorted = GetSortedBrickIndices(level);
         foreach (int idx in sorted)
         {
             var b = level.bricks[idx];
-            float x = originX + b.gridX * studW;
-            float y = originY + b.gridY * rowH;
-            float w = b.StudWidth * studW;
-            // Brick rendered at full sprite height (studW-based) for overlap
-            float h = b.HeightUnits * studW;
+            float x = originX + b.gridX * sW;
+            float y = originY + b.gridY * rH;
+            float w = b.StudWidth * sW;
+            float h = b.HeightUnits * sW;
 
             Sprite sprite = GetSprite(b.SpriteKey);
             var go = CreateBrickImage("Ref_" + b.SpriteKey, sprite,
@@ -651,6 +876,13 @@ public class TowerBuilderController : BaseMiniGame
                 if (img != null) img.color = Color.white;
             }
         }
+
+        // Reset palette brick scale from 2-player pulse highlights
+        foreach (var brick in paletteBricks)
+        {
+            if (brick == null || brick.isPlaced) continue;
+            brick.transform.localScale = Vector3.one;
+        }
     }
 
     /// <summary>
@@ -678,6 +910,7 @@ public class TowerBuilderController : BaseMiniGame
         var slotImages = new List<Image>();
         var slotBaseColors = new List<Color>();
         var refImages = new List<Image>();
+        var paletteBrickImages = new List<Image>();
 
         foreach (int si in nextSlots)
         {
@@ -698,6 +931,21 @@ public class TowerBuilderController : BaseMiniGame
                 var img = refBrickObjects[bi].GetComponent<Image>();
                 if (img != null)
                     refImages.Add(img);
+            }
+
+            // In 2-player mode: also highlight the matching palette brick
+            if (TwoPlayerManager.IsActive)
+            {
+                foreach (var brick in paletteBricks)
+                {
+                    if (brick.isPlaced) continue;
+                    if (brick.brickType == slot.brickType && brick.brickColor == slot.color)
+                    {
+                        var pImg = brick.GetComponent<Image>();
+                        if (pImg != null) paletteBrickImages.Add(pImg);
+                        break;
+                    }
+                }
             }
         }
 
@@ -721,6 +969,14 @@ public class TowerBuilderController : BaseMiniGame
                 if (img == null) continue;
                 float brightness = 1f + pulse * 0.3f; // 1.0 to 1.3
                 img.color = new Color(brightness, brightness, brightness, 1f);
+            }
+
+            // Pulse matching palette brick (2-player guidance)
+            foreach (var img in paletteBrickImages)
+            {
+                if (img == null) continue;
+                float s = 1f + pulse * 0.08f;
+                img.transform.localScale = new Vector3(s, s, 1f);
             }
 
             yield return null;
@@ -757,6 +1013,10 @@ public class TowerBuilderController : BaseMiniGame
         // Gentle whole-tower bounce: all placed bricks scale together
         yield return StartCoroutine(TowerBounce(placedBricks));
 
+        // 2-player: show co-op celebration message
+        if (TwoPlayerManager.IsActive)
+            yield return StartCoroutine(ShowCoopMessage());
+
         yield return new WaitForSeconds(0.5f);
 
         // Let BaseMiniGame handle confetti, stats, and journey navigation
@@ -770,6 +1030,61 @@ public class TowerBuilderController : BaseMiniGame
     /// Flash a brick briefly to white then back — a sparkle sweep effect.
     /// No scale change, so the tower structure stays stable.
     /// </summary>
+    private IEnumerator ShowCoopMessage()
+    {
+        var msgGO = new GameObject("CoopMsg");
+        msgGO.transform.SetParent(playArea, false);
+        var msgRT = msgGO.AddComponent<RectTransform>();
+        msgRT.anchorMin = new Vector2(0.5f, 0.5f);
+        msgRT.anchorMax = new Vector2(0.5f, 0.5f);
+        msgRT.pivot = new Vector2(0.5f, 0.5f);
+        msgRT.anchoredPosition = new Vector2(0, 80f);
+        msgRT.sizeDelta = new Vector2(600, 80);
+
+        var tmp = msgGO.AddComponent<TMPro.TextMeshProUGUI>();
+        HebrewText.SetText(tmp, "\u05D1\u05E0\u05D9\u05EA\u05DD \u05D1\u05D9\u05D7\u05D3!");
+        tmp.fontSize = 48;
+        tmp.fontStyle = TMPro.FontStyles.Bold;
+        tmp.color = new Color(1f, 0.95f, 0.3f);
+        tmp.alignment = TMPro.TextAlignmentOptions.Center;
+        tmp.raycastTarget = false;
+        tmp.outlineWidth = 0.3f;
+        tmp.outlineColor = new Color(0.4f, 0.25f, 0f);
+
+        spawnedObjects.Add(msgGO);
+
+        // Scale up with elastic overshoot
+        msgRT.localScale = Vector3.zero;
+        float t = 0;
+        float dur = 0.4f;
+        while (t < dur)
+        {
+            t += Time.deltaTime;
+            float p = Mathf.Clamp01(t / dur);
+            float scale = p < 0.6f
+                ? Mathf.Lerp(0f, 1.15f, p / 0.6f)
+                : Mathf.Lerp(1.15f, 1f, (p - 0.6f) / 0.4f);
+            msgRT.localScale = Vector3.one * scale;
+            yield return null;
+        }
+        msgRT.localScale = Vector3.one;
+
+        yield return new WaitForSeconds(1.2f);
+
+        // Fade out
+        t = 0;
+        dur = 0.4f;
+        while (t < dur)
+        {
+            t += Time.deltaTime;
+            float p = Mathf.Clamp01(t / dur);
+            tmp.alpha = 1f - p;
+            yield return null;
+        }
+
+        Destroy(msgGO);
+    }
+
     private IEnumerator SparkleFlash(Image img)
     {
         if (img == null) yield break;

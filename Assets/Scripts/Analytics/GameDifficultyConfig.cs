@@ -35,6 +35,17 @@ public static class GameDifficultyConfig
     }
 
     // ═══════════════════════════════════════════════════════════
+    //  SPIN PUZZLE
+    // ═══════════════════════════════════════════════════════════
+
+    public static int SpinPuzzleGridSize(int difficulty)
+    {
+        if (difficulty <= 3) return 2;
+        if (difficulty <= 6) return 3;
+        return 4;
+    }
+
+    // ═══════════════════════════════════════════════════════════
     //  MEMORY GAME
     // ═══════════════════════════════════════════════════════════
 
@@ -323,6 +334,13 @@ public static class GameDifficultyConfig
         if (string.IsNullOrEmpty(gameId)) return $"\u05E8\u05DE\u05D4 {difficulty}"; // רמה X
 
         string id = gameId.ToLowerInvariant().Replace("_", "").Replace("-", "");
+
+        // Spin Puzzle (must come before generic "puzzle" check)
+        if (id.Contains("spinpuzzle"))
+        {
+            int grid = SpinPuzzleGridSize(difficulty);
+            return $"\u05E1\u05D5\u05D1\u05D1 {grid}x{grid}"; // סובב 2x2/3x3/4x4
+        }
 
         // Puzzle
         if (id.Contains("puzzle") || id.Contains("jigsaw"))

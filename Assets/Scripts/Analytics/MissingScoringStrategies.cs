@@ -184,6 +184,24 @@ public class FishingScoringStrategy : BaseScoringStrategy
     public override GameDifficultyExpectation GetExpectation(int d) => InterpolateExpectation(Anchors, d);
 }
 
+// ── Spin Puzzle ──
+public class SpinPuzzleScoringStrategy : BaseScoringStrategy
+{
+    protected override float SuccessWeight => 0.30f;
+    protected override float AccuracyWeight => 0.20f;
+    protected override float SpeedWeight => 0.25f;
+    protected override float IndependenceWeight => 0.15f;
+    protected override float DifficultyWeight => 0.10f;
+
+    private static readonly GameDifficultyExpectation[] Anchors =
+    {
+        new GameDifficultyExpectation { difficultyLevel = 1, expectedDurationMin = 5f, expectedDurationMax = 20f, expectedMistakesMin = 0f, expectedMistakesMax = 0f, expectedActionsMin = 4f, expectedActionsMax = 12f },
+        new GameDifficultyExpectation { difficultyLevel = 5, expectedDurationMin = 10f, expectedDurationMax = 40f, expectedMistakesMin = 0f, expectedMistakesMax = 0f, expectedActionsMin = 9f, expectedActionsMax = 27f },
+        new GameDifficultyExpectation { difficultyLevel = 10, expectedDurationMin = 20f, expectedDurationMax = 60f, expectedMistakesMin = 0f, expectedMistakesMax = 0f, expectedActionsMin = 16f, expectedActionsMax = 48f }
+    };
+    public override GameDifficultyExpectation GetExpectation(int d) => InterpolateExpectation(Anchors, d);
+}
+
 // ── Coloring (creative — high success weight, low speed/accuracy) ──
 public class ColoringScoringStrategy : BaseScoringStrategy
 {

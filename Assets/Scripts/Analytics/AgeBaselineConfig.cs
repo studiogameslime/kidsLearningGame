@@ -227,6 +227,7 @@ public static class AgeBaselineConfig
             new Entry(2, "oddoneout"),          // very different animals, easy visual match
             new Entry(2, "quantitymatch", 3),   // quantities 1-3
             new Entry(2, "laundrysorting"),
+            new Entry(2, "spinpuzzle",     4),  // 2x2 grid
         };
 
         // ── Age 3 ──
@@ -251,6 +252,7 @@ public static class AgeBaselineConfig
             new Entry(3, "letterbubbles", 1),  // 6 bubbles, 2 targets, slow
             new Entry(3, "patterncopy",   3),   // 3x3 grid
             new Entry(3, "towerbuilder"),
+            new Entry(3, "spinpuzzle",     4),  // 2x2 grid
 
             // new Entry(3, "pizzamaker"), // hidden for v1
         };
@@ -289,6 +291,7 @@ public static class AgeBaselineConfig
             new Entry(4, "laundrysorting"),
             new Entry(4, "letterbubbles", 1),  // 6 bubbles, 2 targets, slow
             new Entry(4, "towerbuilder"),
+            new Entry(4, "spinpuzzle",     9),  // 3x3 grid
 
             // new Entry(4, "pizzamaker"), // hidden for v1
         };
@@ -327,6 +330,7 @@ public static class AgeBaselineConfig
             new Entry(5, "sockmatch"),
             new Entry(5, "letterbubbles", 5),  // 8 bubbles, 3 targets, medium speed
             new Entry(5, "towerbuilder"),
+            new Entry(5, "spinpuzzle",    16),  // 4x4 grid
 
             // new Entry(5, "pizzamaker"), // hidden for v1
         };
