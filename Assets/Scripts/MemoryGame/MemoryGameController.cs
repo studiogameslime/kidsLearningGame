@@ -396,13 +396,17 @@ public class MemoryGameController : BaseMiniGame
             }
         }
 
-        // ── Header background tint with current player color ──
-        // Find the header background (top bar)
-        var headerBg = canvas.transform.Find("SafeArea/Header");
-        if (headerBg == null) headerBg = canvas.transform.Find("Header");
-        if (headerBg != null)
+        // ── Board overlay tint with current player color ──
+        if (boardArea != null)
         {
-            _boardBgTint = headerBg.GetComponent<Image>();
+            var tintGO = new GameObject("PlayerTint");
+            tintGO.transform.SetParent(boardArea, false);
+            tintGO.transform.SetAsFirstSibling(); // behind cards
+            var tintRT = tintGO.AddComponent<RectTransform>();
+            tintRT.anchorMin = Vector2.zero; tintRT.anchorMax = Vector2.one;
+            tintRT.offsetMin = Vector2.zero; tintRT.offsetMax = Vector2.zero;
+            _boardBgTint = tintGO.AddComponent<Image>();
+            _boardBgTint.raycastTarget = false;
         }
 
         Update2PlayerUI();
@@ -426,8 +430,8 @@ public class MemoryGameController : BaseMiniGame
                 $"\u05DE\u05E9\u05D7\u05E7 \u05D6\u05D9\u05DB\u05E8\u05D5\u05DF - \u05D4\u05EA\u05D5\u05E8 \u05E9\u05DC {currentName}");
             // משחק זיכרון - התור של X
 
-        // Header background tint
+        // Board tint — visible over wood texture
         if (_boardBgTint != null)
-            _boardBgTint.color = new Color(currentColor.r, currentColor.g, currentColor.b, 0.6f);
+            _boardBgTint.color = new Color(currentColor.r, currentColor.g, currentColor.b, 0.2f);
     }
 }
