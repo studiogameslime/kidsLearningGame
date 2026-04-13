@@ -407,7 +407,7 @@ public class MemoryGameController : BaseMiniGame
         var liGO = new GameObject("TurnLeft");
         liGO.transform.SetParent(canvas.transform, false);
         var liRT = liGO.AddComponent<RectTransform>();
-        liRT.anchorMin = new Vector2(0, 0); liRT.anchorMax = new Vector2(0.005f, 1);
+        liRT.anchorMin = new Vector2(0, 0); liRT.anchorMax = new Vector2(0.025f, 1);
         liRT.offsetMin = Vector2.zero; liRT.offsetMax = Vector2.zero;
         _turnIndicatorLeft = liGO.AddComponent<Image>();
         _turnIndicatorLeft.color = TwoPlayerManager.Player1Color;
@@ -415,12 +415,19 @@ public class MemoryGameController : BaseMiniGame
         var riGO = new GameObject("TurnRight");
         riGO.transform.SetParent(canvas.transform, false);
         var riRT = riGO.AddComponent<RectTransform>();
-        riRT.anchorMin = new Vector2(0.995f, 0); riRT.anchorMax = Vector2.one;
+        riRT.anchorMin = new Vector2(0.975f, 0); riRT.anchorMax = Vector2.one;
         riRT.offsetMin = Vector2.zero; riRT.offsetMax = Vector2.zero;
         _turnIndicatorRight = riGO.AddComponent<Image>();
         _turnIndicatorRight.color = TwoPlayerManager.Player2Color;
 
-        Update2PlayerUI();
+        Update2PlayerUI(); // set initial turn indicator state
+    }
+
+    private void OnDestroy()
+    {
+        // Cleanup 2-player state when leaving the game scene
+        if (TwoPlayerManager.IsActive)
+            TwoPlayerManager.End();
     }
 
     private void Update2PlayerUI()

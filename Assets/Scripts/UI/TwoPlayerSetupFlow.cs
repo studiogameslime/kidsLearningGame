@@ -122,7 +122,7 @@ public static class TwoPlayerSetupFlow
         backTMP.alignment = TextAlignmentOptions.Center;
         var backBtn = backGO.AddComponent<Button>();
         backBtn.transition = Selectable.Transition.None;
-        backBtn.onClick.AddListener(() => Object.Destroy(modal));
+        backBtn.onClick.AddListener(() => { TwoPlayerManager.End(); Object.Destroy(modal); });
     }
 
     private static GameObject CreateProfileCard(Transform parent, UserProfile profile, Sprite circleSprite, System.Action onTap)
@@ -238,6 +238,12 @@ public static class TwoPlayerSetupFlow
 
     private static void ShowIdentityScreen(MonoBehaviour host, GameItemData game, System.Action<GameItemData> onStartGame)
     {
+        if (!TwoPlayerManager.IsActive || TwoPlayerManager.Player1 == null || TwoPlayerManager.Player2 == null)
+        {
+            onStartGame?.Invoke(game);
+            return;
+        }
+
         var canvas = host.GetComponentInParent<Canvas>();
         if (canvas == null) { onStartGame?.Invoke(game); return; }
 

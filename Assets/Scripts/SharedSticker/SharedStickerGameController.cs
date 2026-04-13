@@ -328,8 +328,12 @@ public class SharedStickerGameController : BaseMiniGame
             if (TwoPlayerManager.IsActive)
             {
                 var rt = tappedGO.GetComponent<RectTransform>();
-                float screenX = rt != null ? Camera.main.WorldToViewportPoint(rt.position).x : 0.5f;
-                scoringPlayer = TwoPlayerManager.GetPlayerForScreenPosition(screenX);
+                if (rt != null)
+                {
+                    // For UI Canvas, position.x is already in screen pixels
+                    float screenX = rt.position.x / Screen.width;
+                    scoringPlayer = TwoPlayerManager.GetPlayerForScreenPosition(screenX);
+                }
                 if (scoringPlayer == 1) TwoPlayerManager.Score1++;
                 else TwoPlayerManager.Score2++;
             }

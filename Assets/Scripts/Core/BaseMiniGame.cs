@@ -377,6 +377,7 @@ public abstract class BaseMiniGame : MonoBehaviour
     {
         var profile = ProfileManager.ActiveProfile;
         if (profile == null || !profile.autoSwitchGames) return false;
+        if (TwoPlayerManager.IsActive) return false; // never auto-switch in 2-player mode
         if (NoSwitchGames.Contains(GameId)) return false;
 
         // Track rounds completed in this game

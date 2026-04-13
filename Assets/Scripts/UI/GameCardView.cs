@@ -72,9 +72,12 @@ public class GameCardView : MonoBehaviour
             backgroundImage.color = tint;
         }
 
-        // 2-player badge
+        // 2-player badge (prevent duplicates on card reuse)
         if (TwoPlayerManager.SupportsMultiplayer(gameId))
         {
+            var existing = transform.Find("2PBadge");
+            if (existing != null) return; // badge already exists
+
             var badgeGO = new GameObject("2PBadge");
             badgeGO.transform.SetParent(transform, false);
             badgeGO.transform.SetAsLastSibling();
