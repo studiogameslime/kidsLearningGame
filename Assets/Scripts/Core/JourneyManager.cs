@@ -138,7 +138,6 @@ public class JourneyManager : MonoBehaviour
 
         var jp = profile.journey;
         jp.totalGamesCompleted++;
-        jp.totalStars++;
         sessionGamesPlayed++;
 
         // Update per-game stat

@@ -22,7 +22,7 @@ public class WorldController : MonoBehaviour
     public Button parentAreaButton;
     // albumButton removed — now a tappable world object
 
-    [Header("Star Display")]
+    [Header("Header")]
     public TMPro.TextMeshProUGUI headerTitleTMP;
 
     [Header("Sun/Moon (fixed on screen)")]
@@ -88,7 +88,6 @@ public class WorldController : MonoBehaviour
         UpdateProfileAvatar();
         UpdateHeaderTitle();
         BuildWorld();
-        ApplyFeatureLocks();
 
         // Wire screen navigation arrows
         if (arrowLeftButton != null) arrowLeftButton.onClick.AddListener(GoScreenLeft);
@@ -1277,163 +1276,6 @@ public class WorldController : MonoBehaviour
 
         string name = profile.displayName ?? "";
         HebrewText.SetText(headerTitleTMP, $"\u05D4\u05E2\u05D5\u05DC\u05DD \u05E9\u05DC {name}"); // העולם של מתן
-
-        // Star counter on the left side of the header
-        CreateOrUpdateStarCounter(profile);
-    }
-
-    private TMPro.TextMeshProUGUI _starCounterTMP;
-    private Image _starIconImage;
-
-    private void CreateOrUpdateStarCounter(UserProfile profile)
-    {
-        int stars = profile.journey?.totalStars ?? 0;
-
-        if (_starCounterTMP == null)
-        {
-            var header = headerTitleTMP.transform.parent;
-            if (header == null) return;
-
-            // Container with HorizontalLayoutGroup for auto-sizing
-            var containerGO = new GameObject("StarCounter");
-            containerGO.transform.SetParent(header, false);
-            var containerRT = containerGO.AddComponent<RectTransform>();
-            containerRT.anchorMin = new Vector2(0, 0.5f);
-            containerRT.anchorMax = new Vector2(0, 0.5f);
-            containerRT.pivot = new Vector2(0, 0.5f);
-            containerRT.anchoredPosition = new Vector2(100, 0);
-            var hlg = containerGO.AddComponent<HorizontalLayoutGroup>();
-            hlg.spacing = 6;
-            hlg.childAlignment = TextAnchor.MiddleLeft;
-            hlg.childForceExpandWidth = false;
-            hlg.childForceExpandHeight = false;
-            hlg.childControlWidth = false;
-            hlg.childControlHeight = false;
-            var csf = containerGO.AddComponent<ContentSizeFitter>();
-            csf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-            // Star icon sprite
-            var iconGO = new GameObject("StarIcon");
-            iconGO.transform.SetParent(containerGO.transform, false);
-            _starIconImage = iconGO.AddComponent<Image>();
-            var starSprite = Resources.Load<Sprite>("Icons/star");
-            if (starSprite != null) _starIconImage.sprite = starSprite;
-            _starIconImage.color = Color.white;
-            _starIconImage.preserveAspect = true;
-            _starIconImage.raycastTarget = false;
-            var iconLE = iconGO.AddComponent<LayoutElement>();
-            iconLE.preferredWidth = 50;
-            iconLE.preferredHeight = 50;
-
-            // Number text
-            var textGO = new GameObject("Count");
-            textGO.transform.SetParent(containerGO.transform, false);
-            _starCounterTMP = textGO.AddComponent<TMPro.TextMeshProUGUI>();
-            _starCounterTMP.fontSize = 32;
-            _starCounterTMP.fontStyle = TMPro.FontStyles.Bold;
-            _starCounterTMP.color = Color.white;
-            _starCounterTMP.alignment = TMPro.TextAlignmentOptions.Left;
-            _starCounterTMP.raycastTarget = false;
-            var textLE = textGO.AddComponent<LayoutElement>();
-            textLE.preferredHeight = 50;
-        }
-
-        _starCounterTMP.text = stars.ToString();
-    }
-
-    private void ApplyFeatureLocks()
-    {
-        // Game Shelf
-        var shelf = FindObjectOfType<WorldGameShelf>();
-        if (shelf != null)
-            ApplyLock(shelf.gameObject, FeatureUnlockManager.Feature.GameCollection);
-
-        // Aquarium
-        var aquariumIcon = FindObjectOfType<WorldAquarium>();
-        if (aquariumIcon != null)
-            ApplyLock(aquariumIcon.gameObject, FeatureUnlockManager.Feature.Aquarium);
-
-        // Sandbox (sand drawing)
-        var sandboxIcon = FindObjectOfType<WorldSandbox>();
-        if (sandboxIcon != null)
-            ApplyLock(sandboxIcon.gameObject, FeatureUnlockManager.Feature.Sandbox);
-
-        // Sticker Tree
-        var tree = FindObjectOfType<StickerTreeController>();
-        if (tree != null)
-            ApplyLock(tree.gameObject, FeatureUnlockManager.Feature.StickerTree);
-
-        // Easel / Gallery
-        var easel = FindObjectOfType<WorldEasel>();
-        if (easel != null)
-            ApplyLock(easel.gameObject, FeatureUnlockManager.Feature.Gallery);
-    }
-
-    private void ApplyLock(GameObject featureGO, FeatureUnlockManager.Feature feature)
-    {
-        if (FeatureUnlockManager.IsUnlocked(feature)) return;
-
-        // Disable interaction
-        var buttons = featureGO.GetComponentsInChildren<UnityEngine.UI.Button>(true);
-        foreach (var btn in buttons) btn.interactable = false;
-
-        // Dim the feature
-        var images = featureGO.GetComponentsInChildren<UnityEngine.UI.Image>(true);
-        foreach (var img in images) img.color = new UnityEngine.Color(img.color.r, img.color.g, img.color.b, 0.45f);
-
-        // Add lock overlay with progress
-        var lockGO = new GameObject("LockOverlay");
-        lockGO.transform.SetParent(featureGO.transform, false);
-        var lockRT = lockGO.AddComponent<RectTransform>();
-        lockRT.anchorMin = new Vector2(0.5f, 0.5f);
-        lockRT.anchorMax = new Vector2(0.5f, 0.5f);
-        lockRT.sizeDelta = new Vector2(160, 80);
-        lockRT.anchoredPosition = new Vector2(0, -20);
-
-        // Background
-        var lockBg = lockGO.AddComponent<UnityEngine.UI.Image>();
-        var roundedRect = Resources.Load<Sprite>("UI/RoundedRect");
-        if (roundedRect != null) { lockBg.sprite = roundedRect; lockBg.type = UnityEngine.UI.Image.Type.Sliced; }
-        lockBg.color = new UnityEngine.Color(0, 0, 0, 0.6f);
-        lockBg.raycastTarget = false;
-
-        // Lock icon + progress text
-        var textGO = new GameObject("LockText");
-        textGO.transform.SetParent(lockGO.transform, false);
-        var textRT = textGO.AddComponent<RectTransform>();
-        textRT.anchorMin = Vector2.zero; textRT.anchorMax = Vector2.one;
-        textRT.offsetMin = new Vector2(8, 4); textRT.offsetMax = new Vector2(-8, -4);
-        var lockTMP = textGO.AddComponent<TMPro.TextMeshProUGUI>();
-        int remaining = FeatureUnlockManager.GetRemainingStars(feature);
-        HebrewText.SetText(lockTMP, $"\uD83D\uDD12 \u05E2\u05D5\u05D3 {remaining} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD"); // 🔒 עוד X משחקים
-        lockTMP.fontSize = 16;
-        lockTMP.fontStyle = TMPro.FontStyles.Bold;
-        lockTMP.color = UnityEngine.Color.white;
-        lockTMP.alignment = TMPro.TextAlignmentOptions.Center;
-        lockTMP.raycastTarget = false;
-
-        // Progress bar
-        var barBgGO = new GameObject("ProgressBarBg");
-        barBgGO.transform.SetParent(lockGO.transform, false);
-        var barBgRT = barBgGO.AddComponent<RectTransform>();
-        barBgRT.anchorMin = new Vector2(0.1f, 0); barBgRT.anchorMax = new Vector2(0.9f, 0);
-        barBgRT.pivot = new Vector2(0.5f, 1f);
-        barBgRT.anchoredPosition = new Vector2(0, -2);
-        barBgRT.sizeDelta = new Vector2(0, 8);
-        var barBgImg = barBgGO.AddComponent<UnityEngine.UI.Image>();
-        barBgImg.color = new UnityEngine.Color(1, 1, 1, 0.2f);
-        barBgImg.raycastTarget = false;
-
-        var barFillGO = new GameObject("ProgressBarFill");
-        barFillGO.transform.SetParent(barBgGO.transform, false);
-        var barFillRT = barFillGO.AddComponent<RectTransform>();
-        barFillRT.anchorMin = Vector2.zero;
-        barFillRT.anchorMax = new Vector2(FeatureUnlockManager.GetProgress(feature), 1);
-        barFillRT.offsetMin = Vector2.zero; barFillRT.offsetMax = Vector2.zero;
-        var barFillImg = barFillGO.AddComponent<UnityEngine.UI.Image>();
-        barFillImg.color = new UnityEngine.Color(1f, 0.85f, 0.2f, 0.9f); // gold
-        barFillImg.raycastTarget = false;
     }
 
     public void OnHomePressed()

@@ -114,16 +114,17 @@ public static class DifficultyManager
         float accuracy = (float)session.correctActions / totalActions;
 
         // Strong: high accuracy (≥85%) and reasonable time
-        // Weak: low accuracy (<50%) or very slow (>3x expected) or many mistakes
+        // Weak: low accuracy (<50%) or very slow or many mistakes
         // Neutral: everything in between
 
         bool fewMistakes = mistakes <= 1 && accuracy >= 0.85f;
         bool manyMistakes = mistakes >= 4 || accuracy < 0.50f;
 
-        // Time evaluation: use a generous baseline
-        // Most kids games should complete in 10-60 seconds per round
-        bool fast = duration < 30f;
-        bool verySlow = duration > 120f;
+        // Time evaluation: use per-game expected durations from scoring strategy
+        var strategy = ScoringStrategyRegistry.Get(session.gameId);
+        var expect = strategy.GetExpectation(session.difficultyLevel);
+        float expectedMax = expect.expectedDurationMax > 0f ? expect.expectedDurationMax : 60f;
+        bool verySlow = duration > expectedMax * 2f;
 
         if (fewMistakes && !verySlow)
             return PerformanceLevel.Strong;

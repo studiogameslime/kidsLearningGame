@@ -49,14 +49,22 @@ public class ColorStudioController : MonoBehaviour
     // Ambient
     private float ambientBubbleTimer;
     private float ambientSparkleTimer;
+    private float _sessionStart;
 
     private void Start()
     {
+        _sessionStart = Time.realtimeSinceStartup;
         circleSprite = Resources.Load<Sprite>("Circle");
         rootCanvas = GetComponentInParent<Canvas>();
 
         if (backButton != null)
-            backButton.onClick.AddListener(() => { FingerTrail.SetEnabled(true); NavigationManager.GoToHome(); });
+            backButton.onClick.AddListener(() =>
+            {
+                float duration = Time.realtimeSinceStartup - _sessionStart;
+                FirebaseAnalyticsManager.LogSandboxSession("color_studio", duration);
+                FingerTrail.SetEnabled(true);
+                NavigationManager.GoToHome();
+            });
         if (pourButton != null)
         {
             pourButton.onClick.AddListener(OnPourPressed);

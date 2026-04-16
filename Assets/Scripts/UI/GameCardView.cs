@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -6,7 +7,7 @@ using UnityEngine.Events;
 /// <summary>
 /// View component for a single card in the menu grid.
 /// Used for both main-menu game cards and sub-selection cards.
-/// Assign the internal references in the prefab; call Setup() at runtime.
+/// New-in-app games get enhanced visuals: glow border, floating, sparkle badge, scale boost.
 /// </summary>
 public class GameCardView : MonoBehaviour
 {
@@ -23,6 +24,9 @@ public class GameCardView : MonoBehaviour
     // Runtime-created labels
     private TextMeshProUGUI _gameNameLabel;
     private TextMeshProUGUI _difficultyLabel;
+
+    // New-card state
+    private RectTransform _badgeRT;
 
     /// <summary>
     /// Configures the card for display. Called by the menu controller.
@@ -62,9 +66,14 @@ public class GameCardView : MonoBehaviour
 
     /// <summary>
     /// Extended setup for main menu — adds profile-colored border, game name above, difficulty below.
+    /// New-in-app games get glow, float, sparkle badge, and slight scale boost.
     /// </summary>
-    public void SetupExtended(string gameId, string hebrewName, Color profileColor, int difficulty)
+    public void SetupExtended(string gameId, string hebrewName, Color profileColor, int difficulty, bool isNew = false)
     {
+        // ── New game highlight ──
+        if (isNew)
+            SetupNewGameHighlight(profileColor);
+
         // Tint the card border with profile color (soft tint)
         if (backgroundImage != null)
         {
@@ -169,6 +178,146 @@ public class GameCardView : MonoBehaviour
 
             HebrewText.SetText(_difficultyLabel, "\u05E8\u05DE\u05D4 \u05E0\u05D5\u05DB\u05D7\u05D9\u05EA: " + diffName);
             // רמה נוכחית: קל/בינוני/קשה
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    //  NEW GAME HIGHLIGHT — Bold blob sticker
+    // ══════════════════════════════════════════════
+
+    private void SetupNewGameHighlight(Color profileColor)
+    {
+        if (transform.Find("NewSticker") != null) return;
+
+        var circleSprite = Resources.Load<Sprite>("Circle");
+        var roundedRect = Resources.Load<Sprite>("UI/RoundedRect");
+
+        // ── Bold blob sticker (top-right corner, overlaps frame, ~10° tilt) ──
+        var stickerGO = new GameObject("NewSticker");
+        stickerGO.transform.SetParent(transform, false);
+        stickerGO.transform.SetAsLastSibling();
+        _badgeRT = stickerGO.AddComponent<RectTransform>();
+        _badgeRT.anchorMin = new Vector2(0, 1);
+        _badgeRT.anchorMax = new Vector2(0, 1);
+        _badgeRT.pivot = new Vector2(0.5f, 0.5f);
+        _badgeRT.anchoredPosition = new Vector2(30, -10); // overlaps top-left corner
+        _badgeRT.sizeDelta = new Vector2(100, 42);
+        _badgeRT.localRotation = Quaternion.Euler(0, 0, 8f);
+
+        // Main background — hot orange
+        var bgImg = stickerGO.AddComponent<Image>();
+        if (roundedRect != null) { bgImg.sprite = roundedRect; bgImg.type = Image.Type.Sliced; }
+        bgImg.color = new Color(1f, 0.45f, 0.15f, 1f); // bold orange
+        bgImg.raycastTarget = false;
+
+        // White outline (sticker border feel)
+        var outline = stickerGO.AddComponent<Outline>();
+        outline.effectColor = Color.white;
+        outline.effectDistance = new Vector2(3, -3);
+
+        // Drop shadow (second Outline component for shadow layer)
+        var shadow = stickerGO.AddComponent<Shadow>();
+        shadow.effectColor = new Color(0, 0, 0, 0.3f);
+        shadow.effectDistance = new Vector2(2, -3);
+
+        // "חדש" text — big, bold, white
+        var labelGO = new GameObject("Label");
+        labelGO.transform.SetParent(stickerGO.transform, false);
+        var labelRT = labelGO.AddComponent<RectTransform>();
+        labelRT.anchorMin = Vector2.zero;
+        labelRT.anchorMax = Vector2.one;
+        labelRT.offsetMin = new Vector2(4, 2);
+        labelRT.offsetMax = new Vector2(-4, -2);
+        var labelTMP = labelGO.AddComponent<TextMeshProUGUI>();
+        HebrewText.SetText(labelTMP, "\u05D7\u05D3\u05E9!"); // !חדש
+        labelTMP.fontSize = 28;
+        labelTMP.fontStyle = FontStyles.Bold;
+        labelTMP.color = Color.white;
+        labelTMP.alignment = TextAlignmentOptions.Center;
+        labelTMP.raycastTarget = false;
+
+        // ── 2 sparkle dots ──
+        if (circleSprite != null)
+        {
+            float[][] positions = { new float[] { -50f, 18f }, new float[] { 48f, -16f } };
+            for (int i = 0; i < positions.Length; i++)
+            {
+                var sparkle = new GameObject($"Sparkle_{i}");
+                sparkle.transform.SetParent(stickerGO.transform, false);
+                var sRT = sparkle.AddComponent<RectTransform>();
+                sRT.anchorMin = new Vector2(0.5f, 0.5f);
+                sRT.anchorMax = new Vector2(0.5f, 0.5f);
+                sRT.sizeDelta = new Vector2(12, 12);
+                sRT.anchoredPosition = new Vector2(positions[i][0], positions[i][1]);
+                var sImg = sparkle.AddComponent<Image>();
+                sImg.sprite = circleSprite;
+                sImg.color = new Color(1f, 1f, 0.7f, 0f);
+                sImg.raycastTarget = false;
+                StartCoroutine(AnimateSparkle(sRT, sImg, i * 1.2f));
+            }
+        }
+
+        StartCoroutine(AnimateStickerPulse());
+    }
+
+    // ── Gentle pulse: 1 → 1.08 → 1, with tiny rotation wiggle ──
+    private IEnumerator AnimateStickerPulse()
+    {
+        float baseRot = 10f;
+
+        while (_badgeRT != null)
+        {
+            // Pulse up
+            float dur = 0.5f, elapsed = 0f;
+            while (elapsed < dur && _badgeRT != null)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / dur;
+                float scale = 1f + 0.08f * Mathf.Sin(t * Mathf.PI);
+                float rot = baseRot + Mathf.Sin(t * Mathf.PI * 2f) * 2f;
+                _badgeRT.localScale = Vector3.one * scale;
+                _badgeRT.localRotation = Quaternion.Euler(0, 0, rot);
+                yield return null;
+            }
+            if (_badgeRT != null)
+            {
+                _badgeRT.localScale = Vector3.one;
+                _badgeRT.localRotation = Quaternion.Euler(0, 0, baseRot);
+            }
+            yield return new WaitForSeconds(2f);
+        }
+    }
+
+    // ── Sparkle twinkle ──
+    private IEnumerator AnimateSparkle(RectTransform rt, Image img, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        while (rt != null && img != null)
+        {
+            // Appear
+            float dur = 0.3f, elapsed = 0f;
+            while (elapsed < dur && img != null)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / dur;
+                img.color = new Color(1f, 1f, 0.7f, t);
+                rt.localScale = Vector3.one * Mathf.Lerp(0.3f, 1f, t);
+                yield return null;
+            }
+            // Hold
+            yield return new WaitForSeconds(0.2f);
+            // Disappear
+            elapsed = 0f;
+            while (elapsed < dur && img != null)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / dur;
+                img.color = new Color(1f, 1f, 0.7f, 1f - t);
+                rt.localScale = Vector3.one * Mathf.Lerp(1f, 0.3f, t);
+                yield return null;
+            }
+            yield return new WaitForSeconds(Random.Range(2f, 4f));
         }
     }
 }

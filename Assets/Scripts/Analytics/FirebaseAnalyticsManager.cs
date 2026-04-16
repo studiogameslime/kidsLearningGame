@@ -92,8 +92,6 @@ public class FirebaseAnalyticsManager : MonoBehaviour
         else ageBucket = "6+";
 
         FirebaseAnalytics.SetUserProperty("child_age_bucket", ageBucket);
-        FirebaseAnalytics.SetUserProperty("total_stars",
-            (profile.journey?.totalStars ?? 0).ToString());
         FirebaseAnalytics.SetUserProperty("games_played",
             (profile.journey?.totalGamesCompleted ?? 0).ToString());
     }

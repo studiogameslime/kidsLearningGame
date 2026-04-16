@@ -70,6 +70,9 @@ public class GameStatsCollector
     /// <summary>Rounds completed so far.</summary>
     public int RoundsCompleted => _data.roundsCompleted;
 
+    /// <summary>Session score (0-100) computed by scoring strategy after Finalize().</summary>
+    public float SessionScore => _data.sessionScore;
+
     // ── Content Context ──────────────────────────────────────────
 
     /// <summary>Set or update content context after construction.</summary>

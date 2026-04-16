@@ -1,12 +1,18 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
 /// Drives the main-menu scene: reads the GameDatabase and spawns a card for each game.
+/// Detects new games added in app updates and shows them at the top with a "New!" badge.
 /// </summary>
 public class MainMenuController : MonoBehaviour
 {
+    private const string KnownGamesKey = "known_game_ids";
+    private const string NewGamePrefix = "new_game_discovered_";
+    private const int NewBadgeDays = 7;
     [Header("Data")]
     public GameDatabase database;
 
@@ -43,8 +49,81 @@ public class MainMenuController : MonoBehaviour
         if (backToWorldButton != null)
             backToWorldButton.onClick.AddListener(OnBackToWorldPressed);
 
+        DetectNewGames();
         PopulateGrid();
         UpdateProfileButton();
+    }
+
+    // ── New game detection ──
+
+    private HashSet<string> _newGameIds = new HashSet<string>();
+
+    private void DetectNewGames()
+    {
+        if (database == null) return;
+
+        string knownRaw = PlayerPrefs.GetString(KnownGamesKey, "");
+
+        if (string.IsNullOrEmpty(knownRaw))
+        {
+            // First time — save all current IDs as known, EXCEPT halfpuzzle (treat it as new)
+            var ids = new List<string>();
+            foreach (var game in database.games)
+            {
+                if (game == null) continue;
+                if (game.id == "halfpuzzle") continue; // intentionally excluded so it shows as new
+                ids.Add(game.id);
+            }
+            PlayerPrefs.SetString(KnownGamesKey, string.Join(",", ids));
+
+            // Mark halfpuzzle as discovered now
+            if (database.games.Exists(g => g != null && g.id == "halfpuzzle"))
+            {
+                PlayerPrefs.SetString(NewGamePrefix + "halfpuzzle", DateTime.UtcNow.ToString("o"));
+                _newGameIds.Add("halfpuzzle");
+            }
+
+            PlayerPrefs.Save();
+            return;
+        }
+
+        // Parse known IDs
+        var knownSet = new HashSet<string>(knownRaw.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
+        bool changed = false;
+
+        foreach (var game in database.games)
+        {
+            if (game == null) continue;
+
+            if (!knownSet.Contains(game.id))
+            {
+                // New game found in this update
+                knownSet.Add(game.id);
+                PlayerPrefs.SetString(NewGamePrefix + game.id, DateTime.UtcNow.ToString("o"));
+                changed = true;
+            }
+
+            // Check if this game has an active "new" badge (discovered < 7 days ago)
+            string discoveredStr = PlayerPrefs.GetString(NewGamePrefix + game.id, "");
+            if (!string.IsNullOrEmpty(discoveredStr)
+                && DateTime.TryParse(discoveredStr, null,
+                    System.Globalization.DateTimeStyles.RoundtripKind, out DateTime discovered))
+            {
+                if ((DateTime.UtcNow - discovered).TotalDays < NewBadgeDays)
+                    _newGameIds.Add(game.id);
+            }
+        }
+
+        if (changed)
+        {
+            PlayerPrefs.SetString(KnownGamesKey, string.Join(",", knownSet));
+            PlayerPrefs.Save();
+        }
+    }
+
+    private bool IsNewGame(string gameId)
+    {
+        return _newGameIds.Contains(gameId);
     }
 
     private void UpdateProfileButton()
@@ -80,7 +159,16 @@ public class MainMenuController : MonoBehaviour
 
         Color profileColor = profile != null ? profile.AvatarColor : new Color(0.56f, 0.79f, 0.98f);
 
-        foreach (var game in visibleGames)
+        // New-in-app games first, then the rest — both groups keep their original order
+        var newGames = new List<GameItemData>();
+        var regularGames = new List<GameItemData>();
+        foreach (var g in visibleGames)
+            (IsNewGame(g.id) ? newGames : regularGames).Add(g);
+        var ordered = new List<GameItemData>(newGames.Count + regularGames.Count);
+        ordered.AddRange(newGames);
+        ordered.AddRange(regularGames);
+
+        foreach (var game in ordered)
         {
             var card = Instantiate(cardPrefab, cardContainer);
             var capturedGame = game;
@@ -92,10 +180,11 @@ public class MainMenuController : MonoBehaviour
                 () => OnGameCardTapped(capturedGame)
             );
 
-            // Add game name + difficulty + profile color
+            // Add game name + difficulty + profile color + new badge
             string hebrewName = ParentDashboardViewModel.GetGameName(game.id);
             int difficulty = GameDifficultyConfig.GetLevel(game.id);
-            card.SetupExtended(game.id, hebrewName, profileColor, difficulty);
+            bool isNew = IsNewGame(game.id);
+            card.SetupExtended(game.id, hebrewName, profileColor, difficulty, isNew);
         }
     }
 

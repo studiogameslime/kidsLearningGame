@@ -271,6 +271,9 @@ public class ProjectSetup : EditorWindow
             EditorUtility.DisplayProgressBar("Setting up project…", "Building Xylophone…", 0.999f);
             XylophoneSetup.RunSetupSilent();
 
+            EditorUtility.DisplayProgressBar("Setting up project…", "Building Half Puzzle…", 0.9992f);
+            HalfPuzzleSetup.RunSetupSilent();
+
             // Color Studio — hidden for now
             // EditorUtility.DisplayProgressBar("Setting up project…", "Building Color Studio…", 0.9995f);
             // ColorStudioSetup.RunSetupSilent();
@@ -977,8 +980,18 @@ public class ProjectSetup : EditorWindow
         spinPuzzle.hasSubItems = false;
         EditorUtility.SetDirty(spinPuzzle);
 
+        // ── Half Puzzle ──
+        var halfPuzzle = CreateSO<GameItemData>($"{DataPath}/HalfPuzzle.asset");
+        halfPuzzle.id = "halfpuzzle";
+        halfPuzzle.title = "\u05D7\u05D1\u05E8\u05D5 \u05D7\u05E6\u05D0\u05D9\u05DD"; // חברו חצאים
+        halfPuzzle.cardColor = HexColor("#66BB6A");
+        halfPuzzle.targetSceneName = "HalfPuzzle";
+        halfPuzzle.thumbnail = LoadSprite($"{previewPath}/Puzzle.png"); // reuse puzzle preview for now
+        halfPuzzle.hasSubItems = false;
+        EditorUtility.SetDirty(halfPuzzle);
+
         var db = CreateSO<GameDatabase>($"{DataPath}/GameDatabase.asset");
-        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, sizeSort, colorSort, colorCatch, fruitPuzzle, letterBubbles, tower, spinPuzzle };
+        db.games = new List<GameItemData> { memory, puzzle, coloring, fillDots, shadows, findObject, findCount, colorMix, ballMaze, sharedSticker, flappyBird, simonSays, patternCopy, letters, numberMaze, oddOneOut, quantityMatch, numberTrain, letterTrain, fishingGame, connectMatch, laundrySorting, bakery, sockMatch, sizeSort, colorSort, colorCatch, fruitPuzzle, letterBubbles, tower, spinPuzzle, halfPuzzle };
         EditorUtility.SetDirty(db);
 
         // Copy GameDatabase to Resources so Resources.Load works at runtime
@@ -1631,6 +1644,7 @@ public class ProjectSetup : EditorWindow
             $"{ScenesPath}/SandDrawingScene.unity",
             $"{ScenesPath}/BubbleLabScene.unity",
             $"{ScenesPath}/XylophoneScene.unity",
+            $"{ScenesPath}/HalfPuzzle.unity",
             // $"{ScenesPath}/ColorStudioScene.unity", // hidden for now
         };
 

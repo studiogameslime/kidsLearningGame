@@ -234,9 +234,8 @@ public class ParentDashboardController : MonoBehaviour
         LoadData();
         BuildAllTabs();
 
-        // Request store review only after sufficient engagement (3+ visits per profile)
-        var profileId = ProfileManager.ActiveProfile?.id ?? "global";
-        string visitKey = $"dashboard_visits_{profileId}";
+        // Request store review after sufficient engagement (3+ total dashboard visits)
+        string visitKey = "dashboard_visits_total";
         int visitCount = PlayerPrefs.GetInt(visitKey, 0) + 1;
         PlayerPrefs.SetInt(visitKey, visitCount);
         if (visitCount >= 3)
@@ -761,7 +760,6 @@ public class ParentDashboardController : MonoBehaviour
         if (_data == null) return;
         var parent = tabContents[0];
         var profile = ProfileManager.ActiveProfile;
-        int totalStars = profile?.journey?.totalStars ?? 0;
 
         // Disable outer scroll/CSF so flexibleHeight works (content fits viewport)
         var parentCSF = parent.GetComponent<ContentSizeFitter>();
@@ -804,11 +802,8 @@ public class ParentDashboardController : MonoBehaviour
         MakeStatsSummaryBlock(topRow.transform,
             H(_data.totalPlayTimeDisplay),
             H("\u05D6\u05DE\u05DF \u05DE\u05E9\u05D7\u05E7")); // זמן משחק
-        MakeStatsSummaryBlock(topRow.transform,
-            $"{totalStars}",
-            H("\u05DB\u05D5\u05DB\u05D1\u05D9\u05DD")); // כוכבים
 
-        // Favorite game block (4th item in top row)
+        // Favorite game block (3rd item in top row)
         BuildFavoriteGameBlock(topRow.transform, favGame);
 
         // ═══════════════════════════════════════════════════════════

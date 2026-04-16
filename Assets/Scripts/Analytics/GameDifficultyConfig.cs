@@ -38,6 +38,16 @@ public static class GameDifficultyConfig
     //  SPIN PUZZLE
     // ═══════════════════════════════════════════════════════════
 
+    public static int HalfPuzzlePairCount(int difficulty)
+    {
+        if (difficulty <= 3) return 2;
+        if (difficulty <= 5) return 3;
+        if (difficulty <= 6) return 4;
+        if (difficulty <= 8) return 5;
+        if (difficulty <= 9) return 6;
+        return 7;
+    }
+
     public static int SpinPuzzleGridSize(int difficulty)
     {
         if (difficulty <= 3) return 2;
@@ -335,6 +345,13 @@ public static class GameDifficultyConfig
 
         string id = gameId.ToLowerInvariant().Replace("_", "").Replace("-", "");
 
+        // Half Puzzle (must come before generic "puzzle" check)
+        if (id.Contains("halfpuzzle"))
+        {
+            int pairs = HalfPuzzlePairCount(difficulty);
+            return $"{pairs} \u05D6\u05D5\u05D2\u05D5\u05EA"; // X זוגות
+        }
+
         // Spin Puzzle (must come before generic "puzzle" check)
         if (id.Contains("spinpuzzle"))
         {
@@ -616,6 +633,14 @@ public static class GameDifficultyConfig
     public static int BaselineVariantToDifficulty(string gameId, int variantValue)
     {
         if (variantValue <= 0) return 1;
+
+        // Spin Puzzle: variant = piece count (4=2x2, 9=3x3, 16=4x4) → difficulty
+        if (gameId == "spinpuzzle")
+        {
+            if (variantValue <= 4) return 1;        // 2x2 → difficulty 1-3
+            if (variantValue <= 9) return 4;         // 3x3 → difficulty 4-6
+            return 7;                                // 4x4 → difficulty 7-10
+        }
 
         // Letter Train: variant = wagon count → difficulty
         if (gameId == "lettertrain")

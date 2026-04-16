@@ -47,8 +47,6 @@ public class StickerTreeController : MonoBehaviour
         new Vector2(280, 340),
     };
 
-    private bool _isLocked;
-
     private void Start()
     {
         _treeImage = GetComponent<Image>();
@@ -56,31 +54,14 @@ public class StickerTreeController : MonoBehaviour
 
         if (treeStages == null || treeStages.Length == 0) return;
 
-        // Check if feature is locked
-        _isLocked = !FeatureUnlockManager.IsUnlocked(FeatureUnlockManager.Feature.StickerTree);
-
         CreateTimerUI();
-
-        if (!_isLocked)
-            RefreshState();
-        else
-            ApplyLockedState();
+        RefreshState();
     }
 
     private void Update()
     {
         if (treeStages == null || treeStages.Length == 0) return;
-        if (_isLocked) return; // no growth or timer when locked
         RefreshState();
-    }
-
-    private void ApplyLockedState()
-    {
-        // Show seedling stage, no sticker, no timer
-        ApplyStageVisual(0);
-        if (_timerText != null) _timerText.text = "";
-        if (_stickerGO != null) { Destroy(_stickerGO); _stickerGO = null; }
-        _hasStickerReady = false;
     }
 
     /// <summary>Called by WorldInputHandler when player taps the tree.</summary>

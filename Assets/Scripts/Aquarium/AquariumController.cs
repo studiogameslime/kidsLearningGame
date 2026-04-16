@@ -1096,13 +1096,6 @@ public class AquariumController : MonoBehaviour
             profile.aquarium.feedProgress = 0;
             profile.aquarium.nextRewardIndex++;
 
-            // Award a star for each aquarium gift
-            if (profile.journey != null)
-            {
-                profile.journey.totalStars++;
-                profile.journey.totalGamesCompleted++;
-            }
-
             ProfileManager.Instance.Save();
         }
 

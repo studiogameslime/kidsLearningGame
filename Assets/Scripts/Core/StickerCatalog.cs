@@ -41,6 +41,9 @@ public static class StickerCatalog
 
         // ים (ocean_)
         { "fishing",        "ocean_" },
+
+        // פירות (food_)
+        { "halfpuzzle",     "food_" },
     };
 
     /// <summary>

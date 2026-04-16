@@ -273,13 +273,15 @@ public abstract class BaseMiniGame : MonoBehaviour
         OnBeforeComplete();
         Stats?.RecordRoundComplete();
 
-        // Firebase: log completion
-        int mistakes = Stats != null ? Stats.Mistakes : 0;
-        int correct = Stats != null ? Stats.CorrectActions : 0;
-        FirebaseAnalyticsManager.LogGameCompleted(GameId, Difficulty, correct, mistakes, Time.realtimeSinceStartup);
-
         // Register this round's session immediately (every round = 1 session)
+        // Must finalize BEFORE logging to Firebase so the scoring strategy computes the real score.
         Stats?.Finalize(completed: true);
+
+        // Firebase: log completion with real score and real duration
+        int mistakes = Stats != null ? Stats.Mistakes : 0;
+        float sessionScore = Stats != null ? Stats.SessionScore : 0f;
+        float duration = Time.realtimeSinceStartup - _gameSceneStartTime;
+        FirebaseAnalyticsManager.LogGameCompleted(GameId, Difficulty, sessionScore, mistakes, duration);
 
         // Check milestones
         CheckMilestones();

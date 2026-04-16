@@ -135,6 +135,20 @@ public static class GameRecommendationService
             case "simonsays":
             case "fillthedots":
             case "findtheobject":
+            case "spinpuzzle":
+            case "patterncopy":
+            case "numbertrain":
+            case "lettertrain":
+            case "quantitymatch":
+            case "numbermaze":
+            case "connectmatch":
+            case "letters":
+            case "letterbubbles":
+            case "vehiclepuzzle":
+            case "colorcatch":
+            case "colorsort":
+            case "sizesort":
+            case "oddoneout":
                 return true;
             default:
                 return false;
@@ -153,6 +167,9 @@ public static class GameRecommendationService
             case "puzzle":
                 int grid = GameDifficultyConfig.PuzzleGridSize(difficulty);
                 return grid * grid;
+            case "spinpuzzle":
+                int spGrid = GameDifficultyConfig.SpinPuzzleGridSize(difficulty);
+                return spGrid * spGrid;
             case "memory":
                 GameDifficultyConfig.MemoryGridConfig(difficulty, out _, out _, out int pairs);
                 return pairs * 2;
@@ -161,8 +178,27 @@ public static class GameRecommendationService
                 return max;
             case "simonsays":
                 return GameDifficultyConfig.SimonStartSequence(difficulty);
+            case "patterncopy":
+                return GameDifficultyConfig.PatternCopyGridSize(difficulty);
+            case "numbertrain":
+                GameDifficultyConfig.NumberTrainConfig(difficulty, out int ntWagons, out _);
+                return ntWagons;
+            case "lettertrain":
+                GameDifficultyConfig.LetterTrainConfig(difficulty, out int ltWagons, out _);
+                return ltWagons;
+            case "quantitymatch":
+                GameDifficultyConfig.QuantityMatchRange(difficulty, out _, out int qMax);
+                return qMax;
+            case "numbermaze":
+                GameDifficultyConfig.NumberMazeGridConfig(difficulty, out _, out _, out int pathLen);
+                return pathLen;
+            case "connectmatch":
+                GameDifficultyConfig.ConnectMatchConfig(difficulty, out int cmGrid, out _);
+                return cmGrid;
+            case "letters":
+                return GameDifficultyConfig.LetterGameMaxWordLength(difficulty);
             default:
-                return 0;
+                return difficulty; // games where variant = difficulty directly
         }
     }
 

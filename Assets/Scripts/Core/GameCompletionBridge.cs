@@ -107,9 +107,7 @@ public class GameCompletionBridge : MonoBehaviour
 
         var jp = profile.journey;
 
-        // ── Award star ──
         jp.totalGamesCompleted++;
-        jp.totalStars++;
 
         // Update per-game stat
         if (!string.IsNullOrEmpty(gameId))

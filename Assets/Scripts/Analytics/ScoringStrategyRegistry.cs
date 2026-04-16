@@ -28,8 +28,17 @@ public static class ScoringStrategyRegistry
         // Normalize: game IDs may vary in case or have prefixes
         string id = gameId.ToLowerInvariant().Replace("_", "").Replace("-", "");
 
+        if (id.Contains("halfpuzzle"))
+            return new HalfPuzzleScoringStrategy();
+
         if (id.Contains("counting") || id.Contains("count") || id.Contains("findthecount"))
             return new CountingGameScoringStrategy();
+
+        if (id.Contains("connectthedots") || id.Contains("fillthedots"))
+            return new ConnectTheDotsScoringStrategy();
+
+        if (id.Contains("findtheanimal") || id.Contains("findtheobject"))
+            return new FindTheAnimalScoringStrategy();
 
         if (id.Contains("memory") || id.Contains("matching"))
             return new MemoryGameScoringStrategy();
@@ -49,6 +58,9 @@ public static class ScoringStrategyRegistry
         if (id.Contains("letterbubbles"))
             return new LetterBubblesScoringStrategy();
 
+        if (id.Contains("lettertrain"))
+            return new LetterTrainScoringStrategy();
+
         if (id.Contains("letter"))
             return new LetterGameScoringStrategy();
 
@@ -66,9 +78,6 @@ public static class ScoringStrategyRegistry
 
         if (id.Contains("numbertrain"))
             return new NumberTrainScoringStrategy();
-
-        if (id.Contains("lettertrain"))
-            return new LetterTrainScoringStrategy();
 
         if (id.Contains("fishing"))
             return new FishingScoringStrategy();

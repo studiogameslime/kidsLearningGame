@@ -219,3 +219,57 @@ public class ColoringScoringStrategy : BaseScoringStrategy
     };
     public override GameDifficultyExpectation GetExpectation(int d) => InterpolateExpectation(Anchors, d);
 }
+
+// ── Half Puzzle ──
+public class HalfPuzzleScoringStrategy : BaseScoringStrategy
+{
+    protected override float SuccessWeight => 0.35f;
+    protected override float AccuracyWeight => 0.25f;
+    protected override float SpeedWeight => 0.15f;
+    protected override float IndependenceWeight => 0.15f;
+    protected override float DifficultyWeight => 0.10f;
+
+    private static readonly GameDifficultyExpectation[] Anchors =
+    {
+        new GameDifficultyExpectation { difficultyLevel = 1, expectedDurationMin = 5f, expectedDurationMax = 25f, expectedMistakesMin = 0f, expectedMistakesMax = 2f, expectedActionsMin = 2f, expectedActionsMax = 2f },
+        new GameDifficultyExpectation { difficultyLevel = 5, expectedDurationMin = 10f, expectedDurationMax = 40f, expectedMistakesMin = 0f, expectedMistakesMax = 4f, expectedActionsMin = 4f, expectedActionsMax = 4f },
+        new GameDifficultyExpectation { difficultyLevel = 10, expectedDurationMin = 15f, expectedDurationMax = 60f, expectedMistakesMin = 1f, expectedMistakesMax = 6f, expectedActionsMin = 7f, expectedActionsMax = 7f }
+    };
+    public override GameDifficultyExpectation GetExpectation(int d) => InterpolateExpectation(Anchors, d);
+}
+
+// ── Connect the Dots ──
+public class ConnectTheDotsScoringStrategy : BaseScoringStrategy
+{
+    protected override float SuccessWeight => 0.35f;
+    protected override float AccuracyWeight => 0.25f;
+    protected override float SpeedWeight => 0.15f;
+    protected override float IndependenceWeight => 0.15f;
+    protected override float DifficultyWeight => 0.10f;
+
+    private static readonly GameDifficultyExpectation[] Anchors =
+    {
+        new GameDifficultyExpectation { difficultyLevel = 1, expectedDurationMin = 8f, expectedDurationMax = 30f, expectedMistakesMin = 0f, expectedMistakesMax = 2f, expectedActionsMin = 5f, expectedActionsMax = 8f },
+        new GameDifficultyExpectation { difficultyLevel = 5, expectedDurationMin = 12f, expectedDurationMax = 45f, expectedMistakesMin = 0f, expectedMistakesMax = 3f, expectedActionsMin = 8f, expectedActionsMax = 15f },
+        new GameDifficultyExpectation { difficultyLevel = 10, expectedDurationMin = 15f, expectedDurationMax = 60f, expectedMistakesMin = 1f, expectedMistakesMax = 5f, expectedActionsMin = 12f, expectedActionsMax = 25f }
+    };
+    public override GameDifficultyExpectation GetExpectation(int d) => InterpolateExpectation(Anchors, d);
+}
+
+// ── Find the Animal ──
+public class FindTheAnimalScoringStrategy : BaseScoringStrategy
+{
+    protected override float SuccessWeight => 0.30f;
+    protected override float AccuracyWeight => 0.30f;
+    protected override float SpeedWeight => 0.15f;
+    protected override float IndependenceWeight => 0.15f;
+    protected override float DifficultyWeight => 0.10f;
+
+    private static readonly GameDifficultyExpectation[] Anchors =
+    {
+        new GameDifficultyExpectation { difficultyLevel = 1, expectedDurationMin = 5f, expectedDurationMax = 20f, expectedMistakesMin = 0f, expectedMistakesMax = 2f, expectedActionsMin = 3f, expectedActionsMax = 5f },
+        new GameDifficultyExpectation { difficultyLevel = 5, expectedDurationMin = 8f, expectedDurationMax = 30f, expectedMistakesMin = 0f, expectedMistakesMax = 3f, expectedActionsMin = 4f, expectedActionsMax = 6f },
+        new GameDifficultyExpectation { difficultyLevel = 10, expectedDurationMin = 10f, expectedDurationMax = 40f, expectedMistakesMin = 1f, expectedMistakesMax = 5f, expectedActionsMin = 5f, expectedActionsMax = 8f }
+    };
+    public override GameDifficultyExpectation GetExpectation(int d) => InterpolateExpectation(Anchors, d);
+}
