@@ -72,7 +72,7 @@ public class MainMenuController : MonoBehaviour
             foreach (var game in database.games)
             {
                 if (game == null) continue;
-                if (game.id == "halfpuzzle" || game.id == "saladgame") continue; // intentionally excluded so they show as new
+                if (game.id == "halfpuzzle") continue; // intentionally excluded so it shows as new
                 ids.Add(game.id);
             }
             PlayerPrefs.SetString(KnownGamesKey, string.Join(",", ids));

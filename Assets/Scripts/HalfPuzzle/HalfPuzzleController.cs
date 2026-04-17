@@ -32,6 +32,7 @@ public class HalfPuzzleController : BaseMiniGame
     private readonly List<int> _roundFruitIndices = new List<int>();
     private readonly List<Texture2D> _createdTextures = new List<Texture2D>();
     private readonly List<Sprite> _createdSprites = new List<Sprite>();
+    private readonly List<GameObject> _completedFruits = new List<GameObject>();
     private int _matchedCount;
     private int _totalPairs;
     private Canvas _canvas;
@@ -77,8 +78,10 @@ public class HalfPuzzleController : BaseMiniGame
     {
         foreach (var p in _topPieces) if (p != null) Destroy(p.gameObject);
         foreach (var p in _bottomPieces) if (p != null) Destroy(p.gameObject);
+        foreach (var g in _completedFruits) if (g != null) Destroy(g);
         _topPieces.Clear();
         _bottomPieces.Clear();
+        _completedFruits.Clear();
         CleanupTextures();
     }
 
@@ -288,19 +291,43 @@ public class HalfPuzzleController : BaseMiniGame
             return false;
         }
 
-        // Match! Snap left half to the left, right half to the right
+        // Match! Replace both halves with the full fruit
         Stats?.RecordCorrect("match", piece.animalId);
 
         Vector2 midpoint = (pieceRT.anchoredPosition + partnerRT.anchoredPosition) / 2f;
 
-        // Left half pivot is (1, 0.5) → anchoredPosition = right edge
-        // Right half pivot is (0, 0.5) → anchoredPosition = left edge
-        // Both snap to same point = they touch at the seam
-        DraggableHalf leftPiece = isLeftHalf ? piece : partner;
-        DraggableHalf rightPiece = isLeftHalf ? partner : piece;
+        // Mark as placed, then hide both half-cards
+        piece.LockWithoutAnimation();
+        partner.LockWithoutAnimation();
+        piece.gameObject.SetActive(false);
+        partner.gameObject.SetActive(false);
 
-        leftPiece.Lock(midpoint);
-        rightPiece.Lock(midpoint);
+        // Spawn the full fruit at the midpoint
+        int fruitIdx = _roundFruitIndices[pairId];
+        Sprite fullSprite = _fruitSprites[fruitIdx];
+        if (fullSprite != null)
+        {
+            float cardW = pieceRT.sizeDelta.x;
+            float cardH = pieceRT.sizeDelta.y;
+
+            var fullGO = new GameObject($"Full_{fullSprite.name}");
+            fullGO.transform.SetParent(boardArea, false);
+            var fullRT = fullGO.AddComponent<RectTransform>();
+            fullRT.anchorMin = Vector2.zero;
+            fullRT.anchorMax = Vector2.zero;
+            fullRT.pivot = new Vector2(0.5f, 0.5f);
+            fullRT.sizeDelta = new Vector2(cardW * 2f, cardH); // full width = 2 halves
+            fullRT.anchoredPosition = midpoint;
+            fullRT.localScale = Vector3.one * 0.5f; // start small for pop animation
+
+            var fullImg = fullGO.AddComponent<Image>();
+            fullImg.sprite = fullSprite;
+            fullImg.preserveAspect = true;
+            fullImg.raycastTarget = false;
+
+            _completedFruits.Add(fullGO);
+            StartCoroutine(MatchPopAnimation(fullRT));
+        }
 
         PlayCorrectEffect(pieceRT);
 
@@ -309,6 +336,29 @@ public class HalfPuzzleController : BaseMiniGame
             StartCoroutine(DelayedComplete());
 
         return true;
+    }
+
+    private IEnumerator MatchPopAnimation(RectTransform rt)
+    {
+        // Pop in: 0.5 → 1.15 (fast)
+        float dur = 0.2f, elapsed = 0f;
+        while (elapsed < dur && rt != null)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0, 1, elapsed / dur);
+            rt.localScale = Vector3.one * Mathf.Lerp(0.5f, 1.15f, t);
+            yield return null;
+        }
+        // Settle: 1.15 → 1.0 (bounce back)
+        elapsed = 0f; dur = 0.15f;
+        while (elapsed < dur && rt != null)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0, 1, elapsed / dur);
+            rt.localScale = Vector3.one * Mathf.Lerp(1.15f, 1f, t);
+            yield return null;
+        }
+        if (rt != null) rt.localScale = Vector3.one;
     }
 
     private IEnumerator DelayedComplete()

@@ -49,7 +49,15 @@ public class DraggableHalf : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         IsPlaced = true;
         _canvasGroup.blocksRaycasts = false;
         _rt.anchoredPosition = snapPosition;
-        StartCoroutine(MatchPop());
+        if (gameObject.activeInHierarchy)
+            StartCoroutine(MatchPop());
+    }
+
+    /// <summary>Mark as placed without animation (used when GO will be hidden immediately).</summary>
+    public void LockWithoutAnimation()
+    {
+        IsPlaced = true;
+        _canvasGroup.blocksRaycasts = false;
     }
 
     private IEnumerator MatchPop()

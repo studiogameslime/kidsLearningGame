@@ -44,7 +44,6 @@ public static class StickerCatalog
 
         // פירות (food_)
         { "halfpuzzle",     "food_" },
-        { "saladgame",      "food_" },
     };
 
     /// <summary>

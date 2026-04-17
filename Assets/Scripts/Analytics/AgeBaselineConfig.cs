@@ -229,7 +229,6 @@ public static class AgeBaselineConfig
             new Entry(2, "laundrysorting"),
             new Entry(2, "spinpuzzle",     4),  // 2x2 grid
             new Entry(2, "halfpuzzle"),
-            new Entry(2, "saladgame"),
         };
 
         // ── Age 3 ──
@@ -256,7 +255,6 @@ public static class AgeBaselineConfig
             new Entry(3, "towerbuilder"),
             new Entry(3, "spinpuzzle",     4),  // 2x2 grid
             new Entry(3, "halfpuzzle"),
-            new Entry(3, "saladgame"),
 
             // new Entry(3, "pizzamaker"), // hidden for v1
         };
@@ -297,7 +295,6 @@ public static class AgeBaselineConfig
             new Entry(4, "towerbuilder"),
             new Entry(4, "spinpuzzle",     9),  // 3x3 grid
             new Entry(4, "halfpuzzle"),
-            new Entry(4, "saladgame"),
 
             // new Entry(4, "pizzamaker"), // hidden for v1
         };
@@ -338,7 +335,6 @@ public static class AgeBaselineConfig
             new Entry(5, "towerbuilder"),
             new Entry(5, "spinpuzzle",    16),  // 4x4 grid
             new Entry(5, "halfpuzzle"),
-            new Entry(5, "saladgame"),
 
             // new Entry(5, "pizzamaker"), // hidden for v1
         };

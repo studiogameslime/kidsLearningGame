@@ -220,24 +220,6 @@ public class ColoringScoringStrategy : BaseScoringStrategy
     public override GameDifficultyExpectation GetExpectation(int d) => InterpolateExpectation(Anchors, d);
 }
 
-// ── Salad Game ──
-public class SaladGameScoringStrategy : BaseScoringStrategy
-{
-    protected override float SuccessWeight => 0.35f;
-    protected override float AccuracyWeight => 0.25f;
-    protected override float SpeedWeight => 0.10f;
-    protected override float IndependenceWeight => 0.20f;
-    protected override float DifficultyWeight => 0.10f;
-
-    private static readonly GameDifficultyExpectation[] Anchors =
-    {
-        new GameDifficultyExpectation { difficultyLevel = 1, expectedDurationMin = 15f, expectedDurationMax = 60f, expectedMistakesMin = 0f, expectedMistakesMax = 3f, expectedActionsMin = 6f, expectedActionsMax = 10f },
-        new GameDifficultyExpectation { difficultyLevel = 5, expectedDurationMin = 25f, expectedDurationMax = 90f, expectedMistakesMin = 0f, expectedMistakesMax = 5f, expectedActionsMin = 12f, expectedActionsMax = 18f },
-        new GameDifficultyExpectation { difficultyLevel = 10, expectedDurationMin = 40f, expectedDurationMax = 120f, expectedMistakesMin = 1f, expectedMistakesMax = 8f, expectedActionsMin = 20f, expectedActionsMax = 30f }
-    };
-    public override GameDifficultyExpectation GetExpectation(int d) => InterpolateExpectation(Anchors, d);
-}
-
 // ── Half Puzzle ──
 public class HalfPuzzleScoringStrategy : BaseScoringStrategy
 {
