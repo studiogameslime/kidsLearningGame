@@ -1,8 +1,9 @@
-using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Random = UnityEngine.Random;
 
 /// <summary>
 /// Drives the main-menu scene: reads the GameDatabase and spawns a card for each game.
@@ -79,7 +80,7 @@ public class MainMenuController : MonoBehaviour
             // Mark halfpuzzle as discovered now
             if (database.games.Exists(g => g != null && g.id == "halfpuzzle"))
             {
-                PlayerPrefs.SetString(NewGamePrefix + "halfpuzzle", DateTime.UtcNow.ToString("o"));
+                PlayerPrefs.SetString(NewGamePrefix + "halfpuzzle", System.DateTime.UtcNow.ToString("o"));
                 _newGameIds.Add("halfpuzzle");
             }
 
@@ -88,7 +89,7 @@ public class MainMenuController : MonoBehaviour
         }
 
         // Parse known IDs
-        var knownSet = new HashSet<string>(knownRaw.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
+        var knownSet = new HashSet<string>(knownRaw.Split(new[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries));
         bool changed = false;
 
         foreach (var game in database.games)
@@ -99,17 +100,17 @@ public class MainMenuController : MonoBehaviour
             {
                 // New game found in this update
                 knownSet.Add(game.id);
-                PlayerPrefs.SetString(NewGamePrefix + game.id, DateTime.UtcNow.ToString("o"));
+                PlayerPrefs.SetString(NewGamePrefix + game.id, System.DateTime.UtcNow.ToString("o"));
                 changed = true;
             }
 
             // Check if this game has an active "new" badge (discovered < 7 days ago)
             string discoveredStr = PlayerPrefs.GetString(NewGamePrefix + game.id, "");
             if (!string.IsNullOrEmpty(discoveredStr)
-                && DateTime.TryParse(discoveredStr, null,
-                    System.Globalization.DateTimeStyles.RoundtripKind, out DateTime discovered))
+                && System.DateTime.TryParse(discoveredStr, null,
+                    System.Globalization.DateTimeStyles.RoundtripKind, out System.DateTime discovered))
             {
-                if ((DateTime.UtcNow - discovered).TotalDays < NewBadgeDays)
+                if ((System.DateTime.UtcNow - discovered).TotalDays < NewBadgeDays)
                     _newGameIds.Add(game.id);
             }
         }
@@ -180,7 +181,6 @@ public class MainMenuController : MonoBehaviour
                 () => OnGameCardTapped(capturedGame)
             );
 
-            // Add game name + difficulty + profile color + new badge
             string hebrewName = ParentDashboardViewModel.GetGameName(game.id);
             int difficulty = GameDifficultyConfig.GetLevel(game.id);
             bool isNew = IsNewGame(game.id);

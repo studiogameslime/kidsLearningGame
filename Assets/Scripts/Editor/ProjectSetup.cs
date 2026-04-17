@@ -28,9 +28,9 @@ public class ProjectSetup : EditorWindow
     private const int GridPaddingH = 48;
     private const int GridPaddingTop = 24;
     private const int GridPaddingBottom = 24;
-    private const int GridSpacing = 28;
-    private const int CardWidth = 580;
-    private const int CardHeight = 520;
+    private const int GridSpacing = 22;
+    private const int CardWidth = 420;
+    private const int CardHeight = 380;
 
     // Header
     private const int HeaderHeight = SetupConstants.HeaderHeight;
@@ -434,17 +434,24 @@ public class ProjectSetup : EditorWindow
         var root = new GameObject("GameCard");
         var rootRT = root.AddComponent<RectTransform>();
 
-        // Invisible background for button hit area
+        // Card background (rounded rect)
         var bgImage = root.AddComponent<Image>();
-        bgImage.color = new Color(1f, 1f, 1f, 0f); // fully transparent
+        bgImage.sprite = roundedRect;
+        bgImage.type = Image.Type.Sliced;
+        bgImage.color = new Color(1f, 1f, 1f, 0.95f);
         bgImage.raycastTarget = true;
+
+        // Soft shadow
+        var cardShadow = root.AddComponent<Shadow>();
+        cardShadow.effectColor = new Color(0.15f, 0.1f, 0.05f, 0.25f);
+        cardShadow.effectDistance = new Vector2(3, -4);
 
         // Button
         var btn = root.AddComponent<Button>();
         var colors = btn.colors;
         colors.normalColor = Color.white;
-        colors.highlightedColor = new Color(0.95f, 0.95f, 0.95f, 1f);
-        colors.pressedColor = new Color(0.85f, 0.85f, 0.85f, 1f);
+        colors.highlightedColor = new Color(0.97f, 0.97f, 0.97f, 1f);
+        colors.pressedColor = new Color(0.92f, 0.92f, 0.92f, 1f);
         colors.selectedColor = Color.white;
         colors.fadeDuration = 0.1f;
         btn.colors = colors;
@@ -469,15 +476,14 @@ public class ProjectSetup : EditorWindow
         titleTMP.raycastTarget = false;
         titleGO.SetActive(false);
 
-        // Thumbnail mask container (rounded corners via Mask)
-        // Leave space: top 42px for game name, bottom 36px for difficulty
+        // Thumbnail mask (rounded corners)
         var thumbMaskGO = new GameObject("ThumbnailMask");
         thumbMaskGO.transform.SetParent(root.transform, false);
         var thumbMaskRT = thumbMaskGO.AddComponent<RectTransform>();
         thumbMaskRT.anchorMin = Vector2.zero;
         thumbMaskRT.anchorMax = Vector2.one;
-        thumbMaskRT.offsetMin = new Vector2(14, 40);
-        thumbMaskRT.offsetMax = new Vector2(-14, -44);
+        thumbMaskRT.offsetMin = new Vector2(12, 36);
+        thumbMaskRT.offsetMax = new Vector2(-12, -40);
         var maskImg = thumbMaskGO.AddComponent<Image>();
         maskImg.sprite = roundedRect;
         maskImg.type = Image.Type.Sliced;
@@ -497,12 +503,10 @@ public class ProjectSetup : EditorWindow
         thumbImg.raycastTarget = false;
         thumbImg.color = Color.white;
 
-        // Frame border (rounded rect outline, sits on top, overlapping the thumbnail edges)
+        // Frame border (rounded rect outline)
         var frameGO = new GameObject("Frame");
         frameGO.transform.SetParent(root.transform, false);
         var frameRT = frameGO.AddComponent<RectTransform>();
-        frameRT.anchorMin = Vector2.zero;
-        frameRT.anchorMax = Vector2.one;
         frameRT.anchorMin = Vector2.zero;
         frameRT.anchorMax = Vector2.one;
         frameRT.offsetMin = new Vector2(2, 2);
@@ -512,13 +516,8 @@ public class ProjectSetup : EditorWindow
         frameImg.type = Image.Type.Sliced;
         frameImg.color = Color.white;
         frameImg.raycastTarget = false;
-        frameImg.fillCenter = false; // only the border, no fill
-        frameImg.pixelsPerUnitMultiplier = 0.75f; // slightly thicker border
-
-        // Subtle shadow on the frame
-        var shadow = frameGO.AddComponent<Shadow>();
-        shadow.effectColor = new Color(0f, 0f, 0f, 0.15f);
-        shadow.effectDistance = new Vector2(0, -3);
+        frameImg.fillCenter = false;
+        frameImg.pixelsPerUnitMultiplier = 0.75f;
 
         // Placeholder icon (shown when no thumbnail)
         var phGO = new GameObject("PlaceholderIcon");
@@ -535,7 +534,7 @@ public class ProjectSetup : EditorWindow
 
         // Wire up the GameCardView component
         var cardView = root.AddComponent<GameCardView>();
-        cardView.backgroundImage = frameImg; // frame gets tinted with cardColor
+        cardView.backgroundImage = bgImage; // bubble bg gets tinted with profile color
         cardView.thumbnailImage = thumbImg;
         cardView.titleText = titleTMP;
         cardView.button = btn;
@@ -1048,8 +1047,8 @@ public class ProjectSetup : EditorWindow
         var canvas = CreateCanvas("MainCanvas");
         var canvasGO = canvas.gameObject;
 
-        // Background (full-screen color, must be first child so it renders behind everything)
-        var bgGO = CreateFullStretchImage(canvasGO.transform, "Background", BgColor, null, -1);
+        // Background — soft pastel gradient with decorative elements
+        CreatePlayfulBackground(canvasGO.transform);
 
         // Safe Area
         var safeArea = CreateSafeArea(canvasGO.transform);
@@ -1556,7 +1555,7 @@ public class ProjectSetup : EditorWindow
         contentRT.pivot = new Vector2(0.5f, 1);
         contentRT.sizeDelta = new Vector2(0, 0);
 
-        // Grid layout
+        // Grid layout — 4 columns
         var grid = contentGO.AddComponent<GridLayoutGroup>();
         grid.cellSize = new Vector2(CardWidth, CardHeight);
         grid.spacing = new Vector2(GridSpacing, GridSpacing);
@@ -1565,9 +1564,9 @@ public class ProjectSetup : EditorWindow
         grid.startAxis = GridLayoutGroup.Axis.Horizontal;
         grid.childAlignment = TextAnchor.UpperCenter;
         grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = 3;
+        grid.constraintCount = 4;
 
-        // Content Size Fitter (to grow the content as cards are added)
+        // Content Size Fitter
         var fitter = contentGO.AddComponent<ContentSizeFitter>();
         fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
@@ -1722,6 +1721,71 @@ public class ProjectSetup : EditorWindow
         rt.anchorMax = Vector2.one;
         rt.offsetMin = Vector2.zero;
         rt.offsetMax = Vector2.zero;
+    }
+
+    // ── Playful background for MainMenu scene ──
+
+    /// <summary>
+    /// Creates background layers identical to WorldScene:
+    /// sky, hills, ground — same sprites, same colors, same anchors.
+    /// </summary>
+    private static void CreatePlayfulBackground(Transform parent)
+    {
+        const string WorldArt = "Assets/Art/World/";
+
+        // Same colors as WorldSceneSetup
+        Color daySky = HexColor("#8FD4F5");
+        Color dayHillsLarge = HexColor("#B7D7D6");
+        Color dayHills = HexColor("#9FCBC5");
+        Color dayGroundBack = HexColor("#8ED36B");
+        Color dayGroundFront = HexColor("#79C956");
+
+        // Sky
+        var skyGO = new GameObject("Background");
+        skyGO.transform.SetParent(parent, false);
+        skyGO.transform.SetAsFirstSibling();
+        var skyRT = skyGO.AddComponent<RectTransform>();
+        StretchFull(skyRT);
+        var skyImg = skyGO.AddComponent<Image>();
+        skyImg.color = daySky;
+        skyImg.raycastTarget = false;
+
+        // Hills large
+        var hillsLargeSprite = LoadSprite(WorldArt + "hillsLarge.png");
+        if (hillsLargeSprite != null)
+            CreateBgLayer(skyGO.transform, "HillsLarge", hillsLargeSprite,
+                new Vector2(0, 0.35f), new Vector2(1, 0.65f), dayHillsLarge);
+
+        // Hills small
+        var hillsSprite = LoadSprite(WorldArt + "hills.png");
+        if (hillsSprite != null)
+            CreateBgLayer(skyGO.transform, "Hills", hillsSprite,
+                new Vector2(0, 0.25f), new Vector2(1, 0.5f), dayHills);
+
+        // Ground back
+        var groundBackSprite = LoadSprite(WorldArt + "groundLayer1.png");
+        if (groundBackSprite != null)
+            CreateBgLayer(skyGO.transform, "GroundBack", groundBackSprite,
+                new Vector2(0, 0), new Vector2(1, 0.45f), dayGroundBack);
+
+        // Ground front
+        var groundFrontSprite = LoadSprite(WorldArt + "groundLayer2.png");
+        if (groundFrontSprite != null)
+            CreateBgLayer(skyGO.transform, "GroundFront", groundFrontSprite,
+                new Vector2(0, 0), new Vector2(1, 0.25f), dayGroundFront);
+    }
+
+    private static void CreateBgLayer(Transform parent, string name, Sprite sprite,
+        Vector2 anchorMin, Vector2 anchorMax, Color tint)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = anchorMin; rt.anchorMax = anchorMax;
+        rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
+        var img = go.AddComponent<Image>();
+        img.sprite = sprite; img.type = Image.Type.Simple;
+        img.preserveAspect = false; img.color = tint; img.raycastTarget = false;
     }
 
     private static Color HexColor(string hex)

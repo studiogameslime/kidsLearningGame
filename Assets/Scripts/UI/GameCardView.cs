@@ -1,15 +1,16 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 using UnityEngine.Events;
 
 /// <summary>
 /// View component for a single card in the menu grid.
-/// Used for both main-menu game cards and sub-selection cards.
-/// New-in-app games get enhanced visuals: glow border, floating, sparkle badge, scale boost.
+/// Playful, child-friendly feel: slight rotation, soft shadow, tap bounce, idle breathing.
+/// New-in-app games get an animated sticker badge.
 /// </summary>
-public class GameCardView : MonoBehaviour
+public class GameCardView : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
     [Header("References (set in prefab)")]
     public Image backgroundImage;
@@ -25,19 +26,21 @@ public class GameCardView : MonoBehaviour
     private TextMeshProUGUI _gameNameLabel;
     private TextMeshProUGUI _difficultyLabel;
 
-    // New-card state
+    // Playful state
+    private RectTransform _cardRT;
     private RectTransform _badgeRT;
+    private bool _isPressed;
+    private Coroutine _tapCoroutine;
+    private float _idleRotation;
 
     /// <summary>
     /// Configures the card for display. Called by the menu controller.
     /// </summary>
     public void Setup(string title, Sprite thumbnail, Color cardColor, UnityAction onClick)
     {
-        // Title (legacy — hidden in main menu, visible in sub-selection)
         if (titleText != null)
             HebrewText.SetText(titleText, title);
 
-        // Thumbnail
         if (thumbnail != null)
         {
             if (thumbnailImage != null)
@@ -56,7 +59,6 @@ public class GameCardView : MonoBehaviour
                 placeholderIcon.gameObject.SetActive(true);
         }
 
-        // Tap handler
         if (button != null)
         {
             button.onClick.RemoveAllListeners();
@@ -65,27 +67,39 @@ public class GameCardView : MonoBehaviour
     }
 
     /// <summary>
-    /// Extended setup for main menu — adds profile-colored border, game name above, difficulty below.
-    /// New-in-app games get glow, float, sparkle badge, and slight scale boost.
+    /// Extended setup for main menu — playful card with rotation, shadow, tap feedback.
     /// </summary>
     public void SetupExtended(string gameId, string hebrewName, Color profileColor, int difficulty, bool isNew = false)
     {
-        // ── New game highlight ──
-        if (isNew)
-            SetupNewGameHighlight(profileColor);
+        _cardRT = GetComponent<RectTransform>();
 
-        // Tint the card border with profile color (soft tint)
+        // ── 1. Playful rotation (slight random tilt) ──
+        _idleRotation = Random.Range(-2.5f, 2.5f);
+        _cardRT.localRotation = Quaternion.Euler(0, 0, _idleRotation);
+
+        // ── 2. Soft drop shadow ──
+        if (backgroundImage != null && backgroundImage.GetComponent<Shadow>() == null)
+        {
+            var shadow = backgroundImage.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0.15f, 0.1f, 0.05f, 0.3f);
+            shadow.effectDistance = new Vector2(3, -4);
+        }
+
+        // ── 3. New game sticker ──
+        if (isNew)
+            SetupNewGameHighlight();
+
+        // ── 4. Profile color tint (soft pastel on bubble) ──
         if (backgroundImage != null)
         {
-            Color tint = Color.Lerp(Color.white, profileColor, 0.25f);
+            Color tint = Color.Lerp(Color.white, profileColor, 0.15f);
+            tint.a = 0.93f;
             backgroundImage.color = tint;
         }
 
-        // 2-player badge (prevent duplicates on card reuse)
+        // ── 5. 2-player badge ──
         if (TwoPlayerManager.SupportsMultiplayer(gameId) && transform.Find("2PBadge") == null)
         {
-
-            // Rounded background square in bottom-right corner
             var badgeBgGO = new GameObject("2PBadgeBg");
             badgeBgGO.transform.SetParent(transform, false);
             badgeBgGO.transform.SetAsLastSibling();
@@ -103,7 +117,6 @@ public class GameCardView : MonoBehaviour
             bgImg.color = borderTint;
             bgImg.raycastTarget = false;
 
-            // 2-player icon inside the square
             var badgeGO = new GameObject("2PBadge");
             badgeGO.transform.SetParent(badgeBgGO.transform, false);
             var badgeRT = badgeGO.AddComponent<RectTransform>();
@@ -123,7 +136,7 @@ public class GameCardView : MonoBehaviour
             badgeImg.raycastTarget = false;
         }
 
-        // ── Game name ABOVE the thumbnail ──
+        // ── 6. Game name ABOVE the thumbnail ──
         if (_gameNameLabel == null)
         {
             var nameGO = new GameObject("GameNameTop");
@@ -134,10 +147,10 @@ public class GameCardView : MonoBehaviour
             nameRT.anchorMax = new Vector2(1, 1);
             nameRT.pivot = new Vector2(0.5f, 1);
             nameRT.anchoredPosition = new Vector2(0, -4);
-            nameRT.sizeDelta = new Vector2(-20, 40);
+            nameRT.sizeDelta = new Vector2(-20, 36);
 
             _gameNameLabel = nameGO.AddComponent<TextMeshProUGUI>();
-            _gameNameLabel.fontSize = 28;
+            _gameNameLabel.fontSize = 24;
             _gameNameLabel.fontStyle = FontStyles.Bold;
             _gameNameLabel.color = new Color(0.25f, 0.25f, 0.3f);
             _gameNameLabel.alignment = TextAlignmentOptions.Center;
@@ -149,7 +162,7 @@ public class GameCardView : MonoBehaviour
         if (_gameNameLabel != null)
             HebrewText.SetText(_gameNameLabel, hebrewName);
 
-        // ── Difficulty label BELOW the thumbnail ──
+        // ── 7. Difficulty label BELOW the thumbnail ──
         if (_difficultyLabel == null)
         {
             var diffGO = new GameObject("DifficultyBottom");
@@ -160,10 +173,10 @@ public class GameCardView : MonoBehaviour
             diffRT.anchorMax = new Vector2(1, 0);
             diffRT.pivot = new Vector2(0.5f, 0);
             diffRT.anchoredPosition = new Vector2(0, 4);
-            diffRT.sizeDelta = new Vector2(0, 32);
+            diffRT.sizeDelta = new Vector2(0, 28);
 
             _difficultyLabel = diffGO.AddComponent<TextMeshProUGUI>();
-            _difficultyLabel.fontSize = 22;
+            _difficultyLabel.fontSize = 20;
             _difficultyLabel.color = new Color(0.4f, 0.4f, 0.4f);
             _difficultyLabel.alignment = TextAlignmentOptions.Center;
             _difficultyLabel.raycastTarget = false;
@@ -172,27 +185,114 @@ public class GameCardView : MonoBehaviour
         if (_difficultyLabel != null)
         {
             string diffName;
-            if (difficulty <= 3) diffName = "\u05E7\u05DC"; // קל
-            else if (difficulty <= 7) diffName = "\u05D1\u05D9\u05E0\u05D5\u05E0\u05D9"; // בינוני
-            else diffName = "\u05E7\u05E9\u05D4"; // קשה
+            if (difficulty <= 3) diffName = "\u05E7\u05DC";
+            else if (difficulty <= 7) diffName = "\u05D1\u05D9\u05E0\u05D5\u05E0\u05D9";
+            else diffName = "\u05E7\u05E9\u05D4";
 
-            HebrewText.SetText(_difficultyLabel, "\u05E8\u05DE\u05D4 \u05E0\u05D5\u05DB\u05D7\u05D9\u05EA: " + diffName);
-            // רמה נוכחית: קל/בינוני/קשה
+            HebrewText.SetText(_difficultyLabel, "\u05E8\u05DE\u05D4: " + diffName);
+        }
+
+        // ── 8. Start idle breathing animation ──
+        StartCoroutine(IdleBreathing());
+    }
+
+    // ══════════════════════════════════════════════
+    //  TAP FEEDBACK — scale bounce
+    // ══════════════════════════════════════════════
+
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        if (_cardRT == null) return;
+        _isPressed = true;
+        if (_tapCoroutine != null) StopCoroutine(_tapCoroutine);
+        _tapCoroutine = StartCoroutine(AnimateScale(1.05f, 0.08f));
+    }
+
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        if (_cardRT == null) return;
+        _isPressed = false;
+        if (_tapCoroutine != null) StopCoroutine(_tapCoroutine);
+        _tapCoroutine = StartCoroutine(AnimateBounceBack());
+    }
+
+    private IEnumerator AnimateScale(float target, float duration)
+    {
+        float start = _cardRT.localScale.x;
+        float elapsed = 0f;
+        while (elapsed < duration && _cardRT != null)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0, 1, elapsed / duration);
+            float s = Mathf.Lerp(start, target, t);
+            _cardRT.localScale = Vector3.one * s;
+            yield return null;
+        }
+        if (_cardRT != null) _cardRT.localScale = Vector3.one * target;
+    }
+
+    private IEnumerator AnimateBounceBack()
+    {
+        // Overshoot to 0.97 then settle at 1.0
+        float start = _cardRT != null ? _cardRT.localScale.x : 1f;
+
+        // Phase 1: shrink to 0.97
+        float elapsed = 0f, dur = 0.08f;
+        while (elapsed < dur && _cardRT != null)
+        {
+            elapsed += Time.deltaTime;
+            float s = Mathf.Lerp(start, 0.97f, elapsed / dur);
+            _cardRT.localScale = Vector3.one * s;
+            yield return null;
+        }
+
+        // Phase 2: bounce back to 1.0
+        elapsed = 0f; dur = 0.12f;
+        while (elapsed < dur && _cardRT != null)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0, 1, elapsed / dur);
+            float s = Mathf.Lerp(0.97f, 1f, t);
+            _cardRT.localScale = Vector3.one * s;
+            yield return null;
+        }
+        if (_cardRT != null) _cardRT.localScale = Vector3.one;
+    }
+
+    // ══════════════════════════════════════════════
+    //  IDLE BREATHING — very subtle scale pulse
+    // ══════════════════════════════════════════════
+
+    private IEnumerator IdleBreathing()
+    {
+        // Stagger start so cards don't breathe in sync
+        yield return new WaitForSeconds(Random.Range(0f, 2f));
+
+        float speed = Random.Range(0.6f, 0.9f); // each card has slightly different rhythm
+
+        while (_cardRT != null)
+        {
+            if (!_isPressed)
+            {
+                float pulse = 1f + Mathf.Sin(Time.time * speed) * 0.012f; // 1.0 → 1.012 → 1.0
+                _cardRT.localScale = Vector3.one * pulse;
+            }
+            yield return null;
         }
     }
 
     // ══════════════════════════════════════════════
-    //  NEW GAME HIGHLIGHT — Bold blob sticker
+    //  NEW GAME — Bold blob sticker
     // ══════════════════════════════════════════════
 
-    private void SetupNewGameHighlight(Color profileColor)
+    private void SetupNewGameHighlight()
     {
         if (transform.Find("NewSticker") != null) return;
 
         var circleSprite = Resources.Load<Sprite>("Circle");
         var roundedRect = Resources.Load<Sprite>("UI/RoundedRect");
 
-        // ── Bold blob sticker (top-right corner, overlaps frame, ~10° tilt) ──
+        // ── Blob sticker (top-left corner, overlaps frame, tilted) ──
         var stickerGO = new GameObject("NewSticker");
         stickerGO.transform.SetParent(transform, false);
         stickerGO.transform.SetAsLastSibling();
@@ -200,27 +300,27 @@ public class GameCardView : MonoBehaviour
         _badgeRT.anchorMin = new Vector2(0, 1);
         _badgeRT.anchorMax = new Vector2(0, 1);
         _badgeRT.pivot = new Vector2(0.5f, 0.5f);
-        _badgeRT.anchoredPosition = new Vector2(30, -10); // overlaps top-left corner
+        _badgeRT.anchoredPosition = new Vector2(30, -10);
         _badgeRT.sizeDelta = new Vector2(100, 42);
         _badgeRT.localRotation = Quaternion.Euler(0, 0, 8f);
 
         // Main background — hot orange
         var bgImg = stickerGO.AddComponent<Image>();
         if (roundedRect != null) { bgImg.sprite = roundedRect; bgImg.type = Image.Type.Sliced; }
-        bgImg.color = new Color(1f, 0.45f, 0.15f, 1f); // bold orange
+        bgImg.color = new Color(1f, 0.45f, 0.15f, 1f);
         bgImg.raycastTarget = false;
 
-        // White outline (sticker border feel)
+        // White outline
         var outline = stickerGO.AddComponent<Outline>();
         outline.effectColor = Color.white;
         outline.effectDistance = new Vector2(3, -3);
 
-        // Drop shadow (second Outline component for shadow layer)
+        // Drop shadow
         var shadow = stickerGO.AddComponent<Shadow>();
         shadow.effectColor = new Color(0, 0, 0, 0.3f);
         shadow.effectDistance = new Vector2(2, -3);
 
-        // "חדש" text — big, bold, white
+        // "!חדש" text
         var labelGO = new GameObject("Label");
         labelGO.transform.SetParent(stickerGO.transform, false);
         var labelRT = labelGO.AddComponent<RectTransform>();
@@ -236,7 +336,7 @@ public class GameCardView : MonoBehaviour
         labelTMP.alignment = TextAlignmentOptions.Center;
         labelTMP.raycastTarget = false;
 
-        // ── 2 sparkle dots ──
+        // 2 sparkle dots
         if (circleSprite != null)
         {
             float[][] positions = { new float[] { -50f, 18f }, new float[] { 48f, -16f } };
@@ -260,23 +360,19 @@ public class GameCardView : MonoBehaviour
         StartCoroutine(AnimateStickerPulse());
     }
 
-    // ── Gentle pulse: 1 → 1.08 → 1, with tiny rotation wiggle ──
+    // ── Sticker pulse: 1 → 1.08 → 1 with wiggle ──
     private IEnumerator AnimateStickerPulse()
     {
-        float baseRot = 10f;
-
+        float baseRot = 8f;
         while (_badgeRT != null)
         {
-            // Pulse up
             float dur = 0.5f, elapsed = 0f;
             while (elapsed < dur && _badgeRT != null)
             {
                 elapsed += Time.deltaTime;
                 float t = elapsed / dur;
-                float scale = 1f + 0.08f * Mathf.Sin(t * Mathf.PI);
-                float rot = baseRot + Mathf.Sin(t * Mathf.PI * 2f) * 2f;
-                _badgeRT.localScale = Vector3.one * scale;
-                _badgeRT.localRotation = Quaternion.Euler(0, 0, rot);
+                _badgeRT.localScale = Vector3.one * (1f + 0.08f * Mathf.Sin(t * Mathf.PI));
+                _badgeRT.localRotation = Quaternion.Euler(0, 0, baseRot + Mathf.Sin(t * Mathf.PI * 2f) * 2f);
                 yield return null;
             }
             if (_badgeRT != null)
@@ -292,10 +388,8 @@ public class GameCardView : MonoBehaviour
     private IEnumerator AnimateSparkle(RectTransform rt, Image img, float delay)
     {
         yield return new WaitForSeconds(delay);
-
         while (rt != null && img != null)
         {
-            // Appear
             float dur = 0.3f, elapsed = 0f;
             while (elapsed < dur && img != null)
             {
@@ -305,9 +399,7 @@ public class GameCardView : MonoBehaviour
                 rt.localScale = Vector3.one * Mathf.Lerp(0.3f, 1f, t);
                 yield return null;
             }
-            // Hold
             yield return new WaitForSeconds(0.2f);
-            // Disappear
             elapsed = 0f;
             while (elapsed < dur && img != null)
             {
