@@ -91,6 +91,17 @@ public class DraggableHalf : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
     {
         if (IsPlaced) return;
         _rt.anchoredPosition += eventData.delta / _canvas.scaleFactor;
+
+        // Clamp to parent bounds so piece can't be lost off-screen
+        var parentRT = _rt.parent as RectTransform;
+        if (parentRT != null)
+        {
+            Vector2 pos = _rt.anchoredPosition;
+            Rect bounds = parentRT.rect;
+            pos.x = Mathf.Clamp(pos.x, bounds.xMin + 20f, bounds.xMax - 20f);
+            pos.y = Mathf.Clamp(pos.y, bounds.yMin + 20f, bounds.yMax - 20f);
+            _rt.anchoredPosition = pos;
+        }
     }
 
     public void OnEndDrag(PointerEventData eventData)

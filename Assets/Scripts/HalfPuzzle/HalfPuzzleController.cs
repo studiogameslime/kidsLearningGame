@@ -4,20 +4,18 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Half Puzzle game: fruit images are cut in half (top/bottom).
-/// Top halves in a row at the top, bottom halves shuffled at the bottom.
-/// Both halves are draggable — the child can drag from top to bottom or bottom to top.
-/// When two matching halves are close enough, they snap together.
+/// Half Puzzle game: fruit images are cut in half (left/right).
+/// Left halves in a row at the top (shuffled), right halves at the bottom (shuffled).
+/// Both halves are draggable — the child drags one half to its match.
+/// When matching halves are close enough, they snap together side by side.
 ///
-/// Layout similar to Shadow Match: horizontal rows, top and bottom.
+/// Kitchen theme background built procedurally.
 ///
 /// Difficulty scales the number of pairs:
 ///   1-3  → 2 pairs
 ///   4-6  → 3-4 pairs
 ///   7-9  → 5-6 pairs
 ///   10   → 7 pairs
-///
-/// Uses fruit sprites from Resources/Tractor/Fruits.png sprite sheet (Fruits_0..19).
 /// </summary>
 public class HalfPuzzleController : BaseMiniGame
 {
@@ -25,13 +23,15 @@ public class HalfPuzzleController : BaseMiniGame
     public RectTransform boardArea;
 
     [Header("Settings")]
-    public float snapDistance = 100f;
+    public float snapDistance = 90f;
 
     // Runtime state
     private Sprite[] _fruitSprites;
-    private readonly List<DraggableHalf> _topPieces = new List<DraggableHalf>();
-    private readonly List<DraggableHalf> _bottomPieces = new List<DraggableHalf>();
+    private readonly List<DraggableHalf> _topPieces = new List<DraggableHalf>();    // left halves
+    private readonly List<DraggableHalf> _bottomPieces = new List<DraggableHalf>(); // right halves
     private readonly List<int> _roundFruitIndices = new List<int>();
+    private readonly List<Texture2D> _createdTextures = new List<Texture2D>();
+    private readonly List<Sprite> _createdSprites = new List<Sprite>();
     private int _matchedCount;
     private int _totalPairs;
     private Canvas _canvas;
@@ -42,8 +42,10 @@ public class HalfPuzzleController : BaseMiniGame
 
     protected override void OnGameInit()
     {
-        totalRounds = 3;
+        totalRounds = 1;
+        isEndless = true;
         contentCategory = "fruits";
+        playConfettiOnRoundWin = true;
         playConfettiOnSessionWin = true;
         _canvas = GetComponentInParent<Canvas>();
 
@@ -77,6 +79,20 @@ public class HalfPuzzleController : BaseMiniGame
         foreach (var p in _bottomPieces) if (p != null) Destroy(p.gameObject);
         _topPieces.Clear();
         _bottomPieces.Clear();
+        CleanupTextures();
+    }
+
+    private void OnDestroy()
+    {
+        CleanupTextures();
+    }
+
+    private void CleanupTextures()
+    {
+        foreach (var s in _createdSprites) if (s != null) Destroy(s);
+        foreach (var t in _createdTextures) if (t != null) Destroy(t);
+        _createdSprites.Clear();
+        _createdTextures.Clear();
     }
 
     protected override string GetContentId()
@@ -108,81 +124,63 @@ public class HalfPuzzleController : BaseMiniGame
         float boardW = boardArea.rect.width;
         float boardH = boardArea.rect.height;
 
-        // Layout: top row at ~70% height, bottom row at ~25% height
-        float topRowY = boardH * 0.70f;
-        float bottomRowY = boardH * 0.25f;
+        // Layout: top row (left halves) at ~72%, bottom row (right halves) at ~28%
+        float topRowY = boardH * 0.72f;
+        float bottomRowY = boardH * 0.28f;
 
-        // Card size — large (x2), based on available width
-        float padding = 30f;
-        float spacing = 24f;
+        // Card size — each half is half-width, full-height of the fruit
+        float padding = 40f;
+        float spacing = 28f;
         float availW = boardW - padding * 2f - (_totalPairs - 1) * spacing;
-        float cardW = Mathf.Min(availW / _totalPairs, 240f);
-        float cardH = cardW; // square halves
+        float cardW = Mathf.Min(availW / _totalPairs, 200f);
+        float cardH = cardW * 1.6f; // taller than wide since it's half a fruit (left/right cut)
 
         // Horizontal centering
         float totalW = _totalPairs * cardW + (_totalPairs - 1) * spacing;
         float startX = (boardW - totalW) / 2f + cardW / 2f;
 
-        // Shuffled orders (independent for top and bottom rows)
+        // Shuffled orders
         var topOrder = new List<int>();
         var bottomOrder = new List<int>();
         for (int i = 0; i < _totalPairs; i++) { topOrder.Add(i); bottomOrder.Add(i); }
         ShuffleList(topOrder);
         ShuffleList(bottomOrder);
 
+        var roundedRect = Resources.Load<Sprite>("UI/RoundedRect");
+
         for (int i = 0; i < _totalPairs; i++)
         {
             float xPos = startX + i * (cardW + spacing);
 
-            // ── Top half (draggable) ──
+            // ── Top row: LEFT halves (draggable) ──
             int topIdx = topOrder[i];
             int topFruitIdx = _roundFruitIndices[topIdx];
             Sprite topFullSprite = _fruitSprites[topFruitIdx];
             if (topFullSprite == null) continue;
 
             Texture2D topTex = ExtractSpriteTexture(topFullSprite);
-            Sprite topSprite = CreateTopHalf(topTex);
+            Sprite leftSprite = CreateLeftHalf(topTex);
 
-            var topGO = new GameObject($"Top_{topFullSprite.name}");
-            topGO.transform.SetParent(boardArea, false);
-            var topRT = topGO.AddComponent<RectTransform>();
-            topRT.anchorMin = Vector2.zero;
-            topRT.anchorMax = Vector2.zero;
-            topRT.pivot = new Vector2(0.5f, 0f); // pivot at bottom edge
-            topRT.sizeDelta = new Vector2(cardW, cardH);
-            topRT.anchoredPosition = new Vector2(xPos, topRowY);
-
-            var topImg = topGO.AddComponent<Image>();
-            topImg.sprite = topSprite;
-            topImg.preserveAspect = true;
-            topImg.raycastTarget = true;
+            var topGO = CreateHalfCard(boardArea, $"Left_{topFullSprite.name}",
+                leftSprite, roundedRect, cardW, cardH, new Vector2(xPos, topRowY),
+                new Vector2(1f, 0.5f)); // pivot at right edge
 
             var topDrag = topGO.AddComponent<DraggableHalf>();
             topDrag.Init(topIdx, topFullSprite.name, _canvas, this);
             _topPieces.Add(topDrag);
 
-            // ── Bottom half (draggable) ──
+            // ── Bottom row: RIGHT halves (draggable) ──
             int bottomIdx = bottomOrder[i];
             int bottomFruitIdx = _roundFruitIndices[bottomIdx];
             Sprite bottomFullSprite = _fruitSprites[bottomFruitIdx];
             if (bottomFullSprite == null) continue;
 
             Texture2D bottomTex = ExtractSpriteTexture(bottomFullSprite);
-            Sprite bottomSprite = CreateBottomHalf(bottomTex);
+            Sprite rightSprite = CreateRightHalf(bottomTex);
 
-            var bottomGO = new GameObject($"Bottom_{bottomFullSprite.name}");
-            bottomGO.transform.SetParent(boardArea, false);
-            var bottomRT = bottomGO.AddComponent<RectTransform>();
-            bottomRT.anchorMin = Vector2.zero;
-            bottomRT.anchorMax = Vector2.zero;
-            bottomRT.pivot = new Vector2(0.5f, 1f); // pivot at top edge
-            bottomRT.sizeDelta = new Vector2(cardW, cardH);
-            bottomRT.anchoredPosition = new Vector2(xPos, bottomRowY);
-
-            var bottomImg = bottomGO.AddComponent<Image>();
-            bottomImg.sprite = bottomSprite;
-            bottomImg.preserveAspect = true;
-            bottomImg.raycastTarget = true;
+            var bottomGO = CreateHalfCard(boardArea, $"Right_{bottomFullSprite.name}",
+                rightSprite, roundedRect, cardW, cardH, new Vector2(xPos, bottomRowY),
+                new Vector2(0f, 0.5f)); // pivot at left edge
 
             var bottomDrag = bottomGO.AddComponent<DraggableHalf>();
             bottomDrag.Init(bottomIdx, bottomFullSprite.name, _canvas, this);
@@ -192,13 +190,52 @@ public class HalfPuzzleController : BaseMiniGame
         StartCoroutine(CaptureStartPositions());
     }
 
+    /// <summary>Creates a styled half-card with cabinet-like background.</summary>
+    private GameObject CreateHalfCard(Transform parent, string name, Sprite halfSprite,
+        Sprite roundedRect, float w, float h, Vector2 position, Vector2 pivot)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.zero;
+        rt.pivot = pivot;
+        rt.sizeDelta = new Vector2(w, h);
+        rt.anchoredPosition = position;
+
+        // Cabinet-style background
+        var bgImg = go.AddComponent<Image>();
+        if (roundedRect != null) { bgImg.sprite = roundedRect; bgImg.type = Image.Type.Sliced; }
+        bgImg.color = new Color(0.92f, 0.95f, 0.98f, 0.9f); // soft light blue-white
+        bgImg.raycastTarget = true;
+
+        // Shadow
+        var shadow = go.AddComponent<Shadow>();
+        shadow.effectColor = new Color(0.2f, 0.15f, 0.1f, 0.25f);
+        shadow.effectDistance = new Vector2(2, -3);
+
+        // Fruit image inside
+        var imgGO = new GameObject("FruitImage");
+        imgGO.transform.SetParent(go.transform, false);
+        var imgRT = imgGO.AddComponent<RectTransform>();
+        imgRT.anchorMin = new Vector2(0.05f, 0.05f);
+        imgRT.anchorMax = new Vector2(0.95f, 0.95f);
+        imgRT.offsetMin = Vector2.zero;
+        imgRT.offsetMax = Vector2.zero;
+        var fruitImg = imgGO.AddComponent<Image>();
+        fruitImg.sprite = halfSprite;
+        fruitImg.preserveAspect = true;
+        fruitImg.raycastTarget = false;
+
+        return go;
+    }
+
     private IEnumerator CaptureStartPositions()
     {
         yield return null;
         foreach (var p in _topPieces) if (p != null) p.CaptureStartPosition();
         foreach (var p in _bottomPieces) if (p != null) p.CaptureStartPosition();
 
-        // Tutorial hand on first bottom piece
         if (TutorialHand != null && _bottomPieces.Count > 0)
         {
             var rt = _bottomPieces[0].GetComponent<RectTransform>();
@@ -208,10 +245,6 @@ public class HalfPuzzleController : BaseMiniGame
 
     // ── Match logic ──
 
-    /// <summary>
-    /// Called by DraggableHalf on drop. Checks if the dragged piece is near its matching partner.
-    /// Works in both directions: top piece near matching bottom, or bottom piece near matching top.
-    /// </summary>
     public bool TryMatch(DraggableHalf piece)
     {
         if (IsInputLocked || piece.IsPlaced) return false;
@@ -221,9 +254,9 @@ public class HalfPuzzleController : BaseMiniGame
         int pairId = piece.pairId;
         RectTransform pieceRT = piece.GetComponent<RectTransform>();
 
-        // Find the matching partner in the OTHER row
-        bool isTopPiece = _topPieces.Contains(piece);
-        var partnerList = isTopPiece ? _bottomPieces : _topPieces;
+        // Find matching partner in the OTHER row
+        bool isLeftHalf = _topPieces.Contains(piece);
+        var partnerList = isLeftHalf ? _bottomPieces : _topPieces;
 
         DraggableHalf partner = null;
         foreach (var p in partnerList)
@@ -239,7 +272,7 @@ public class HalfPuzzleController : BaseMiniGame
 
         if (dist > snapDistance)
         {
-            // Check if near a WRONG partner (mistake)
+            // Check if near a WRONG partner
             foreach (var p in partnerList)
             {
                 if (p == null || p.IsPlaced || p.pairId == pairId) continue;
@@ -255,20 +288,19 @@ public class HalfPuzzleController : BaseMiniGame
             return false;
         }
 
-        // Match! Snap both halves together at the midpoint
+        // Match! Snap left half to the left, right half to the right
         Stats?.RecordCorrect("match", piece.animalId);
 
         Vector2 midpoint = (pieceRT.anchoredPosition + partnerRT.anchoredPosition) / 2f;
 
-        // Determine which is top and which is bottom for correct stacking
-        DraggableHalf topPiece = isTopPiece ? piece : partner;
-        DraggableHalf bottomPiece = isTopPiece ? partner : piece;
-        RectTransform topRT = topPiece.GetComponent<RectTransform>();
-        RectTransform bottomRT = bottomPiece.GetComponent<RectTransform>();
+        // Left half pivot is (1, 0.5) → anchoredPosition = right edge
+        // Right half pivot is (0, 0.5) → anchoredPosition = left edge
+        // Both snap to same point = they touch at the seam
+        DraggableHalf leftPiece = isLeftHalf ? piece : partner;
+        DraggableHalf rightPiece = isLeftHalf ? partner : piece;
 
-        float halfH = topRT.sizeDelta.y * 0.5f;
-        topPiece.Lock(new Vector2(midpoint.x, midpoint.y + halfH));
-        bottomPiece.Lock(new Vector2(midpoint.x, midpoint.y - halfH));
+        leftPiece.Lock(midpoint);
+        rightPiece.Lock(midpoint);
 
         PlayCorrectEffect(pieceRT);
 
@@ -285,7 +317,7 @@ public class HalfPuzzleController : BaseMiniGame
         CompleteRound();
     }
 
-    // ── Sprite splitting (top/bottom) ──
+    // ── Sprite splitting (left/right) ──
 
     private static Texture2D ExtractSpriteTexture(Sprite sprite)
     {
@@ -310,24 +342,31 @@ public class HalfPuzzleController : BaseMiniGame
         return extracted;
     }
 
-    private static Sprite CreateTopHalf(Texture2D tex)
+    private Sprite CreateLeftHalf(Texture2D tex)
     {
         if (tex == null) return null;
-        int halfH = tex.height / 2;
-        return Sprite.Create(tex,
-            new Rect(0, halfH, tex.width, tex.height - halfH),
-            new Vector2(0.5f, 0f), // pivot at bottom edge
+        _createdTextures.Add(tex);
+        int halfW = tex.width / 2;
+        var sprite = Sprite.Create(tex,
+            new Rect(0, 0, halfW, tex.height),
+            new Vector2(1f, 0.5f),
             100f);
+        _createdSprites.Add(sprite);
+        return sprite;
     }
 
-    private static Sprite CreateBottomHalf(Texture2D tex)
+    private Sprite CreateRightHalf(Texture2D tex)
     {
         if (tex == null) return null;
-        int halfH = tex.height / 2;
-        return Sprite.Create(tex,
-            new Rect(0, 0, tex.width, halfH),
-            new Vector2(0.5f, 1f), // pivot at top edge
+        if (!_createdTextures.Contains(tex))
+            _createdTextures.Add(tex);
+        int halfW = tex.width / 2;
+        var sprite = Sprite.Create(tex,
+            new Rect(halfW, 0, tex.width - halfW, tex.height),
+            new Vector2(0f, 0.5f),
             100f);
+        _createdSprites.Add(sprite);
+        return sprite;
     }
 
     // ── Utility ──

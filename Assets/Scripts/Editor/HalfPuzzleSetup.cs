@@ -6,23 +6,23 @@ using UnityEngine.EventSystems;
 using TMPro;
 
 /// <summary>
-/// Builds the HalfPuzzle scene — wooden board theme (like Memory Game).
-/// Uses fruit sprites from Resources/Tractor/Fruits.png sprite sheet.
+/// Builds the HalfPuzzle scene — cute toy kitchen theme.
+/// Layered kitchen background: wall tiles, counter, shelf details.
+/// All built procedurally from shapes — no image assets needed for background.
 /// </summary>
 public class HalfPuzzleSetup : EditorWindow
 {
     private static readonly Vector2 Ref = new Vector2(1920, 1080);
-
-    // Warm wood palette (matching Memory Game)
-    private static readonly Color TableBaseColor    = HexColor("#5C3D2E");
-    private static readonly Color BoardWoodA        = HexColor("#8B6B4A");
-    private static readonly Color BoardWoodB        = HexColor("#7E6042");
-    private static readonly Color PlankSepColor     = HexColor("#5A4030");
-    private static readonly Color BoardEdgeColor    = HexColor("#6B4D38");
-    private static readonly Color BoardInnerRimColor = HexColor("#A08060");
-    private static readonly Color HeaderColor       = new Color(0.30f, 0.20f, 0.12f, 0.75f);
-
     private static readonly int HeaderHeight = SetupConstants.HeaderHeight;
+
+    // Kitchen palette
+    private static readonly Color WallColor       = HexColor("#E8E0D8"); // warm beige wall
+    private static readonly Color WallTileColor    = HexColor("#F2ECE4"); // lighter tile
+    private static readonly Color CounterColor     = HexColor("#D4C4AA"); // warm wood counter
+    private static readonly Color CounterEdgeColor = HexColor("#B8A888"); // darker counter edge
+    private static readonly Color ShelfColor       = HexColor("#C8B898"); // shelf wood
+    private static readonly Color BacksplashColor  = HexColor("#B5D4E8"); // soft blue backsplash
+    private static readonly Color HeaderColor      = new Color(0.55f, 0.75f, 0.55f, 0.88f); // soft green
 
     public static void RunSetupSilent()
     {
@@ -48,7 +48,7 @@ public class HalfPuzzleSetup : EditorWindow
         camGO.AddComponent<AudioListener>();
         var cam = camGO.AddComponent<Camera>();
         cam.clearFlags = CameraClearFlags.SolidColor;
-        cam.backgroundColor = TableBaseColor;
+        cam.backgroundColor = WallColor;
         cam.orthographic = true;
         var urpType = System.Type.GetType(
             "UnityEngine.Rendering.Universal.UniversalAdditionalCameraData, Unity.RenderPipelines.Universal.Runtime");
@@ -72,13 +72,8 @@ public class HalfPuzzleSetup : EditorWindow
         scaler.matchWidthOrHeight = 0.5f;
         canvasGO.AddComponent<GraphicRaycaster>();
 
-        // ── Background (dark warm brown table) ──
-        var bgGO = CreateStretchImage(canvasGO.transform, "Background", TableBaseColor);
-        bgGO.GetComponent<Image>().raycastTarget = false;
-
-        // Warm vignette
-        CreateWarmVignette(canvasGO.transform, "VignetteTop", true);
-        CreateWarmVignette(canvasGO.transform, "VignetteBottom", false);
+        // ── Kitchen Background ──
+        CreateKitchenBackground(canvasGO.transform, roundedRect);
 
         // ── SafeArea ──
         var safeArea = new GameObject("SafeArea");
@@ -87,7 +82,7 @@ public class HalfPuzzleSetup : EditorWindow
         StretchFull(safeRT);
         safeArea.AddComponent<SafeAreaHandler>();
 
-        // ── Header (warm brown) ──
+        // ── Header ──
         var topBar = CreateStretchImage(safeArea.transform, "TopBar", HeaderColor);
         var topBarRT = topBar.GetComponent<RectTransform>();
         topBarRT.anchorMin = new Vector2(0, 1);
@@ -108,7 +103,7 @@ public class HalfPuzzleSetup : EditorWindow
         HebrewText.SetText(titleTMP, "\u05D7\u05D1\u05E8\u05D5 \u05D0\u05EA \u05D4\u05D7\u05E6\u05D0\u05D9\u05DD"); // חברו את החצאים
         titleTMP.fontSize = 36;
         titleTMP.fontStyle = FontStyles.Bold;
-        titleTMP.color = new Color(1f, 0.96f, 0.88f, 1f); // warm white
+        titleTMP.color = Color.white;
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.raycastTarget = false;
 
@@ -118,64 +113,24 @@ public class HalfPuzzleSetup : EditorWindow
             new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f),
             new Vector2(24, 0), new Vector2(90, 90));
 
-        // Trophy button
+        // Trophy
         var trophyIcon = LoadSprite("Assets/Art/Icons/trophy.png");
         var trophyGO = CreateIconButton(topBar.transform, "TrophyButton", trophyIcon,
             new Vector2(1, 1), new Vector2(1, 1), new Vector2(1, 1),
             new Vector2(-16, -20), new Vector2(70, 70));
 
-        // ── Board (wood plank surface) ──
-        var boardGO = new GameObject("BoardPanel");
-        boardGO.transform.SetParent(safeArea.transform, false);
-        var boardRT = boardGO.AddComponent<RectTransform>();
-        boardRT.anchorMin = new Vector2(0.005f, 0.01f);
-        boardRT.anchorMax = new Vector2(0.995f, 0.90f);
-        boardRT.offsetMin = Vector2.zero;
-        boardRT.offsetMax = Vector2.zero;
-
-        var boardImg = boardGO.AddComponent<Image>();
-        if (roundedRect != null) { boardImg.sprite = roundedRect; boardImg.type = Image.Type.Sliced; }
-        boardImg.color = BoardEdgeColor;
-        boardImg.raycastTarget = false;
-
-        var boardShadow = boardGO.AddComponent<Shadow>();
-        boardShadow.effectColor = new Color(0.12f, 0.06f, 0.02f, 0.5f);
-        boardShadow.effectDistance = new Vector2(5, -5);
-
-        // Inner rim
-        var rimGO = new GameObject("InnerRim");
-        rimGO.transform.SetParent(boardGO.transform, false);
-        var rimRT = rimGO.AddComponent<RectTransform>();
-        StretchFull(rimRT);
-        rimRT.offsetMin = new Vector2(2, 2);
-        rimRT.offsetMax = new Vector2(-2, -2);
-        var rimImg = rimGO.AddComponent<Image>();
-        if (roundedRect != null) { rimImg.sprite = roundedRect; rimImg.type = Image.Type.Sliced; }
-        rimImg.color = BoardInnerRimColor;
-        rimImg.raycastTarget = false;
-
-        // Wood planks
-        var woodSurface = new GameObject("WoodSurface");
-        woodSurface.transform.SetParent(boardGO.transform, false);
-        var woodSurfaceRT = woodSurface.AddComponent<RectTransform>();
-        StretchFull(woodSurfaceRT);
-        woodSurfaceRT.offsetMin = new Vector2(3, 3);
-        woodSurfaceRT.offsetMax = new Vector2(-3, -3);
-        CreateWoodPlanks(woodSurface.transform);
-
-        // Play area (on top of wood — controller builds pieces here)
+        // ── Play area ──
         var playArea = new GameObject("PlayArea");
-        playArea.transform.SetParent(boardGO.transform, false);
+        playArea.transform.SetParent(safeArea.transform, false);
         var playAreaRT = playArea.AddComponent<RectTransform>();
         StretchFull(playAreaRT);
-        playAreaRT.offsetMin = new Vector2(4, 4);
-        playAreaRT.offsetMax = new Vector2(-4, -4);
+        playAreaRT.offsetMax = new Vector2(0, -HeaderHeight);
+        playAreaRT.offsetMin = Vector2.zero;
 
         // ── Controller ──
         var controller = canvasGO.AddComponent<HalfPuzzleController>();
         controller.boardArea = playAreaRT;
 
-        // Wire home button
         UnityEditor.Events.UnityEventTools.AddPersistentListener(
             homeGO.GetComponent<Button>().onClick, controller.OnExitPressed);
 
@@ -194,74 +149,130 @@ public class HalfPuzzleSetup : EditorWindow
         Debug.Log("[HalfPuzzleSetup] Scene created: Assets/Scenes/HalfPuzzle.unity");
     }
 
-    // ── Wood planks ──
+    // ══════════════════════════════════════════════
+    //  KITCHEN BACKGROUND
+    // ══════════════════════════════════════════════
 
-    private static void CreateWoodPlanks(Transform parent)
+    private static void CreateKitchenBackground(Transform parent, Sprite roundedRect)
     {
-        int plankCount = 6;
-        Color[] plankColors = {
-            BoardWoodA, BoardWoodB,
-            LerpColor(BoardWoodA, BoardWoodB, 0.3f),
-            BoardWoodA,
-            LerpColor(BoardWoodB, BoardWoodA, 0.4f),
-            BoardWoodB
-        };
+        // ── 1. Wall (full screen, warm beige) ──
+        var wallGO = CreateStretchImage(parent, "Wall", WallColor);
+        wallGO.GetComponent<Image>().raycastTarget = false;
+        wallGO.transform.SetAsFirstSibling();
 
-        for (int i = 0; i < plankCount; i++)
+        // ── 2. Tile pattern on wall (subtle grid of lighter rectangles, top 65%) ──
+        var tilesParent = new GameObject("WallTiles");
+        tilesParent.transform.SetParent(wallGO.transform, false);
+        var tilesRT = tilesParent.AddComponent<RectTransform>();
+        tilesRT.anchorMin = new Vector2(0, 0.35f);
+        tilesRT.anchorMax = Vector2.one;
+        tilesRT.offsetMin = Vector2.zero;
+        tilesRT.offsetMax = Vector2.zero;
+
+        // Create subtle tile grid
+        int tileCols = 12, tileRows = 4;
+        for (int r = 0; r < tileRows; r++)
         {
-            float yMin = (float)i / plankCount;
-            float yMax = (float)(i + 1) / plankCount;
-
-            var plankGO = new GameObject($"Plank_{i}");
-            plankGO.transform.SetParent(parent, false);
-            var plankRT = plankGO.AddComponent<RectTransform>();
-            plankRT.anchorMin = new Vector2(0, yMin);
-            plankRT.anchorMax = new Vector2(1, yMax);
-            plankRT.offsetMin = Vector2.zero;
-            plankRT.offsetMax = Vector2.zero;
-            var plankImg = plankGO.AddComponent<Image>();
-            plankImg.color = plankColors[i % plankColors.Length];
-            plankImg.raycastTarget = false;
-
-            // Separator line
-            if (i < plankCount - 1)
+            for (int c = 0; c < tileCols; c++)
             {
-                var sep = new GameObject($"Sep_{i}");
-                sep.transform.SetParent(parent, false);
-                var sepRT = sep.AddComponent<RectTransform>();
-                sepRT.anchorMin = new Vector2(0, yMax);
-                sepRT.anchorMax = new Vector2(1, yMax);
-                sepRT.pivot = new Vector2(0.5f, 0.5f);
-                sepRT.sizeDelta = new Vector2(0, 2);
-                var sepImg = sep.AddComponent<Image>();
-                sepImg.color = PlankSepColor;
-                sepImg.raycastTarget = false;
+                var tileGO = new GameObject($"Tile_{r}_{c}");
+                tileGO.transform.SetParent(tilesParent.transform, false);
+                var tileRT = tileGO.AddComponent<RectTransform>();
+                float xMin = (float)c / tileCols + 0.002f;
+                float xMax = (float)(c + 1) / tileCols - 0.002f;
+                float yMin = (float)r / tileRows + 0.005f;
+                float yMax = (float)(r + 1) / tileRows - 0.005f;
+                tileRT.anchorMin = new Vector2(xMin, yMin);
+                tileRT.anchorMax = new Vector2(xMax, yMax);
+                tileRT.offsetMin = Vector2.zero;
+                tileRT.offsetMax = Vector2.zero;
+                var tileImg = tileGO.AddComponent<Image>();
+                if (roundedRect != null) { tileImg.sprite = roundedRect; tileImg.type = Image.Type.Sliced; }
+                // Alternate tile colors slightly
+                float shade = ((r + c) % 2 == 0) ? 0f : 0.015f;
+                tileImg.color = new Color(
+                    WallTileColor.r + shade,
+                    WallTileColor.g + shade,
+                    WallTileColor.b + shade, 0.6f);
+                tileImg.raycastTarget = false;
             }
         }
-    }
 
-    // ── Vignette ──
+        // ── 3. Backsplash strip (soft blue band between wall and counter) ──
+        var splashGO = new GameObject("Backsplash");
+        splashGO.transform.SetParent(wallGO.transform, false);
+        var splashRT = splashGO.AddComponent<RectTransform>();
+        splashRT.anchorMin = new Vector2(0, 0.30f);
+        splashRT.anchorMax = new Vector2(1, 0.38f);
+        splashRT.offsetMin = Vector2.zero;
+        splashRT.offsetMax = Vector2.zero;
+        var splashImg = splashGO.AddComponent<Image>();
+        splashImg.color = BacksplashColor;
+        splashImg.raycastTarget = false;
 
-    private static void CreateWarmVignette(Transform parent, string name, bool isTop)
-    {
-        var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
-        var rt = go.AddComponent<RectTransform>();
-        if (isTop)
+        // ── 4. Counter (bottom 30%, warm wood) ──
+        var counterGO = new GameObject("Counter");
+        counterGO.transform.SetParent(wallGO.transform, false);
+        var counterRT = counterGO.AddComponent<RectTransform>();
+        counterRT.anchorMin = Vector2.zero;
+        counterRT.anchorMax = new Vector2(1, 0.30f);
+        counterRT.offsetMin = Vector2.zero;
+        counterRT.offsetMax = Vector2.zero;
+        var counterImg = counterGO.AddComponent<Image>();
+        counterImg.color = CounterColor;
+        counterImg.raycastTarget = false;
+
+        // Counter top edge (darker line)
+        var edgeGO = new GameObject("CounterEdge");
+        edgeGO.transform.SetParent(counterGO.transform, false);
+        var edgeRT = edgeGO.AddComponent<RectTransform>();
+        edgeRT.anchorMin = new Vector2(0, 1);
+        edgeRT.anchorMax = new Vector2(1, 1);
+        edgeRT.pivot = new Vector2(0.5f, 0.5f);
+        edgeRT.sizeDelta = new Vector2(0, 6);
+        var edgeImg = edgeGO.AddComponent<Image>();
+        edgeImg.color = CounterEdgeColor;
+        edgeImg.raycastTarget = false;
+
+        // Counter wood grain lines (horizontal)
+        for (int i = 0; i < 3; i++)
         {
-            rt.anchorMin = new Vector2(0, 0.8f);
-            rt.anchorMax = Vector2.one;
+            var grainGO = new GameObject($"Grain_{i}");
+            grainGO.transform.SetParent(counterGO.transform, false);
+            var grainRT = grainGO.AddComponent<RectTransform>();
+            float y = 0.25f + i * 0.25f;
+            grainRT.anchorMin = new Vector2(0.02f, y);
+            grainRT.anchorMax = new Vector2(0.98f, y);
+            grainRT.sizeDelta = new Vector2(0, 1.5f);
+            var grainImg = grainGO.AddComponent<Image>();
+            grainImg.color = new Color(CounterEdgeColor.r, CounterEdgeColor.g, CounterEdgeColor.b, 0.2f);
+            grainImg.raycastTarget = false;
         }
-        else
-        {
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = new Vector2(1, 0.2f);
-        }
-        rt.offsetMin = Vector2.zero;
-        rt.offsetMax = Vector2.zero;
-        var img = go.AddComponent<Image>();
-        img.color = new Color(0.15f, 0.08f, 0.03f, isTop ? 0.3f : 0.4f);
-        img.raycastTarget = false;
+
+        // ── 5. Upper shelf (thin shelf line at ~68% height) ──
+        var shelfGO = new GameObject("UpperShelf");
+        shelfGO.transform.SetParent(wallGO.transform, false);
+        var shelfRT = shelfGO.AddComponent<RectTransform>();
+        shelfRT.anchorMin = new Vector2(0.05f, 0.60f);
+        shelfRT.anchorMax = new Vector2(0.95f, 0.60f);
+        shelfRT.pivot = new Vector2(0.5f, 0.5f);
+        shelfRT.sizeDelta = new Vector2(0, 8);
+        var shelfImg = shelfGO.AddComponent<Image>();
+        if (roundedRect != null) { shelfImg.sprite = roundedRect; shelfImg.type = Image.Type.Sliced; }
+        shelfImg.color = ShelfColor;
+        shelfImg.raycastTarget = false;
+
+        // Shelf shadow (below)
+        var shelfShadowGO = new GameObject("ShelfShadow");
+        shelfShadowGO.transform.SetParent(wallGO.transform, false);
+        var shelfShadowRT = shelfShadowGO.AddComponent<RectTransform>();
+        shelfShadowRT.anchorMin = new Vector2(0.05f, 0.57f);
+        shelfShadowRT.anchorMax = new Vector2(0.95f, 0.60f);
+        shelfShadowRT.offsetMin = Vector2.zero;
+        shelfShadowRT.offsetMax = Vector2.zero;
+        var shelfShadowImg = shelfShadowGO.AddComponent<Image>();
+        shelfShadowImg.color = new Color(0.3f, 0.25f, 0.2f, 0.08f);
+        shelfShadowImg.raycastTarget = false;
     }
 
     // ── Helpers ──
@@ -294,8 +305,6 @@ public class HalfPuzzleSetup : EditorWindow
         rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
         rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
     }
-
-    private static Color LerpColor(Color a, Color b, float t) => Color.Lerp(a, b, t);
 
     private static void EnsureFolder(string path)
     {
