@@ -152,7 +152,9 @@ public class GameCardView : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
             _gameNameLabel = nameGO.AddComponent<TextMeshProUGUI>();
             _gameNameLabel.fontSize = 24;
             _gameNameLabel.fontStyle = FontStyles.Bold;
-            _gameNameLabel.color = new Color(0.25f, 0.25f, 0.3f);
+            _gameNameLabel.color = new Color(0.2f, 0.2f, 0.28f);
+            _gameNameLabel.outlineWidth = 0.15f;
+            _gameNameLabel.outlineColor = new Color32(255, 255, 255, 120);
             _gameNameLabel.alignment = TextAlignmentOptions.Center;
             _gameNameLabel.raycastTarget = false;
             _gameNameLabel.enableWordWrapping = false;

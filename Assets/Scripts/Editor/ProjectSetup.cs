@@ -506,6 +506,20 @@ public class ProjectSetup : EditorWindow
         thumbImg.raycastTarget = false;
         thumbImg.color = Color.white;
 
+        // Glossy highlight (top edge shine — gives 3D card feel)
+        var shineGO = new GameObject("Shine");
+        shineGO.transform.SetParent(root.transform, false);
+        var shineRT = shineGO.AddComponent<RectTransform>();
+        shineRT.anchorMin = new Vector2(0.1f, 0.85f);
+        shineRT.anchorMax = new Vector2(0.9f, 0.98f);
+        shineRT.offsetMin = Vector2.zero;
+        shineRT.offsetMax = Vector2.zero;
+        var shineImg = shineGO.AddComponent<Image>();
+        shineImg.sprite = roundedRect;
+        shineImg.type = Image.Type.Sliced;
+        shineImg.color = new Color(1f, 1f, 1f, 0.15f);
+        shineImg.raycastTarget = false;
+
         // Frame border (rounded rect outline)
         var frameGO = new GameObject("Frame");
         frameGO.transform.SetParent(root.transform, false);
@@ -1781,6 +1795,30 @@ public class ProjectSetup : EditorWindow
         if (groundBackSprite != null)
             CreateBgLayer(skyGO.transform, "GroundBack", groundBackSprite,
                 new Vector2(0, 0), new Vector2(1, 0.45f), dayGroundBack);
+
+        // Clouds (individual, for depth)
+        for (int i = 1; i <= 4; i++)
+        {
+            var cloudSprite = LoadSprite(WorldArt + $"cloud{i}.png");
+            if (cloudSprite != null)
+            {
+                float x = 0.1f + (i - 1) * 0.25f;
+                float y = 0.72f + (i % 2) * 0.08f;
+                float size = 0.12f + (i % 3) * 0.04f;
+                var cloudGO = new GameObject($"Cloud_{i}");
+                cloudGO.transform.SetParent(skyGO.transform, false);
+                var cloudRT = cloudGO.AddComponent<RectTransform>();
+                cloudRT.anchorMin = new Vector2(x - size, y - size * 0.5f);
+                cloudRT.anchorMax = new Vector2(x + size, y + size * 0.5f);
+                cloudRT.offsetMin = Vector2.zero;
+                cloudRT.offsetMax = Vector2.zero;
+                var cloudImg = cloudGO.AddComponent<Image>();
+                cloudImg.sprite = cloudSprite;
+                cloudImg.preserveAspect = true;
+                cloudImg.color = new Color(1f, 1f, 1f, 0.6f);
+                cloudImg.raycastTarget = false;
+            }
+        }
 
         // Ground front
         var groundFrontSprite = LoadSprite(WorldArt + "groundLayer2.png");
