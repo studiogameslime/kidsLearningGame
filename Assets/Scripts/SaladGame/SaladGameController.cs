@@ -2,68 +2,66 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
 using TMPro;
 
 /// <summary>
-/// Salad preparation game.
-/// Flow: Alin requests → pick vegetable → cut on board → pieces to bowl → repeat → shake to mix → serve.
+/// Salad preparation game — pick, free-cut, bowl focus, shake-mix, serve.
 ///
-/// Phases:
-///   1. ShowRequest — Alin shows thought bubble with requested items
-///   2. PickItem — player taps correct item from basket
-///   3. CutItem — player swipes along guide lines to slice
-///   4. AddToBowl — pieces fall into bowl
-///   5. (repeat 2-4 for each item)
-///   6. MixSalad — shake device to mix
-///   7. Serve — Alin reacts happily
-///
-/// Uses fruit sprites from Resources/Tractor/Fruits (Fruits_0..19).
+/// Cutting: free swipe anywhere, auto-corrected into clean slices.
+/// Pieces visibly separate after each cut (spacing, rotation, offset).
+/// Bowl focus moment: bowl moves to center, pieces arc-fall in, brief pause.
+/// Mix: accelerometer shakes pieces in bowl with physics simulation.
 /// </summary>
 public class SaladGameController : BaseMiniGame
 {
     [Header("UI Areas")]
     public RectTransform playArea;
 
-    // Game phases
-    private enum Phase { ShowRequest, PickItem, CutItem, AddToBowl, MixSalad, Serve }
+    private enum Phase { ShowRequest, PickItem, CutItem, BowlFocus, MixSalad, Serve }
     private Phase _phase;
 
-    // Round data
+    // Data
     private Sprite[] _allFruits;
     private List<int> _requestedIndices = new List<int>();
     private int _currentRequestIdx;
     private Canvas _canvas;
+    private Sprite _roundedRect;
 
-    // UI references (created at runtime)
+    // UI panels
     private GameObject _basketPanel;
     private GameObject _cuttingBoardPanel;
     private GameObject _bowlPanel;
     private GameObject _thoughtBubble;
+    private GameObject _confirmBtn;
     private GameObject _fallbackMixBtn;
     private RectTransform _bowlRT;
-    private readonly List<GameObject> _bowlPieces = new List<GameObject>();
-    private readonly List<CutPiece> _physicsPieces = new List<CutPiece>();
-    private readonly List<Texture2D> _createdTextures = new List<Texture2D>();
-    private readonly List<Sprite> _createdSprites = new List<Sprite>();
-    private Sprite _roundedRectCached;
 
     // Cutting state
     private Sprite _currentFullSprite;
-    private readonly List<RectTransform> _cutLines = new List<RectTransform>();
-    private readonly List<bool> _cutDone = new List<bool>();
-    private readonly List<GameObject> _cutPieceGOs = new List<GameObject>();
-    private int _cutsCompleted;
-    private int _totalCuts;
+    private RectTransform _fruitContainer;
+    private readonly List<RectTransform> _currentPieces = new List<RectTransform>();
+    private int _cutCount;
+    private const int MaxCuts = 6;
 
-    // Shake detection
+    // Bowl pieces (persist across items)
+    private readonly List<GameObject> _bowlPieceGOs = new List<GameObject>();
+    private readonly List<CutPiece> _physicsPieces = new List<CutPiece>();
+
+    // Memory tracking
+    private readonly List<Texture2D> _createdTextures = new List<Texture2D>();
+    private readonly List<Sprite> _createdSprites = new List<Sprite>();
+
+    // Picking
+    private int _pickedItemIdx = -1;
+    private RectTransform _pickedItemRT;
+
+    // Shake
     private float _shakeAccum;
-    private const float ShakeThreshold = 2.5f;
-    private const float ShakeNeeded = 8f; // accumulated shake force needed
+    private const float ShakeNeeded = 8f;
     private bool _shakeReady;
     private float _noShakeTimer;
 
-    // ── BaseMiniGame overrides ──
+    // ── BaseMiniGame ──
 
     protected override string GetFallbackGameId() => "saladgame";
 
@@ -74,23 +72,18 @@ public class SaladGameController : BaseMiniGame
         contentCategory = "fruits";
         playConfettiOnRoundWin = true;
         _canvas = GetComponentInParent<Canvas>();
-
         _allFruits = Resources.LoadAll<Sprite>("Tractor/Fruits");
-        if (_allFruits == null || _allFruits.Length == 0)
-            Debug.LogError("[SaladGame] No fruit sprites found!");
-
-        _roundedRectCached = Resources.Load<Sprite>("UI/RoundedRect");
+        _roundedRect = Resources.Load<Sprite>("UI/RoundedRect");
     }
 
     protected override void OnRoundSetup()
     {
         _currentRequestIdx = 0;
-        _bowlPieces.Clear();
+        _bowlPieceGOs.Clear();
         _physicsPieces.Clear();
         _shakeAccum = 0f;
         _shakeReady = false;
 
-        // Pick items for this salad
         int itemCount = GetItemCount();
         _requestedIndices.Clear();
         var pool = new List<int>();
@@ -98,8 +91,6 @@ public class SaladGameController : BaseMiniGame
         ShuffleList(pool);
         for (int i = 0; i < itemCount && i < pool.Count; i++)
             _requestedIndices.Add(pool[i]);
-
-        Debug.Log($"[SaladGame] Round: {itemCount} items, difficulty={Difficulty}");
 
         StartCoroutine(RunRound());
     }
@@ -110,23 +101,22 @@ public class SaladGameController : BaseMiniGame
         if (_cuttingBoardPanel != null) Destroy(_cuttingBoardPanel);
         if (_bowlPanel != null) Destroy(_bowlPanel);
         if (_thoughtBubble != null) Destroy(_thoughtBubble);
+        if (_confirmBtn != null) Destroy(_confirmBtn);
         if (_fallbackMixBtn != null) Destroy(_fallbackMixBtn);
-        foreach (var g in _bowlPieces) if (g != null) Destroy(g);
-        _bowlPieces.Clear();
+        foreach (var g in _bowlPieceGOs) if (g != null) Destroy(g);
+        _bowlPieceGOs.Clear();
         _physicsPieces.Clear();
-        _cutLines.Clear();
-        _cutDone.Clear();
-        _cutPieceGOs.Clear();
-        CleanupNativeAssets();
+        _currentPieces.Clear();
+        CleanupNative();
     }
 
     private void OnDestroy()
     {
         StopAllCoroutines();
-        CleanupNativeAssets();
+        CleanupNative();
     }
 
-    private void CleanupNativeAssets()
+    private void CleanupNative()
     {
         foreach (var s in _createdSprites) if (s != null) Destroy(s);
         foreach (var t in _createdTextures) if (t != null) Destroy(t);
@@ -141,50 +131,26 @@ public class SaladGameController : BaseMiniGame
         return 4;
     }
 
-    private int GetCutsPerItem()
-    {
-        if (Difficulty <= 3) return 2;
-        if (Difficulty <= 6) return 3;
-        return 4;
-    }
-
     // ══════════════════════════════════════════════
     //  MAIN FLOW
     // ══════════════════════════════════════════════
 
     private IEnumerator RunRound()
     {
-        yield return null; // wait one frame for layout
-
-        // Create bowl (persists across all items)
+        yield return null;
         CreateBowl();
-
-        // Show request
         yield return StartCoroutine(ShowRequestPhase());
 
-        // Process each item
         for (_currentRequestIdx = 0; _currentRequestIdx < _requestedIndices.Count; _currentRequestIdx++)
         {
-            // Highlight current item in thought bubble
-            UpdateThoughtBubbleHighlight();
-
-            // Pick
+            UpdateThoughtHighlight();
             yield return StartCoroutine(PickItemPhase());
-
-            // Cut
             yield return StartCoroutine(CutItemPhase());
-
-            // Add to bowl
-            yield return StartCoroutine(AddToBowlPhase());
+            yield return StartCoroutine(BowlFocusPhase());
         }
 
-        // Mix
         yield return StartCoroutine(MixSaladPhase());
-
-        // Serve
         yield return StartCoroutine(ServePhase());
-
-        // Complete round
         CompleteRound();
     }
 
@@ -195,7 +161,6 @@ public class SaladGameController : BaseMiniGame
     private IEnumerator ShowRequestPhase()
     {
         _phase = Phase.ShowRequest;
-
         CreateThoughtBubble();
 
         if (AlinGuide.Instance != null)
@@ -203,9 +168,7 @@ public class SaladGameController : BaseMiniGame
             AlinGuide.Instance.Show();
             AlinGuide.Instance.PlayTalking();
         }
-
         yield return new WaitForSeconds(2f);
-
         if (AlinGuide.Instance != null)
             AlinGuide.Instance.StopTalking();
     }
@@ -217,22 +180,21 @@ public class SaladGameController : BaseMiniGame
         _thoughtBubble = new GameObject("ThoughtBubble");
         _thoughtBubble.transform.SetParent(playArea, false);
         var rt = _thoughtBubble.AddComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0.02f, 0.75f);
+        rt.anchorMin = new Vector2(0.02f, 0.78f);
         rt.anchorMax = new Vector2(0.55f, 0.98f);
         rt.offsetMin = Vector2.zero;
         rt.offsetMax = Vector2.zero;
 
-        var roundedRect = Resources.Load<Sprite>("UI/RoundedRect");
-
-        // Bubble background
         var bg = _thoughtBubble.AddComponent<Image>();
-        if (roundedRect != null) { bg.sprite = roundedRect; bg.type = Image.Type.Sliced; }
-        bg.color = new Color(1f, 1f, 1f, 0.9f);
+        if (_roundedRect != null) { bg.sprite = _roundedRect; bg.type = Image.Type.Sliced; }
+        bg.color = new Color(1f, 1f, 1f, 0.92f);
         bg.raycastTarget = false;
 
-        // Add requested item icons
-        float iconSize = 80f;
-        float spacing = 16f;
+        var shadow = _thoughtBubble.AddComponent<Shadow>();
+        shadow.effectColor = new Color(0, 0, 0, 0.15f);
+        shadow.effectDistance = new Vector2(2, -3);
+
+        float iconSize = 70f, spacing = 14f;
         float totalW = _requestedIndices.Count * iconSize + (_requestedIndices.Count - 1) * spacing;
         float startX = -totalW / 2f + iconSize / 2f;
 
@@ -245,31 +207,24 @@ public class SaladGameController : BaseMiniGame
             iconRT.anchorMax = new Vector2(0.5f, 0.5f);
             iconRT.sizeDelta = new Vector2(iconSize, iconSize);
             iconRT.anchoredPosition = new Vector2(startX + i * (iconSize + spacing), 0);
-
             var iconImg = iconGO.AddComponent<Image>();
             iconImg.sprite = _allFruits[_requestedIndices[i]];
             iconImg.preserveAspect = true;
             iconImg.raycastTarget = false;
-
-            // Dim initially — will highlight current
-            iconImg.color = new Color(1f, 1f, 1f, 0.4f);
+            iconImg.color = new Color(1f, 1f, 1f, 0.35f);
         }
     }
 
-    private void UpdateThoughtBubbleHighlight()
+    private void UpdateThoughtHighlight()
     {
         if (_thoughtBubble == null) return;
         for (int i = 0; i < _thoughtBubble.transform.childCount; i++)
         {
-            var icon = _thoughtBubble.transform.GetChild(i).GetComponent<Image>();
-            if (icon == null) continue;
-
-            if (i < _currentRequestIdx)
-                icon.color = new Color(0.5f, 1f, 0.5f, 0.6f); // done — greenish
-            else if (i == _currentRequestIdx)
-                icon.color = Color.white; // current — full bright
-            else
-                icon.color = new Color(1f, 1f, 1f, 0.4f); // upcoming — dim
+            var img = _thoughtBubble.transform.GetChild(i).GetComponent<Image>();
+            if (img == null) continue;
+            if (i < _currentRequestIdx) img.color = new Color(0.5f, 1f, 0.5f, 0.7f);
+            else if (i == _currentRequestIdx) img.color = Color.white;
+            else img.color = new Color(1f, 1f, 1f, 0.35f);
         }
     }
 
@@ -281,45 +236,34 @@ public class SaladGameController : BaseMiniGame
     {
         _phase = Phase.PickItem;
         _pickedItemIdx = -1;
-
         CreateBasket();
 
-        // Wait for correct pick
-        bool picked = false;
         int correctIdx = _requestedIndices[_currentRequestIdx];
+        bool picked = false;
 
         while (!picked)
         {
             yield return null;
-            if (IsInputLocked) continue;
+            if (IsInputLocked || _pickedItemIdx < 0) continue;
 
-            // Check for tap (handled via button callbacks set in CreateBasket)
-            if (_pickedItemIdx >= 0)
+            if (_pickedItemIdx == correctIdx)
             {
-                if (_pickedItemIdx == correctIdx)
-                {
-                    picked = true;
-                    Stats?.RecordCorrect("pick", _allFruits[correctIdx].name);
-                    // Flash the correct item
-                    PlayCorrectEffect(_pickedItemRT);
-                    yield return new WaitForSeconds(0.3f);
-                }
-                else
-                {
-                    RecordMistake("wrong_pick");
-                    PlayWrongEffect(_pickedItemRT);
-                    yield return new WaitForSeconds(0.3f);
-                }
-                _pickedItemIdx = -1;
+                picked = true;
+                Stats?.RecordCorrect("pick", _allFruits[correctIdx].name);
+                PlayCorrectEffect(_pickedItemRT);
+                yield return new WaitForSeconds(0.4f);
             }
+            else
+            {
+                RecordMistake("wrong_pick");
+                PlayWrongEffect(_pickedItemRT);
+                yield return new WaitForSeconds(0.4f);
+            }
+            _pickedItemIdx = -1;
         }
 
-        // Remove basket
         if (_basketPanel != null) { Destroy(_basketPanel); _basketPanel = null; }
     }
-
-    private int _pickedItemIdx = -1;
-    private RectTransform _pickedItemRT;
 
     private void CreateBasket()
     {
@@ -329,52 +273,38 @@ public class SaladGameController : BaseMiniGame
         _basketPanel.transform.SetParent(playArea, false);
         var rt = _basketPanel.AddComponent<RectTransform>();
         rt.anchorMin = new Vector2(0.05f, 0.05f);
-        rt.anchorMax = new Vector2(0.95f, 0.65f);
+        rt.anchorMax = new Vector2(0.95f, 0.68f);
         rt.offsetMin = Vector2.zero;
         rt.offsetMax = Vector2.zero;
 
-        var roundedRect = Resources.Load<Sprite>("UI/RoundedRect");
-
-        // Basket background
         var bg = _basketPanel.AddComponent<Image>();
-        if (roundedRect != null) { bg.sprite = roundedRect; bg.type = Image.Type.Sliced; }
-        bg.color = new Color(0.92f, 0.88f, 0.78f, 0.85f); // warm basket color
+        if (_roundedRect != null) { bg.sprite = _roundedRect; bg.type = Image.Type.Sliced; }
+        bg.color = new Color(0.93f, 0.89f, 0.80f, 0.88f);
         bg.raycastTarget = false;
 
-        // Shadow
-        var shadow = _basketPanel.AddComponent<Shadow>();
-        shadow.effectColor = new Color(0.2f, 0.15f, 0.1f, 0.2f);
-        shadow.effectDistance = new Vector2(3, -4);
-
-        // Place items (requested + distractors)
-        int basketSize = GetBasketSize();
-        var itemIndices = new List<int>(_requestedIndices);
-
-        // Add distractors
-        var allIndices = new List<int>();
-        for (int i = 0; i < _allFruits.Length; i++) allIndices.Add(i);
-        ShuffleList(allIndices);
-        foreach (int idx in allIndices)
+        int basketSize = Difficulty <= 3 ? 4 : (Difficulty <= 6 ? 5 : 6);
+        var items = new List<int>(_requestedIndices);
+        var allIdx = new List<int>();
+        for (int i = 0; i < _allFruits.Length; i++) allIdx.Add(i);
+        ShuffleList(allIdx);
+        foreach (int idx in allIdx)
         {
-            if (itemIndices.Count >= basketSize) break;
-            if (!itemIndices.Contains(idx)) itemIndices.Add(idx);
+            if (items.Count >= basketSize) break;
+            if (!items.Contains(idx)) items.Add(idx);
         }
-        ShuffleList(itemIndices);
+        ShuffleList(items);
 
-        // Layout items in grid
-        int cols = Mathf.Min(basketSize, 4);
+        int cols = Mathf.Min(basketSize, 3);
         int rows = Mathf.CeilToInt((float)basketSize / cols);
-        float itemSize = 120f;
-        float spacing = 20f;
+        float itemSize = 130f, spacing = 24f;
+        int correctIdx = _requestedIndices[_currentRequestIdx];
 
-        for (int i = 0; i < itemIndices.Count; i++)
+        for (int i = 0; i < items.Count; i++)
         {
-            int col = i % cols;
-            int row = i / cols;
+            int col = i % cols, row = i / cols;
             float x = (col - (cols - 1) / 2f) * (itemSize + spacing);
             float y = ((rows - 1) / 2f - row) * (itemSize + spacing);
-
-            int fruitIdx = itemIndices[i];
+            int fruitIdx = items[i];
 
             var itemGO = new GameObject($"Item_{fruitIdx}");
             itemGO.transform.SetParent(_basketPanel.transform, false);
@@ -384,13 +314,21 @@ public class SaladGameController : BaseMiniGame
             itemRT.sizeDelta = new Vector2(itemSize, itemSize);
             itemRT.anchoredPosition = new Vector2(x, y);
 
-            // Item card background
             var cardBg = itemGO.AddComponent<Image>();
-            if (roundedRect != null) { cardBg.sprite = roundedRect; cardBg.type = Image.Type.Sliced; }
-            cardBg.color = new Color(1f, 1f, 1f, 0.8f);
-            cardBg.raycastTarget = true;
+            if (_roundedRect != null) { cardBg.sprite = _roundedRect; cardBg.type = Image.Type.Sliced; }
+            // Highlight the correct item with a subtle warm glow
+            bool isCorrect = (fruitIdx == correctIdx);
+            cardBg.color = isCorrect
+                ? new Color(1f, 0.97f, 0.88f, 0.95f)
+                : new Color(1f, 1f, 1f, 0.8f);
 
-            // Fruit image
+            if (isCorrect)
+            {
+                var glow = itemGO.AddComponent<Outline>();
+                glow.effectColor = new Color(1f, 0.85f, 0.3f, 0.5f);
+                glow.effectDistance = new Vector2(3, -3);
+            }
+
             var fruitGO = new GameObject("Fruit");
             fruitGO.transform.SetParent(itemGO.transform, false);
             var fruitRT = fruitGO.AddComponent<RectTransform>();
@@ -403,46 +341,37 @@ public class SaladGameController : BaseMiniGame
             fruitImg.preserveAspect = true;
             fruitImg.raycastTarget = false;
 
-            // Button
             var btn = itemGO.AddComponent<Button>();
             btn.targetGraphic = cardBg;
-            int capturedIdx = fruitIdx;
-            var capturedRT = itemRT;
-            btn.onClick.AddListener(() => { _pickedItemIdx = capturedIdx; _pickedItemRT = capturedRT; });
+            int ci = fruitIdx;
+            var crt = itemRT;
+            btn.onClick.AddListener(() => { _pickedItemIdx = ci; _pickedItemRT = crt; });
         }
     }
 
-    private int GetBasketSize()
-    {
-        if (Difficulty <= 3) return 4;
-        if (Difficulty <= 6) return 5;
-        return 6;
-    }
-
     // ══════════════════════════════════════════════
-    //  PHASE 3: CUT ITEM
+    //  PHASE 3: CUT ITEM (FREE SWIPE)
     // ══════════════════════════════════════════════
 
     private IEnumerator CutItemPhase()
     {
         _phase = Phase.CutItem;
-        _cutsCompleted = 0;
-        _totalCuts = GetCutsPerItem();
-        _cutLines.Clear();
-        _cutDone.Clear();
-        _cutPieceGOs.Clear();
+        _cutCount = 0;
+        _currentPieces.Clear();
 
         int fruitIdx = _requestedIndices[_currentRequestIdx];
         _currentFullSprite = _allFruits[fruitIdx];
 
         CreateCuttingBoard();
 
-        // Wait for all cuts
-        while (_cutsCompleted < _totalCuts)
+        // Wait for at least 1 cut + confirm
+        bool confirmed = false;
+        CreateConfirmButton(() => { if (_cutCount > 0) confirmed = true; });
+
+        while (!confirmed)
             yield return null;
 
-        // Show confirm button, wait for tap
-        yield return StartCoroutine(WaitForConfirm());
+        if (_confirmBtn != null) { Destroy(_confirmBtn); _confirmBtn = null; }
     }
 
     private void CreateCuttingBoard()
@@ -452,130 +381,151 @@ public class SaladGameController : BaseMiniGame
         _cuttingBoardPanel = new GameObject("CuttingBoard");
         _cuttingBoardPanel.transform.SetParent(playArea, false);
         var rt = _cuttingBoardPanel.AddComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0.1f, 0.05f);
-        rt.anchorMax = new Vector2(0.9f, 0.70f);
+        rt.anchorMin = new Vector2(0.08f, 0.05f);
+        rt.anchorMax = new Vector2(0.92f, 0.72f);
         rt.offsetMin = Vector2.zero;
         rt.offsetMax = Vector2.zero;
 
-        // Board background (wood)
         var bg = _cuttingBoardPanel.AddComponent<Image>();
-        var roundedRect = Resources.Load<Sprite>("UI/RoundedRect");
-        if (roundedRect != null) { bg.sprite = roundedRect; bg.type = Image.Type.Sliced; }
-        bg.color = new Color(0.82f, 0.72f, 0.55f, 1f); // wood color
-        bg.raycastTarget = true; // catches swipes
+        if (_roundedRect != null) { bg.sprite = _roundedRect; bg.type = Image.Type.Sliced; }
+        bg.color = new Color(0.85f, 0.74f, 0.58f, 1f);
+        bg.raycastTarget = true;
 
         var shadow = _cuttingBoardPanel.AddComponent<Shadow>();
         shadow.effectColor = new Color(0.2f, 0.15f, 0.1f, 0.3f);
         shadow.effectDistance = new Vector2(4, -6);
 
-        // Fruit on the board (centered, large)
-        var fruitGO = new GameObject("Fruit");
-        fruitGO.transform.SetParent(_cuttingBoardPanel.transform, false);
+        // Wood grain lines
+        for (int i = 0; i < 4; i++)
+        {
+            var grain = new GameObject($"Grain_{i}");
+            grain.transform.SetParent(_cuttingBoardPanel.transform, false);
+            var grt = grain.AddComponent<RectTransform>();
+            float y = 0.2f + i * 0.2f;
+            grt.anchorMin = new Vector2(0.03f, y);
+            grt.anchorMax = new Vector2(0.97f, y);
+            grt.sizeDelta = new Vector2(0, 1.5f);
+            var gimg = grain.AddComponent<Image>();
+            gimg.color = new Color(0.7f, 0.6f, 0.45f, 0.2f);
+            gimg.raycastTarget = false;
+        }
+
+        // Fruit container (holds the fruit image, pieces will replace it)
+        var fruitContainer = new GameObject("FruitContainer");
+        fruitContainer.transform.SetParent(_cuttingBoardPanel.transform, false);
+        _fruitContainer = fruitContainer.AddComponent<RectTransform>();
+        _fruitContainer.anchorMin = new Vector2(0.15f, 0.1f);
+        _fruitContainer.anchorMax = new Vector2(0.85f, 0.9f);
+        _fruitContainer.offsetMin = Vector2.zero;
+        _fruitContainer.offsetMax = Vector2.zero;
+
+        // Full fruit (will be replaced by pieces on first cut)
+        var fruitGO = new GameObject("FullFruit");
+        fruitGO.transform.SetParent(fruitContainer.transform, false);
         var fruitRT = fruitGO.AddComponent<RectTransform>();
-        fruitRT.anchorMin = new Vector2(0.15f, 0.1f);
-        fruitRT.anchorMax = new Vector2(0.85f, 0.9f);
+        fruitRT.anchorMin = Vector2.zero;
+        fruitRT.anchorMax = Vector2.one;
         fruitRT.offsetMin = Vector2.zero;
         fruitRT.offsetMax = Vector2.zero;
         var fruitImg = fruitGO.AddComponent<Image>();
         fruitImg.sprite = _currentFullSprite;
-        fruitImg.preserveAspect = false; // fill container so cut lines align correctly
+        fruitImg.preserveAspect = true;
         fruitImg.raycastTarget = false;
 
-        // Cut guide lines (vertical lines across the fruit)
-        for (int i = 0; i < _totalCuts; i++)
-        {
-            float xNorm = (float)(i + 1) / (_totalCuts + 1);
+        _currentPieces.Add(fruitRT);
 
-            var lineGO = new GameObject($"CutLine_{i}");
-            lineGO.transform.SetParent(fruitGO.transform, false);
-            var lineRT = lineGO.AddComponent<RectTransform>();
-            lineRT.anchorMin = new Vector2(xNorm, 0.05f);
-            lineRT.anchorMax = new Vector2(xNorm, 0.95f);
-            lineRT.sizeDelta = new Vector2(4, 0);
-            var lineImg = lineGO.AddComponent<Image>();
-            lineImg.color = new Color(1f, 1f, 1f, 0.5f);
-            lineImg.raycastTarget = false;
-
-            // Dashed effect — make it dotted by adding small gap segments
-            var lineOutline = lineGO.AddComponent<Outline>();
-            lineOutline.effectColor = new Color(0.4f, 0.3f, 0.2f, 0.3f);
-            lineOutline.effectDistance = new Vector2(1, 0);
-
-            _cutLines.Add(lineRT);
-            _cutDone.Add(false);
-        }
-
-        // Add swipe detector
-        var swipeDetector = _cuttingBoardPanel.AddComponent<SwipeDetector>();
-        swipeDetector.Init(this, fruitGO.GetComponent<RectTransform>(), _canvas);
+        // Swipe detector
+        var swipe = _cuttingBoardPanel.AddComponent<SwipeDetector>();
+        swipe.Init(this, _fruitContainer, _canvas);
     }
 
-    /// <summary>Called by SwipeDetector when a swipe crosses the cutting board.</summary>
-    public void OnSwipe(float swipeXNormalized)
+    /// <summary>Called by SwipeDetector on free swipe.</summary>
+    public void OnSwipe(float normalizedX, bool isVertical)
     {
         if (_phase != Phase.CutItem) return;
+        if (_cutCount >= MaxCuts) return;
+        if (_currentPieces.Count == 0) return;
 
-        // Find nearest uncut line
-        int nearestLine = -1;
-        float nearestDist = float.MaxValue;
+        // Clamp to avoid edge cuts
+        normalizedX = Mathf.Clamp(normalizedX, 0.12f, 0.88f);
 
-        for (int i = 0; i < _cutLines.Count; i++)
+        _cutCount++;
+
+        // Extract texture and split into pieces
+        Texture2D tex = ExtractSpriteTexture(_currentFullSprite);
+        _createdTextures.Add(tex);
+
+        int totalPieces = _cutCount + 1;
+        float containerW = _fruitContainer.rect.width;
+        float containerH = _fruitContainer.rect.height;
+        if (containerW <= 0) containerW = 400f;
+        if (containerH <= 0) containerH = 350f;
+
+        // Destroy old pieces
+        foreach (var p in _currentPieces)
+            if (p != null) Destroy(p.gameObject);
+        _currentPieces.Clear();
+
+        // Create new pieces (evenly split)
+        float pieceW = containerW / totalPieces;
+        for (int i = 0; i < totalPieces; i++)
         {
-            if (_cutDone[i]) continue;
-            float lineX = (float)(i + 1) / (_totalCuts + 1);
-            float dist = Mathf.Abs(swipeXNormalized - lineX);
-            if (dist < nearestDist && dist < 0.2f) // within 20% tolerance
-            {
-                nearestDist = dist;
-                nearestLine = i;
-            }
+            int segW = tex.width / totalPieces;
+            var sprite = Sprite.Create(tex,
+                new Rect(i * segW, 0, segW, tex.height),
+                new Vector2(0.5f, 0.5f), 100f);
+            _createdSprites.Add(sprite);
+
+            var pieceGO = new GameObject($"Piece_{i}");
+            pieceGO.transform.SetParent(_fruitContainer, false);
+            var pieceRT = pieceGO.AddComponent<RectTransform>();
+            pieceRT.anchorMin = new Vector2(0.5f, 0.5f);
+            pieceRT.anchorMax = new Vector2(0.5f, 0.5f);
+            pieceRT.sizeDelta = new Vector2(pieceW - 6f, containerH * 0.85f);
+
+            // Position with spacing between pieces
+            float xPos = (i - (totalPieces - 1) / 2f) * pieceW;
+            // Random offset for playful feel
+            float yOffset = Random.Range(-8f, 8f);
+            float rot = Random.Range(-5f, 5f);
+            pieceRT.anchoredPosition = new Vector2(xPos, yOffset);
+            pieceRT.localRotation = Quaternion.Euler(0, 0, rot);
+
+            var pieceImg = pieceGO.AddComponent<Image>();
+            pieceImg.sprite = sprite;
+            pieceImg.preserveAspect = true;
+            pieceImg.raycastTarget = false;
+
+            _currentPieces.Add(pieceRT);
         }
 
-        if (nearestLine < 0) return; // swipe too far from any line
-
-        // Mark as cut
-        _cutDone[nearestLine] = true;
-        _cutsCompleted++;
-
-        // Visual feedback: line becomes solid green then fades
-        if (_cutLines[nearestLine] != null)
-        {
-            var lineImg = _cutLines[nearestLine].GetComponent<Image>();
-            if (lineImg != null)
-            {
-                lineImg.color = new Color(0.3f, 0.9f, 0.3f, 0.8f);
-                var lineRT = _cutLines[nearestLine];
-                lineRT.sizeDelta = new Vector2(6, lineRT.sizeDelta.y);
-            }
-            PlayCorrectEffect(_cutLines[nearestLine]);
-        }
-
-        // Play chop sound
+        // Play chop feedback
         var chopClip = Resources.Load<AudioClip>("Sounds/Correct");
         if (chopClip != null) BackgroundMusicManager.PlayOneShot(chopClip, 0.5f);
+
+        // Show confirm button if not already visible
+        if (_confirmBtn != null)
+            _confirmBtn.SetActive(true);
 
         Stats?.RecordCorrect("cut");
     }
 
-    private IEnumerator WaitForConfirm()
+    private void CreateConfirmButton(System.Action onConfirm)
     {
-        // Create ✔️ button
-        var confirmGO = new GameObject("ConfirmBtn");
-        confirmGO.transform.SetParent(_cuttingBoardPanel.transform, false);
-        var confirmRT = confirmGO.AddComponent<RectTransform>();
-        confirmRT.anchorMin = new Vector2(0.5f, 0);
-        confirmRT.anchorMax = new Vector2(0.5f, 0);
-        confirmRT.pivot = new Vector2(0.5f, 0);
-        confirmRT.anchoredPosition = new Vector2(0, 20);
-        confirmRT.sizeDelta = new Vector2(100, 60);
+        _confirmBtn = new GameObject("ConfirmBtn");
+        _confirmBtn.transform.SetParent(playArea, false);
+        var rt = _confirmBtn.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.38f, 0.01f);
+        rt.anchorMax = new Vector2(0.62f, 0.08f);
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
 
-        var roundedRect = Resources.Load<Sprite>("UI/RoundedRect");
-        var confirmBg = confirmGO.AddComponent<Image>();
-        if (roundedRect != null) { confirmBg.sprite = roundedRect; confirmBg.type = Image.Type.Sliced; }
-        confirmBg.color = new Color(0.3f, 0.85f, 0.4f, 1f);
+        var bg = _confirmBtn.AddComponent<Image>();
+        if (_roundedRect != null) { bg.sprite = _roundedRect; bg.type = Image.Type.Sliced; }
+        bg.color = new Color(0.3f, 0.85f, 0.4f, 1f);
 
         var labelGO = new GameObject("Label");
-        labelGO.transform.SetParent(confirmGO.transform, false);
+        labelGO.transform.SetParent(_confirmBtn.transform, false);
         var labelRT = labelGO.AddComponent<RectTransform>();
         labelRT.anchorMin = Vector2.zero; labelRT.anchorMax = Vector2.one;
         labelRT.offsetMin = Vector2.zero; labelRT.offsetMax = Vector2.zero;
@@ -586,91 +536,124 @@ public class SaladGameController : BaseMiniGame
         labelTMP.alignment = TextAlignmentOptions.Center;
         labelTMP.raycastTarget = false;
 
-        bool confirmed = false;
-        var btn = confirmGO.AddComponent<Button>();
-        btn.targetGraphic = confirmBg;
-        btn.onClick.AddListener(() => confirmed = true);
+        var btn = _confirmBtn.AddComponent<Button>();
+        btn.targetGraphic = bg;
+        btn.onClick.AddListener(() => onConfirm?.Invoke());
 
-        while (!confirmed)
-            yield return null;
+        _confirmBtn.SetActive(false); // hidden until first cut
     }
 
     // ══════════════════════════════════════════════
-    //  PHASE 4: ADD TO BOWL
+    //  PHASE 4: BOWL FOCUS MOMENT
     // ══════════════════════════════════════════════
 
-    private IEnumerator AddToBowlPhase()
+    private IEnumerator BowlFocusPhase()
     {
-        _phase = Phase.AddToBowl;
+        _phase = Phase.BowlFocus;
 
-        int segments = _totalCuts + 1;
+        // Dim cutting board
+        if (_cuttingBoardPanel != null)
+        {
+            var cg = _cuttingBoardPanel.AddComponent<CanvasGroup>();
+            float dur = 0.3f, elapsed = 0f;
+            while (elapsed < dur)
+            {
+                elapsed += Time.deltaTime;
+                cg.alpha = Mathf.Lerp(1f, 0.2f, elapsed / dur);
+                yield return null;
+            }
+        }
+
+        // Move bowl to center + scale up
+        Vector2 bowlOrigPos = _bowlRT.anchoredPosition;
+        Vector2 bowlOrigSize = _bowlRT.sizeDelta;
+        Vector2 bowlOrigAnchorMin = _bowlRT.anchorMin;
+        Vector2 bowlOrigAnchorMax = _bowlRT.anchorMax;
+
+        // Switch to center-anchored for animation
+        _bowlRT.anchorMin = new Vector2(0.5f, 0.5f);
+        _bowlRT.anchorMax = new Vector2(0.5f, 0.5f);
+        _bowlRT.sizeDelta = new Vector2(300f, 250f);
+        Vector2 targetPos = new Vector2(0, -30f);
+
+        float moveDur = 0.4f;
+        Vector2 startPos = _bowlRT.anchoredPosition;
+        float elapsedMove = 0f;
+        while (elapsedMove < moveDur)
+        {
+            elapsedMove += Time.deltaTime;
+            float t = Mathf.SmoothStep(0, 1, elapsedMove / moveDur);
+            _bowlRT.anchoredPosition = Vector2.Lerp(startPos, targetPos, t);
+            float scale = Mathf.Lerp(1f, 1.3f, t);
+            _bowlRT.localScale = Vector3.one * scale;
+            yield return null;
+        }
+
+        // Create and animate pieces falling into bowl
         Texture2D tex = ExtractSpriteTexture(_currentFullSprite);
-        _createdTextures.Add(tex); // defer destruction to OnRoundCleanup
-
-        // Calculate bowl center in playArea local coords (bowl uses anchor-stretch)
-        float playW = playArea.rect.width;
-        float playH = playArea.rect.height;
-        // Bowl anchors: (0.6, 0.02) to (0.95, 0.40) — center relative to playArea bottom-left
-        float bowlCenterX = (0.775f - 0.5f) * playW;  // convert to center-relative
-        float bowlCenterY = (0.21f - 0.5f) * playH;
-        float pieceSize = 50f;
+        _createdTextures.Add(tex);
+        int segments = _cutCount + 1;
 
         for (int i = 0; i < segments; i++)
         {
             int segW = tex.width / segments;
-            var pieceSprite = Sprite.Create(tex,
+            var sprite = Sprite.Create(tex,
                 new Rect(i * segW, 0, segW, tex.height),
                 new Vector2(0.5f, 0.5f), 100f);
-            _createdSprites.Add(pieceSprite);
+            _createdSprites.Add(sprite);
 
-            var pieceGO = new GameObject($"Piece_{i}");
+            var pieceGO = new GameObject($"BowlPiece_{i}");
             pieceGO.transform.SetParent(playArea, false);
             var pieceRT = pieceGO.AddComponent<RectTransform>();
             pieceRT.anchorMin = new Vector2(0.5f, 0.5f);
             pieceRT.anchorMax = new Vector2(0.5f, 0.5f);
-            pieceRT.sizeDelta = new Vector2(pieceSize, pieceSize);
-
-            // Start position (center-ish of screen)
-            pieceRT.anchoredPosition = new Vector2(Random.Range(-80f, 80f), 100f);
+            pieceRT.sizeDelta = new Vector2(45f, 45f);
+            pieceRT.anchoredPosition = new Vector2(Random.Range(-60f, 60f), 200f);
 
             var pieceImg = pieceGO.AddComponent<Image>();
-            pieceImg.sprite = pieceSprite;
+            pieceImg.sprite = sprite;
             pieceImg.preserveAspect = true;
             pieceImg.raycastTarget = false;
 
-            float targetX = bowlCenterX + Random.Range(-40f, 40f);
-            float targetY = bowlCenterY + Random.Range(10f, 40f);
-            StartCoroutine(AnimatePieceToBowl(pieceRT, targetX, targetY, i * 0.1f));
+            float tgtX = targetPos.x + Random.Range(-50f, 50f);
+            float tgtY = targetPos.y + Random.Range(-20f, 30f);
+            StartCoroutine(PieceFallToBowl(pieceRT, tgtX, tgtY, i * 0.08f));
 
-            _bowlPieces.Add(pieceGO);
-            _physicsPieces.Add(new CutPiece
-            {
-                rt = pieceRT,
-                velocity = Vector2.zero,
-                angularVelocity = 0f
-            });
+            _bowlPieceGOs.Add(pieceGO);
+            _physicsPieces.Add(new CutPiece { rt = pieceRT, velocity = Vector2.zero, angularVelocity = 0f });
         }
 
-        yield return new WaitForSeconds(segments * 0.1f + 0.5f);
-        if (_cuttingBoardPanel != null) { Destroy(_cuttingBoardPanel); _cuttingBoardPanel = null; }
+        // Wait for all pieces to land + brief satisfying pause
+        yield return new WaitForSeconds(segments * 0.08f + 0.8f);
+
+        // Move bowl back
+        if (_cuttingBoardPanel != null)
+            Destroy(_cuttingBoardPanel);
+        _cuttingBoardPanel = null;
+
+        // Restore bowl to corner
+        _bowlRT.anchorMin = bowlOrigAnchorMin;
+        _bowlRT.anchorMax = bowlOrigAnchorMax;
+        _bowlRT.offsetMin = Vector2.zero;
+        _bowlRT.offsetMax = Vector2.zero;
+        _bowlRT.localScale = Vector3.one;
+
+        yield return new WaitForSeconds(0.3f);
     }
 
-    private IEnumerator AnimatePieceToBowl(RectTransform rt, float targetX, float targetY, float delay)
+    private IEnumerator PieceFallToBowl(RectTransform rt, float tgtX, float tgtY, float delay)
     {
         yield return new WaitForSeconds(delay);
-
         Vector2 start = rt.anchoredPosition;
-        Vector2 end = new Vector2(targetX, targetY);
-        float dur = 0.4f, elapsed = 0f;
+        Vector2 end = new Vector2(tgtX, tgtY);
+        float dur = 0.35f, elapsed = 0f;
 
-        // Arc trajectory (up then down)
-        float arcHeight = 60f;
         while (elapsed < dur && rt != null)
         {
             elapsed += Time.deltaTime;
             float t = elapsed / dur;
             Vector2 pos = Vector2.Lerp(start, end, t);
-            pos.y += Mathf.Sin(t * Mathf.PI) * arcHeight;
+            pos.y += Mathf.Sin(t * Mathf.PI) * 50f; // arc
             rt.anchoredPosition = pos;
             rt.localRotation = Quaternion.Euler(0, 0, t * 180f);
             yield return null;
@@ -678,28 +661,44 @@ public class SaladGameController : BaseMiniGame
         if (rt != null)
         {
             rt.anchoredPosition = end;
-            rt.localRotation = Quaternion.Euler(0, 0, Random.Range(0f, 360f));
+            // Soft bounce
+            float bounceDur = 0.12f;
+            elapsed = 0f;
+            while (elapsed < bounceDur && rt != null)
+            {
+                elapsed += Time.deltaTime;
+                float b = Mathf.Sin((elapsed / bounceDur) * Mathf.PI) * 8f;
+                rt.anchoredPosition = end + new Vector2(0, b);
+                yield return null;
+            }
+            if (rt != null) rt.anchoredPosition = end;
         }
     }
 
     // ══════════════════════════════════════════════
-    //  PHASE 5: MIX SALAD
+    //  PHASE 5: MIX SALAD (SHAKE)
     // ══════════════════════════════════════════════
 
     private IEnumerator MixSaladPhase()
     {
         _phase = Phase.MixSalad;
 
-        // Show "Shake to mix!" prompt
+        // Move bowl to center for mixing
+        _bowlRT.anchorMin = new Vector2(0.5f, 0.5f);
+        _bowlRT.anchorMax = new Vector2(0.5f, 0.5f);
+        _bowlRT.sizeDelta = new Vector2(350f, 280f);
+        _bowlRT.anchoredPosition = new Vector2(0, -30f);
+        _bowlRT.localScale = Vector3.one * 1.2f;
+
         var promptGO = new GameObject("ShakePrompt");
         promptGO.transform.SetParent(playArea, false);
         var promptRT = promptGO.AddComponent<RectTransform>();
-        promptRT.anchorMin = new Vector2(0.2f, 0.75f);
-        promptRT.anchorMax = new Vector2(0.8f, 0.90f);
+        promptRT.anchorMin = new Vector2(0.15f, 0.78f);
+        promptRT.anchorMax = new Vector2(0.85f, 0.92f);
         promptRT.offsetMin = Vector2.zero;
         promptRT.offsetMax = Vector2.zero;
         var promptTMP = promptGO.AddComponent<TextMeshProUGUI>();
-        HebrewText.SetText(promptTMP, "\u05E0\u05E2\u05E0\u05E2\u05D5 \u05D0\u05EA \u05D4\u05DE\u05DB\u05E9\u05D9\u05E8!"); // נענעו את המכשיר!
+        HebrewText.SetText(promptTMP, "\u05E0\u05E2\u05E0\u05E2\u05D5 \u05D0\u05EA \u05D4\u05DE\u05DB\u05E9\u05D9\u05E8!");
         promptTMP.fontSize = 38;
         promptTMP.fontStyle = FontStyles.Bold;
         promptTMP.color = new Color(0.3f, 0.3f, 0.35f);
@@ -709,42 +708,37 @@ public class SaladGameController : BaseMiniGame
         _shakeAccum = 0f;
         _shakeReady = true;
         _noShakeTimer = 0f;
-
-        // Fallback button (appears after 5 seconds)
-        GameObject fallbackBtn = null;
+        _fallbackMixBtn = null;
 
         while (_shakeAccum < ShakeNeeded)
         {
             _noShakeTimer += Time.deltaTime;
-
-            // Show fallback button after 5 seconds
-            if (_noShakeTimer > 5f && fallbackBtn == null)
-            {
-                fallbackBtn = CreateMixButton(promptGO.transform);
-            }
-
+            if (_noShakeTimer > 5f && _fallbackMixBtn == null)
+                _fallbackMixBtn = CreateMixButton();
             yield return null;
         }
 
         _shakeReady = false;
-        if (fallbackBtn != null) Destroy(fallbackBtn);
-        if (promptGO != null) Destroy(promptGO);
+        if (_fallbackMixBtn != null) { Destroy(_fallbackMixBtn); _fallbackMixBtn = null; }
+        Destroy(promptGO);
+
+        // Restore bowl
+        _bowlRT.localScale = Vector3.one;
     }
 
-    private GameObject CreateMixButton(Transform parent)
+    private GameObject CreateMixButton()
     {
         var btnGO = new GameObject("MixButton");
-        btnGO.transform.SetParent(parent.parent, false); // on playArea
-        var btnRT = btnGO.AddComponent<RectTransform>();
-        btnRT.anchorMin = new Vector2(0.3f, 0.65f);
-        btnRT.anchorMax = new Vector2(0.7f, 0.75f);
-        btnRT.offsetMin = Vector2.zero;
-        btnRT.offsetMax = Vector2.zero;
+        btnGO.transform.SetParent(playArea, false);
+        var rt = btnGO.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.3f, 0.68f);
+        rt.anchorMax = new Vector2(0.7f, 0.78f);
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
 
-        var roundedRect = Resources.Load<Sprite>("UI/RoundedRect");
-        var bgImg = btnGO.AddComponent<Image>();
-        if (roundedRect != null) { bgImg.sprite = roundedRect; bgImg.type = Image.Type.Sliced; }
-        bgImg.color = new Color(0.95f, 0.65f, 0.2f, 1f);
+        var bg = btnGO.AddComponent<Image>();
+        if (_roundedRect != null) { bg.sprite = _roundedRect; bg.type = Image.Type.Sliced; }
+        bg.color = new Color(0.95f, 0.65f, 0.2f, 1f);
 
         var labelGO = new GameObject("Label");
         labelGO.transform.SetParent(btnGO.transform, false);
@@ -752,7 +746,7 @@ public class SaladGameController : BaseMiniGame
         labelRT.anchorMin = Vector2.zero; labelRT.anchorMax = Vector2.one;
         labelRT.offsetMin = Vector2.zero; labelRT.offsetMax = Vector2.zero;
         var labelTMP = labelGO.AddComponent<TextMeshProUGUI>();
-        HebrewText.SetText(labelTMP, "\u05E2\u05E8\u05D1\u05D1\u05D5!"); // ערבבו!
+        HebrewText.SetText(labelTMP, "\u05E2\u05E8\u05D1\u05D1\u05D5!");
         labelTMP.fontSize = 30;
         labelTMP.fontStyle = FontStyles.Bold;
         labelTMP.color = Color.white;
@@ -760,13 +754,8 @@ public class SaladGameController : BaseMiniGame
         labelTMP.raycastTarget = false;
 
         var btn = btnGO.AddComponent<Button>();
-        btn.targetGraphic = bgImg;
-        btn.onClick.AddListener(() =>
-        {
-            _shakeAccum = ShakeNeeded; // complete mixing
-            Destroy(btnGO);
-        });
-
+        btn.targetGraphic = bg;
+        btn.onClick.AddListener(() => _shakeAccum = ShakeNeeded);
         return btnGO;
     }
 
@@ -774,71 +763,45 @@ public class SaladGameController : BaseMiniGame
     {
         if (!_shakeReady) return;
 
-        // Detect shake from accelerometer
         Vector3 accel = Input.acceleration;
-        float force = accel.magnitude - 1f; // subtract gravity
-        if (force < 0) force = 0;
+        float force = Mathf.Max(0, accel.magnitude - 1f);
 
-        if (force > ShakeThreshold * 0.3f) // any significant movement
+        if (force > 0.3f)
         {
             _shakeAccum += force * Time.deltaTime * 3f;
             _noShakeTimer = 0f;
 
-            // Apply physics to bowl pieces
             foreach (var piece in _physicsPieces)
             {
                 if (piece.rt == null) continue;
                 piece.velocity += new Vector2(
-                    Random.Range(-200f, 200f) * force,
-                    Random.Range(-100f, 200f) * force
+                    Random.Range(-250f, 250f) * force,
+                    Random.Range(-100f, 250f) * force
                 ) * Time.deltaTime;
             }
         }
 
-        // Update physics for bowl pieces
-        UpdateBowlPhysics();
-    }
-
-    private void UpdateBowlPhysics()
-    {
-        if (_bowlRT == null || playArea == null) return;
-
-        // Compute bowl bounds in playArea center-relative coords
-        float playW = playArea.rect.width;
-        float playH = playArea.rect.height;
-        // Bowl anchors: (0.6, 0.02) to (0.95, 0.40)
-        float bowlLeft = (0.6f - 0.5f) * playW + 10f;
-        float bowlRight = (0.95f - 0.5f) * playW - 10f;
-        float bowlBottom = (0.02f - 0.5f) * playH + 10f;
-        float bowlTop = (0.40f - 0.5f) * playH - 10f;
-
+        // Physics update
         foreach (var piece in _physicsPieces)
         {
             if (piece.rt == null) continue;
-
-            // Apply gravity
             piece.velocity.y -= 300f * Time.deltaTime;
+            piece.velocity *= 0.96f;
 
-            // Apply damping
-            piece.velocity *= 0.97f;
-            piece.angularVelocity *= 0.95f;
+            Vector2 pos = piece.rt.anchoredPosition + piece.velocity * Time.deltaTime;
 
-            // Move
-            Vector2 pos = piece.rt.anchoredPosition;
-            pos += piece.velocity * Time.deltaTime;
-
-            // Bounce off bowl walls
-            if (pos.x < bowlLeft) { pos.x = bowlLeft; piece.velocity.x = Mathf.Abs(piece.velocity.x) * 0.5f; }
-            if (pos.x > bowlRight) { pos.x = bowlRight; piece.velocity.x = -Mathf.Abs(piece.velocity.x) * 0.5f; }
-            if (pos.y < bowlBottom) { pos.y = bowlBottom; piece.velocity.y = Mathf.Abs(piece.velocity.y) * 0.4f; }
-            if (pos.y > bowlTop) { pos.y = bowlTop; piece.velocity.y = -Mathf.Abs(piece.velocity.y) * 0.3f; }
+            // Bowl bounds (centered at 0, -30)
+            float bw = 140f, bh = 100f, by = -30f;
+            if (pos.x < -bw) { pos.x = -bw; piece.velocity.x *= -0.5f; }
+            if (pos.x > bw) { pos.x = bw; piece.velocity.x *= -0.5f; }
+            if (pos.y < by - bh) { pos.y = by - bh; piece.velocity.y *= -0.4f; }
+            if (pos.y > by + bh) { pos.y = by + bh; piece.velocity.y *= -0.3f; }
 
             piece.rt.anchoredPosition = pos;
-
-            // Rotate
+            piece.angularVelocity += piece.velocity.x * 0.08f;
+            piece.angularVelocity *= 0.94f;
             float angle = piece.rt.localRotation.eulerAngles.z + piece.angularVelocity * Time.deltaTime;
             piece.rt.localRotation = Quaternion.Euler(0, 0, angle);
-            piece.angularVelocity += piece.velocity.x * 0.1f;
         }
     }
 
@@ -856,16 +819,15 @@ public class SaladGameController : BaseMiniGame
             AlinGuide.Instance.PlayTalking();
         }
 
-        // Show happy message
         var msgGO = new GameObject("ServeMsg");
         msgGO.transform.SetParent(playArea, false);
         var msgRT = msgGO.AddComponent<RectTransform>();
-        msgRT.anchorMin = new Vector2(0.15f, 0.78f);
-        msgRT.anchorMax = new Vector2(0.85f, 0.95f);
+        msgRT.anchorMin = new Vector2(0.1f, 0.80f);
+        msgRT.anchorMax = new Vector2(0.9f, 0.96f);
         msgRT.offsetMin = Vector2.zero;
         msgRT.offsetMax = Vector2.zero;
         var msgTMP = msgGO.AddComponent<TextMeshProUGUI>();
-        HebrewText.SetText(msgTMP, "\u05D9\u05D5\u05E4\u05D9! \u05D4\u05E1\u05DC\u05D8 \u05DE\u05D5\u05DB\u05DF!"); // יופי! הסלט מוכן!
+        HebrewText.SetText(msgTMP, "\u05D9\u05D5\u05E4\u05D9! \u05D4\u05E1\u05DC\u05D8 \u05DE\u05D5\u05DB\u05DF!");
         msgTMP.fontSize = 42;
         msgTMP.fontStyle = FontStyles.Bold;
         msgTMP.color = new Color(0.25f, 0.65f, 0.25f);
@@ -873,12 +835,10 @@ public class SaladGameController : BaseMiniGame
         msgTMP.raycastTarget = false;
 
         SoundLibrary.PlayRandomFeedback();
-
         yield return new WaitForSeconds(2.5f);
 
         if (AlinGuide.Instance != null)
             AlinGuide.Instance.StopTalking();
-
         Destroy(msgGO);
     }
 
@@ -893,58 +853,53 @@ public class SaladGameController : BaseMiniGame
         _bowlPanel = new GameObject("Bowl");
         _bowlPanel.transform.SetParent(playArea, false);
         _bowlRT = _bowlPanel.AddComponent<RectTransform>();
-        _bowlRT.anchorMin = new Vector2(0.6f, 0.02f);
-        _bowlRT.anchorMax = new Vector2(0.95f, 0.40f);
+        _bowlRT.anchorMin = new Vector2(0.65f, 0.02f);
+        _bowlRT.anchorMax = new Vector2(0.95f, 0.35f);
         _bowlRT.offsetMin = Vector2.zero;
         _bowlRT.offsetMax = Vector2.zero;
 
-        // Bowl shape (U-shape using rounded rect)
-        var roundedRect = Resources.Load<Sprite>("UI/RoundedRect");
         var bowlImg = _bowlPanel.AddComponent<Image>();
-        if (roundedRect != null) { bowlImg.sprite = roundedRect; bowlImg.type = Image.Type.Sliced; }
-        bowlImg.color = new Color(0.85f, 0.85f, 0.9f, 0.9f); // light ceramic
+        if (_roundedRect != null) { bowlImg.sprite = _roundedRect; bowlImg.type = Image.Type.Sliced; }
+        bowlImg.color = new Color(0.88f, 0.88f, 0.92f, 0.92f);
         bowlImg.raycastTarget = false;
 
-        var bowlShadow = _bowlPanel.AddComponent<Shadow>();
-        bowlShadow.effectColor = new Color(0.15f, 0.1f, 0.1f, 0.25f);
-        bowlShadow.effectDistance = new Vector2(3, -4);
+        var shadow = _bowlPanel.AddComponent<Shadow>();
+        shadow.effectColor = new Color(0.15f, 0.1f, 0.1f, 0.2f);
+        shadow.effectDistance = new Vector2(3, -4);
 
-        // Inner darker area
-        var innerGO = new GameObject("Inner");
-        innerGO.transform.SetParent(_bowlPanel.transform, false);
-        var innerRT = innerGO.AddComponent<RectTransform>();
-        innerRT.anchorMin = new Vector2(0.08f, 0.08f);
-        innerRT.anchorMax = new Vector2(0.92f, 0.85f);
+        var inner = new GameObject("Inner");
+        inner.transform.SetParent(_bowlPanel.transform, false);
+        var innerRT = inner.AddComponent<RectTransform>();
+        innerRT.anchorMin = new Vector2(0.06f, 0.06f);
+        innerRT.anchorMax = new Vector2(0.94f, 0.88f);
         innerRT.offsetMin = Vector2.zero;
         innerRT.offsetMax = Vector2.zero;
-        var innerImg = innerGO.AddComponent<Image>();
-        if (roundedRect != null) { innerImg.sprite = roundedRect; innerImg.type = Image.Type.Sliced; }
-        innerImg.color = new Color(0.92f, 0.92f, 0.95f, 0.7f);
+        var innerImg = inner.AddComponent<Image>();
+        if (_roundedRect != null) { innerImg.sprite = _roundedRect; innerImg.type = Image.Type.Sliced; }
+        innerImg.color = new Color(0.94f, 0.94f, 0.96f, 0.6f);
         innerImg.raycastTarget = false;
     }
 
     // ══════════════════════════════════════════════
-    //  SPRITE UTILITIES
+    //  UTILITIES
     // ══════════════════════════════════════════════
 
     private static Texture2D ExtractSpriteTexture(Sprite sprite)
     {
         if (sprite == null) return null;
         var source = sprite.texture;
-        Rect spriteRect = sprite.textureRect;
-        int w = Mathf.RoundToInt(spriteRect.width);
-        int h = Mathf.RoundToInt(spriteRect.height);
-
+        Rect r = sprite.textureRect;
+        int w = Mathf.RoundToInt(r.width), h = Mathf.RoundToInt(r.height);
         RenderTexture rt = RenderTexture.GetTemporary(source.width, source.height, 0, RenderTextureFormat.ARGB32);
         Graphics.Blit(source, rt);
         RenderTexture prev = RenderTexture.active;
         RenderTexture.active = rt;
-        var extracted = new Texture2D(w, h, TextureFormat.RGBA32, false);
-        extracted.ReadPixels(new Rect(spriteRect.x, spriteRect.y, w, h), 0, 0);
-        extracted.Apply();
+        var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+        tex.ReadPixels(new Rect(r.x, r.y, w, h), 0, 0);
+        tex.Apply();
         RenderTexture.active = prev;
         RenderTexture.ReleaseTemporary(rt);
-        return extracted;
+        return tex;
     }
 
     private static void ShuffleList<T>(List<T> list)
@@ -958,7 +913,6 @@ public class SaladGameController : BaseMiniGame
 
     public void OnExitPressed() => ExitGame();
 
-    // ── Physics data ──
     private class CutPiece
     {
         public RectTransform rt;
