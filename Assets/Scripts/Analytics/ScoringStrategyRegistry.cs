@@ -28,6 +28,9 @@ public static class ScoringStrategyRegistry
         // Normalize: game IDs may vary in case or have prefixes
         string id = gameId.ToLowerInvariant().Replace("_", "").Replace("-", "");
 
+        if (id.Contains("saladgame") || id.Contains("salad"))
+            return new SaladGameScoringStrategy();
+
         if (id.Contains("halfpuzzle"))
             return new HalfPuzzleScoringStrategy();
 
