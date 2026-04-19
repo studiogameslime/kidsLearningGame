@@ -4654,6 +4654,74 @@ public class ParentDashboardController : MonoBehaviour
                     FirebaseAnalyticsManager.LogParentChangedSetting("auto_switch_games", val ? "on" : "off");
                 }
             });
+
+        MakeSettingsDivider(contentGO.transform);
+
+        // ── Feedback buttons row ──
+        var feedbackRow = new GameObject("FeedbackRow");
+        feedbackRow.transform.SetParent(contentGO.transform, false);
+        feedbackRow.AddComponent<RectTransform>();
+        var fbLayout = feedbackRow.AddComponent<HorizontalLayoutGroup>();
+        fbLayout.spacing = 12;
+        fbLayout.childForceExpandWidth = true;
+        fbLayout.childControlWidth = true;
+        fbLayout.childControlHeight = true;
+        feedbackRow.AddComponent<LayoutElement>().preferredHeight = 70;
+
+        MakeSettingsActionButton(feedbackRow.transform,
+            H("\u05D3\u05D9\u05D5\u05D5\u05D7 \u05E2\u05DC \u05EA\u05E7\u05DC\u05D4"), // דיווח על תקלה
+            H("\u05E0\u05EA\u05E7\u05DC\u05EA\u05DD \u05D1\u05D1\u05E2\u05D9\u05D4? \u05E1\u05E4\u05E8\u05D5 \u05DC\u05E0\u05D5"), // נתקלתם בבעיה? ספרו לנו
+            () => OpenBugReportEmail());
+
+        MakeSettingsActionButton(feedbackRow.transform,
+            H("\u05D4\u05E6\u05D9\u05E2\u05D5 \u05E8\u05E2\u05D9\u05D5\u05DF"), // הציעו רעיון
+            H("\u05DE\u05E9\u05D7\u05E7 \u05D7\u05D3\u05E9, \u05E4\u05D9\u05E6'\u05E8 \u05D0\u05D5 \u05E9\u05D9\u05E4\u05D5\u05E8"), // משחק חדש, פיצ'ר או שיפור
+            () => OpenFeatureSuggestionEmail());
+    }
+
+    private void OpenBugReportEmail()
+    {
+        var profile = ProfileManager.ActiveProfile;
+        string childName = profile != null ? profile.displayName : "";
+        string age = profile != null ? profile.age.ToString() : "";
+        string device = SystemInfo.deviceModel;
+        string os = SystemInfo.operatingSystem;
+        string version = Application.version;
+
+        string subject = EscapeURL("\u05D3\u05D9\u05D5\u05D5\u05D7 \u05E2\u05DC \u05EA\u05E7\u05DC\u05D4 - \u05D0\u05DC\u05D9\u05DF");
+        // דיווח על תקלה - אלין
+        string body = EscapeURL(
+            "\u05E9\u05DC\u05D5\u05DD,\n\n" +                    // שלום,
+            "\u05E0\u05EA\u05E7\u05DC\u05EA\u05D9 \u05D1\u05D1\u05E2\u05D9\u05D4 \u05D4\u05D1\u05D0\u05D4:\n\n" + // נתקלתי בבעיה הבאה:
+            "[\u05EA\u05D0\u05E8\u05D5 \u05D0\u05EA \u05D4\u05D1\u05E2\u05D9\u05D4 \u05DB\u05D0\u05DF]\n\n" +     // [תארו את הבעיה כאן]
+            "---\n" +
+            $"\u05E9\u05DD \u05D4\u05D9\u05DC\u05D3: {childName}\n" +     // שם הילד:
+            $"\u05D2\u05D9\u05DC: {age}\n" +                               // גיל:
+            $"\u05DE\u05DB\u05E9\u05D9\u05E8: {device}\n" +               // מכשיר:
+            $"\u05DE\u05E2\u05E8\u05DB\u05EA \u05D4\u05E4\u05E2\u05DC\u05D4: {os}\n" + // מערכת הפעלה:
+            $"\u05D2\u05E8\u05E1\u05D4: {version}\n"                      // גרסה:
+        );
+
+        Application.OpenURL($"mailto:support@limestudiogames.com?subject={subject}&body={body}");
+    }
+
+    private void OpenFeatureSuggestionEmail()
+    {
+        string subject = EscapeURL("\u05E8\u05E2\u05D9\u05D5\u05DF \u05DC\u05D0\u05E4\u05DC\u05D9\u05E7\u05E6\u05D9\u05D4 \u05D0\u05DC\u05D9\u05DF");
+        // רעיון לאפליקציה אלין
+        string body = EscapeURL(
+            "\u05E9\u05DC\u05D5\u05DD,\n\n" +                                    // שלום,
+            "\u05D9\u05E9 \u05DC\u05D9 \u05E8\u05E2\u05D9\u05D5\u05DF:\n\n" +   // יש לי רעיון:
+            "[\u05DB\u05EA\u05D1\u05D5 \u05D0\u05EA \u05D4\u05E8\u05E2\u05D9\u05D5\u05DF \u05DB\u05D0\u05DF]\n\n" + // [כתבו את הרעיון כאן]
+            "\u05EA\u05D5\u05D3\u05D4!\n"                                        // תודה!
+        );
+
+        Application.OpenURL($"mailto:support@limestudiogames.com?subject={subject}&body={body}");
+    }
+
+    private static string EscapeURL(string s)
+    {
+        return UnityEngine.Networking.UnityWebRequest.EscapeURL(s).Replace("+", "%20");
     }
 
     private void MakeSettingsToggle(Transform parent, string title, string subtitle,
