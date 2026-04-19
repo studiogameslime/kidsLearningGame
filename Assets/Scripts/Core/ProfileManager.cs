@@ -171,6 +171,7 @@ public class ProfileManager : MonoBehaviour
         if (profile != null)
             profile.lastPlayedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         EstimatedAgeCalculator.ResetCache();
+        BaseMiniGame.ResetAutoSwitchState();
         Save();
     }
 

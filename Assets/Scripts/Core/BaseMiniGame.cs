@@ -80,6 +80,9 @@ public abstract class BaseMiniGame : MonoBehaviour
             FirebaseAnalyticsManager.LogFirstGamePlayed(GameId);
         }
 
+        // Reset auto-switch counter for this fresh game session
+        ResetAutoSwitchForNewSession();
+
         // Start first round
         CurrentRound = 0;
         SetupNewRound();
@@ -240,7 +243,10 @@ public abstract class BaseMiniGame : MonoBehaviour
         float duration = Time.realtimeSinceStartup - _gameSceneStartTime;
         FirebaseAnalyticsManager.LogGameExited(GameId);
         FirebaseAnalyticsManager.LogGameSessionDuration(GameId, duration);
-        TwoPlayerManager.End(); // clean up 2-player state
+        TwoPlayerManager.End();
+        // Reset auto-switch counter so re-entering this game starts fresh
+        _roundsInCurrentGame = 0;
+        _lastGameId = null;
         OnGameExit();
         NavigationManager.GoToMainMenu();
     }
@@ -370,34 +376,55 @@ public abstract class BaseMiniGame : MonoBehaviour
 
     // ── Auto-Switch Games ──
 
-    private static int _roundsInCurrentGame; // counts completed rounds in this game
+    private static int _roundsInCurrentGame;
     private static string _lastGameId;
     private static readonly List<string> _visitedGamesThisSession = new List<string>();
-    private const int RoundsBeforeSwitch = 5; // switch after 5 completed rounds
+    private const int RoundsBeforeSwitch = 5;
+    private const int MaxVisitedBeforeReset = 15;
 
-    // Creative/sandbox games that should never auto-switch
+    // Games that should never auto-switch (creative/sandbox)
     private static readonly HashSet<string> NoSwitchGames = new HashSet<string>
     {
         "coloring"
     };
 
+    /// <summary>Reset auto-switch counter when a game scene starts fresh.</summary>
+    private void ResetAutoSwitchForNewSession()
+    {
+        // Always reset counter when entering a game from menu (not from auto-switch)
+        // Auto-switch sets _lastGameId to the next game before loading, so if they match
+        // it means we arrived via auto-switch and counter is already 0.
+        // If _lastGameId doesn't match, it's a fresh menu entry.
+        if (_lastGameId != GameId)
+        {
+            _roundsInCurrentGame = 0;
+            _lastGameId = GameId;
+        }
+
+        // Prevent unbounded growth
+        if (_visitedGamesThisSession.Count > MaxVisitedBeforeReset)
+            _visitedGamesThisSession.Clear();
+    }
+
+    /// <summary>Call on profile switch to prevent cross-profile counter leaking.</summary>
+    public static void ResetAutoSwitchState()
+    {
+        _roundsInCurrentGame = 0;
+        _lastGameId = null;
+        _visitedGamesThisSession.Clear();
+    }
+
     private bool ShouldAutoSwitch()
     {
         var profile = ProfileManager.ActiveProfile;
         if (profile == null || !profile.autoSwitchGames) return false;
-        if (TwoPlayerManager.IsActive) return false; // never auto-switch in 2-player mode
+        if (TwoPlayerManager.IsActive) return false;
         if (NoSwitchGames.Contains(GameId)) return false;
+        if (isEndless) return false; // endless games: player chose to keep playing
 
-        // Track rounds completed in this game
-        if (_lastGameId != GameId)
-        {
-            _lastGameId = GameId;
-            _roundsInCurrentGame = 0;
-        }
         _roundsInCurrentGame++;
 
-        // Switch after N completed rounds
-        Debug.Log($"[AutoSwitch] {GameId}: round {_roundsInCurrentGame}/{RoundsBeforeSwitch}, autoSwitch={profile.autoSwitchGames}");
+        Debug.Log($"[AutoSwitch] {GameId}: round {_roundsInCurrentGame}/{RoundsBeforeSwitch}");
         return _roundsInCurrentGame >= RoundsBeforeSwitch;
     }
 
