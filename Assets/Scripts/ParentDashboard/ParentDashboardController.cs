@@ -272,32 +272,46 @@ public class ParentDashboardController : MonoBehaviour
         _data = ParentDashboardViewModel.Build(gameDatabase);
         if (_data == null) return;
 
+        // Build single subtitle line: "מתן * גיל 4 * שוחקו 59 משחקים"
+        string name = _data.profileName ?? "---";
+        string ageStr = _data.ageDisplay != "---"
+            ? $"\u05D2\u05D9\u05DC {_data.ageDisplay}" // גיל X
+            : "";
+        string sessStr = $"\u05E9\u05D5\u05D7\u05E7\u05D5 {_data.totalSessions} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD"; // שוחקו X משחקים
+
+        string subLine = !string.IsNullOrEmpty(ageStr)
+            ? $"{name}  \u2022  {ageStr}  \u2022  {sessStr}" // מתן • גיל 4 • שוחקו 59 משחקים
+            : $"{name}  \u2022  {sessStr}";
+
+        // Use headerNameText as the single subtitle (hide the others)
         if (headerNameText != null)
         {
-            HebrewText.SetText(headerNameText, _data.profileName);
+            HebrewText.SetText(headerNameText, subLine);
             headerNameText.enableWordWrapping = false;
+            headerNameText.alignment = TextAlignmentOptions.Center;
         }
         if (headerAgeText != null)
-        {
-            string ageLabel = _data.ageDisplay != "---"
-                ? $"\u05D2\u05D9\u05DC {_data.ageDisplay}" // גיל X
-                : "";
-            HebrewText.SetText(headerAgeText, ageLabel);
-            headerAgeText.enableWordWrapping = false;
-        }
+            headerAgeText.gameObject.SetActive(false);
         if (headerSessionsText != null)
-        {
-            string sessLabel = $"{_data.totalSessions} \u05DE\u05E9\u05D7\u05E7\u05D9\u05DD"; // X משחקים
-            HebrewText.SetText(headerSessionsText, sessLabel);
-            headerSessionsText.enableWordWrapping = false;
-        }
+            headerSessionsText.gameObject.SetActive(false);
 
-        // Force layout rebuild so ContentSizeFitter recalculates after text changes
+        // Hide separators in the SubRow
         if (headerNameText != null)
         {
             var subRow = headerNameText.transform.parent;
             if (subRow != null)
+            {
+                // Hide separator dots (children that are not the text fields)
+                for (int i = 0; i < subRow.childCount; i++)
+                {
+                    var child = subRow.GetChild(i);
+                    if (child.gameObject != headerNameText.gameObject
+                        && child.gameObject != headerAgeText?.gameObject
+                        && child.gameObject != headerSessionsText?.gameObject)
+                        child.gameObject.SetActive(false);
+                }
                 LayoutRebuilder.ForceRebuildLayoutImmediate(subRow.GetComponent<RectTransform>());
+            }
         }
     }
 
