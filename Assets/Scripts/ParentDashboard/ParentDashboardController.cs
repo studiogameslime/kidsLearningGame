@@ -4702,7 +4702,7 @@ public class ParentDashboardController : MonoBehaviour
             $"\u05D2\u05E8\u05E1\u05D4: {version}\n"                      // גרסה:
         );
 
-        Application.OpenURL($"mailto:support@limestudiogames.com?subject={subject}&body={body}");
+        Application.OpenURL($"mailto:studiogameslime@gmail.com?subject={subject}&body={body}");
     }
 
     private void OpenFeatureSuggestionEmail()
@@ -4716,7 +4716,7 @@ public class ParentDashboardController : MonoBehaviour
             "\u05EA\u05D5\u05D3\u05D4!\n"                                        // תודה!
         );
 
-        Application.OpenURL($"mailto:support@limestudiogames.com?subject={subject}&body={body}");
+        Application.OpenURL($"mailto:studiogameslime@gmail.com?subject={subject}&body={body}");
     }
 
     private static string EscapeURL(string s)
