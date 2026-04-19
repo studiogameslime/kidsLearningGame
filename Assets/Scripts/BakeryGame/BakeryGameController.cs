@@ -310,7 +310,7 @@ public class BakeryGameController : BaseMiniGame
         CompleteRound();
     }
 
-    public void OnHomePressed() => NavigationManager.GoToWorld();
+    public void OnHomePressed() => ExitGame();
 
     // ── Utility ──
 

@@ -583,7 +583,7 @@ public class SockMatchController : BaseMiniGame
         go.SetActive(false);
     }
 
-    public void OnHomePressed() => NavigationManager.GoToWorld();
+    public void OnHomePressed() => ExitGame();
 
     private static Vector2 WToL(RectTransform src, RectTransform par)
     {

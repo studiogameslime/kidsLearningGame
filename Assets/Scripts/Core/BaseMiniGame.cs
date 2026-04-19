@@ -240,6 +240,8 @@ public abstract class BaseMiniGame : MonoBehaviour
     protected void ExitGame()
     {
         if (StickerPopup.IsActive) return;
+        if (CurrentState == GameState.Completing) return; // block exit during celebration/completion
+        if (BubbleTransition.IsActive) return; // block if already transitioning
         float duration = Time.realtimeSinceStartup - _gameSceneStartTime;
         FirebaseAnalyticsManager.LogGameExited(GameId);
         FirebaseAnalyticsManager.LogGameSessionDuration(GameId, duration);

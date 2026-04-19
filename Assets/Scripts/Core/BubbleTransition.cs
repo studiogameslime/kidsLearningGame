@@ -188,10 +188,16 @@ public class BubbleTransition : MonoBehaviour
     /// </summary>
     public static void LoadScene(string sceneName)
     {
-        if (Instance == null || Instance.isTransitioning)
+        if (Instance == null)
         {
-            // Fallback: direct load
+            // No transition instance — direct load
             SceneManager.LoadScene(sceneName);
+            return;
+        }
+        if (Instance.isTransitioning)
+        {
+            // Already transitioning — block duplicate navigation
+            Debug.LogWarning($"[BubbleTransition] Blocked duplicate LoadScene({sceneName}) — already transitioning");
             return;
         }
         Instance.StartCoroutine(Instance.TransitionCoroutine(sceneName));
