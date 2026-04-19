@@ -283,34 +283,36 @@ public class ParentDashboardController : MonoBehaviour
             ? $"{name}  \u2022  {ageStr}  \u2022  {sessStr}" // מתן • גיל 4 • שוחקו 59 משחקים
             : $"{name}  \u2022  {sessStr}";
 
-        // Use headerNameText as the single subtitle (hide the others)
-        if (headerNameText != null)
-        {
-            HebrewText.SetText(headerNameText, subLine);
-            headerNameText.enableWordWrapping = false;
-            headerNameText.alignment = TextAlignmentOptions.Center;
-        }
-        if (headerAgeText != null)
-            headerAgeText.gameObject.SetActive(false);
-        if (headerSessionsText != null)
-            headerSessionsText.gameObject.SetActive(false);
-
-        // Hide separators in the SubRow
+        // Replace the SubRow with a single centered text
         if (headerNameText != null)
         {
             var subRow = headerNameText.transform.parent;
             if (subRow != null)
             {
-                // Hide separator dots (children that are not the text fields)
+                // Hide ALL children in the SubRow (name, age, sessions, separators)
                 for (int i = 0; i < subRow.childCount; i++)
-                {
-                    var child = subRow.GetChild(i);
-                    if (child.gameObject != headerNameText.gameObject
-                        && child.gameObject != headerAgeText?.gameObject
-                        && child.gameObject != headerSessionsText?.gameObject)
-                        child.gameObject.SetActive(false);
-                }
-                LayoutRebuilder.ForceRebuildLayoutImmediate(subRow.GetComponent<RectTransform>());
+                    subRow.GetChild(i).gameObject.SetActive(false);
+
+                // Destroy the HorizontalLayoutGroup so it doesn't interfere
+                var hlg = subRow.GetComponent<HorizontalLayoutGroup>();
+                if (hlg != null) Destroy(hlg);
+
+                // Create a single centered label
+                var labelGO = new GameObject("SubtitleLine");
+                labelGO.transform.SetParent(subRow, false);
+                var labelRT = labelGO.AddComponent<RectTransform>();
+                labelRT.anchorMin = Vector2.zero;
+                labelRT.anchorMax = Vector2.one;
+                labelRT.offsetMin = Vector2.zero;
+                labelRT.offsetMax = Vector2.zero;
+
+                var labelTMP = labelGO.AddComponent<TextMeshProUGUI>();
+                HebrewText.SetText(labelTMP, subLine);
+                labelTMP.fontSize = 22;
+                labelTMP.color = new Color(0.85f, 0.85f, 0.9f);
+                labelTMP.alignment = TextAlignmentOptions.Center;
+                labelTMP.enableWordWrapping = false;
+                labelTMP.raycastTarget = false;
             }
         }
     }
