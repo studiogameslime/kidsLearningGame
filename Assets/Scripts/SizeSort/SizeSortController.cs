@@ -80,21 +80,21 @@ public class SizeSortController : BaseMiniGame
     {
         if (fruitSprites == null || fruitSprites.Length == 0) return;
 
-        // Pick a random fruit not used yet
+        // Pick a random fruit not used in this session (prevent duplicates on cart)
         int fruitIndex;
-        int attempts = 0;
+        if (usedFruitIndices.Count >= fruitSprites.Length)
+            usedFruitIndices.Clear(); // all used — reset pool
+
         do
         {
             fruitIndex = Random.Range(0, fruitSprites.Length);
-            attempts++;
-        } while (usedFruitIndices.Contains(fruitIndex) && attempts < 50);
+        } while (usedFruitIndices.Contains(fruitIndex));
 
         usedFruitIndices.Add(fruitIndex);
         currentFruitSprite = fruitSprites[fruitIndex];
 
-        // Get size scales from difficulty
-        int difficulty = GameDifficultyConfig.GetLevel("sizesort");
-        GameDifficultyConfig.SizeSortConfig(difficulty, out float smallScale, out float mediumScale);
+        // Get size scales from difficulty (use BaseMiniGame.Difficulty — respects parent override)
+        GameDifficultyConfig.SizeSortConfig(Difficulty, out float smallScale, out float mediumScale);
 
         // Create 3 fruits: small, medium, large — shuffled positions
         var sizes = new List<int> { 0, 1, 2 }; // small, medium, large
@@ -175,8 +175,7 @@ public class SizeSortController : BaseMiniGame
 
             // Add fruit to cart visually
             float[] scales = { 0.5f, 0.75f, 1.0f };
-            int diff = GameDifficultyConfig.GetLevel("sizesort");
-            GameDifficultyConfig.SizeSortConfig(diff, out float ss, out float ms);
+            GameDifficultyConfig.SizeSortConfig(Difficulty, out float ss, out float ms);
             scales[0] = ss; scales[1] = ms;
 
             targetCart.AddFruit(currentFruitSprite, scales[fruit.sizeCategory]);
