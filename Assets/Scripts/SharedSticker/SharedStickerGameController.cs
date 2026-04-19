@@ -65,8 +65,8 @@ public class SharedStickerGameController : BaseMiniGame
         var s1GO = new GameObject("Score1");
         s1GO.transform.SetParent(canvas.transform, false);
         var s1RT = s1GO.AddComponent<RectTransform>();
-        s1RT.anchorMin = new Vector2(0, 0.9f); s1RT.anchorMax = new Vector2(0.15f, 1);
-        s1RT.offsetMin = new Vector2(10, 0); s1RT.offsetMax = Vector2.zero;
+        s1RT.anchorMin = new Vector2(0.12f, 0.9f); s1RT.anchorMax = new Vector2(0.28f, 1);
+        s1RT.offsetMin = Vector2.zero; s1RT.offsetMax = Vector2.zero;
         _score1TMP = s1GO.AddComponent<TMPro.TextMeshProUGUI>();
         _score1TMP.text = "0";
         _score1TMP.fontSize = 48; _score1TMP.fontStyle = TMPro.FontStyles.Bold;
@@ -78,8 +78,8 @@ public class SharedStickerGameController : BaseMiniGame
         var n1GO = new GameObject("Name1");
         n1GO.transform.SetParent(canvas.transform, false);
         var n1RT = n1GO.AddComponent<RectTransform>();
-        n1RT.anchorMin = new Vector2(0, 0.83f); n1RT.anchorMax = new Vector2(0.15f, 0.9f);
-        n1RT.offsetMin = new Vector2(10, 0); n1RT.offsetMax = Vector2.zero;
+        n1RT.anchorMin = new Vector2(0.12f, 0.83f); n1RT.anchorMax = new Vector2(0.28f, 0.9f);
+        n1RT.offsetMin = Vector2.zero; n1RT.offsetMax = Vector2.zero;
         var n1TMP = n1GO.AddComponent<TMPro.TextMeshProUGUI>();
         HebrewText.SetText(n1TMP, TwoPlayerManager.GetName(1));
         n1TMP.fontSize = 20; n1TMP.color = TwoPlayerManager.Player1Color;
