@@ -26,6 +26,7 @@ public static class StoreReviewManager
             {
                 activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
             }
+            if (activity == null) { Debug.LogWarning("[StoreReview] Unable to get current activity"); return false; }
             using (var managerClass = new AndroidJavaClass("com.google.android.play.core.review.ReviewManagerFactory"))
             {
                 reviewManager = managerClass.CallStatic<AndroidJavaObject>("create", activity);

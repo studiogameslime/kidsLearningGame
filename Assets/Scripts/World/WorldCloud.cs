@@ -88,6 +88,7 @@ public class WorldCloud : MonoBehaviour
 
     private void SpawnRain()
     {
+        if (rt == null || rt.parent == null) return;
         // Get cloud's actual position in parent space (anchor + offset)
         float cloudX = rt.anchoredPosition.x;
         float cloudY = rt.anchoredPosition.y;

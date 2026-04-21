@@ -15,7 +15,7 @@ public class InAppUpdateManager : MonoBehaviour
     private const string LastCheckKey = "inapp_update_last_check";
     private const double CheckCooldownHours = 12.0;
 
-    private bool _downloadReady;
+    private volatile bool _downloadReady;
 
 #if UNITY_ANDROID && !UNITY_EDITOR
     private AndroidJavaObject _appUpdateManager;

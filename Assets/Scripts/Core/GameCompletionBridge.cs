@@ -77,7 +77,7 @@ public class GameCompletionBridge : MonoBehaviour
     /// </summary>
     public static void IncrementGameCount(UserProfile profile)
     {
-        if (profile == null) return;
+        if (profile == null || profile.journey == null) return;
         var jp = profile.journey;
         jp.totalGamesCompleted++;
 

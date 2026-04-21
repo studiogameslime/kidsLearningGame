@@ -469,6 +469,8 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
         Rect srcRect = sprite.textureRect;
         int srcX = (int)srcRect.x, srcY = (int)srcRect.y;
         int srcW = (int)srcRect.width, srcH = (int)srcRect.height;
+        if (textureHeight <= 0) return;
+        if (srcH <= 0 || srcW <= 0) return;
 
         // Compensate for display stretch: texture is square but RawImage may not be.
         // Calculate how many texture pixels correspond to equal screen distance in X vs Y.
@@ -533,6 +535,7 @@ public class DrawingCanvas : MonoBehaviour, IPointerDownHandler, IDragHandler, I
 
         // Convert from local rect space (-width/2..+width/2) to 0..1
         Rect rect = rectTransform.rect;
+        if (rect.width <= 0 || rect.height <= 0) return false;
         float normalizedX = (localPoint.x - rect.x) / rect.width;
         float normalizedY = (localPoint.y - rect.y) / rect.height;
 

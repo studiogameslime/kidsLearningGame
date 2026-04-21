@@ -999,7 +999,7 @@ public class ProjectSetup : EditorWindow
         halfPuzzle.title = "\u05D7\u05D1\u05E8\u05D5 \u05D7\u05E6\u05D0\u05D9\u05DD"; // חברו חצאים
         halfPuzzle.cardColor = HexColor("#66BB6A");
         halfPuzzle.targetSceneName = "HalfPuzzle";
-        halfPuzzle.thumbnail = LoadSprite($"{previewPath}/Puzzle.png"); // reuse puzzle preview for now
+        halfPuzzle.thumbnail = LoadSprite($"{previewPath}/HalfGame.png");
         halfPuzzle.hasSubItems = false;
         EditorUtility.SetDirty(halfPuzzle);
 

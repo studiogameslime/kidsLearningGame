@@ -3083,24 +3083,24 @@ public class ParentDashboardController : MonoBehaviour
         var capturedOverlay = overlayGO;
         closeTapBtn.onClick.AddListener(() => Destroy(capturedOverlay));
 
+        // Share button at top center
+        var shareBtnGO = new GameObject("ShareBtn");
+        shareBtnGO.transform.SetParent(overlayGO.transform, false);
+        var shareRT = shareBtnGO.AddComponent<RectTransform>();
+        shareRT.anchorMin = new Vector2(0.3f, 0.91f);
+        shareRT.anchorMax = new Vector2(0.7f, 0.98f);
+
         // Drawing image — centered, preserveAspect
         var drawGO = new GameObject("Drawing");
         drawGO.transform.SetParent(overlayGO.transform, false);
         var drawRT = drawGO.AddComponent<RectTransform>();
-        drawRT.anchorMin = new Vector2(0.1f, 0.1f);
-        drawRT.anchorMax = new Vector2(0.9f, 0.85f);
+        drawRT.anchorMin = new Vector2(0.1f, 0.05f);
+        drawRT.anchorMax = new Vector2(0.9f, 0.89f);
         drawRT.offsetMin = Vector2.zero; drawRT.offsetMax = Vector2.zero;
         var drawImg = drawGO.AddComponent<Image>();
         drawImg.sprite = sprite;
         drawImg.preserveAspect = true;
         drawImg.raycastTarget = false;
-
-        // Share button at bottom center
-        var shareBtnGO = new GameObject("ShareBtn");
-        shareBtnGO.transform.SetParent(overlayGO.transform, false);
-        var shareRT = shareBtnGO.AddComponent<RectTransform>();
-        shareRT.anchorMin = new Vector2(0.3f, 0.02f);
-        shareRT.anchorMax = new Vector2(0.7f, 0.09f);
         shareRT.offsetMin = Vector2.zero; shareRT.offsetMax = Vector2.zero;
         var shareBg = shareBtnGO.AddComponent<Image>();
         if (roundedRect != null) { shareBg.sprite = roundedRect; shareBg.type = Image.Type.Sliced; }
@@ -4478,8 +4478,8 @@ public class ParentDashboardController : MonoBehaviour
         var cardGO = new GameObject("Card");
         cardGO.transform.SetParent(_settingsModal.transform, false);
         var cardRT = cardGO.AddComponent<RectTransform>();
-        cardRT.anchorMin = new Vector2(0.5f, 0.15f);
-        cardRT.anchorMax = new Vector2(0.5f, 0.85f);
+        cardRT.anchorMin = new Vector2(0.5f, 0.22f);
+        cardRT.anchorMax = new Vector2(0.5f, 0.92f);
         cardRT.pivot = new Vector2(0.5f, 0.5f);
         cardRT.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 750);
 

@@ -217,7 +217,8 @@ public class RewardRevealController : MonoBehaviour
             if (profile.journey.pendingWorldRewards.Count > 0)
             {
                 DiscoveryEntry next = null;
-                foreach (var entry in profile.journey.pendingWorldRewards)
+                var remaining = new List<DiscoveryEntry>(profile.journey.pendingWorldRewards);
+                foreach (var entry in remaining)
                 {
                     if (entry.type == "animal" || entry.type == "color")
                     {

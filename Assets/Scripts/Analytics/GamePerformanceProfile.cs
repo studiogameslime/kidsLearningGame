@@ -87,7 +87,8 @@ public class GamePerformanceProfile
 
     private void Recalculate()
     {
-        if (recentSessions == null || recentSessions.Count == 0) return;
+        if (recentSessions == null) recentSessions = new List<GameSessionData>();
+        if (recentSessions.Count == 0) return;
 
         float totalAcc = 0f;
         float totalDur = 0f;

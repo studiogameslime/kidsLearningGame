@@ -12,6 +12,7 @@ public class DraggableHalf : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
 {
     [HideInInspector] public int pairId;
     [HideInInspector] public string animalId;
+    [HideInInspector] public float minClampX = 20f;
 
     public bool IsPlaced { get; private set; }
 
@@ -106,8 +107,8 @@ public class DraggableHalf : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         {
             Vector2 pos = _rt.anchoredPosition;
             Rect bounds = parentRT.rect;
-            pos.x = Mathf.Clamp(pos.x, bounds.xMin + 20f, bounds.xMax - 20f);
-            pos.y = Mathf.Clamp(pos.y, bounds.yMin + 20f, bounds.yMax - 20f);
+            pos.x = Mathf.Clamp(pos.x, minClampX, bounds.width - 20f);
+            pos.y = Mathf.Clamp(pos.y, 20f, bounds.height - 20f);
             _rt.anchoredPosition = pos;
         }
     }
@@ -121,6 +122,12 @@ public class DraggableHalf : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
 
         if (!_controller.TryMatch(this))
             StartCoroutine(BounceBack());
+    }
+
+    public void BounceToStart()
+    {
+        if (IsPlaced) return;
+        StartCoroutine(BounceBack());
     }
 
     private IEnumerator BounceBack()

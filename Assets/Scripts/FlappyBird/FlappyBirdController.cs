@@ -355,7 +355,7 @@ public class FlappyBirdController : BaseMiniGame
                 }
 
                 // Bottom pipe collision (top edge of bottom pipe)
-                float botTop = pair.bottom.sizeDelta.y;
+                float botTop = pair.bottom.anchoredPosition.y + pair.bottom.sizeDelta.y;
                 if (birdY - birdH < botTop)
                 {
                     Die();

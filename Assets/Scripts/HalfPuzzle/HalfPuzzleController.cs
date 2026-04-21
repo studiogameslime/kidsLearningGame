@@ -23,10 +23,11 @@ public class HalfPuzzleController : BaseMiniGame
     public RectTransform boardArea;
 
     [Header("Settings")]
-    public float snapDistance = 90f;
+    public float snapDistance = 160f;
 
     // Runtime state
     private Sprite[] _fruitSprites;
+    private Sprite _basketSprite;
     private readonly List<DraggableHalf> _topPieces = new List<DraggableHalf>();    // left halves
     private readonly List<DraggableHalf> _bottomPieces = new List<DraggableHalf>(); // right halves
     private readonly List<int> _roundFruitIndices = new List<int>();
@@ -36,6 +37,8 @@ public class HalfPuzzleController : BaseMiniGame
     private int _matchedCount;
     private int _totalPairs;
     private Canvas _canvas;
+    private RectTransform _basketRT;
+    private int _basketItemCount;
 
     // ── BaseMiniGame overrides ──
 
@@ -53,6 +56,8 @@ public class HalfPuzzleController : BaseMiniGame
         _fruitSprites = Resources.LoadAll<Sprite>("Tractor/Fruits");
         if (_fruitSprites == null || _fruitSprites.Length == 0)
             Debug.LogError("[HalfPuzzle] No fruit sprites found in Resources/Tractor/Fruits!");
+
+        _basketSprite = Resources.Load<Sprite>("Basket");
     }
 
     protected override void OnRoundSetup()
@@ -79,9 +84,12 @@ public class HalfPuzzleController : BaseMiniGame
         foreach (var p in _topPieces) if (p != null) Destroy(p.gameObject);
         foreach (var p in _bottomPieces) if (p != null) Destroy(p.gameObject);
         foreach (var g in _completedFruits) if (g != null) Destroy(g);
+        if (_basketRT != null) Destroy(_basketRT.gameObject);
+        _basketRT = null;
         _topPieces.Clear();
         _bottomPieces.Clear();
         _completedFruits.Clear();
+        _basketItemCount = 0;
         CleanupTextures();
     }
 
@@ -127,6 +135,16 @@ public class HalfPuzzleController : BaseMiniGame
         float boardW = boardArea.rect.width;
         float boardH = boardArea.rect.height;
 
+        // ── Basket on the left side ──
+        _basketItemCount = 0;
+        float basketW = 280f;
+        float basketH = 340f;
+        BuildBasket(boardArea, basketW, basketH, boardH);
+
+        // Pieces area starts after the basket
+        float piecesStartX = basketW + 30f;
+        float piecesW = boardW - piecesStartX;
+
         // Layout: top row (left halves) at ~72%, bottom row (right halves) at ~28%
         float topRowY = boardH * 0.72f;
         float bottomRowY = boardH * 0.28f;
@@ -134,13 +152,13 @@ public class HalfPuzzleController : BaseMiniGame
         // Card size — each half is half-width, full-height of the fruit
         float padding = 40f;
         float spacing = 28f;
-        float availW = boardW - padding * 2f - (_totalPairs - 1) * spacing;
+        float availW = piecesW - padding * 2f - (_totalPairs - 1) * spacing;
         float cardW = Mathf.Min(availW / _totalPairs, 200f);
         float cardH = cardW * 1.6f; // taller than wide since it's half a fruit (left/right cut)
 
-        // Horizontal centering
+        // Horizontal centering within the pieces area
         float totalW = _totalPairs * cardW + (_totalPairs - 1) * spacing;
-        float startX = (boardW - totalW) / 2f + cardW / 2f;
+        float startX = piecesStartX + (piecesW - totalW) / 2f + cardW / 2f;
 
         // Shuffled orders
         var topOrder = new List<int>();
@@ -170,6 +188,7 @@ public class HalfPuzzleController : BaseMiniGame
 
             var topDrag = topGO.AddComponent<DraggableHalf>();
             topDrag.Init(topIdx, topFullSprite.name, _canvas, this);
+            topDrag.minClampX = piecesStartX;
             _topPieces.Add(topDrag);
 
             // ── Bottom row: RIGHT halves (draggable) ──
@@ -187,6 +206,7 @@ public class HalfPuzzleController : BaseMiniGame
 
             var bottomDrag = bottomGO.AddComponent<DraggableHalf>();
             bottomDrag.Init(bottomIdx, bottomFullSprite.name, _canvas, this);
+            bottomDrag.minClampX = piecesStartX;
             _bottomPieces.Add(bottomDrag);
         }
 
@@ -257,41 +277,39 @@ public class HalfPuzzleController : BaseMiniGame
         int pairId = piece.pairId;
         RectTransform pieceRT = piece.GetComponent<RectTransform>();
 
-        // Find matching partner in the OTHER row
+        // Find the closest partner piece that overlaps with the dragged piece
         bool isLeftHalf = _topPieces.Contains(piece);
         var partnerList = isLeftHalf ? _bottomPieces : _topPieces;
 
-        DraggableHalf partner = null;
+        Rect pieceWorld = GetWorldRect(pieceRT);
+
+        DraggableHalf closest = null;
+        float closestDist = float.MaxValue;
         foreach (var p in partnerList)
         {
-            if (p != null && !p.IsPlaced && p.pairId == pairId)
-            { partner = p; break; }
+            if (p == null || p.IsPlaced) continue;
+            RectTransform pRT = p.GetComponent<RectTransform>();
+            Rect pWorld = GetWorldRect(pRT);
+            if (!pieceWorld.Overlaps(pWorld)) continue;
+            float d = Vector2.Distance(pieceRT.anchoredPosition, pRT.anchoredPosition);
+            if (d < closestDist) { closestDist = d; closest = p; }
         }
 
-        if (partner == null) return false;
+        if (closest == null) return false;
 
-        RectTransform partnerRT = partner.GetComponent<RectTransform>();
-        float dist = Vector2.Distance(pieceRT.anchoredPosition, partnerRT.anchoredPosition);
-
-        if (dist > snapDistance)
+        // Dropped on a wrong partner — shake then bounce back
+        if (closest.pairId != pairId)
         {
-            // Check if near a WRONG partner
-            foreach (var p in partnerList)
-            {
-                if (p == null || p.IsPlaced || p.pairId == pairId) continue;
-                RectTransform wrongRT = p.GetComponent<RectTransform>();
-                float wrongDist = Vector2.Distance(pieceRT.anchoredPosition, wrongRT.anchoredPosition);
-                if (wrongDist < snapDistance)
-                {
-                    Stats?.RecordMistake("wrong_half");
-                    PlayWrongEffect(pieceRT);
-                    return false;
-                }
-            }
-            return false;
+            Stats?.RecordMistake("wrong_half");
+            StartCoroutine(ShakeThenBounceBack(piece, pieceRT));
+            return true; // return true to prevent OnEndDrag's BounceBack from conflicting
         }
 
-        // Match! Replace both halves with the full fruit
+        // Find the correct partner reference for midpoint calculation
+        DraggableHalf partner = closest;
+        RectTransform partnerRT = partner.GetComponent<RectTransform>();
+
+        // Match! Merge halves into full fruit and fly to basket
         Stats?.RecordCorrect("match", piece.animalId);
 
         Vector2 midpoint = (pieceRT.anchoredPosition + partnerRT.anchoredPosition) / 2f;
@@ -302,7 +320,7 @@ public class HalfPuzzleController : BaseMiniGame
         piece.gameObject.SetActive(false);
         partner.gameObject.SetActive(false);
 
-        // Spawn the full fruit at the midpoint
+        // Spawn the full fruit at the midpoint, then fly to basket
         int fruitIdx = _roundFruitIndices[pairId];
         Sprite fullSprite = _fruitSprites[fruitIdx];
         if (fullSprite != null)
@@ -316,9 +334,9 @@ public class HalfPuzzleController : BaseMiniGame
             fullRT.anchorMin = Vector2.zero;
             fullRT.anchorMax = Vector2.zero;
             fullRT.pivot = new Vector2(0.5f, 0.5f);
-            fullRT.sizeDelta = new Vector2(cardW * 2f, cardH); // full width = 2 halves
+            fullRT.sizeDelta = new Vector2(cardW * 2f, cardH);
             fullRT.anchoredPosition = midpoint;
-            fullRT.localScale = Vector3.one * 0.5f; // start small for pop animation
+            fullRT.localScale = Vector3.one * 0.5f;
 
             var fullImg = fullGO.AddComponent<Image>();
             fullImg.sprite = fullSprite;
@@ -326,7 +344,7 @@ public class HalfPuzzleController : BaseMiniGame
             fullImg.raycastTarget = false;
 
             _completedFruits.Add(fullGO);
-            StartCoroutine(MatchPopAnimation(fullRT));
+            StartCoroutine(PopThenFlyToBasket(fullRT, fullSprite));
         }
 
         PlayCorrectEffect(pieceRT);
@@ -338,32 +356,224 @@ public class HalfPuzzleController : BaseMiniGame
         return true;
     }
 
-    private IEnumerator MatchPopAnimation(RectTransform rt)
+    private IEnumerator ShakeThenBounceBack(DraggableHalf piece, RectTransform pieceRT)
     {
-        // Pop in: 0.5 → 1.15 (fast)
+        // Shake first (0.4s), then bounce back to start
+        PlayWrongEffect(pieceRT);
+        yield return new WaitForSeconds(0.45f);
+
+        if (piece == null || piece.IsPlaced) yield break;
+
+        // Now bounce back
+        piece.BounceToStart();
+    }
+
+    // ── Basket ──
+
+    private void BuildBasket(RectTransform parent, float w, float h, float boardH)
+    {
+        var basketGO = new GameObject("Basket");
+        basketGO.transform.SetParent(parent, false);
+        var rt = basketGO.AddComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.zero;
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.sizeDelta = new Vector2(w, h);
+        rt.anchoredPosition = new Vector2(w / 2f + 15f, boardH * 0.3f);
+
+        var img = basketGO.AddComponent<Image>();
+        if (_basketSprite != null)
+            img.sprite = _basketSprite;
+        img.preserveAspect = true;
+        img.color = Color.white;
+        img.raycastTarget = false;
+
+        _basketRT = rt;
+
+        // Bounce-in animation
+        StartCoroutine(BasketBounceIn(rt));
+    }
+
+    private IEnumerator BasketBounceIn(RectTransform rt)
+    {
+        rt.localScale = Vector3.zero;
+        float t = 0f;
+        while (t < 0.35f)
+        {
+            t += Time.deltaTime;
+            float p = t / 0.35f;
+            float s = p < 0.65f
+                ? Mathf.Lerp(0f, 1.15f, p / 0.65f)
+                : Mathf.Lerp(1.15f, 1f, (p - 0.65f) / 0.35f);
+            rt.localScale = Vector3.one * s;
+            yield return null;
+        }
+        rt.localScale = Vector3.one;
+    }
+
+    private IEnumerator PopThenFlyToBasket(RectTransform rt, Sprite fruitSprite)
+    {
+        if (rt == null) yield break;
+
+        // Phase 1: Pop in (0.5 → 1.2 → 1.0)
         float dur = 0.2f, elapsed = 0f;
         while (elapsed < dur && rt != null)
         {
             elapsed += Time.deltaTime;
             float t = Mathf.SmoothStep(0, 1, elapsed / dur);
-            rt.localScale = Vector3.one * Mathf.Lerp(0.5f, 1.15f, t);
+            rt.localScale = Vector3.one * Mathf.Lerp(0.5f, 1.2f, t);
             yield return null;
         }
-        // Settle: 1.15 → 1.0 (bounce back)
         elapsed = 0f; dur = 0.15f;
         while (elapsed < dur && rt != null)
         {
             elapsed += Time.deltaTime;
             float t = Mathf.SmoothStep(0, 1, elapsed / dur);
-            rt.localScale = Vector3.one * Mathf.Lerp(1.15f, 1f, t);
+            rt.localScale = Vector3.one * Mathf.Lerp(1.2f, 1f, t);
             yield return null;
         }
         if (rt != null) rt.localScale = Vector3.one;
+
+        // Brief pause so the child sees the full fruit
+        yield return new WaitForSeconds(0.35f);
+        if (rt == null) yield break;
+
+        // Phase 2: Lift up slightly before flying
+        Vector2 startPos = rt.anchoredPosition;
+        Vector2 liftPos = startPos + new Vector2(0, 40f);
+        dur = 0.12f; elapsed = 0f;
+        while (elapsed < dur && rt != null)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0, 1, elapsed / dur);
+            rt.anchoredPosition = Vector2.Lerp(startPos, liftPos, t);
+            rt.localScale = Vector3.one * Mathf.Lerp(1f, 1.1f, t);
+            yield return null;
+        }
+        if (rt == null) yield break;
+
+        // Phase 3: Fly to basket — arc + playful spin + shrink + fade
+        Vector2 flyStart = rt.anchoredPosition;
+        Vector2 targetPos = _basketRT != null ? _basketRT.anchoredPosition : flyStart;
+        float targetScale = 0.35f;
+        dur = 0.55f; elapsed = 0f;
+
+        // Higher arc for more dramatic flight
+        float arcHeight = 150f;
+        // Full 360 spin
+        float totalRotation = 360f;
+
+        var canvasGroup = rt.GetComponent<CanvasGroup>();
+        if (canvasGroup == null) canvasGroup = rt.gameObject.AddComponent<CanvasGroup>();
+
+        while (elapsed < dur && rt != null)
+        {
+            elapsed += Time.deltaTime;
+            // Ease-in-out with slight acceleration at end
+            float t = elapsed / dur;
+            float eased = t < 0.5f
+                ? 2f * t * t
+                : 1f - Mathf.Pow(-2f * t + 2f, 2f) / 2f;
+
+            // Position with parabolic arc
+            Vector2 pos = Vector2.Lerp(flyStart, targetPos, eased);
+            pos.y += arcHeight * 4f * eased * (1f - eased);
+            rt.anchoredPosition = pos;
+
+            // Shrink with slight bounce feel
+            float scale = Mathf.Lerp(1.1f, targetScale, eased);
+            rt.localScale = Vector3.one * scale;
+
+            // Playful spin
+            rt.localRotation = Quaternion.Euler(0, 0, -totalRotation * eased);
+
+            // Fade out in the last 20%
+            if (t > 0.8f)
+                canvasGroup.alpha = Mathf.Lerp(1f, 0.3f, (t - 0.8f) / 0.2f);
+
+            yield return null;
+        }
+
+        if (rt != null)
+            rt.gameObject.SetActive(false);
+
+        // Phase 4: Add mini fruit inside basket
+        if (_basketRT != null && fruitSprite != null)
+            AddFruitToBasket(fruitSprite);
+    }
+
+    private void AddFruitToBasket(Sprite fruitSprite)
+    {
+        var itemGO = new GameObject($"BasketItem_{_basketItemCount}");
+        itemGO.transform.SetParent(_basketRT, false);
+        var itemRT = itemGO.AddComponent<RectTransform>();
+
+        // Grid layout inside basket: 3 columns, centered in lower portion
+        float itemSize = 55f;
+        float gap = 6f;
+        int cols = 3;
+        int col = _basketItemCount % cols;
+        int row = _basketItemCount / cols;
+        float gridW = cols * itemSize + (cols - 1) * gap;
+        float x = -gridW / 2f + col * (itemSize + gap) + itemSize / 2f;
+        // Start items from upper area of basket
+        float topOffset = _basketRT.sizeDelta.y * 0.2f;
+        float y = topOffset - row * (itemSize + gap) - itemSize / 2f;
+
+        itemRT.anchoredPosition = new Vector2(x, y);
+        itemRT.sizeDelta = new Vector2(itemSize, itemSize);
+
+        var itemImg = itemGO.AddComponent<Image>();
+        itemImg.sprite = fruitSprite;
+        itemImg.preserveAspect = true;
+        itemImg.raycastTarget = false;
+
+        _basketItemCount++;
+        _completedFruits.Add(itemGO);
+
+        // Pop-in animation
+        StartCoroutine(BasketItemPopIn(itemRT));
+    }
+
+    private IEnumerator BasketItemPopIn(RectTransform itemRT)
+    {
+        itemRT.localScale = Vector3.zero;
+        float t = 0f;
+        while (t < 0.25f)
+        {
+            t += Time.deltaTime;
+            float p = t / 0.25f;
+            float s = p < 0.6f
+                ? Mathf.Lerp(0f, 1.2f, p / 0.6f)
+                : Mathf.Lerp(1.2f, 1f, (p - 0.6f) / 0.4f);
+            itemRT.localScale = Vector3.one * s;
+            yield return null;
+        }
+        itemRT.localScale = Vector3.one;
+
+        // Bounce the basket
+        if (_basketRT != null)
+            StartCoroutine(BasketBounce());
+    }
+
+    private IEnumerator BasketBounce()
+    {
+        float t = 0f;
+        while (t < 0.2f)
+        {
+            t += Time.deltaTime;
+            float p = t / 0.2f;
+            float s = 1f + Mathf.Sin(p * Mathf.PI) * 0.08f;
+            _basketRT.localScale = Vector3.one * s;
+            yield return null;
+        }
+        _basketRT.localScale = Vector3.one;
     }
 
     private IEnumerator DelayedComplete()
     {
-        yield return new WaitForSeconds(0.5f);
+        // Wait for pop + fly-to-basket animation to finish
+        yield return new WaitForSeconds(1.3f);
         CompleteRound();
     }
 
@@ -420,6 +630,17 @@ public class HalfPuzzleController : BaseMiniGame
     }
 
     // ── Utility ──
+
+    private static Rect GetWorldRect(RectTransform rt)
+    {
+        Vector3[] corners = new Vector3[4];
+        rt.GetWorldCorners(corners);
+        float xMin = corners[0].x;
+        float yMin = corners[0].y;
+        float w = corners[2].x - corners[0].x;
+        float h = corners[2].y - corners[0].y;
+        return new Rect(xMin, yMin, w, h);
+    }
 
     private static void ShuffleList<T>(List<T> list)
     {

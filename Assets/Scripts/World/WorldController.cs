@@ -242,9 +242,15 @@ public class WorldController : MonoBehaviour
         // Clean up
         RestoreAlin();
         if (_spotlightOverlay != null)
+        {
             Destroy(_spotlightOverlay);
+            _spotlightOverlay = null;
+        }
         if (_cutoutTexture != null)
+        {
             Destroy(_cutoutTexture);
+            _cutoutTexture = null;
+        }
 
         // Mark as played and save
         if (profile != null)
